@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
+import { geocodeAddress } from "@/lib/geocode"
 
 const TYPES = [
   { value: "restaurant", label: "Restaurante" },
@@ -60,8 +61,26 @@ export default function SugerirPage() {
     setLoading(true)
     setError("")
 
-    if (!formData.lat || !formData.lng) {
-      setError("Seleccioná una dirección de la lista para continuar.")
+    let dataToSubmit = formData
+
+    // Si tiene dirección pero no coordenadas (ej. pegó o escribió sin seleccionar), geocodificar
+    if ((!formData.lat || !formData.lng) && formData.address.trim()) {
+      const geo = await geocodeAddress(formData.address)
+      if (geo) {
+        dataToSubmit = {
+          ...formData,
+          address: geo.address,
+          lat: geo.lat.toString(),
+          lng: geo.lng.toString(),
+          neighborhood: geo.neighborhood || "Otro",
+        }
+      } else {
+        setError("No se pudo encontrar la dirección. Probá seleccionando una sugerencia de la lista.")
+        setLoading(false)
+        return
+      }
+    } else if (!formData.lat || !formData.lng) {
+      setError("Agregá una dirección y seleccionala de la lista o escribíla completa.")
       setLoading(false)
       return
     }
@@ -71,10 +90,10 @@ export default function SugerirPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
+          ...dataToSubmit,
           location: {
-            lat: parseFloat(formData.lat),
-            lng: parseFloat(formData.lng),
+            lat: parseFloat(dataToSubmit.lat),
+            lng: parseFloat(dataToSubmit.lng),
           },
         }),
       })
@@ -148,7 +167,7 @@ export default function SugerirPage() {
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Escribí al menos 3 caracteres y seleccioná una sugerencia de la lista.
+                Escribí o pegá la dirección. Podés seleccionar una sugerencia o enviar directamente.
               </p>
             </div>
 
