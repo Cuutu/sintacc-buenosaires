@@ -18,10 +18,7 @@ export async function checkRateLimit(
       type,
       date: today,
     },
-    {
-      $inc: { count: 1 },
-      $setOnInsert: { count: 1 },
-    },
+    { $inc: { count: 1 } },
     {
       upsert: true,
       new: true,
