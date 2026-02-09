@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AddressAutocomplete } from "@/components/address-autocomplete"
 
 const TYPES = [
   { value: "restaurant", label: "Restaurante" },
@@ -31,6 +32,11 @@ const NEIGHBORHOODS = [
   "Almagro",
   "Villa Urquiza",
   "Colegiales",
+  "Balvanera",
+  "Monserrat",
+  "La Boca",
+  "Barracas",
+  "Constitución",
   "Otro",
 ]
 
@@ -139,11 +145,24 @@ export default function SugerirPage() {
 
             <div>
               <Label>Dirección *</Label>
-              <Input
+              <AddressAutocomplete
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(address) => setFormData({ ...formData, address })}
+                onSelect={(result) => {
+                  setFormData({
+                    ...formData,
+                    address: result.address,
+                    lat: result.lat.toString(),
+                    lng: result.lng.toString(),
+                    neighborhood: result.neighborhood || "",
+                  })
+                }}
+                placeholder="Escribí una dirección o lugar en Buenos Aires..."
                 required
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Escribí al menos 3 caracteres para buscar. Seleccioná una sugerencia para autocompletar.
+              </p>
             </div>
 
             <div>
@@ -178,6 +197,7 @@ export default function SugerirPage() {
                   onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
                   placeholder="-34.6037"
                   required
+                  title="Se completa automáticamente al elegir una dirección"
                 />
               </div>
               <div>
@@ -189,9 +209,13 @@ export default function SugerirPage() {
                   onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
                   placeholder="-58.3816"
                   required
+                  title="Se completa automáticamente al elegir una dirección"
                 />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Coordenadas se completan al elegir una dirección. Podés editarlas si es necesario.
+            </p>
 
             <div>
               <Label>Instagram</Label>
