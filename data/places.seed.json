@@ -1,0 +1,134 @@
+[
+  {
+    "name": "Bendita Cocina Sin TACC",
+    "type": "restaurant",
+    "address": "Av. Santa Fe 2723, C1123 CABA",
+    "neighborhood": "Palermo",
+    "location": {
+      "lat": -34.5925,
+      "lng": -58.4103
+    },
+    "tags": ["certificado_sin_tacc", "100_gf", "cocina_separada"],
+    "contact": {
+      "instagram": "@benditacocinasintacc",
+      "phone": "+54 11 4831-1234",
+      "url": "https://benditacocina.com.ar"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Café Sin TACC",
+    "type": "cafe",
+    "address": "Av. Corrientes 4567, C1414 CABA",
+    "neighborhood": "Villa Crespo",
+    "location": {
+      "lat": -34.6000,
+      "lng": -58.4400
+    },
+    "tags": ["certificado_sin_tacc", "opciones_sin_tacc"],
+    "contact": {
+      "instagram": "@cafesintacc",
+      "phone": "+54 11 4856-7890"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Panadería Celíaca",
+    "type": "bakery",
+    "address": "Av. Cabildo 2345, C1428 CABA",
+    "neighborhood": "Belgrano",
+    "location": {
+      "lat": -34.5600,
+      "lng": -58.4600
+    },
+    "tags": ["certificado_sin_tacc", "100_gf"],
+    "contact": {
+      "whatsapp": "+54 11 4789-0123",
+      "phone": "+54 11 4789-0123"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Heladería Sin Gluten",
+    "type": "icecream",
+    "address": "Av. del Libertador 5678, C1425 CABA",
+    "neighborhood": "Recoleta",
+    "location": {
+      "lat": -34.5875,
+      "lng": -58.3950
+    },
+    "tags": ["opciones_sin_tacc", "100_gf"],
+    "contact": {
+      "instagram": "@heladeriasingluten"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Restaurante Verde",
+    "type": "restaurant",
+    "address": "Defensa 1234, C1143 CABA",
+    "neighborhood": "San Telmo",
+    "location": {
+      "lat": -34.6200,
+      "lng": -58.3700
+    },
+    "tags": ["opciones_sin_tacc"],
+    "contact": {
+      "phone": "+54 11 4361-5678"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Tienda Sin TACC",
+    "type": "store",
+    "address": "Av. Córdoba 3456, C1054 CABA",
+    "neighborhood": "Recoleta",
+    "location": {
+      "lat": -34.5950,
+      "lng": -58.3900
+    },
+    "tags": ["certificado_sin_tacc", "100_gf"],
+    "contact": {
+      "url": "https://tiendasintacc.com.ar"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Bar Sin Gluten",
+    "type": "bar",
+    "address": "Av. Scalabrini Ortiz 789, C1414 CABA",
+    "neighborhood": "Palermo",
+    "location": {
+      "lat": -34.5900,
+      "lng": -58.4200
+    },
+    "tags": ["opciones_sin_tacc"],
+    "contact": {
+      "instagram": "@barsingluten"
+    },
+    "photos": [],
+    "status": "approved"
+  },
+  {
+    "name": "Café Orgánico Sin TACC",
+    "type": "cafe",
+    "address": "Av. Juan B. Justo 456, C1414 CABA",
+    "neighborhood": "Villa Crespo",
+    "location": {
+      "lat": -34.6050,
+      "lng": -58.4350
+    },
+    "tags": ["certificado_sin_tacc", "cocina_separada"],
+    "contact": {
+      "phone": "+54 11 4851-2345"
+    },
+    "photos": [],
+    "status": "approved"
+  }
+]
