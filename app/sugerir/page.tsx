@@ -21,25 +21,6 @@ const TYPES = [
   { value: "other", label: "Otro" },
 ]
 
-const NEIGHBORHOODS = [
-  "Palermo",
-  "Recoleta",
-  "San Telmo",
-  "Puerto Madero",
-  "Belgrano",
-  "Villa Crespo",
-  "Caballito",
-  "Almagro",
-  "Villa Urquiza",
-  "Colegiales",
-  "Balvanera",
-  "Monserrat",
-  "La Boca",
-  "Barracas",
-  "Constitución",
-  "Otro",
-]
-
 export default function SugerirPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -78,6 +59,12 @@ export default function SugerirPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+
+    if (!formData.lat || !formData.lng) {
+      setError("Seleccioná una dirección de la lista para continuar.")
+      setLoading(false)
+      return
+    }
 
     try {
       const res = await fetch("/api/suggestions", {
@@ -154,68 +141,16 @@ export default function SugerirPage() {
                     address: result.address,
                     lat: result.lat.toString(),
                     lng: result.lng.toString(),
-                    neighborhood: result.neighborhood || "",
+                    neighborhood: result.neighborhood || "Otro",
                   })
                 }}
                 placeholder="Escribí una dirección o lugar en Buenos Aires..."
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Escribí al menos 3 caracteres para buscar. Seleccioná una sugerencia para autocompletar.
+                Escribí al menos 3 caracteres y seleccioná una sugerencia de la lista.
               </p>
             </div>
-
-            <div>
-              <Label>Barrio *</Label>
-              <Select
-                value={formData.neighborhood}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, neighborhood: value })
-                }
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar barrio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NEIGHBORHOODS.map((hood) => (
-                    <SelectItem key={hood} value={hood}>
-                      {hood}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Latitud *</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  value={formData.lat}
-                  onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
-                  placeholder="-34.6037"
-                  required
-                  title="Se completa automáticamente al elegir una dirección"
-                />
-              </div>
-              <div>
-                <Label>Longitud *</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  value={formData.lng}
-                  onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
-                  placeholder="-58.3816"
-                  required
-                  title="Se completa automáticamente al elegir una dirección"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground -mt-2">
-              Coordenadas se completan al elegir una dirección. Podés editarlas si es necesario.
-            </p>
 
             <div>
               <Label>Instagram</Label>
