@@ -22,12 +22,12 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
               <Sparkles className="h-4 w-4" />
-              Buenos Aires · Comunidad celíaca
+              Argentina · Comunidad celíaca
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
               Encontrá lugares{" "}
-              <span className="text-primary">sin TACC</span>
+              <span className="text-primary">libre de gluten</span>
               <br />
               cerca de vos
             </h1>

@@ -114,7 +114,7 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
                   size="icon"
                   onClick={() =>
                     window.open(
-                      `https://www.google.com/maps/search/?api=1&query=${place.location.lat},${place.location.lng}`,
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`,
                       "_blank"
                     )
                   }

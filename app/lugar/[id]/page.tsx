@@ -61,7 +61,7 @@ export default function LugarPage() {
 
   const openInMaps = () => {
     if (!place) return
-    const url = `https://www.google.com/maps/search/?api=1&query=${place.location.lat},${place.location.lng}`
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`
     window.open(url, "_blank")
   }
 
