@@ -19,17 +19,19 @@ export function SearchBar() {
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2 w-full">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="relative flex-1 group">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input
           type="text"
           placeholder="Buscar lugares, direcciones, barrios..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
+          className="pl-11 h-12 bg-card/50 border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all rounded-xl"
         />
       </div>
-      <Button type="submit">Buscar</Button>
+      <Button type="submit" size="lg" className="h-12 px-6 rounded-xl">
+        Buscar
+      </Button>
     </form>
   )
 }

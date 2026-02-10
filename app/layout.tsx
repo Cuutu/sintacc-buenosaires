@@ -12,7 +12,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "SinTACC BSAS - Lugares sin gluten en Buenos Aires",
+  title: "Celimap - Lugares sin gluten en Buenos Aires",
   description: "Encuentra lugares certificados sin TACC y opciones seguras para celíacos en Buenos Aires",
 };
 

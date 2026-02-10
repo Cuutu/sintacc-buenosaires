@@ -23,7 +23,7 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
   const typeIcon = TYPE_ICONS[place.type] || "📍"
 
   const cardContent = (
-      <Card className="place-card-hover overflow-hidden cursor-pointer h-full border-2 hover:border-primary/30 rounded-xl group">
+      <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-border/50 hover:border-primary/50 rounded-xl group bg-card/50">
         {place.photos && place.photos.length > 0 ? (
           <div className="relative h-40 w-full overflow-hidden">
             <img
@@ -33,7 +33,7 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-2 left-3 right-3">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur text-xs font-medium">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-background/90 backdrop-blur text-xs font-medium">
                 {typeIcon} {place.neighborhood}
               </span>
             </div>
@@ -41,7 +41,7 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
         ) : (
           <div className="relative h-24 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent flex items-center justify-center">
             <span className="text-4xl">{typeIcon}</span>
-            <span className="absolute bottom-2 left-3 px-2.5 py-1 rounded-lg bg-white/90 text-xs font-medium shadow-sm">
+            <span className="absolute bottom-2 left-3 px-2.5 py-1 rounded-lg bg-background/90 text-xs font-medium shadow-sm">
               {place.neighborhood}
             </span>
           </div>

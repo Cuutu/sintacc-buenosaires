@@ -14,17 +14,17 @@ export function HomeStats() {
   }, [])
 
   return (
-    <div className="flex flex-wrap justify-center gap-8 mt-8 text-muted-foreground">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap justify-center gap-8 mt-8">
+      <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border border-border/50">
         <MapPin className="h-5 w-5 text-primary" />
-        <span>
-          <strong className="text-foreground">{stats.placesCount}</strong> lugares
+        <span className="text-muted-foreground">
+          <strong className="text-foreground font-semibold">{stats.placesCount}</strong> lugares
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border border-border/50">
         <MessageSquare className="h-5 w-5 text-primary" />
-        <span>
-          <strong className="text-foreground">{stats.reviewsCount}</strong> reseñas
+        <span className="text-muted-foreground">
+          <strong className="text-foreground font-semibold">{stats.reviewsCount}</strong> reseñas
         </span>
       </div>
     </div>
