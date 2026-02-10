@@ -4,7 +4,7 @@ import Link from "next/link"
 import { MapPin, ArrowRight, Sparkles } from "lucide-react"
 import { HomeStats } from "@/components/home-stats"
 import { FeaturedPlaces } from "@/components/featured-places"
-import { StatsCards } from "@/components/stats-cards"
+import { StatsGrid } from "@/components/stats/StatsGrid"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 export default function HomePage() {
@@ -68,9 +68,9 @@ export default function HomePage() {
         </div>
       </ScrollReveal>
 
-      {/* Stats Cards */}
+      {/* Stats Grid */}
       <div className="container mx-auto px-4 py-16">
-        <StatsCards />
+        <StatsGrid />
       </div>
 
       {/* CTA */}
