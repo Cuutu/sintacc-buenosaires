@@ -3,6 +3,7 @@ import { z } from "zod"
 export const placeSchema = z.object({
   name: z.string().min(1).max(200).trim(),
   type: z.enum(["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"]),
+  types: z.array(z.enum(["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"])).min(1).optional(),
   address: z.string().min(1).max(500).trim(),
   neighborhood: z.string().min(1).max(100).trim(),
   location: z.object({

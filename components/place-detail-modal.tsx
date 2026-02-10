@@ -40,6 +40,7 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
     }
   }, [open, placeId])
 
+  const displayTypes = place?.types?.length ? place.types : (place ? [place.type] : [])
   const typeConfig = place ? TYPES.find((t) => t.value === place.type) : null
 
   return (
@@ -66,18 +67,24 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
                     className="object-cover"
                     sizes="(max-width: 512px) 100vw, 512px"
                   />
-                  <div className="absolute bottom-2 left-2">
-                    <Badge className="bg-background/90 text-foreground">
-                      {typeConfig?.emoji} {typeConfig?.label || place.type}
-                    </Badge>
+                  <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+                    {displayTypes.map((t) => (
+                      <Badge key={t} className="bg-background/90 text-foreground">
+                        {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               ) : (
                 <div className="relative h-32 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                   <span className="text-5xl">{typeConfig?.emoji || "📍"}</span>
-                  <Badge className="absolute bottom-2 left-2">
-                    {typeConfig?.label || place.type}
-                  </Badge>
+                  <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+                    {displayTypes.map((t) => (
+                      <Badge key={t} className="bg-background/90 text-foreground">
+                        {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
 

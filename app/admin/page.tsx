@@ -17,6 +17,7 @@ type SuggestionItem = {
   placeDraft: {
     name: string
     type: string
+    types?: string[]
     address: string
     neighborhood: string
     openingHours?: string
@@ -210,7 +211,14 @@ export default function AdminPage() {
                   <CardContent>
                     <div className="space-y-2 mb-4">
                       <p>
-                        <strong>Tipo:</strong> {getTypeLabel(suggestion.placeDraft.type)}
+                        <strong>Tipo:</strong>{" "}
+                        {(() => {
+                          const draft = suggestion.placeDraft as Record<string, unknown>
+                          const types = draft.types as string[] | undefined
+                          return Array.isArray(types) && types.length
+                            ? types.map((t) => getTypeLabel(t)).join(", ")
+                            : getTypeLabel(suggestion.placeDraft.type)
+                        })()}
                       </p>
                       <p>
                         <strong>Dirección:</strong> {suggestion.placeDraft.address}

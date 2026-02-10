@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { geocodeAddress } from "@/lib/geocode"
 import { toast } from "sonner"
@@ -20,7 +19,7 @@ export default function SugerirPage() {
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
+    types: [] as string[],
     address: "",
     neighborhood: "",
     lat: "",
@@ -47,6 +46,15 @@ export default function SugerirPage() {
       tags: prev.tags.includes(tag)
         ? prev.tags.filter((t) => t !== tag)
         : [...prev.tags, tag],
+    }))
+  }
+
+  const toggleType = (typeValue: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      types: prev.types.includes(typeValue)
+        ? prev.types.filter((t) => t !== typeValue)
+        : [...prev.types, typeValue],
     }))
   }
 
@@ -92,8 +100,15 @@ export default function SugerirPage() {
       return
     }
 
+    if (formData.types.length === 0) {
+      setError("Seleccioná al menos un tipo de lugar")
+      setLoading(false)
+      return
+    }
+
     const payload = {
       ...dataToSubmit,
+      types: dataToSubmit.types,
       openingHours: dataToSubmit.openingHours || undefined,
       delivery: dataToSubmit.delivery?.available
         ? {
@@ -150,22 +165,22 @@ export default function SugerirPage() {
 
             <div>
               <Label>Tipo *</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.emoji} {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-muted-foreground mb-2">
+                Seleccioná uno o más tipos que apliquen al lugar
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {TYPES.map((type) => (
+                  <Button
+                    key={type.value}
+                    type="button"
+                    variant={formData.types.includes(type.value) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleType(type.value)}
+                  >
+                    {type.emoji} {type.label}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div>

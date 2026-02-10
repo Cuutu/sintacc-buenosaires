@@ -100,6 +100,7 @@ export default function LugarPage() {
     )
   }
 
+  const displayTypes = place.types?.length ? place.types : [place.type]
   const typeConfig = TYPES.find((t) => t.value === place.type)
 
   return (
@@ -136,9 +137,13 @@ export default function LugarPage() {
           ) : (
             <div className="relative h-64 w-full rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
               <span className="text-8xl">{typeConfig?.emoji || "📍"}</span>
-              <span className="absolute bottom-2 left-2 px-2 py-1 rounded bg-white/90 text-sm font-medium">
-                {typeConfig?.label || "Lugar"}
-              </span>
+              <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+                {displayTypes.map((t) => (
+                  <span key={t} className="px-2 py-1 rounded bg-background/90 text-sm font-medium">
+                    {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -232,6 +237,14 @@ export default function LugarPage() {
               </span>
             </div>
           )}
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {displayTypes.map((t) => (
+              <Badge key={t} variant="secondary" className="bg-primary/10 text-primary">
+                {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
+              </Badge>
+            ))}
+          </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
             {place.tags.map((tag) => (

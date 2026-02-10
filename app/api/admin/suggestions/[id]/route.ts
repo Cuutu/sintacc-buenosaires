@@ -42,11 +42,13 @@ export async function PATCH(
     }
     
     if (action === "approve") {
-      // Create place from suggestion
-      const place = new Place({
-        ...suggestion.placeDraft,
-        status: "approved",
-      })
+      const draft = suggestion.placeDraft as Record<string, unknown>
+      const placeData: Record<string, unknown> = { ...draft, status: "approved" }
+      if (draft.types && Array.isArray(draft.types) && draft.types.length > 0) {
+        if (!draft.type) placeData.type = draft.types[0]
+        placeData.types = draft.types
+      }
+      const place = new Place(placeData)
       await place.save()
       
       suggestion.status = "approved"

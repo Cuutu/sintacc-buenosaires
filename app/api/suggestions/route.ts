@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
     await connectDB()
     
     const body = await request.json()
+    if (body.types?.length && !body.type) {
+      body.type = body.types[0]
+    }
     const validated = suggestionSchema.parse(body)
     
     const suggestion = new Suggestion({

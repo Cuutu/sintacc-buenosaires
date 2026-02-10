@@ -21,7 +21,8 @@ const TYPE_ICONS: Record<string, string> = {
 }
 
 export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
-  const typeIcon = TYPE_ICONS[place.type] || "📍"
+  const primaryType = place.types?.[0] ?? place.type
+  const typeIcon = TYPE_ICONS[primaryType] || "📍"
 
   const cardContent = (
       <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-border/50 hover:border-primary/50 rounded-xl group bg-card/50">

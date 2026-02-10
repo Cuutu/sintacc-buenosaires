@@ -4,6 +4,7 @@ import { features } from "@/lib/features"
 export interface IPlace extends Document {
   name: string
   type: "restaurant" | "cafe" | "bakery" | "store" | "icecream" | "bar" | "other"
+  types?: string[]
   address: string
   neighborhood: string
   location: {
@@ -44,6 +45,11 @@ const PlaceSchema = new Schema<IPlace>(
       type: String,
       enum: ["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"],
       required: true,
+    },
+    types: {
+      type: [String],
+      enum: ["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"],
+      default: undefined,
     },
     address: {
       type: String,
