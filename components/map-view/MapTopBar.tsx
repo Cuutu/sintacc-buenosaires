@@ -44,15 +44,15 @@ export function MapTopBar({
   }
 
   return (
-    <div className="fixed top-16 left-0 right-0 z-30 px-4 pt-3 pb-2 bg-black/40 backdrop-blur-md border-b border-white/10 md:top-20 md:left-4 md:right-auto md:max-w-md md:rounded-xl md:border md:border-white/10">
-      <div className="flex gap-2 mb-3">
+    <div className="fixed top-16 left-0 right-0 z-30 px-4 pt-3 pb-2 bg-black/40 backdrop-blur-md border-b border-white/10 md:top-6 md:left-6 md:right-auto md:max-w-md md:rounded-2xl md:border md:border-white/10 md:px-5 md:pt-5 md:pb-4 md:shadow-xl md:shadow-black/30 md:border-white/20">
+      <div className="flex gap-2 mb-3 md:mb-4">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-12 h-12 min-h-[44px] text-base rounded-xl border-white/10 bg-black/40 backdrop-blur"
+            className="pl-12 h-12 min-h-[44px] text-base rounded-xl border-white/10 bg-black/40 backdrop-blur md:bg-white/5 md:border-white/20"
           />
         </div>
         {onFiltersOpen && (
@@ -67,7 +67,7 @@ export function MapTopBar({
           </Button>
         )}
       </div>
-      <div className="flex overflow-x-auto gap-2 scrollbar-hide snap-x snap-mandatory pb-1 -mx-1">
+      <div className="flex overflow-x-auto gap-2 scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 md:gap-3">
         {FILTER_CHIPS.map((chip) => (
           <button
             key={chip.id}
