@@ -2,7 +2,7 @@ import { SearchBar } from "@/components/search-bar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { MapPin, Star, Users, ArrowRight, Sparkles } from "lucide-react"
+import { MapPin, Star, Users, ArrowRight, Sparkles, ChevronDown } from "lucide-react"
 import { HomeStats } from "@/components/home-stats"
 import { FeaturedPlaces } from "@/components/featured-places"
 
@@ -26,7 +26,8 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Encontrá lugares{" "}
+              Encontrá lugares
+              <br />
               <span className="text-primary">libres de gluten</span>
               <br />
               cerca tuyo
@@ -55,12 +56,21 @@ export default function HomePage() {
             </div>
 
             <HomeStats />
+
+            <a
+              href="#lugares"
+              className="inline-flex flex-col items-center gap-1 mt-8 text-muted-foreground hover:text-primary transition-colors animate-bounce"
+              aria-label="Ver lugares destacados"
+            >
+              <span className="text-sm font-medium">Ver lugares</span>
+              <ChevronDown className="h-8 w-8" />
+            </a>
           </div>
         </div>
       </div>
 
       {/* Featured Places */}
-      <div className="container mx-auto px-4 py-16 border-t border-border/50">
+      <div id="lugares" className="container mx-auto px-4 py-16 border-t border-border/50 scroll-mt-20">
         <FeaturedPlaces />
       </div>
 
