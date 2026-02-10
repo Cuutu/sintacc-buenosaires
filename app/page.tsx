@@ -34,7 +34,7 @@ export default function HomePage() {
                 alt="Sin gluten"
                 width={48}
                 height={48}
-                className="inline-block w-10 h-10 md:w-12 md:h-12"
+                className="inline-block w-10 h-10 md:w-12 md:h-12 mix-blend-multiply"
               />
               cerca tuyo
             </h1>
