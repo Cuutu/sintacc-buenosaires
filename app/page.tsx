@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { MapPin, ArrowRight, Sparkles } from "lucide-react"
 import { HomeStats } from "@/components/home-stats"
-import { FeaturedPlaces } from "@/components/featured-places"
+import { FeaturedSection } from "@/components/featured/FeaturedSection"
 import { StatsGrid } from "@/components/stats/StatsGrid"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
@@ -64,7 +64,7 @@ export default function HomePage() {
       {/* Featured Places */}
       <ScrollReveal>
         <div id="lugares" className="container mx-auto px-4 py-16 border-t border-border/50 scroll-mt-20">
-          <FeaturedPlaces />
+          <FeaturedSection />
         </div>
       </ScrollReveal>
 
