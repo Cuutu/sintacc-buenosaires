@@ -1,10 +1,11 @@
 import { SearchBar } from "@/components/search-bar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { MapPin, Star, Users, ArrowRight, Sparkles, ChevronDown } from "lucide-react"
+import { MapPin, ArrowRight, Sparkles } from "lucide-react"
 import { HomeStats } from "@/components/home-stats"
 import { FeaturedPlaces } from "@/components/featured-places"
+import { StatsCards } from "@/components/stats-cards"
+import { ScrollReveal } from "@/components/scroll-reveal"
 
 export default function HomePage() {
   return (
@@ -56,64 +57,24 @@ export default function HomePage() {
             </div>
 
             <HomeStats />
-
-            <a
-              href="#lugares"
-              className="inline-flex flex-col items-center gap-1 mt-8 text-muted-foreground hover:text-primary transition-colors animate-bounce"
-              aria-label="Ver lugares destacados"
-            >
-              <span className="text-sm font-medium">Ver lugares</span>
-              <ChevronDown className="h-8 w-8" />
-            </a>
           </div>
         </div>
       </div>
 
       {/* Featured Places */}
-      <div id="lugares" className="container mx-auto px-4 py-16 border-t border-border/50 scroll-mt-20">
-        <FeaturedPlaces />
-      </div>
-
-      {/* Features */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="border-border/50 bg-card/50 hover:bg-card/80 transition-colors group">
-            <CardHeader className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <CardTitle className="text-xl">Mapa interactivo</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Explorá lugares seguros en Buenos Aires con filtros por barrio, tipo y más.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="border-border/50 bg-card/50 hover:bg-card/80 transition-colors group">
-            <CardHeader className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                <Star className="h-6 w-6" />
-              </div>
-              <CardTitle className="text-xl">Reseñas verificadas</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Experiencias reales de la comunidad celíaca. Cocina separada, sensación segura.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="border-border/50 bg-card/50 hover:bg-card/80 transition-colors group">
-            <CardHeader className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                <Users className="h-6 w-6" />
-              </div>
-              <CardTitle className="text-xl">Comunidad activa</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Compartí y descubrí nuevos lugares. Cada sugerencia suma.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+      <ScrollReveal>
+        <div id="lugares" className="container mx-auto px-4 py-16 border-t border-border/50 scroll-mt-20">
+          <FeaturedPlaces />
         </div>
+      </ScrollReveal>
+
+      {/* Stats Cards */}
+      <div className="container mx-auto px-4 py-16">
+        <StatsCards />
       </div>
 
       {/* CTA */}
+      <ScrollReveal>
       <div className="border-t border-border/50">
         <div className="container mx-auto px-4 py-16 text-center">
           <p className="text-muted-foreground mb-6">
@@ -124,6 +85,7 @@ export default function HomePage() {
           </Button>
         </div>
       </div>
+      </ScrollReveal>
     </div>
   )
 }

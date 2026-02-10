@@ -2,19 +2,22 @@ import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
+import { User } from "@/models/User"
 
 export async function GET() {
   try {
     await connectDB()
     
-    const [placesCount, reviewsCount] = await Promise.all([
+    const [placesCount, reviewsCount, usersCount] = await Promise.all([
       Place.countDocuments({ status: "approved" }),
       Review.countDocuments({ status: "visible" }),
+      User.countDocuments(),
     ])
     
     return NextResponse.json({
       placesCount,
       reviewsCount,
+      usersCount,
     })
   } catch (error) {
     console.error("Error fetching stats:", error)
