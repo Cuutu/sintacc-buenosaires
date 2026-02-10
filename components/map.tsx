@@ -6,8 +6,17 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
+
+const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
+  restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
+  cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
+  bakery: { emoji: "🥐", bg: "#ca8a04", label: "Panadería" },
+  store: { emoji: "🛒", bg: "#16a34a", label: "Tienda" },
+  icecream: { emoji: "🍦", bg: "#ec4899", label: "Heladería" },
+  bar: { emoji: "🍺", bg: "#7c3aed", label: "Bar" },
+  other: { emoji: "📍", bg: "#3b82f6", label: "Lugar" },
+}
 
 interface MapProps {
   places: IPlace[]
@@ -47,22 +56,40 @@ export function Map({ places, initialCenter = [-58.3816, -34.6037], initialZoom 
 
     // Add markers
     places.forEach((place) => {
+      const config = TYPE_MARKERS[place.type] || TYPE_MARKERS.other
+
       const el = document.createElement("div")
-      el.className = "marker"
-      el.style.width = "30px"
-      el.style.height = "30px"
-      el.style.borderRadius = "50%"
-      el.style.backgroundColor = "#3b82f6"
-      el.style.border = "2px solid white"
-      el.style.cursor = "pointer"
+      el.className = "mapboxgl-marker"
+      el.style.cssText = `
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: ${config.bg};
+        border: 2px solid white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        transition: transform 0.2s ease;
+      `
+      el.innerHTML = `<span style="font-size: 16px; line-height: 1;">${config.emoji}</span>`
+
+      el.addEventListener("mouseenter", () => {
+        el.style.transform = "scale(1.2)"
+      })
+      el.addEventListener("mouseleave", () => {
+        el.style.transform = "scale(1)"
+      })
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([place.location.lng, place.location.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(
-            `<div class="p-2">
-              <h3 class="font-bold">${place.name}</h3>
-              <p class="text-sm text-gray-600">${place.address}</p>
+            `<div style="padding: 12px; min-width: 200px;">
+              <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: white; margin-bottom: 8px; background: ${config.bg}">${config.emoji} ${config.label}</span>
+              <h3 style="font-weight: 700; font-size: 14px; margin: 0;">${place.name}</h3>
+              <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">${place.address}</p>
             </div>`
           )
         )

@@ -57,3 +57,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Map sidebar glassmorphism */
+.map-sidebar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 4px 0 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* Place card hover lift */
+.place-card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.place-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.15);
+}

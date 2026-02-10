@@ -70,27 +70,34 @@ function MapaContent() {
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
-      <div className="w-full md:w-96 border-r bg-background p-4 overflow-y-auto">
-        <div className="mb-4">
-          <div className="flex gap-2 mb-2">
-            <Input
-              placeholder="Buscar..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="flex-1"
-            />
+      {/* Sidebar - Glassmorphism */}
+      <div className="map-sidebar w-full md:w-[420px] md:min-w-[340px] p-5 overflow-y-auto md:rounded-r-2xl z-10">
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Explorar lugares
+          </h2>
+          <div className="flex gap-2">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                placeholder="Buscar por nombre, barrio..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="pl-10 h-11 rounded-xl border-2 focus-visible:ring-2 focus-visible:ring-primary/20 bg-white/90"
+              />
+            </div>
             <Button
-              variant="outline"
+              variant={showFilters ? "default" : "outline"}
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
+              className="h-11 w-11 rounded-xl shrink-0"
             >
               <Filter className="h-4 w-4" />
             </Button>
           </div>
 
           {showFilters && (
-            <Card className="mb-4">
+            <Card className="mb-4 rounded-xl border-2 shadow-sm">
               <CardContent className="p-4 space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tipo</label>
@@ -138,13 +145,24 @@ function MapaContent() {
         </div>
 
         {loading ? (
-          <div className="text-center py-8">Cargando...</div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl h-32 bg-muted/50 animate-pulse" />
+            ))}
+          </div>
         ) : places.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No se encontraron lugares
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-full bg-muted/50 p-4 mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-muted-foreground">No se encontraron lugares</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">Probá con otros filtros o barrios</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              {places.length} lugar{places.length !== 1 ? "es" : ""} encontrado{places.length !== 1 ? "s" : ""}
+            </p>
             {places.map((place) => (
               <PlaceCard key={place._id.toString()} place={place} />
             ))}
