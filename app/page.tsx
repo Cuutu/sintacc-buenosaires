@@ -2,7 +2,6 @@ import { SearchBar } from "@/components/search-bar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import Image from "next/image"
 import { MapPin, Star, Users, ArrowRight, Sparkles } from "lucide-react"
 import { HomeStats } from "@/components/home-stats"
 import { FeaturedPlaces } from "@/components/featured-places"
@@ -26,16 +25,10 @@ export default function HomePage() {
               Argentina · Comunidad celíaca
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 flex flex-wrap items-center justify-center gap-2 md:gap-3">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
               Encontrá lugares{" "}
               <span className="text-primary">libres de gluten</span>
-              <Image
-                src="/sin-gluten-logo.png"
-                alt="Sin gluten"
-                width={48}
-                height={48}
-                className="inline-block w-10 h-10 md:w-12 md:h-12 mix-blend-multiply"
-              />
+              <br />
               cerca tuyo
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-10">
