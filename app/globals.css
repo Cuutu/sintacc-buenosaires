@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    /* Celimap - Dark theme (default) */
-    --background: 240 10% 4%;
+    /* Celimap - Dark theme (default) - base #0b0b0c */
+    --background: 240 4% 4%;
     --foreground: 0 0% 95%;
-    --card: 240 10% 7%;
+    --card: 240 4% 7%;
     --card-foreground: 0 0% 95%;
     --popover: 240 10% 7%;
     --popover-foreground: 0 0% 95%;
@@ -58,7 +58,23 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    position: relative;
+    min-height: 100vh;
+    color: hsl(var(--foreground));
+    background:
+      radial-gradient(900px circle at 12% 8%, rgba(16, 185, 129, 0.08), transparent 40%),
+      radial-gradient(700px circle at 88% 85%, rgba(16, 185, 129, 0.06), transparent 45%),
+      #0b0b0c;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("/noise.png");
+    background-repeat: repeat;
+    opacity: 0.035;
+    z-index: 9999;
   }
 }
 
@@ -88,6 +104,14 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Premium surface utility - cards, modals, etc. */
+.surface-premium {
+  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all;
+}
+.surface-premium:hover {
+  @apply bg-white/[0.07] border-white/20;
 }
 
 /* Place card hover lift */
