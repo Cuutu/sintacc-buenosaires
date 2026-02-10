@@ -31,25 +31,22 @@ export function MapDesktop({
   return (
     <div className="grid grid-cols-12 h-full w-full">
       <div className="col-span-7 relative">
-        <div className="absolute top-4 left-4 right-4 z-10">
-          <MapTopBar
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            onSearchChange={onSearchChange}
-          />
-        </div>
-        <div className="absolute inset-0 pt-24">
-          <MapboxMap
-            places={places}
-            selectedPlaceId={selectedPlaceId ?? undefined}
-            onPlaceSelect={onPlaceSelect}
-            darkStyle={false}
-            reduceMotion={reduceMotion}
-          />
-        </div>
+        <MapboxMap
+          places={places}
+          selectedPlaceId={selectedPlaceId ?? undefined}
+          onPlaceSelect={onPlaceSelect}
+          darkStyle={false}
+          reduceMotion={reduceMotion}
+        />
       </div>
-      <div className="col-span-5 border-l border-white/10 bg-black/40 backdrop-blur-xl overflow-y-auto">
-        <div className="p-5">
+      <div className="col-span-5 border-l border-white/10 bg-black/40 backdrop-blur-xl overflow-y-auto flex flex-col">
+        <MapTopBar
+          variant="sidebar"
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          onSearchChange={onSearchChange}
+        />
+        <div className="p-5 flex-1">
           <h2 className="text-lg font-semibold mb-4">
             Resultados
             <span className="text-muted-foreground font-normal ml-2">
