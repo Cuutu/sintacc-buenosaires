@@ -4,11 +4,11 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { FeaturedCard } from "./FeaturedCard"
-import { FeaturedSkeleton } from "./FeaturedSkeleton"
+import { FeaturedCarousel } from "./FeaturedCarousel"
 import type { PlaceWithStats } from "./featured-utils"
 
-const TARGET_COUNT = 4
+const TARGET_COUNT = 3
+const FETCH_LIMIT = 12
 
 interface FeaturedSectionProps {
   /** Si se pasa, se usan estos lugares. Si no, se fetchean. */
@@ -27,7 +27,7 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
       setIsLoading(false)
       return
     }
-    fetch("/api/places?limit=4")
+    fetch(`/api/places?limit=${FETCH_LIMIT}`)
       .then((res) => res.json())
       .then((data) => setPlaces(data.places ?? []))
       .catch(() => setPlaces([]))
@@ -36,6 +36,12 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
 
   const displayPlaces = places ?? []
   const skeletonsNeeded = Math.max(0, TARGET_COUNT - displayPlaces.length)
+  const items: (PlaceWithStats | "skeleton")[] = isLoading
+    ? Array.from({ length: TARGET_COUNT }).fill("skeleton") as "skeleton"[]
+    : [
+        ...displayPlaces,
+        ...Array.from({ length: skeletonsNeeded }).fill("skeleton") as "skeleton"[],
+      ]
 
   return (
     <section>
@@ -47,70 +53,28 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
             Recomendados por la comunidad celíaca
           </p>
         </div>
-        <Button
-          asChild
-          size="sm"
-          className="w-fit shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          <Link href="/mapa" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Abrir mapa
+        <div className="flex items-center gap-3 shrink-0">
+          <Button
+            asChild
+            size="sm"
+            className="w-fit bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            <Link href="/mapa" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Abrir mapa
+            </Link>
+          </Button>
+          <Link
+            href="/mapa"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Ver todos
           </Link>
-        </Button>
-      </div>
-
-      {/* Desktop: grid 2x2 */}
-      <div className="hidden md:grid md:grid-cols-2 gap-6">
-        {isLoading ? (
-          Array.from({ length: TARGET_COUNT }).map((_, i) => (
-            <FeaturedSkeleton key={`skeleton-${i}`} />
-          ))
-        ) : (
-          <>
-            {displayPlaces.map((place) => (
-              <FeaturedCard key={place._id.toString()} place={place} />
-            ))}
-            {Array.from({ length: skeletonsNeeded }).map((_, i) => (
-              <FeaturedSkeleton key={`skeleton-fill-${i}`} />
-            ))}
-          </>
-        )}
-      </div>
-
-      {/* Mobile: horizontal scroll con snap */}
-      <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
-        <div className="flex gap-4 pb-2 min-w-0" style={{ width: "max-content" }}>
-          {isLoading ? (
-            Array.from({ length: TARGET_COUNT }).map((_, i) => (
-              <div
-                key={`skeleton-${i}`}
-                className="w-[280px] shrink-0 snap-center"
-              >
-                <FeaturedSkeleton />
-              </div>
-            ))
-          ) : (
-            <>
-              {displayPlaces.map((place) => (
-                <div
-                  key={place._id.toString()}
-                  className="w-[280px] shrink-0 snap-center"
-                >
-                  <FeaturedCard place={place} />
-                </div>
-              ))}
-              {Array.from({ length: skeletonsNeeded }).map((_, i) => (
-                <div
-                  key={`skeleton-fill-${i}`}
-                  className="w-[280px] shrink-0 snap-center"
-                >
-                  <FeaturedSkeleton />
-                </div>
-              ))}
-            </>
-          )}
         </div>
       </div>
+
+      {/* Carousel */}
+      <FeaturedCarousel items={items} isLoading={isLoading} />
     </section>
   )
 }
