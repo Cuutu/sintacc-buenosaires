@@ -9,15 +9,15 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 export default function HomePage() {
   return (
     <div className="min-h-screen">
-      {/* Hero - compacto mobile-first */}
-      <div className="relative overflow-hidden">
+      {/* Hero - compacto mobile, full viewport en desktop para que "Lugares destacados" quede abajo */}
+      <div className="relative overflow-hidden md:min-h-[calc(100vh-4rem)] md:flex md:items-center">
         <div className="absolute inset-0 -z-10">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/20 blur-[100px]" />
           <div className="absolute top-1/2 -left-40 h-72 w-72 rounded-full bg-primary/10 blur-[120px]" />
           <div className="absolute bottom-0 right-1/2 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
         </div>
 
-        <div className="container mx-auto px-4 py-10 md:py-20 max-w-3xl mx-auto">
+        <div className="container mx-auto px-4 py-10 md:py-12 max-w-3xl mx-auto w-full">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-base font-medium mb-4">
               <Sparkles className="h-4 w-4" />
