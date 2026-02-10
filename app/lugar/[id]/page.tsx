@@ -11,10 +11,11 @@ import { SafetyBadge } from "@/components/safety-badge"
 import { FavoriteButton } from "@/components/favorite-button"
 import { IPlace } from "@/models/Place"
 import { IReview } from "@/models/Review"
-import { Star, MapPin, Phone, Instagram, Globe, ExternalLink, Share2, MapPinned } from "lucide-react"
+import { Star, MapPin, Phone, Instagram, Globe, ExternalLink, Share2, MapPinned, Clock, Package } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
+import { isOpenNow } from "@/lib/opening-hours"
 
 export default function LugarPage() {
   const params = useParams()
@@ -163,6 +164,51 @@ export default function LugarPage() {
               {place.address}, {place.neighborhood}
             </span>
           </div>
+
+          {place.openingHours && (
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
+              <span>{place.openingHours}</span>
+              {(() => {
+                const open = isOpenNow(place.openingHours)
+                if (open === true) return <Badge className="bg-primary/20 text-primary">Abierto</Badge>
+                if (open === false) return <Badge variant="secondary">Cerrado</Badge>
+                return null
+              })()}
+            </div>
+          )}
+
+          {place.delivery?.available && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="h-5 w-5 text-muted-foreground shrink-0" />
+                <span className="font-medium">Delivery</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {place.delivery.rappi && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={place.delivery.rappi} target="_blank" rel="noopener noreferrer">
+                      Rappi
+                    </a>
+                  </Button>
+                )}
+                {place.delivery.pedidosya && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={place.delivery.pedidosya} target="_blank" rel="noopener noreferrer">
+                      PedidosYa
+                    </a>
+                  </Button>
+                )}
+                {place.delivery.other && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={place.delivery.other} target="_blank" rel="noopener noreferrer">
+                      Otro
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <Button variant="outline" className="mb-4" onClick={openInMaps}>
             <MapPinned className="h-4 w-4 mr-2" />

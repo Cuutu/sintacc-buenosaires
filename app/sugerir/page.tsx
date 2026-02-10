@@ -26,6 +26,13 @@ export default function SugerirPage() {
     lat: "",
     lng: "",
     tags: [] as string[],
+    openingHours: "",
+    delivery: {
+      available: false,
+      rappi: "",
+      pedidosya: "",
+      other: "",
+    },
     contact: {
       instagram: "",
       whatsapp: "",
@@ -85,17 +92,28 @@ export default function SugerirPage() {
       return
     }
 
+    const payload = {
+      ...dataToSubmit,
+      openingHours: dataToSubmit.openingHours || undefined,
+      delivery: dataToSubmit.delivery?.available
+        ? {
+            available: true,
+            rappi: dataToSubmit.delivery.rappi?.trim() || undefined,
+            pedidosya: dataToSubmit.delivery.pedidosya?.trim() || undefined,
+            other: dataToSubmit.delivery.other?.trim() || undefined,
+          }
+        : undefined,
+      location: {
+        lat: parseFloat(dataToSubmit.lat),
+        lng: parseFloat(dataToSubmit.lng),
+      },
+    }
+
     try {
       const res = await fetch("/api/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...dataToSubmit,
-          location: {
-            lat: parseFloat(dataToSubmit.lat),
-            lng: parseFloat(dataToSubmit.lng),
-          },
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
@@ -170,6 +188,78 @@ export default function SugerirPage() {
               <p className="text-xs text-muted-foreground mt-1">
                 Escribí o pegá la dirección. Podés seleccionar una sugerencia o enviar directamente.
               </p>
+            </div>
+
+            <div>
+              <Label>Horario (opcional)</Label>
+              <Input
+                value={formData.openingHours}
+                onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
+                placeholder="Ej: Lun-Vie 9-18, Sáb 10-14"
+              />
+            </div>
+
+            <div>
+              <Label>Delivery (opcional)</Label>
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.delivery.available}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        delivery: { ...formData.delivery, available: e.target.checked },
+                      })
+                    }
+                    className="rounded border-border"
+                  />
+                  <span className="text-sm">Tiene delivery</span>
+                </label>
+                {formData.delivery.available && (
+                  <div className="space-y-3 pl-6 border-l-2 border-border">
+                    <div>
+                      <Label className="text-xs">Rappi</Label>
+                      <Input
+                        value={formData.delivery.rappi}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            delivery: { ...formData.delivery, rappi: e.target.value },
+                          })
+                        }
+                        placeholder="https://www.rappi.com.ar/..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">PedidosYa</Label>
+                      <Input
+                        value={formData.delivery.pedidosya}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            delivery: { ...formData.delivery, pedidosya: e.target.value },
+                          })
+                        }
+                        placeholder="https://www.pedidosya.com.ar/..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Otro (WhatsApp, sitio propio, etc.)</Label>
+                      <Input
+                        value={formData.delivery.other}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            delivery: { ...formData.delivery, other: e.target.value },
+                          })
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

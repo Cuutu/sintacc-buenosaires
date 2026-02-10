@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
+import { isOpenNow } from "@/lib/opening-hours"
 
 interface PlaceCardProps {
   place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }
@@ -70,7 +71,13 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
                 <span className="text-xs text-muted-foreground">Sin reseñas aún</span>
               )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {place.openingHours && (() => {
+                const open = isOpenNow(place.openingHours)
+                if (open === true) return <Badge key="open" className="text-xs bg-primary/20 text-primary">Abierto</Badge>
+                if (open === false) return <Badge key="closed" variant="secondary" className="text-xs">Cerrado</Badge>
+                return null
+              })()}
               {place.tags.slice(0, 3).map((tag) => (
                 <Badge
                   key={tag}

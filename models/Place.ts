@@ -17,6 +17,13 @@ export interface IPlace extends Document {
     phone?: string
     url?: string
   }
+  openingHours?: string
+  delivery?: {
+    available: boolean
+    rappi?: string
+    pedidosya?: string
+    other?: string
+  }
   photos: string[]
   status: "approved" | "pending"
   // Fase 2
@@ -66,6 +73,13 @@ const PlaceSchema = new Schema<IPlace>(
       whatsapp: String,
       phone: String,
       url: String,
+    },
+    openingHours: String,
+    delivery: {
+      available: { type: Boolean, default: false },
+      rappi: String,
+      pedidosya: String,
+      other: String,
     },
     photos: {
       type: [String],

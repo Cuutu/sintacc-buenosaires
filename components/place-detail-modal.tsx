@@ -10,11 +10,12 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, ExternalLink } from "lucide-react"
+import { Star, MapPin, ExternalLink, Clock, Package } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
+import { isOpenNow } from "@/lib/opening-hours"
 
 interface PlaceDetailModalProps {
   placeId: string | null
@@ -84,6 +85,43 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
                 <MapPin className="h-4 w-4 shrink-0" />
                 <span>{place.address}</span>
               </div>
+
+              {place.openingHours && (
+                <div className="flex items-center gap-2 text-sm flex-wrap">
+                  <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>{place.openingHours}</span>
+                  {(() => {
+                    const open = isOpenNow(place.openingHours)
+                    if (open === true) return <Badge className="bg-primary/20 text-primary text-xs">Abierto</Badge>
+                    if (open === false) return <Badge variant="secondary" className="text-xs">Cerrado</Badge>
+                    return null
+                  })()}
+                </div>
+              )}
+
+              {place.delivery?.available && (place.delivery.rappi || place.delivery.pedidosya || place.delivery.other) && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm font-medium flex items-center gap-1">
+                    <Package className="h-4 w-4" />
+                    Delivery:
+                  </span>
+                  {place.delivery.rappi && (
+                    <a href={place.delivery.rappi} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      Rappi
+                    </a>
+                  )}
+                  {place.delivery.pedidosya && (
+                    <a href={place.delivery.pedidosya} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      PedidosYa
+                    </a>
+                  )}
+                  {place.delivery.other && (
+                    <a href={place.delivery.other} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      Otro
+                    </a>
+                  )}
+                </div>
+              )}
 
               {place.stats && (
                 <div className="flex items-center gap-2">

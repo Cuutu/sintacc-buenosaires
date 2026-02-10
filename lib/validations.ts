@@ -16,6 +16,13 @@ export const placeSchema = z.object({
     phone: z.string().optional(),
     url: z.string().url().optional(),
   }).optional(),
+  openingHours: z.string().max(500).optional(),
+  delivery: z.object({
+    available: z.boolean().optional(),
+    rappi: z.string().optional(),
+    pedidosya: z.string().optional(),
+    other: z.string().optional(),
+  }).optional(),
   photos: z.array(z.string().url()).default([]),
 })
 

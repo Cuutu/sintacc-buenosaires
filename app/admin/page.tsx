@@ -14,7 +14,14 @@ import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff } from "lucide-react"
 
 type SuggestionItem = {
   _id: string
-  placeDraft: { name: string; type: string; address: string; neighborhood: string }
+  placeDraft: {
+    name: string
+    type: string
+    address: string
+    neighborhood: string
+    openingHours?: string
+    delivery?: { available?: boolean; rappi?: string; pedidosya?: string; other?: string }
+  }
   suggestedByUserId?: { name?: string }
 }
 
@@ -211,6 +218,23 @@ export default function AdminPage() {
                       <p>
                         <strong>Barrio:</strong> {suggestion.placeDraft.neighborhood}
                       </p>
+                      {suggestion.placeDraft.openingHours && (
+                        <p>
+                          <strong>Horario:</strong> {suggestion.placeDraft.openingHours}
+                        </p>
+                      )}
+                      {suggestion.placeDraft.delivery?.available && (
+                        <p>
+                          <strong>Delivery:</strong>{" "}
+                          {[
+                            suggestion.placeDraft.delivery.rappi && "Rappi",
+                            suggestion.placeDraft.delivery.pedidosya && "PedidosYa",
+                            suggestion.placeDraft.delivery.other && "Otro",
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
