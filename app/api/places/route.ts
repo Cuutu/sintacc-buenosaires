@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type")
     const neighborhood = searchParams.get("neighborhood")
     const tags = searchParams.get("tags")?.split(",").filter(Boolean)
+    const safetyLevel = searchParams.get("safetyLevel")
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
     const skip = (page - 1) * limit
@@ -35,6 +36,10 @@ export async function GET(request: NextRequest) {
     
     if (tags && tags.length > 0) {
       query.tags = { $in: tags }
+    }
+
+    if (safetyLevel) {
+      query.safetyLevel = safetyLevel
     }
     
     const places = await Place.find(query)
