@@ -201,7 +201,7 @@ export default function SugerirPage() {
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Escribí o pegá la dirección. Podés seleccionar una sugerencia o enviar directamente.
+                Escribí la dirección
               </p>
             </div>
 
