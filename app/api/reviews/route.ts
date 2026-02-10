@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       status: "visible",
     })
       .populate("userId", "name image")
-      .sort({ createdAt: -1 })
+      .sort({ pinned: -1, createdAt: -1 })
       .lean()
     
     return NextResponse.json({ reviews })

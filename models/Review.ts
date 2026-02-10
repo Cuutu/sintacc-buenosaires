@@ -9,6 +9,7 @@ export interface IReview extends Document {
   separateKitchen: "yes" | "no" | "unknown"
   comment: string
   status: "visible" | "hidden"
+  pinned?: boolean
   // Fase 2
   contaminationIncident?: boolean
   visitDate?: Date
@@ -56,6 +57,11 @@ const ReviewSchema = new Schema<IReview>(
       type: String,
       enum: ["visible", "hidden"],
       default: "visible",
+      index: true,
+    },
+    pinned: {
+      type: Boolean,
+      default: false,
       index: true,
     },
     // Fase 2

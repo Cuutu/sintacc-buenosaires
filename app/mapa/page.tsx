@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation"
 import { Search, Filter, List } from "lucide-react"
 import { NEIGHBORHOODS, TYPES } from "@/lib/constants"
 
-const TYPES_WITH_ALL = [{ value: "", label: "Todos" }, ...TYPES.map((t) => ({ value: t.value, label: `${t.emoji} ${t.label}` }))]
+const TYPES_WITH_ALL = [{ value: "all", label: "Todos" }, ...TYPES.map((t) => ({ value: t.value, label: `${t.emoji} ${t.label}` }))]
 
 function MapaContent() {
   const searchParams = useSearchParams()
@@ -22,8 +22,8 @@ function MapaContent() {
   const [showSidebarMobile, setShowSidebarMobile] = useState(false)
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
-    type: "",
-    neighborhood: "",
+    type: "all",
+    neighborhood: "all",
   })
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search)
   const [showFilters, setShowFilters] = useState(false)
@@ -42,8 +42,8 @@ function MapaContent() {
     try {
       const params = new URLSearchParams()
       if (debouncedSearch) params.append("search", debouncedSearch)
-      if (filters.type) params.append("type", filters.type)
-      if (filters.neighborhood) params.append("neighborhood", filters.neighborhood)
+      if (filters.type && filters.type !== "all") params.append("type", filters.type)
+      if (filters.neighborhood && filters.neighborhood !== "all") params.append("neighborhood", filters.neighborhood)
 
       const res = await fetch(`/api/places?${params.toString()}`)
       const data = await res.json()
@@ -139,7 +139,7 @@ function MapaContent() {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
                       {NEIGHBORHOODS.filter((h) => h !== "Otro").map((hood) => (
                         <SelectItem key={hood} value={hood}>
                           {hood}

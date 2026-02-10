@@ -53,6 +53,8 @@ export default function LugarPage() {
   }
 
   const sortedReviews = [...reviews].sort((a, b) => {
+    if ((a as any).pinned && !(b as any).pinned) return -1
+    if (!(a as any).pinned && (b as any).pinned) return 1
     if (reviewSort === "rating") return (b as any).rating - (a as any).rating
     return new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime()
   })
@@ -281,7 +283,7 @@ export default function LugarPage() {
               </Card>
             ) : (
               sortedReviews.map((review: any) => (
-                <Card key={review._id}>
+                <Card key={review._id} className={review.pinned ? "border-primary/50" : ""}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -292,9 +294,10 @@ export default function LugarPage() {
                             width={32}
                             height={32}
                             className="rounded-full"
+                            unoptimized
                           />
                         ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm shrink-0">
                             {review.userId?.name?.[0] || "U"}
                           </div>
                         )}
@@ -316,9 +319,14 @@ export default function LugarPage() {
                           </div>
                         </div>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(review.createdAt).toLocaleDateString("es-AR")}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {review.pinned && (
+                          <Badge variant="default" className="text-xs">Fijado</Badge>
+                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString("es-AR")}
+                        </span>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>

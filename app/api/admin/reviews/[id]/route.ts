@@ -22,18 +22,29 @@ export async function PATCH(
     }
     
     const body = await request.json()
-    const { action } = body // "hide" or "unhide"
+    const { action } = body // "hide" | "unhide" | "pin" | "unpin"
     
-    if (!["hide", "unhide"].includes(action)) {
+    if (!["hide", "unhide", "pin", "unpin"].includes(action)) {
       return NextResponse.json(
-        { error: "Acción inválida. Use 'hide' o 'unhide'" },
+        { error: "Acción inválida. Use 'hide', 'unhide', 'pin' o 'unpin'" },
         { status: 400 }
       )
     }
     
+    let update: Record<string, unknown>
+    let message: string
+    
+    if (action === "pin" || action === "unpin") {
+      update = { pinned: action === "pin" }
+      message = action === "pin" ? "Comentario fijado" : "Comentario desfijado"
+    } else {
+      update = { status: action === "hide" ? "hidden" : "visible" }
+      message = action === "hide" ? "Reseña ocultada" : "Reseña mostrada"
+    }
+    
     const review = await Review.findByIdAndUpdate(
       params.id,
-      { status: action === "hide" ? "hidden" : "visible" },
+      update,
       { new: true }
     )
     
@@ -45,7 +56,7 @@ export async function PATCH(
     }
     
     return NextResponse.json({
-      message: `Reseña ${action === "hide" ? "ocultada" : "mostrada"}`,
+      message,
       review,
     })
   } catch (error) {

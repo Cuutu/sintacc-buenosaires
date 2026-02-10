@@ -90,13 +90,16 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
     return (
       <div onClick={() => onMapClick(place)}>
         {cardContent}
-        <Link
-          href={`/lugar/${place._id}`}
-          className="block mt-2 text-sm text-primary hover:underline text-center"
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          className="block mt-2 text-sm text-primary hover:underline text-center w-full"
+          onClick={(e) => {
+            e.stopPropagation()
+            onMapClick(place)
+          }}
         >
           Ver detalle →
-        </Link>
+        </button>
       </div>
     )
   }

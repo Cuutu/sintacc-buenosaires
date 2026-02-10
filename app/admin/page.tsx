@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
-import { Eye, EyeOff, Trash2, ExternalLink } from "lucide-react"
+import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff } from "lucide-react"
 
 type SuggestionItem = {
   _id: string
@@ -25,6 +25,7 @@ type ReviewItem = {
   rating: number
   comment: string
   status: "visible" | "hidden"
+  pinned?: boolean
   createdAt: string
 }
 
@@ -121,7 +122,7 @@ export default function AdminPage() {
     }
   }
 
-  const handleReviewAction = async (id: string, action: "hide" | "unhide") => {
+  const handleReviewAction = async (id: string, action: "hide" | "unhide" | "pin" | "unpin") => {
     try {
       const res = await fetch(`/api/admin/reviews/${id}`, {
         method: "PATCH",
@@ -129,11 +130,11 @@ export default function AdminPage() {
         body: JSON.stringify({ action }),
       })
 
+      const data = await res.json()
       if (res.ok) {
-        toast.success(action === "hide" ? "Reseña ocultada" : "Reseña visible")
+        toast.success(data.message || "Listo")
         fetchReviews()
       } else {
-        const data = await res.json()
         toast.error(data.error || "Error")
       }
     } catch (error) {
@@ -291,6 +292,9 @@ export default function AdminPage() {
                           <Badge variant={review.status === "visible" ? "default" : "outline"}>
                             {review.status === "visible" ? "Visible" : "Oculta"}
                           </Badge>
+                          {review.pinned && (
+                            <Badge variant="secondary">Fijado</Badge>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
@@ -299,6 +303,25 @@ export default function AdminPage() {
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         </Link>
+                        {review.pinned ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleReviewAction(review._id, "unpin")}
+                            title="Desfijar"
+                          >
+                            <PinOff className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleReviewAction(review._id, "pin")}
+                            title="Fijar comentario"
+                          >
+                            <Pin className="h-4 w-4" />
+                          </Button>
+                        )}
                         {review.status === "visible" ? (
                           <Button
                             variant="outline"
