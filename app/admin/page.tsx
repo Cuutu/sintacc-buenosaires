@@ -3,18 +3,52 @@
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ISuggestion } from "@/models/Suggestion"
-import { IReview } from "@/models/Review"
+import { toast } from "sonner"
+import { TYPES } from "@/lib/constants"
+import { Eye, EyeOff, Trash2, ExternalLink } from "lucide-react"
+
+type SuggestionItem = {
+  _id: string
+  placeDraft: { name: string; type: string; address: string; neighborhood: string }
+  suggestedByUserId?: { name?: string }
+}
+
+type ReviewItem = {
+  _id: string
+  placeId: { name: string; address?: string; _id: string }
+  userId?: { name?: string; image?: string }
+  rating: number
+  comment: string
+  status: "visible" | "hidden"
+  createdAt: string
+}
+
+type PlaceItem = {
+  _id: string
+  name: string
+  type: string
+  address: string
+  neighborhood: string
+  status: string
+  stats?: { avgRating: number; totalReviews: number }
+}
 
 export default function AdminPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [suggestions, setSuggestions] = useState<ISuggestion[]>([])
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
+  const [reviews, setReviews] = useState<ReviewItem[]>([])
+  const [places, setPlaces] = useState<PlaceItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [placesLoading, setPlacesLoading] = useState(false)
+  const [reviewFilter, setReviewFilter] = useState<string>("")
+  const [placeFilter, setPlaceFilter] = useState<string>("")
 
   useEffect(() => {
     if (session?.user?.role !== "admin") {
@@ -36,6 +70,36 @@ export default function AdminPage() {
     }
   }
 
+  const fetchReviews = async (status?: string) => {
+    setReviewsLoading(true)
+    try {
+      const filter = status ?? reviewFilter
+      const url = filter ? `/api/admin/reviews?status=${filter}` : "/api/admin/reviews"
+      const res = await fetch(url)
+      const data = await res.json()
+      setReviews(data.reviews || [])
+    } catch (error) {
+      console.error("Error fetching reviews:", error)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  const fetchPlaces = async (status?: string) => {
+    setPlacesLoading(true)
+    try {
+      const filter = status ?? placeFilter
+      const url = filter ? `/api/admin/places?status=${filter}` : "/api/admin/places"
+      const res = await fetch(url)
+      const data = await res.json()
+      setPlaces(data.places || [])
+    } catch (error) {
+      console.error("Error fetching places:", error)
+    } finally {
+      setPlacesLoading(false)
+    }
+  }
+
   const handleSuggestionAction = async (id: string, action: "approve" | "reject") => {
     try {
       const res = await fetch(`/api/admin/suggestions/${id}`, {
@@ -44,13 +108,56 @@ export default function AdminPage() {
         body: JSON.stringify({ action }),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
+        toast.success(action === "approve" ? "Sugerencia aprobada y lugar creado" : "Sugerencia rechazada")
         fetchSuggestions()
+      } else {
+        toast.error(data.error || "Error al procesar")
       }
     } catch (error) {
-      console.error("Error processing suggestion:", error)
+      toast.error("Error al procesar sugerencia")
     }
   }
+
+  const handleReviewAction = async (id: string, action: "hide" | "unhide") => {
+    try {
+      const res = await fetch(`/api/admin/reviews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+
+      if (res.ok) {
+        toast.success(action === "hide" ? "Reseña ocultada" : "Reseña visible")
+        fetchReviews()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Error")
+      }
+    } catch (error) {
+      toast.error("Error al actualizar reseña")
+    }
+  }
+
+  const handleDeletePlace = async (id: string, name: string) => {
+    if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return
+    try {
+      const res = await fetch(`/api/places/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Lugar eliminado")
+        fetchPlaces()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Error")
+      }
+    } catch (error) {
+      toast.error("Error al eliminar")
+    }
+  }
+
+  const getTypeLabel = (type: string) => TYPES.find((t) => t.value === type)?.label || type
 
   if (session?.user?.role !== "admin") {
     return null
@@ -62,10 +169,13 @@ export default function AdminPage() {
 
       <Tabs defaultValue="suggestions">
         <TabsList>
-          <TabsTrigger value="suggestions">
-            Sugerencias pendientes ({suggestions.length})
+          <TabsTrigger value="suggestions">Sugerencias ({suggestions.length})</TabsTrigger>
+          <TabsTrigger value="reviews" onClick={() => fetchReviews()}>
+            Reseñas
           </TabsTrigger>
-          <TabsTrigger value="reviews">Reseñas</TabsTrigger>
+          <TabsTrigger value="places" onClick={() => fetchPlaces()}>
+            Lugares
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="suggestions" className="mt-4">
@@ -79,20 +189,20 @@ export default function AdminPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {suggestions.map((suggestion: any) => (
+              {suggestions.map((suggestion: SuggestionItem) => (
                 <Card key={suggestion._id}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>{suggestion.placeDraft.name}</CardTitle>
                       <Badge variant="secondary">
-                        {suggestion.suggestedByUserId?.name || "Usuario"}
+                        {(suggestion.suggestedByUserId as any)?.name || "Usuario"}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 mb-4">
                       <p>
-                        <strong>Tipo:</strong> {suggestion.placeDraft.type}
+                        <strong>Tipo:</strong> {getTypeLabel(suggestion.placeDraft.type)}
                       </p>
                       <p>
                         <strong>Dirección:</strong> {suggestion.placeDraft.address}
@@ -123,11 +233,182 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-4">
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Gestión de reseñas (próximamente)
-            </CardContent>
-          </Card>
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={reviewFilter === "" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setReviewFilter("")
+                fetchReviews("")
+              }}
+            >
+              Todas
+            </Button>
+            <Button
+              variant={reviewFilter === "visible" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setReviewFilter("visible")
+                fetchReviews("visible")
+              }}
+            >
+              Visibles
+            </Button>
+            <Button
+              variant={reviewFilter === "hidden" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setReviewFilter("hidden")
+                fetchReviews("hidden")
+              }}
+            >
+              Ocultas
+            </Button>
+          </div>
+          {reviewsLoading ? (
+            <div className="text-center py-8">Cargando reseñas...</div>
+          ) : reviews.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No hay reseñas
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review: ReviewItem) => (
+                <Card key={review._id}>
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">
+                          {review.placeId?.name} — {review.userId?.name || "Anónimo"}
+                        </p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {review.comment}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="secondary">{review.rating} ⭐</Badge>
+                          <Badge variant={review.status === "visible" ? "default" : "outline"}>
+                            {review.status === "visible" ? "Visible" : "Oculta"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Link href={`/lugar/${review.placeId?._id}`} target="_blank">
+                          <Button variant="ghost" size="icon">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        {review.status === "visible" ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleReviewAction(review._id, "hide")}
+                            title="Ocultar"
+                          >
+                            <EyeOff className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleReviewAction(review._id, "unhide")}
+                            title="Mostrar"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="places" className="mt-4">
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={placeFilter === "" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setPlaceFilter("")
+                fetchPlaces("")
+              }}
+            >
+              Todos
+            </Button>
+            <Button
+              variant={placeFilter === "approved" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setPlaceFilter("approved")
+                fetchPlaces("approved")
+              }}
+            >
+              Aprobados
+            </Button>
+            <Button
+              variant={placeFilter === "pending" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setPlaceFilter("pending")
+                fetchPlaces("pending")
+              }}
+            >
+              Pendientes
+            </Button>
+          </div>
+          {placesLoading ? (
+            <div className="text-center py-8">Cargando lugares...</div>
+          ) : places.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No hay lugares
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {places.map((place: PlaceItem) => (
+                <Card key={place._id}>
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{place.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {getTypeLabel(place.type)} · {place.neighborhood}
+                        </p>
+                        {place.stats && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {place.stats.avgRating} ⭐ · {place.stats.totalReviews} reseñas
+                          </p>
+                        )}
+                        <Badge variant={place.status === "approved" ? "default" : "secondary"} className="mt-2">
+                          {place.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Link href={`/lugar/${place._id}`} target="_blank">
+                          <Button variant="ghost" size="icon">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDeletePlace(place._id, place.name)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

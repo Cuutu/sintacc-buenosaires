@@ -7,20 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { geocodeAddress } from "@/lib/geocode"
-
-const TYPES = [
-  { value: "restaurant", label: "Restaurante" },
-  { value: "cafe", label: "Café" },
-  { value: "bakery", label: "Panadería" },
-  { value: "store", label: "Tienda" },
-  { value: "icecream", label: "Heladería" },
-  { value: "bar", label: "Bar" },
-  { value: "other", label: "Otro" },
-]
+import { toast } from "sonner"
+import { TYPES, PLACE_TAGS } from "@/lib/constants"
 
 export default function SugerirPage() {
   const { data: session } = useSession()
@@ -42,6 +33,15 @@ export default function SugerirPage() {
       url: "",
     },
   })
+
+  const toggleTag = (tag: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter((t) => t !== tag)
+        : [...prev.tags, tag],
+    }))
+  }
 
   if (!session) {
     return (
@@ -104,6 +104,7 @@ export default function SugerirPage() {
         throw new Error(data.error || "Error al crear sugerencia")
       }
 
+      toast.success("¡Sugerencia enviada! Será revisada por el equipo.")
       router.push("/mapa?success=suggestion")
     } catch (err: any) {
       setError(err.message)
@@ -142,7 +143,7 @@ export default function SugerirPage() {
                 <SelectContent>
                   {TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      {type.emoji} {type.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -172,6 +173,23 @@ export default function SugerirPage() {
             </div>
 
             <div>
+              <Label>Características (opcional)</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {PLACE_TAGS.map((tag) => (
+                  <Button
+                    key={tag.value}
+                    type="button"
+                    variant={formData.tags.includes(tag.value) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleTag(tag.value)}
+                  >
+                    {tag.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <Label>Instagram</Label>
               <Input
                 value={formData.contact.instagram}
@@ -185,17 +203,32 @@ export default function SugerirPage() {
               />
             </div>
 
-            <div>
-              <Label>Teléfono</Label>
-              <Input
-                value={formData.contact.phone}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contact: { ...formData.contact, phone: e.target.value },
-                  })
-                }
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Teléfono</Label>
+                <Input
+                  value={formData.contact.phone}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      contact: { ...formData.contact, phone: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label>WhatsApp</Label>
+                <Input
+                  value={formData.contact.whatsapp}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      contact: { ...formData.contact, whatsapp: e.target.value },
+                    })
+                  }
+                  placeholder="Ej: +54 11 1234-5678"
+                />
+              </div>
             </div>
 
             <div>

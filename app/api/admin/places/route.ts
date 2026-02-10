@@ -3,66 +3,50 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
-import { placeSchema } from "@/lib/validations"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await requireAdmin(request)
+    if (session instanceof NextResponse) return session
+
     await connectDB()
-    
+
     const searchParams = request.nextUrl.searchParams
-    const search = searchParams.get("search")
-    const type = searchParams.get("type")
-    const neighborhood = searchParams.get("neighborhood")
-    const tags = searchParams.get("tags")?.split(",").filter(Boolean)
+    const status = searchParams.get("status") // "approved" | "pending" | omit for all
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
     const skip = (page - 1) * limit
-    
-    const query: any = { status: "approved" }
-    
-    if (search) {
-      query.$text = { $search: search }
+
+    const query: Record<string, unknown> = {}
+    if (status === "approved" || status === "pending") {
+      query.status = status
     }
-    
-    if (type) {
-      query.type = type
-    }
-    
-    if (neighborhood) {
-      query.neighborhood = neighborhood
-    }
-    
-    if (tags && tags.length > 0) {
-      query.tags = { $in: tags }
-    }
-    
+
     const places = await Place.find(query)
-      .sort(search ? { score: { $meta: "textScore" } } : { createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()
-    
+
     const total = await Place.countDocuments(query)
-    
     const placeIds = places.map((p: any) => p._id)
     const reviewStats = await Review.aggregate([
       { $match: { placeId: { $in: placeIds }, status: "visible" } },
       { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
     ])
-    
     const statsMap = new Map(
       reviewStats.map((s: any) => [
         s._id.toString(),
         { avgRating: Math.round(s.avgRating * 10) / 10, totalReviews: s.count },
       ])
     )
-    
+
     const placesWithStats = places.map((p: any) => ({
       ...p,
       stats: statsMap.get(p._id.toString()) || { avgRating: 0, totalReviews: 0 },
     }))
-    
+
     return NextResponse.json({
       places: placesWithStats,
       pagination: {
@@ -73,42 +57,9 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error fetching places:", error)
+    console.error("Error fetching admin places:", error)
     return NextResponse.json(
       { error: "Error al obtener lugares" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await requireAdmin(request)
-    if (session instanceof NextResponse) return session
-    
-    await connectDB()
-    
-    const body = await request.json()
-    const validated = placeSchema.parse(body)
-    
-    const place = new Place({
-      ...validated,
-      status: "approved",
-    })
-    
-    await place.save()
-    
-    return NextResponse.json(place, { status: 201 })
-  } catch (error: any) {
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.errors },
-        { status: 400 }
-      )
-    }
-    console.error("Error creating place:", error)
-    return NextResponse.json(
-      { error: "Error al crear lugar" },
       { status: 500 }
     )
   }

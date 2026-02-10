@@ -42,7 +42,8 @@
     "date-fns": "^3.3.0",
     "react-hook-form": "^7.50.0",
     "@hookform/resolvers": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "sonner": "^1.4.0"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

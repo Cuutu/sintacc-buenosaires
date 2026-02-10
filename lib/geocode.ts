@@ -1,3 +1,5 @@
+import { NEIGHBORHOODS } from "./constants"
+
 export interface GeocodeResult {
   address: string
   lat: number
@@ -5,21 +7,19 @@ export interface GeocodeResult {
   neighborhood?: string
 }
 
-const BUENOS_AIRES_NEIGHBORHOODS = [
-  "Palermo", "Recoleta", "San Telmo", "Puerto Madero", "Belgrano",
-  "Villa Crespo", "Caballito", "Almagro", "Villa Urquiza", "Colegiales",
-  "Balvanera", "Monserrat", "Retiro", "La Boca", "Barracas", "Boedo",
+// Barrios para matchear con Mapbox (NEIGHBORHOODS sin "Otro" + extras que Mapbox puede devolver)
+const MATCH_NEIGHBORHOODS = [
+  ...NEIGHBORHOODS.filter((n) => n !== "Otro"),
   "Parque Chas", "Villa Ortúzar", "Chacarita", "Paternal", "Versalles",
   "Liniers", "Flores", "Floresta", "Vélez Sarsfield", "Monte Castro",
-  "Villa Real", "Villa del Parque", "Villa Santa Rita", "Coghlan",
-  "Saavedra", "Núñez", "Parque Chacabuco", "Constitución", "San Nicolás",
+  "Villa Real", "Villa del Parque", "Villa Santa Rita", "Coghlan", "San Nicolás",
 ]
 
 function matchNeighborhood(placeName: string, context?: Array<{ id: string; text: string }>): string | undefined {
   const searchText = placeName.toLowerCase()
   const contextText = context?.map(c => c.text.toLowerCase()).join(" ") || ""
 
-  for (const hood of BUENOS_AIRES_NEIGHBORHOODS) {
+  for (const hood of MATCH_NEIGHBORHOODS) {
     if (searchText.includes(hood.toLowerCase()) || contextText.includes(hood.toLowerCase())) {
       return hood
     }

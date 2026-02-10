@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { IPlace } from "@/models/Place"
 
-const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
+export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
   restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
   cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
   bakery: { emoji: "🥐", bg: "#ca8a04", label: "Panadería" },
@@ -22,9 +22,17 @@ interface MapProps {
   places: IPlace[]
   initialCenter?: [number, number]
   initialZoom?: number
+  selectedPlaceId?: string
+  onPlaceSelect?: (place: IPlace) => void
 }
 
-export function Map({ places, initialCenter = [-58.3816, -34.6037], initialZoom = 12 }: MapProps) {
+export function Map({
+  places,
+  initialCenter = [-58.3816, -34.6037],
+  initialZoom = 12,
+  selectedPlaceId,
+  onPlaceSelect,
+}: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
@@ -97,6 +105,7 @@ export function Map({ places, initialCenter = [-58.3816, -34.6037], initialZoom 
 
       el.addEventListener("click", () => {
         setSelectedPlace(place)
+        onPlaceSelect?.(place)
       })
 
       markersRef.current.push(marker)
@@ -105,12 +114,41 @@ export function Map({ places, initialCenter = [-58.3816, -34.6037], initialZoom 
     return () => {
       markersRef.current.forEach((marker) => marker.remove())
     }
-  }, [places, initialCenter, initialZoom])
+  }, [places, initialCenter, initialZoom, onPlaceSelect])
+
+  useEffect(() => {
+    if (!map.current || !selectedPlaceId) return
+    const place = places.find((p) => p._id.toString() === selectedPlaceId)
+    if (place) {
+      map.current.flyTo({
+        center: [place.location.lng, place.location.lat],
+        zoom: 15,
+        duration: 1000,
+      })
+      setSelectedPlace(place)
+    }
+  }, [selectedPlaceId, places])
 
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
-      
+
+      {/* Leyenda de iconos */}
+      <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg px-3 py-2 shadow-lg text-xs">
+        <p className="font-semibold mb-2 text-muted-foreground">Tipos de lugares</p>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(TYPE_MARKERS).map(([key, { emoji, label }]) => (
+            <span
+              key={key}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50"
+            >
+              <span>{emoji}</span>
+              <span>{label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {selectedPlace && (
         <div className="absolute top-4 right-4 z-10 max-w-sm">
           <Card>

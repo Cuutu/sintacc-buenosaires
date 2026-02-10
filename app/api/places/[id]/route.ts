@@ -107,3 +107,39 @@ export async function PATCH(
     )
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await requireAdmin(request)
+    if (session instanceof NextResponse) return session
+
+    await connectDB()
+
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json(
+        { error: "ID inválido" },
+        { status: 400 }
+      )
+    }
+
+    const place = await Place.findByIdAndDelete(params.id)
+
+    if (!place) {
+      return NextResponse.json(
+        { error: "Lugar no encontrado" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ message: "Lugar eliminado correctamente" })
+  } catch (error) {
+    console.error("Error deleting place:", error)
+    return NextResponse.json(
+      { error: "Error al eliminar lugar" },
+      { status: 500 }
+    )
+  }
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useCallback } from "react"
 import { Map } from "@/components/map"
 import { PlaceCard } from "@/components/place-card"
 import { Input } from "@/components/ui/input"
@@ -9,52 +9,39 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { IPlace } from "@/models/Place"
 import { useSearchParams } from "next/navigation"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, List } from "lucide-react"
+import { NEIGHBORHOODS, TYPES } from "@/lib/constants"
 
-const NEIGHBORHOODS = [
-  "Palermo",
-  "Recoleta",
-  "San Telmo",
-  "Puerto Madero",
-  "Belgrano",
-  "Villa Crespo",
-  "Caballito",
-  "Almagro",
-  "Villa Urquiza",
-  "Colegiales",
-]
-
-const TYPES = [
-  { value: "", label: "Todos" },
-  { value: "restaurant", label: "Restaurante" },
-  { value: "cafe", label: "Café" },
-  { value: "bakery", label: "Panadería" },
-  { value: "store", label: "Tienda" },
-  { value: "icecream", label: "Heladería" },
-  { value: "bar", label: "Bar" },
-  { value: "other", label: "Otro" },
-]
+const TYPES_WITH_ALL = [{ value: "", label: "Todos" }, ...TYPES.map((t) => ({ value: t.value, label: `${t.emoji} ${t.label}` }))]
 
 function MapaContent() {
   const searchParams = useSearchParams()
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
+  const [showSidebarMobile, setShowSidebarMobile] = useState(false)
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     type: "",
     neighborhood: "",
   })
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search)
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    fetchPlaces()
-  }, [filters])
+    const t = setTimeout(() => setDebouncedSearch(filters.search), 400)
+    return () => clearTimeout(t)
+  }, [filters.search])
 
-  const fetchPlaces = async () => {
+  useEffect(() => {
+    fetchPlaces()
+  }, [debouncedSearch, filters.type, filters.neighborhood])
+
+  const fetchPlaces = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (filters.search) params.append("search", filters.search)
+      if (debouncedSearch) params.append("search", debouncedSearch)
       if (filters.type) params.append("type", filters.type)
       if (filters.neighborhood) params.append("neighborhood", filters.neighborhood)
 
@@ -66,12 +53,34 @@ function MapaContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [debouncedSearch, filters.type, filters.neighborhood])
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] relative">
+      {/* Botón mobile para abrir sidebar */}
+      <Button
+        className="md:hidden fixed bottom-4 left-4 z-20 rounded-full shadow-lg"
+        size="icon"
+        onClick={() => setShowSidebarMobile(true)}
+      >
+        <List className="h-5 w-5" />
+      </Button>
+
       {/* Sidebar - Glassmorphism */}
-      <div className="map-sidebar w-full md:w-[420px] md:min-w-[340px] p-5 overflow-y-auto md:rounded-r-2xl z-10">
+      <div
+        className={`map-sidebar w-full md:w-[420px] md:min-w-[340px] p-5 overflow-y-auto md:rounded-r-2xl z-10 
+          md:relative fixed inset-y-0 left-0 h-full transition-transform duration-300
+          ${showSidebarMobile ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+      >
+        {showSidebarMobile && (
+          <Button
+            variant="ghost"
+            className="absolute top-2 right-2 md:hidden"
+            onClick={() => setShowSidebarMobile(false)}
+          >
+            ✕
+          </Button>
+        )}
         <div className="mb-6">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Explorar lugares
@@ -109,7 +118,7 @@ function MapaContent() {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TYPES.map((type) => (
+                      {TYPES_WITH_ALL.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
@@ -131,7 +140,7 @@ function MapaContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Todos</SelectItem>
-                      {NEIGHBORHOODS.map((hood) => (
+                      {NEIGHBORHOODS.filter((h) => h !== "Otro").map((hood) => (
                         <SelectItem key={hood} value={hood}>
                           {hood}
                         </SelectItem>
@@ -164,7 +173,14 @@ function MapaContent() {
               {places.length} lugar{places.length !== 1 ? "es" : ""} encontrado{places.length !== 1 ? "s" : ""}
             </p>
             {places.map((place) => (
-              <PlaceCard key={place._id.toString()} place={place} />
+              <PlaceCard
+                key={place._id.toString()}
+                place={place}
+                onMapClick={(p) => {
+                  setSelectedPlaceId(p._id.toString())
+                  setShowSidebarMobile(false)
+                }}
+              />
             ))}
           </div>
         )}
@@ -172,7 +188,11 @@ function MapaContent() {
 
       {/* Map */}
       <div className="flex-1 relative">
-        <Map places={places} />
+        <Map
+          places={places}
+          selectedPlaceId={selectedPlaceId || undefined}
+          onPlaceSelect={(p) => setSelectedPlaceId(p._id.toString())}
+        />
       </div>
     </div>
   )

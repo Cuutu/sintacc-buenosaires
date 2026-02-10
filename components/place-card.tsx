@@ -6,6 +6,7 @@ import { IPlace } from "@/models/Place"
 
 interface PlaceCardProps {
   place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }
+  onMapClick?: (place: IPlace) => void
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -18,11 +19,10 @@ const TYPE_ICONS: Record<string, string> = {
   other: "📍",
 }
 
-export function PlaceCard({ place }: PlaceCardProps) {
+export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
   const typeIcon = TYPE_ICONS[place.type] || "📍"
 
-  return (
-    <Link href={`/lugar/${place._id}`}>
+  const cardContent = (
       <Card className="place-card-hover overflow-hidden cursor-pointer h-full border-2 hover:border-primary/30 rounded-xl group">
         {place.photos && place.photos.length > 0 ? (
           <div className="relative h-40 w-full overflow-hidden">
@@ -84,6 +84,22 @@ export function PlaceCard({ place }: PlaceCardProps) {
           </div>
         </CardContent>
       </Card>
-    </Link>
   )
+
+  if (onMapClick) {
+    return (
+      <div onClick={() => onMapClick(place)}>
+        {cardContent}
+        <Link
+          href={`/lugar/${place._id}`}
+          className="block mt-2 text-sm text-primary hover:underline text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Ver detalle →
+        </Link>
+      </div>
+    )
+  }
+
+  return <Link href={`/lugar/${place._id}`}>{cardContent}</Link>
 }
