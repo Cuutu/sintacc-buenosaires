@@ -9,9 +9,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReviewForm } from "@/components/review-form"
 import { SafetyBadge } from "@/components/safety-badge"
 import { FavoriteButton } from "@/components/favorite-button"
+import { StickyActionBarMobile, PhotoStrip } from "@/components/lugar"
 import { IPlace } from "@/models/Place"
 import { IReview } from "@/models/Review"
-import { Star, MapPin, Phone, Instagram, Globe, ExternalLink, Share2, MapPinned, Clock, Package } from "lucide-react"
+import {
+  Star,
+  MapPin,
+  Phone,
+  Instagram,
+  Globe,
+  ExternalLink,
+  Share2,
+  MapPinned,
+  Clock,
+  Package,
+} from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
@@ -79,9 +91,9 @@ export default function LugarPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-64 bg-muted rounded-lg" />
+          <div className="aspect-[4/3] bg-muted rounded-2xl" />
           <div className="h-8 w-2/3 bg-muted rounded" />
           <div className="h-4 w-full bg-muted rounded" />
         </div>
@@ -104,66 +116,41 @@ export default function LugarPage() {
   const typeConfig = TYPES.find((t) => t.value === place.type)
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 min-h-screen">
       <div className="grid md:grid-cols-2 gap-8 mb-8">
-        {/* Photos */}
-        <div className="space-y-2">
-          {place.photos && place.photos.length > 0 ? (
-            <>
-              <div className="relative h-64 w-full rounded-lg overflow-hidden">
-                <Image
-                  src={place.photos[0]}
-                  alt={place.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-              {place.photos.length > 1 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {place.photos.slice(1, 4).map((photo, idx) => (
-                    <div key={idx} className="relative h-24 w-full rounded overflow-hidden">
-                      <Image
-                        src={photo}
-                        alt={`${place.name} ${idx + 2}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="relative h-64 w-full rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <span className="text-8xl">{typeConfig?.emoji || "📍"}</span>
-              <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
-                {displayTypes.map((t) => (
-                  <span key={t} className="px-2 py-1 rounded bg-background/90 text-sm font-medium">
-                    {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Fotos: strip horizontal mobile */}
+        <div className="space-y-4">
+          <PhotoStrip
+            photos={place.photos}
+            name={place.name}
+            type={place.type}
+            types={place.types}
+          />
         </div>
 
         {/* Info */}
         <div>
-          <div className="flex items-start justify-between mb-4">
-            <h1 className="text-3xl font-bold">{place.name}</h1>
-            <div className="flex gap-2">
-              <FavoriteButton placeId={place._id.toString()} />
-              <Button variant="outline" size="icon" onClick={shareLink} title="Copiar link">
-                <Share2 className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={shareWhatsApp} title="Compartir en WhatsApp">
-                <span className="text-lg">📱</span>
-              </Button>
+          <div className="flex flex-col gap-4 mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold">{place.name}</h1>
+            <div className="flex flex-wrap gap-2 items-center">
+              {place.safetyLevel && (
+                <div className="[&>*]:min-h-[44px] [&>*]:text-base">
+                  <SafetyBadge safetyLevel={place.safetyLevel} />
+                </div>
+              )}
+              <div className="hidden md:flex gap-2 [&>button]:min-h-[44px] [&>button]:min-w-[44px]">
+                <FavoriteButton placeId={place._id.toString()} />
+                <Button variant="outline" size="icon" onClick={shareLink} title="Copiar link">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={shareWhatsApp} title="Compartir en WhatsApp">
+                  <span className="text-lg">📱</span>
+                </Button>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 text-base">
             <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
             <span className="text-muted-foreground">
               {place.address}, {place.neighborhood}
@@ -171,13 +158,13 @@ export default function LugarPage() {
           </div>
 
           {place.openingHours && (
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
               <span>{place.openingHours}</span>
               {(() => {
                 const open = isOpenNow(place.openingHours)
-                if (open === true) return <Badge className="bg-primary/20 text-primary">Abierto</Badge>
-                if (open === false) return <Badge variant="secondary">Cerrado</Badge>
+                if (open === true) return <Badge className="bg-primary/20 text-primary min-h-[44px]">Abierto</Badge>
+                if (open === false) return <Badge variant="secondary" className="min-h-[44px]">Cerrado</Badge>
                 return null
               })()}
             </div>
@@ -191,21 +178,21 @@ export default function LugarPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {place.delivery.rappi && (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="min-h-[44px]">
                     <a href={place.delivery.rappi} target="_blank" rel="noopener noreferrer">
                       Rappi
                     </a>
                   </Button>
                 )}
                 {place.delivery.pedidosya && (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="min-h-[44px]">
                     <a href={place.delivery.pedidosya} target="_blank" rel="noopener noreferrer">
                       PedidosYa
                     </a>
                   </Button>
                 )}
                 {place.delivery.other && (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="min-h-[44px]">
                     <a href={place.delivery.other} target="_blank" rel="noopener noreferrer">
                       Otro
                     </a>
@@ -215,16 +202,14 @@ export default function LugarPage() {
             </div>
           )}
 
-          <Button variant="outline" className="mb-4" onClick={openInMaps}>
+          <Button
+            variant="outline"
+            className="mb-4 min-h-[48px] w-full md:w-auto"
+            onClick={openInMaps}
+          >
             <MapPinned className="h-4 w-4 mr-2" />
             Ver en Google Maps
           </Button>
-
-          {place.safetyLevel && (
-            <div className="mb-4">
-              <SafetyBadge safetyLevel={place.safetyLevel} />
-            </div>
-          )}
 
           {place.stats?.avgRating && (
             <div className="flex items-center gap-2 mb-4">
@@ -240,15 +225,15 @@ export default function LugarPage() {
 
           <div className="flex flex-wrap gap-2 mb-4">
             {displayTypes.map((t) => (
-              <Badge key={t} variant="secondary" className="bg-primary/10 text-primary">
+              <Badge key={t} variant="secondary" className="bg-primary/10 text-primary min-h-[44px] px-4">
                 {TYPES.find((c) => c.value === t)?.emoji} {TYPES.find((c) => c.value === t)?.label || t}
               </Badge>
             ))}
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
-            {place.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
+            {place.tags?.map((tag) => (
+              <Badge key={tag} variant="secondary" className="min-h-[44px] px-4">
                 {tag.replace(/_/g, " ")}
               </Badge>
             ))}
@@ -259,7 +244,10 @@ export default function LugarPage() {
               {place.contact.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  <a href={`tel:${place.contact.phone}`} className="text-primary hover:underline">
+                  <a
+                    href={`tel:${place.contact.phone}`}
+                    className="text-primary hover:underline min-h-[44px] flex items-center"
+                  >
                     {place.contact.phone}
                   </a>
                 </div>
@@ -271,7 +259,7 @@ export default function LugarPage() {
                     href={`https://wa.me/${place.contact.whatsapp.replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary hover:underline min-h-[44px] flex items-center"
                   >
                     WhatsApp
                   </a>
@@ -310,16 +298,21 @@ export default function LugarPage() {
       </div>
 
       <Tabs defaultValue="reviews" className="mt-8">
-        <TabsList>
-          <TabsTrigger value="reviews">Reseñas ({reviews.length})</TabsTrigger>
-          <TabsTrigger value="write">Escribir reseña</TabsTrigger>
+        <TabsList className="w-full flex min-h-[48px] mb-4">
+          <TabsTrigger value="reviews" className="flex-1 min-h-[44px] text-base">
+            Reseñas ({reviews.length})
+          </TabsTrigger>
+          <TabsTrigger value="write" className="flex-1 min-h-[44px] text-base">
+            Escribir reseña
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="reviews" className="mt-4">
           {reviews.length > 0 && (
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 flex-wrap">
               <Button
                 variant={reviewSort === "recent" ? "default" : "outline"}
                 size="sm"
+                className="min-h-[44px]"
                 onClick={() => setReviewSort("recent")}
               >
                 Más recientes
@@ -327,6 +320,7 @@ export default function LugarPage() {
               <Button
                 variant={reviewSort === "rating" ? "default" : "outline"}
                 size="sm"
+                className="min-h-[44px]"
                 onClick={() => setReviewSort("rating")}
               >
                 Mejor valoradas
@@ -344,19 +338,19 @@ export default function LugarPage() {
               sortedReviews.map((review: any) => (
                 <Card key={review._id} className={review.pinned ? "border-primary/50" : ""}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         {review.userId?.image ? (
                           <Image
                             src={review.userId.image}
                             alt={review.userId?.name}
-                            width={32}
-                            height={32}
+                            width={40}
+                            height={40}
                             className="rounded-full"
                             unoptimized
                           />
                         ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-base shrink-0">
                             {review.userId?.name?.[0] || "U"}
                           </div>
                         )}
@@ -368,7 +362,7 @@ export default function LugarPage() {
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`h-4 w-4 ${
+                                className={`h-5 w-5 ${
                                   i < review.rating
                                     ? "fill-amber-400 text-amber-400"
                                     : "text-gray-300"
@@ -389,13 +383,13 @@ export default function LugarPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="mb-2">{review.comment}</p>
-                    <div className="flex gap-2">
+                    <p className="mb-2 text-base">{review.comment}</p>
+                    <div className="flex gap-2 flex-wrap">
                       {review.safeFeeling && (
-                        <Badge variant="default">Me sentí seguro</Badge>
+                        <Badge variant="default" className="min-h-[44px]">Me sentí seguro</Badge>
                       )}
                       {review.separateKitchen === "yes" && (
-                        <Badge variant="secondary">Cocina separada</Badge>
+                        <Badge variant="secondary" className="min-h-[44px]">Cocina separada</Badge>
                       )}
                     </div>
                   </CardContent>
@@ -408,6 +402,8 @@ export default function LugarPage() {
           <ReviewForm placeId={params.id as string} onSuccess={fetchReviews} />
         </TabsContent>
       </Tabs>
+
+      <StickyActionBarMobile place={place} />
     </div>
   )
 }

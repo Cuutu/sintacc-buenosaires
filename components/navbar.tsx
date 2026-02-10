@@ -12,18 +12,18 @@ export function Navbar() {
   return (
     <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-14 md:h-16 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <MapPin className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">Celimap</span>
           </Link>
 
-          <div className="flex items-center space-x-4">
-            <Link href="/mapa">
-              <Button variant="ghost">Mapa</Button>
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <Link href="/mapa" className="hidden sm:block">
+              <Button variant="ghost" size="sm" className="min-h-[44px]">Mapa</Button>
             </Link>
-            <Link href="/sugerir">
-              <Button variant="ghost">Sugerir lugar</Button>
+            <Link href="/sugerir" className="hidden sm:block">
+              <Button variant="ghost" size="sm" className="min-h-[44px]">Sugerir lugar</Button>
             </Link>
 
             {session?.user ? (

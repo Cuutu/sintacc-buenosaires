@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { BottomNav } from "@/components/nav/BottomNav";
 import { Toaster } from "sonner";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -26,8 +27,11 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Providers>
           <Navbar />
-          <main className="min-h-screen">{children}</main>
+          <main className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+            {children}
+          </main>
           <Footer />
+          <BottomNav />
           <Toaster position="top-center" richColors closeButton />
         </Providers>
       </body>

@@ -84,20 +84,20 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Calificación</Label>
-            <div className="flex gap-1 mt-2">
+            <Label className="text-base">Calificación</Label>
+            <div className="flex gap-2 mt-3">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className="focus:outline-none"
+                  className="min-h-[48px] min-w-[48px] p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Star
-                    className={`h-8 w-8 ${
+                    className={`h-10 w-10 md:h-8 md:w-8 ${
                       star <= rating
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-muted-foreground"
                     }`}
                   />
                 </button>
@@ -106,29 +106,31 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
           </div>
 
           <div>
-            <Label>¿Te sentiste seguro comiendo aquí?</Label>
-            <div className="flex gap-4 mt-2">
-              <label className="flex items-center gap-2">
+            <Label className="text-base">¿Te sentiste seguro comiendo aquí?</Label>
+            <div className="flex gap-4 mt-3">
+              <label className="flex items-center gap-3 min-h-[44px] cursor-pointer">
                 <input
                   type="radio"
                   checked={safeFeeling}
                   onChange={() => setSafeFeeling(true)}
+                  className="w-5 h-5"
                 />
-                Sí
+                <span className="text-base">Sí</span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-3 min-h-[44px] cursor-pointer">
                 <input
                   type="radio"
                   checked={!safeFeeling}
                   onChange={() => setSafeFeeling(false)}
+                  className="w-5 h-5"
                 />
-                No
+                <span className="text-base">No</span>
               </label>
             </div>
           </div>
 
           <div>
-            <Label>Cocina separada</Label>
+            <Label className="text-base">Cocina separada</Label>
             <Select
               value={separateKitchen}
               onValueChange={(value: "yes" | "no" | "unknown") =>
@@ -147,7 +149,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
           </div>
 
           <div>
-            <Label>Comentario</Label>
+            <Label className="text-base">Comentario</Label>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -155,6 +157,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
               rows={4}
               maxLength={800}
               required
+              className="min-h-[120px] text-base"
             />
             <p className="text-sm text-muted-foreground mt-1">
               {comment.length}/800 caracteres
@@ -167,7 +170,11 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
             </div>
           )}
 
-          <Button type="submit" disabled={loading || rating === 0 || !comment.trim()}>
+          <Button
+            type="submit"
+            disabled={loading || rating === 0 || !comment.trim()}
+            className="w-full min-h-[48px] text-base"
+          >
             {loading ? "Enviando..." : "Publicar reseña"}
           </Button>
         </form>
