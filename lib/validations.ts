@@ -11,12 +11,14 @@ export const placeSchema = z.object({
     lng: z.number().min(-180).max(180),
   }),
   tags: z.array(z.string()).default([]),
-  contact: z.object({
-    instagram: z.string().optional(),
-    whatsapp: z.string().optional(),
-    phone: z.string().optional(),
-    url: z.string().url().optional(),
-  }).optional(),
+  contact: z
+    .object({
+      instagram: z.string().optional(),
+      whatsapp: z.string().optional(),
+      phone: z.string().optional(),
+      url: z.preprocess((val) => (val === "" ? undefined : val), z.string().url().optional()),
+    })
+    .optional(),
   openingHours: z.string().max(500).optional(),
   delivery: z.object({
     available: z.boolean().optional(),
@@ -42,6 +44,27 @@ export const reviewSchema = z.object({
 export const suggestionSchema = placeSchema.extend({
   // Same as place but without status
 })
+
+const INSTAGRAM_REGEX = /instagram\.com|instagr\.am/
+const GOOGLE_MAPS_REGEX = /google\.com\/maps|goo\.gl\/maps|maps\.google|maps\.app\.goo\.gl/
+
+export const quickSuggestionSchema = z.object({
+  sourceLink: z
+    .string()
+    .min(1, "Agregá el link de Instagram o Google Maps")
+    .refine(
+      (val) => INSTAGRAM_REGEX.test(val) || GOOGLE_MAPS_REGEX.test(val),
+      "El link debe ser de Instagram o Google Maps"
+    ),
+  safetyLevel: z.enum(["dedicated_gf", "gf_options"], {
+    required_error: "Indicá si es 100% apto o tiene opciones",
+  }),
+  name: z.string().max(200).trim().optional(),
+})
+
+export function isQuickSuggestion(body: unknown): body is z.infer<typeof quickSuggestionSchema> {
+  return typeof body === "object" && body !== null && "sourceLink" in body && "safetyLevel" in body
+}
 
 export function sanitizeHtml(input: string): string {
   return input

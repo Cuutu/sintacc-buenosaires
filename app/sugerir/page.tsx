@@ -11,12 +11,19 @@ import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { geocodeAddress } from "@/lib/geocode"
 import { toast } from "sonner"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
+import { ChevronDown, ChevronUp, Link2 } from "lucide-react"
 
 export default function SugerirPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [quickMode, setQuickMode] = useState(false)
+  const [quickData, setQuickData] = useState({
+    sourceLink: "",
+    safetyLevel: "" as "" | "dedicated_gf" | "gf_options",
+    name: "",
+  })
   const [formData, setFormData] = useState({
     name: "",
     types: [] as string[],
@@ -69,6 +76,31 @@ export default function SugerirPage() {
         </Card>
       </div>
     )
+  }
+
+  const handleQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+    try {
+      const res = await fetch("/api/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceLink: quickData.sourceLink.trim(),
+          safetyLevel: quickData.safetyLevel,
+          name: quickData.name.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al crear sugerencia")
+      toast.success("¡Sugerencia enviada! La completaremos nosotros.")
+      router.push("/mapa?success=suggestion")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al enviar")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,6 +185,73 @@ export default function SugerirPage() {
           <CardTitle>Sugerir un lugar</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Modo rápido: solo link + safety */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setQuickMode(!quickMode)}
+              className="flex items-center gap-2 w-full text-left text-sm text-primary hover:underline"
+            >
+              <Link2 className="h-4 w-4" />
+              ¿Solo tenés el link de Instagram o Google Maps?
+              {quickMode ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+            </button>
+            {quickMode && (
+              <form onSubmit={handleQuickSubmit} className="mt-4 p-4 rounded-lg border border-border bg-muted/30 space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Pegá el link y contanos si es 100% apto o tiene opciones. Nosotros completamos el resto.
+                </p>
+                <div>
+                  <Label>Link (Instagram o Google Maps) *</Label>
+                  <Input
+                    value={quickData.sourceLink}
+                    onChange={(e) => setQuickData({ ...quickData, sourceLink: e.target.value })}
+                    placeholder="https://instagram.com/... o https://maps.google.com/..."
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>¿Es 100% apto o tiene opciones? *</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant={quickData.safetyLevel === "dedicated_gf" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setQuickData({ ...quickData, safetyLevel: "dedicated_gf" })}
+                    >
+                      100% sin TACC
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={quickData.safetyLevel === "gf_options" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setQuickData({ ...quickData, safetyLevel: "gf_options" })}
+                    >
+                      Opciones sin TACC
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label>Nombre del lugar (opcional)</Label>
+                  <Input
+                    value={quickData.name}
+                    onChange={(e) => setQuickData({ ...quickData, name: e.target.value })}
+                    placeholder="Si lo conocés"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading || !quickData.safetyLevel}
+                >
+                  {loading ? "Enviando..." : "Enviar sugerencia"}
+                </Button>
+              </form>
+            )}
+          </div>
+
+          <div className="border-t border-border pt-6">
+            <p className="text-sm text-muted-foreground mb-4">O completá el formulario completo:</p>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Nombre del lugar *</Label>

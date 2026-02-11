@@ -22,6 +22,9 @@ type SuggestionItem = {
     neighborhood: string
     openingHours?: string
     delivery?: { available?: boolean; rappi?: string; pedidosya?: string; other?: string }
+    contact?: { instagram?: string; url?: string }
+    safetyLevel?: string
+    tags?: string[]
   }
   suggestedByUserId?: { name?: string }
 }
@@ -270,6 +273,38 @@ export default function AdminPage() {
                           ]
                             .filter(Boolean)
                             .join(", ")}
+                        </p>
+                      )}
+                      {(suggestion.placeDraft.contact?.instagram || suggestion.placeDraft.contact?.url) && (
+                        <p>
+                          <strong>Link:</strong>{" "}
+                          {suggestion.placeDraft.contact?.instagram ? (
+                            <a
+                              href={suggestion.placeDraft.contact.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              Instagram
+                            </a>
+                          ) : suggestion.placeDraft.contact?.url ? (
+                            <a
+                              href={suggestion.placeDraft.contact.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              Google Maps
+                            </a>
+                          ) : null}
+                        </p>
+                      )}
+                      {suggestion.placeDraft.safetyLevel && (
+                        <p>
+                          <strong>Nivel:</strong>{" "}
+                          {suggestion.placeDraft.safetyLevel === "dedicated_gf"
+                            ? "100% sin TACC"
+                            : "Opciones sin TACC"}
                         </p>
                       )}
                     </div>
