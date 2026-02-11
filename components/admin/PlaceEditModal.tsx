@@ -158,24 +158,10 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       setError("El barrio es obligatorio")
       return
     }
-    let lat = formData.lat
-    let lng = formData.lng
-    let address = formData.address
-    let neighborhood = formData.neighborhood
-    if ((!lat || !lng) && formData.address.trim()) {
-      const geo = await geocodeAddress(formData.address)
-      if (geo) {
-        lat = geo.lat.toString()
-        lng = geo.lng.toString()
-        address = geo.address
-        neighborhood = geo.neighborhood || "Otro"
-      } else {
-        setError("No se pudo geocodificar la dirección")
-        return
-      }
-    }
-    if (!lat || !lng) {
-      setError("Seleccioná una dirección de la lista o escribí una completa")
+    // Siempre geocodificar la dirección al guardar para que las coordenadas coincidan con la dirección
+    const geo = await geocodeAddress(formData.address)
+    if (!geo) {
+      setError("No se pudo geocodificar la dirección. Probá seleccionando una sugerencia del autocompletado.")
       return
     }
 
@@ -184,9 +170,9 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       const payload = buildPayload()
       const finalPayload = {
         ...payload,
-        address,
-        neighborhood,
-        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        address: geo.address,
+        neighborhood: geo.neighborhood || formData.neighborhood,
+        location: { lat: geo.lat, lng: geo.lng },
       }
       const res = await fetch(`/api/places/${placeId}`, {
         method: "PATCH",

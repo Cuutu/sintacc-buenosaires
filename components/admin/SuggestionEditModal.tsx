@@ -158,24 +158,9 @@ export function SuggestionEditModal({
       setError("El barrio es obligatorio")
       return
     }
-    let lat = formData.lat
-    let lng = formData.lng
-    let address = formData.address
-    let neighborhood = formData.neighborhood
-    if ((!lat || !lng) && formData.address.trim()) {
-      const geo = await geocodeAddress(formData.address)
-      if (geo) {
-        lat = geo.lat.toString()
-        lng = geo.lng.toString()
-        address = geo.address
-        neighborhood = geo.neighborhood || "Otro"
-      } else {
-        setError("No se pudo geocodificar la dirección")
-        return
-      }
-    }
-    if (!lat || !lng) {
-      setError("Seleccioná una dirección de la lista o escribí una completa")
+    const geo = await geocodeAddress(formData.address)
+    if (!geo) {
+      setError("No se pudo geocodificar la dirección. Probá seleccionando una sugerencia del autocompletado.")
       return
     }
 
@@ -184,9 +169,9 @@ export function SuggestionEditModal({
       const payload = buildPayload()
       const finalPayload = {
         ...payload,
-        address,
-        neighborhood,
-        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        address: geo.address,
+        neighborhood: geo.neighborhood || formData.neighborhood,
+        location: { lat: geo.lat, lng: geo.lng },
       }
       const res = await fetch(`/api/admin/suggestions/${suggestionId}`, {
         method: "PATCH",
@@ -214,24 +199,9 @@ export function SuggestionEditModal({
       setError("Nombre, dirección y barrio son obligatorios")
       return
     }
-    let lat = formData.lat
-    let lng = formData.lng
-    let address = formData.address
-    let neighborhood = formData.neighborhood
-    if ((!lat || !lng) && formData.address.trim()) {
-      const geo = await geocodeAddress(formData.address)
-      if (geo) {
-        lat = geo.lat.toString()
-        lng = geo.lng.toString()
-        address = geo.address
-        neighborhood = geo.neighborhood || "Otro"
-      } else {
-        setError("No se pudo geocodificar la dirección")
-        return
-      }
-    }
-    if (!lat || !lng) {
-      setError("Seleccioná una dirección de la lista")
+    const geo = await geocodeAddress(formData.address)
+    if (!geo) {
+      setError("No se pudo geocodificar la dirección. Probá seleccionando una sugerencia del autocompletado.")
       return
     }
 
@@ -240,9 +210,9 @@ export function SuggestionEditModal({
       const payload = buildPayload()
       const finalPayload = {
         ...payload,
-        address,
-        neighborhood,
-        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        address: geo.address,
+        neighborhood: geo.neighborhood || formData.neighborhood,
+        location: { lat: geo.lat, lng: geo.lng },
       }
       const res = await fetch(`/api/admin/suggestions/${suggestionId}`, {
         method: "POST",
