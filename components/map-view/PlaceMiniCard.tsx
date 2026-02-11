@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IPlace } from "@/models/Place"
-import { getSafetyBadge } from "@/components/featured/featured-utils"
+import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
 
 interface PlaceMiniCardProps {
   place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }
@@ -25,7 +25,8 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
   const primaryType = place.types?.[0] ?? place.type
   const typeIcon = TYPE_ICONS[primaryType] || "📍"
   const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
-  const safetyConfig = getSafetyBadge(place.safetyLevel as any)
+  const effectiveSafetyLevel = inferSafetyLevel(place)
+  const safetyConfig = getSafetyBadge(effectiveSafetyLevel as any)
 
   const content = (
     <div

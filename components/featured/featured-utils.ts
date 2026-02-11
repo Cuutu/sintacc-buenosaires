@@ -17,6 +17,22 @@ const SAFETY_CONFIG = {
   unknown: { label: "Sin info verificada", dot: "⚪", className: "bg-muted/50 text-muted-foreground border-border" },
 } as const
 
+/**
+ * Infiere safetyLevel desde tags cuando no está seteado en el lugar.
+ * Mantiene consistencia con la vista de detalle que muestra ambos.
+ */
+export function inferSafetyLevel(place: {
+  safetyLevel?: PlaceWithStats["safetyLevel"]
+  tags?: string[]
+}): PlaceWithStats["safetyLevel"] {
+  if (place.safetyLevel) return place.safetyLevel
+  const tags = place.tags ?? []
+  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc"))
+    return "dedicated_gf"
+  if (tags.includes("opciones_sin_tacc")) return "gf_options"
+  return undefined
+}
+
 export function getSafetyBadge(
   safetyLevel?: PlaceWithStats["safetyLevel"]
 ) {

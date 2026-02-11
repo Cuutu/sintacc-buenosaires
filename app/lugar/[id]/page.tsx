@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReviewForm } from "@/components/review-form"
 import { SafetyBadge } from "@/components/safety-badge"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { TagBadge } from "@/components/TagBadge"
 import { FavoriteButton } from "@/components/favorite-button"
 import { StickyActionBarMobile, PhotoStrip } from "@/components/lugar"
@@ -135,7 +136,7 @@ export default function LugarPage() {
             <h1 className="text-2xl md:text-3xl font-bold">{place.name}</h1>
             <div className="flex flex-wrap gap-2 items-center">
               <div className="[&>*]:min-h-[44px] [&>*]:text-base">
-                <SafetyBadge safetyLevel={place.safetyLevel} />
+                <SafetyBadge safetyLevel={inferSafetyLevel(place)} />
               </div>
               <div className="hidden md:flex gap-2 [&>button]:min-h-[44px] [&>button]:min-w-[44px]">
                 <FavoriteButton placeId={place._id.toString()} />
