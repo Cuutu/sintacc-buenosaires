@@ -68,7 +68,11 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
         mapInstance.on("load", () => {
           mapInstance.resize()
-          setDebugInfo("Mapa cargado correctamente")
+          const canvas = container.querySelector("canvas")
+          const canvasInfo = canvas
+            ? `${canvas.width}x${canvas.height}, z-index: ${getComputedStyle(canvas).zIndex}`
+            : "sin canvas"
+          setDebugInfo(`Mapa cargado. Canvas: ${canvasInfo}`)
         })
         mapInstance.on("error", (ev: any) => {
           const message =
@@ -164,7 +168,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="map-picker-title"
@@ -186,8 +190,8 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
         </div>
 
         {/* Contenedor del mapa SIN transform - clave para Mapbox */}
-        <div className="flex-1 min-h-[400px] relative">
-          <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+        <div className="flex-1 min-h-[400px] relative bg-gray-900">
+          <div ref={mapContainer} className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }} />
           {picked && (
             <p className="absolute bottom-3 left-3 right-3 text-xs text-white/90 bg-black/60 px-3 py-2 rounded-lg z-10">
               📍 {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)} — Hacé click en &quot;Confirmar&quot; para usar
