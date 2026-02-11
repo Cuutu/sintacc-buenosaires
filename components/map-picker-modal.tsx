@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { reverseGeocode } from "@/lib/geocode"
@@ -15,9 +16,8 @@ type Props = {
 }
 
 /**
- * Usa overlay propio en lugar de Radix Dialog porque Mapbox GL
- * no renderiza bien dentro de contenedores con CSS transform
- * (el Dialog usa translate para centrarse).
+ * Renderiza en un portal a document.body para aislar el mapa de cualquier
+ * CSS heredado (overflow, backdrop-blur, transform) que pueda dejar el canvas en negro.
  */
 export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -27,7 +27,6 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   const [geocoding, setGeocoding] = useState(false)
   const [error, setError] = useState("")
   const [mounted, setMounted] = useState(false)
-  const [debugInfo, setDebugInfo] = useState("")
 
   useEffect(() => {
     setMounted(true)
@@ -45,100 +44,48 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     mapboxgl.accessToken = token
     setPicked(null)
     setError("")
-    setDebugInfo("")
     if (markerRef.current) {
       markerRef.current.remove()
       markerRef.current = null
     }
 
     const container = mapContainer.current
-    let cleanup: (() => void) | null = null
 
-    function initMap() {
-      if (!container || !open) return
-      let mapInstance: mapboxgl.Map
-      try {
-        mapInstance = new mapboxgl.Map({
-          container,
-          style: "mapbox://styles/mapbox/streets-v12",
-          center: CABA_CENTER,
-          zoom: CABA_ZOOM,
-        })
-        map.current = mapInstance
+    const mapInstance = new mapboxgl.Map({
+      container,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: CABA_CENTER,
+      zoom: CABA_ZOOM,
+    })
+    map.current = mapInstance
 
-        mapInstance.on("load", () => {
-          mapInstance.resize()
-          const canvas = container.querySelector("canvas")
-          const canvasInfo = canvas
-            ? `${canvas.width}x${canvas.height}, z-index: ${getComputedStyle(canvas).zIndex}`
-            : "sin canvas"
-          setDebugInfo(`Mapa cargado. Canvas: ${canvasInfo}`)
-        })
-        mapInstance.on("error", (ev: any) => {
-          const message =
-            ev?.error?.message ||
-            ev?.error?.statusText ||
-            "Error desconocido de Mapbox"
-          console.error("Mapbox error in picker:", ev?.error || ev)
-          setError(
-            `Mapbox no pudo cargar el mapa. ${message}. Si estás en Vercel, revisá NEXT_PUBLIC_MAPBOX_TOKEN y Allowed URLs del token.`
-          )
-        })
-        mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right")
-      } catch (err: any) {
-        console.error("Error creating map picker:", err)
-        setError(
-          `No se pudo inicializar el mapa. ${err?.message || "Error desconocido"}`
-        )
-        return
-      }
+    mapInstance.on("load", () => {
+      mapInstance.resize()
+    })
+    mapInstance.on("error", (ev: unknown) => {
+      const e = ev as { error?: { message?: string } }
+      const msg = e?.error?.message || "Error de Mapbox"
+      setError(`Mapbox: ${msg}. Revisá el token y Allowed URLs en Mapbox Studio.`)
+    })
+    mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right")
 
-      const handleClick = (e: mapboxgl.MapMouseEvent) => {
-        const { lng, lat } = e.lngLat
-        setPicked({ lat, lng })
+    const handleClick = (e: mapboxgl.MapMouseEvent) => {
+      const { lng, lat } = e.lngLat
+      setPicked({ lat, lng })
 
-        if (markerRef.current) markerRef.current.remove()
-        const el = document.createElement("div")
-        el.innerHTML = `<div style="
-          width: 32px; height: 32px;
-          background: #10b981; border: 3px solid white;
-          border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-          display: flex; align-items: center; justify-content: center;
-        "><span style="font-size: 16px;">📍</span></div>`
-        markerRef.current = new mapboxgl.Marker({ element: el })
-          .setLngLat([lng, lat])
-          .addTo(mapInstance)
-      }
-
-      mapInstance.on("click", handleClick)
+      if (markerRef.current) markerRef.current.remove()
+      const el = document.createElement("div")
+      el.innerHTML = `<div style="width:32px;height:32px;background:#10b981;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><span style="font-size:16px">📍</span></div>`
+      markerRef.current = new mapboxgl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .addTo(mapInstance)
     }
 
-    const timer = setTimeout(() => {
-      if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
-        setDebugInfo(`Contenedor ${container.offsetWidth}x${container.offsetHeight}`)
-        initMap()
-      } else {
-        const retry = setTimeout(() => {
-          if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-            setError(
-              "El contenedor del mapa quedó en 0x0. Esto suele ser un problema de layout/render en producción."
-            )
-            return
-          }
-          setDebugInfo(`Retry contenedor ${container.offsetWidth}x${container.offsetHeight}`)
-          initMap()
-        }, 200)
-        cleanup = () => clearTimeout(retry)
-      }
-    }, 50)
+    mapInstance.on("click", handleClick)
 
     return () => {
-      clearTimeout(timer)
-      cleanup?.()
-      if (map.current) {
-        map.current.remove()
-        map.current = null
-      }
+      mapInstance.remove()
+      map.current = null
     }
   }, [open, mounted])
 
@@ -166,9 +113,12 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
   if (!open || !mounted) return null
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+      style={{
+        backgroundColor: "rgba(0,0,0,0.85)",
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="map-picker-title"
@@ -176,42 +126,55 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-background rounded-2xl border border-border shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl flex flex-col rounded-2xl border border-white/10 bg-[#0b0b0c] shadow-2xl"
+        style={{ maxHeight: "90vh" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 px-6 pt-6 pb-4">
           <h2 id="map-picker-title" className="text-lg font-semibold flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
+            <MapPin className="h-5 w-5 text-[#10b981]" />
             Marcá la ubicación en el mapa
           </h2>
-          <p id="map-picker-desc" className="text-sm text-muted-foreground mt-1">
+          <p id="map-picker-desc" className="text-sm text-white/60 mt-1">
             Hacé click en el mapa donde está el lugar. Luego confirmá para usar esa ubicación.
           </p>
         </div>
 
-        {/* Contenedor del mapa SIN transform - clave para Mapbox */}
-        <div className="flex-1 min-h-[400px] relative bg-gray-900">
-          <div ref={mapContainer} className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }} />
+        {/* Contenedor aislado: dimensiones fijas, sin transform/overflow de padres */}
+        <div
+          className="flex-shrink-0 relative"
+          style={{
+            height: 420,
+            width: "100%",
+            minHeight: 420,
+          }}
+        >
+          <div
+            ref={mapContainer}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          />
           {picked && (
             <p className="absolute bottom-3 left-3 right-3 text-xs text-white/90 bg-black/60 px-3 py-2 rounded-lg z-10">
-              📍 {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)} — Hacé click en &quot;Confirmar&quot; para usar
+              📍 {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)} — Confirmá para usar
             </p>
           )}
         </div>
 
         {error && (
-          <p className="px-6 py-2 text-sm text-destructive bg-destructive/10">{error}</p>
-        )}
-        {!error && debugInfo && (
-          <p className="px-6 py-2 text-xs text-muted-foreground bg-muted/20">{debugInfo}</p>
+          <p className="px-6 py-2 text-sm text-red-400 bg-red-500/10">{error}</p>
         )}
 
-        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
+        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-white/10">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={geocoding}
-            className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg border border-white/20 hover:bg-white/5 transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -219,7 +182,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
             type="button"
             onClick={handleConfirm}
             disabled={geocoding || !picked}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            className="px-4 py-2 rounded-lg bg-[#10b981] text-white hover:bg-[#0d9668] transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             {geocoding ? (
               <span className="flex items-center gap-2">
@@ -235,7 +198,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
         <button
           type="button"
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-lg p-1.5 hover:bg-muted transition-colors"
+          className="absolute right-4 top-4 rounded-lg p-1.5 hover:bg-white/10 transition-colors"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5" />
@@ -243,4 +206,6 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }
