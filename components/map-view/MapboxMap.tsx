@@ -25,6 +25,7 @@ interface MapboxMapProps {
   places: IPlace[]
   selectedPlaceId?: string
   onPlaceSelect?: (place: IPlace) => void
+  onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
   darkStyle?: boolean
   reduceMotion?: boolean
 }
@@ -35,6 +36,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       places,
       selectedPlaceId,
       onPlaceSelect,
+      onBoundsChange,
       darkStyle = true,
       reduceMotion = false,
     },
@@ -43,6 +45,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
     const markersRef = useRef<mapboxgl.Marker[]>([])
+    const onBoundsChangeRef = useRef(onBoundsChange)
+    onBoundsChangeRef.current = onBoundsChange
 
     const flyTo = useCallback(
       (lng: number, lat: number, zoom = 15) => {
@@ -87,6 +91,18 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       return () => {}
     }, [darkStyle])
+
+    useEffect(() => {
+      const m = map.current
+      if (!m || !onBoundsChange) return
+      const emitBounds = () => onBoundsChangeRef.current?.(m.getBounds())
+      m.on("load", emitBounds)
+      m.on("moveend", emitBounds)
+      return () => {
+        m.off("load", emitBounds)
+        m.off("moveend", emitBounds)
+      }
+    }, [onBoundsChange])
 
     useEffect(() => {
       if (!map.current) return

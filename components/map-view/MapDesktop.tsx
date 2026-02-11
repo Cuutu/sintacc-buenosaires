@@ -1,10 +1,12 @@
 "use client"
 
 import * as React from "react"
+import mapboxgl from "mapbox-gl"
 import { MapboxMap } from "./MapboxMap"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import { filterPlacesInBounds } from "./geo"
 import type { IPlace } from "@/models/Place"
 
 interface MapDesktopProps {
@@ -27,6 +29,18 @@ export function MapDesktop({
   onPlaceSelect,
 }: MapDesktopProps) {
   const reduceMotion = usePrefersReducedMotion()
+  const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
+
+  const visiblePlaces = React.useMemo(() => {
+    if (!bounds) return places
+    const inBounds = filterPlacesInBounds(places, bounds)
+    if (!selectedPlaceId) return inBounds
+    const selected = places.find((p) => p._id.toString() === selectedPlaceId)
+    if (selected && !inBounds.some((p) => p._id.toString() === selectedPlaceId)) {
+      return [selected, ...inBounds]
+    }
+    return inBounds
+  }, [places, bounds, selectedPlaceId])
 
   return (
     <div className="grid grid-cols-12 h-full w-full">
@@ -35,6 +49,7 @@ export function MapDesktop({
           places={places}
           selectedPlaceId={selectedPlaceId ?? undefined}
           onPlaceSelect={onPlaceSelect}
+          onBoundsChange={setBounds}
           darkStyle={false}
           reduceMotion={reduceMotion}
         />
@@ -50,11 +65,11 @@ export function MapDesktop({
           <h2 className="text-lg font-semibold mb-4">
             Resultados
             <span className="text-muted-foreground font-normal ml-2">
-              {places.length} lugar{places.length !== 1 ? "es" : ""}
+              {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
             </span>
           </h2>
           <PlacesList
-            places={places}
+            places={visiblePlaces}
             selectedPlaceId={selectedPlaceId}
             loading={loading}
           />

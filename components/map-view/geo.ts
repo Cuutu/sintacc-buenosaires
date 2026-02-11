@@ -25,3 +25,11 @@ export function distanceKm(
 function toRad(deg: number): number {
   return deg * (Math.PI / 180)
 }
+
+/** Filtrar lugares que están dentro de los bounds visibles del mapa */
+export function filterPlacesInBounds<T extends { location: { lat: number; lng: number } }>(
+  places: T[],
+  bounds: { contains: (lngLat: [number, number]) => boolean }
+): T[] {
+  return places.filter((p) => bounds.contains([p.location.lng, p.location.lat]))
+}

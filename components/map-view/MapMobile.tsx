@@ -7,7 +7,8 @@ import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
-import { CABA_CENTER } from "./geo"
+import mapboxgl from "mapbox-gl"
+import { CABA_CENTER, filterPlacesInBounds } from "./geo"
 import type { IPlace } from "@/models/Place"
 
 interface MapMobileProps {
@@ -32,6 +33,18 @@ export function MapMobile({
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
   const [sheetSnap, setSheetSnap] = React.useState<SheetSnap>("half")
+  const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
+
+  const visiblePlaces = React.useMemo(() => {
+    if (!bounds) return places
+    const inBounds = filterPlacesInBounds(places, bounds)
+    if (!selectedPlaceId) return inBounds
+    const selected = places.find((p) => p._id.toString() === selectedPlaceId)
+    if (selected && !inBounds.some((p) => p._id.toString() === selectedPlaceId)) {
+      return [selected, ...inBounds]
+    }
+    return inBounds
+  }, [places, bounds, selectedPlaceId])
 
   const goToNearMe = () => {
     if (!navigator.geolocation) return
@@ -69,6 +82,7 @@ export function MapMobile({
           places={places}
           selectedPlaceId={selectedPlaceId ?? undefined}
           onPlaceSelect={handlePlaceSelect}
+          onBoundsChange={setBounds}
           darkStyle
           reduceMotion={reduceMotion}
         />
@@ -89,11 +103,11 @@ export function MapMobile({
           <h2 className="text-lg font-semibold mb-3 px-4">
             Resultados
             <span className="text-muted-foreground font-normal ml-2">
-              {places.length} lugar{places.length !== 1 ? "es" : ""}
+              {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
             </span>
           </h2>
           <PlacesList
-            places={places}
+            places={visiblePlaces}
             selectedPlaceId={selectedPlaceId}
             loading={loading}
           />
