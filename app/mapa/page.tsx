@@ -30,6 +30,7 @@ function MapaContent() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
+      params.append("limit", "999") // El mapa debe mostrar todos los lugares
       if (debouncedSearch) params.append("search", debouncedSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
       if (filters.neighborhood && filters.neighborhood !== "all")
