@@ -56,8 +56,9 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
     function initMap() {
       if (!container || !open) return
+      let mapInstance: mapboxgl.Map
       try {
-        const mapInstance = new mapboxgl.Map({
+        mapInstance = new mapboxgl.Map({
           container,
           style: "mapbox://styles/mapbox/streets-v12",
           center: CABA_CENTER,
