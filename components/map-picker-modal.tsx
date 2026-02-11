@@ -48,36 +48,50 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       markerRef.current = null
     }
 
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: CABA_CENTER,
-      zoom: CABA_ZOOM,
-    })
-    map.current = mapInstance
+    let cancelled = false
+    const timer = setTimeout(() => {
+      if (cancelled || !mapContainer.current) return
 
-    const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      const { lng, lat } = e.lngLat
-      setPicked({ lat, lng })
+      const mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: CABA_CENTER,
+        zoom: CABA_ZOOM,
+      })
+      map.current = mapInstance
 
-      if (markerRef.current) markerRef.current.remove()
-      const el = document.createElement("div")
-      el.innerHTML = `<div style="
-        width: 32px; height: 32px;
-        background: #10b981; border: 3px solid white;
-        border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        display: flex; align-items: center; justify-content: center;
-      "><span style="font-size: 16px;">📍</span></div>`
-      markerRef.current = new mapboxgl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .addTo(mapInstance)
-    }
+      mapInstance.on("load", () => {
+        mapInstance.resize()
+      })
+      mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right")
 
-    mapInstance.on("click", handleClick)
+      const handleClick = (e: mapboxgl.MapMouseEvent) => {
+        const { lng, lat } = e.lngLat
+        setPicked({ lat, lng })
+
+        if (markerRef.current) markerRef.current.remove()
+        const el = document.createElement("div")
+        el.innerHTML = `<div style="
+          width: 32px; height: 32px;
+          background: #10b981; border: 3px solid white;
+          border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          display: flex; align-items: center; justify-content: center;
+        "><span style="font-size: 16px;">📍</span></div>`
+        markerRef.current = new mapboxgl.Marker({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(mapInstance)
+      }
+
+      mapInstance.on("click", handleClick)
+    }, 350)
 
     return () => {
-      mapInstance.remove()
-      map.current = null
+      cancelled = true
+      clearTimeout(timer)
+      if (map.current) {
+        map.current.remove()
+        map.current = null
+      }
     }
   }, [open])
 
