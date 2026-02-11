@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReviewForm } from "@/components/review-form"
 import { SafetyBadge } from "@/components/safety-badge"
+import { TagBadge } from "@/components/TagBadge"
 import { FavoriteButton } from "@/components/favorite-button"
 import { StickyActionBarMobile, PhotoStrip } from "@/components/lugar"
 import { IPlace } from "@/models/Place"
@@ -133,11 +134,9 @@ export default function LugarPage() {
           <div className="flex flex-col gap-4 mb-4">
             <h1 className="text-2xl md:text-3xl font-bold">{place.name}</h1>
             <div className="flex flex-wrap gap-2 items-center">
-              {place.safetyLevel && (
-                <div className="[&>*]:min-h-[44px] [&>*]:text-base">
-                  <SafetyBadge safetyLevel={place.safetyLevel} />
-                </div>
-              )}
+              <div className="[&>*]:min-h-[44px] [&>*]:text-base">
+                <SafetyBadge safetyLevel={place.safetyLevel} />
+              </div>
               <div className="hidden md:flex gap-2 [&>button]:min-h-[44px] [&>button]:min-w-[44px]">
                 <FavoriteButton placeId={place._id.toString()} />
                 <Button variant="outline" size="icon" onClick={shareLink} title="Copiar link">
@@ -233,9 +232,7 @@ export default function LugarPage() {
 
           <div className="flex flex-wrap gap-2 mb-4">
             {place.tags?.map((tag) => (
-              <Badge key={tag} variant="secondary" className="min-h-[44px] px-4">
-                {tag.replace(/_/g, " ")}
-              </Badge>
+              <TagBadge key={tag} tag={tag} />
             ))}
           </div>
 

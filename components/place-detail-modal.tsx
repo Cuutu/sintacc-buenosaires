@@ -15,6 +15,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
+import { TagBadge } from "@/components/TagBadge"
 import { isOpenNow } from "@/lib/opening-hours"
 
 interface PlaceDetailModalProps {
@@ -143,9 +144,7 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
               {place.tags && place.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {place.tags.slice(0, 4).map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag.replace(/_/g, " ")}
-                    </Badge>
+                    <TagBadge key={tag} tag={tag} size="sm" />
                   ))}
                 </div>
               )}

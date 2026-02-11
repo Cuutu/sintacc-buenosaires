@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { MapPin, Star } from "lucide-react"
 import type { PlaceWithStats } from "./featured-utils"
-import { getSafetyBadge, getDisplayChips } from "./featured-utils"
+import { getSafetyBadge, getDisplayTags } from "./featured-utils"
+import { TagBadge } from "@/components/TagBadge"
 
 interface FeaturedCardProps {
   place: PlaceWithStats
@@ -13,7 +14,7 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
   const photo = place.photos?.[0]
   const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
   const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(place.safetyLevel)
-  const chips = getDisplayChips(place)
+  const displayTags = getDisplayTags(place)
 
   return (
     <Link
@@ -69,16 +70,11 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
           )}
         </div>
 
-        {/* Chips */}
-        {chips.length > 0 && (
+        {/* Tags */}
+        {displayTags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {chips.map((chip) => (
-              <span
-                key={chip}
-                className="inline-flex px-2 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-xs"
-              >
-                {chip}
-              </span>
+            {displayTags.map((tag) => (
+              <TagBadge key={tag} tag={tag} size="sm" />
             ))}
           </div>
         )}

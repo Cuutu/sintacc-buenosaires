@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { TagBadge } from "@/components/TagBadge"
 import Link from "next/link"
 import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
@@ -80,13 +81,7 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
                 return null
               })()}
               {place.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20"
-                >
-                  {tag.replace(/_/g, " ")}
-                </Badge>
+                <TagBadge key={tag} tag={tag} size="sm" />
               ))}
             </div>
           </div>

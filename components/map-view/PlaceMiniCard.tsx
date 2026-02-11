@@ -25,7 +25,7 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
   const primaryType = place.types?.[0] ?? place.type
   const typeIcon = TYPE_ICONS[primaryType] || "📍"
   const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
-  const { label: safetyLabel } = getSafetyBadge(place.safetyLevel as any)
+  const safetyConfig = getSafetyBadge(place.safetyLevel as any)
 
   const content = (
     <div
@@ -64,9 +64,12 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
               {stats.avgRating?.toFixed(1)} ({stats.totalReviews})
             </span>
           )}
-          {safetyLabel && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10">
-              {safetyLabel}
+          {safetyConfig && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-lg border inline-flex items-center gap-1 ${safetyConfig.className ?? "bg-muted/50 text-muted-foreground border-border"}`}
+            >
+              <span aria-hidden>{safetyConfig.dot}</span>
+              {safetyConfig.label}
             </span>
           )}
         </div>

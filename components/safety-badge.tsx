@@ -9,19 +9,18 @@ interface SafetyBadgeProps {
 }
 
 export function SafetyBadge({ safetyLevel }: SafetyBadgeProps) {
-  if (!features.safetyLevel || !safetyLevel) {
-    return null
-  }
+  if (!features.safetyLevel) return null
+  const level = safetyLevel ?? "unknown"
 
   const config = {
     dedicated_gf: {
-      label: "100% Sin Gluten",
+      label: "100% sin gluten",
       variant: "default" as const,
       icon: CheckCircle,
       color: "bg-green-500",
     },
     gf_options: {
-      label: "Opciones Sin Gluten",
+      label: "Opciones sin gluten",
       variant: "secondary" as const,
       icon: AlertCircle,
       color: "bg-yellow-500",
@@ -33,14 +32,14 @@ export function SafetyBadge({ safetyLevel }: SafetyBadgeProps) {
       color: "bg-red-500",
     },
     unknown: {
-      label: "Sin Información",
+      label: "Sin info verificada",
       variant: "outline" as const,
       icon: HelpCircle,
       color: "bg-gray-500",
     },
   }
 
-  const { label, variant, icon: Icon } = config[safetyLevel]
+  const { label, variant, icon: Icon } = config[level]
 
   return (
     <Badge variant={variant} className="flex items-center gap-1">
