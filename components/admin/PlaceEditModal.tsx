@@ -19,6 +19,7 @@ import { toast } from "sonner"
 type PlaceData = {
   _id: string
   name?: string
+  status?: string
   type?: string
   types?: string[]
   address?: string
@@ -41,6 +42,7 @@ type Props = {
 export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) {
   const [formData, setFormData] = useState({
     name: "",
+    status: "approved" as string,
     type: "other" as string,
     types: [] as string[],
     address: "",
@@ -66,6 +68,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
           const loc = place.location
           setFormData({
             name: place.name || "",
+            status: place.status || "approved",
             type: place.type || "other",
             types: place.types || (place.type ? [place.type] : ["other"]),
             address: place.address || "",
@@ -119,6 +122,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       : undefined
     return {
       name: formData.name.trim() || undefined,
+      status: formData.status || undefined,
       type: formData.types[0] || formData.type || "other",
       types: formData.types.length ? formData.types : undefined,
       address: formData.address.trim() || undefined,
@@ -204,6 +208,30 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
           <div className="py-8 text-center text-muted-foreground">Cargando...</div>
         ) : (
           <div className="space-y-4 py-4">
+            <div>
+              <Label>Estado</Label>
+              <div className="flex gap-2 mt-1">
+                <Button
+                  type="button"
+                  variant={formData.status === "approved" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, status: "approved" })}
+                >
+                  Aprobado
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.status === "pending" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, status: "pending" })}
+                >
+                  Pendiente
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Los aprobados se muestran en el mapa público
+              </p>
+            </div>
             <div>
               <Label>Nombre *</Label>
               <Input

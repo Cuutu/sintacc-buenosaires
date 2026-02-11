@@ -27,6 +27,7 @@ export const placeSchema = z.object({
     other: z.string().optional(),
   }).optional(),
   photos: z.array(z.string().url()).default([]),
+  status: z.enum(["approved", "pending"]).optional(),
 })
 
 export const reviewSchema = z.object({

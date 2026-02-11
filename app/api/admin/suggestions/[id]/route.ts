@@ -10,13 +10,13 @@ import { ZodError } from "zod"
 function buildPlaceFromDraft(draft: Record<string, unknown>) {
   const placeData: Record<string, unknown> = {
     ...draft,
-    status: "approved",
     photos: (draft.photos as string[])?.length ? draft.photos : [],
   }
   if (placeData.types && Array.isArray(placeData.types) && placeData.types.length > 0) {
     if (!placeData.type) placeData.type = placeData.types[0]
   }
-  return placeSchema.parse(placeData)
+  const parsed = placeSchema.parse(placeData)
+  return { ...parsed, status: "approved" as const }
 }
 
 export async function PATCH(
