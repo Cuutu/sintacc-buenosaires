@@ -94,7 +94,7 @@ export function StatsRow() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch("/api/stats", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setStats(mapApiResponse(data)))
       .catch(() => setStats({ places: null, reviews: null, users: null }))

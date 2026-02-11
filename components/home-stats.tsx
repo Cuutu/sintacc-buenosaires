@@ -7,7 +7,7 @@ export function HomeStats() {
   const [stats, setStats] = useState({ placesCount: 0, reviewsCount: 0 })
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch("/api/stats", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setStats(data))
       .catch(() => {})

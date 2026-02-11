@@ -35,7 +35,7 @@ export function StatsGrid() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch("/api/stats", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         setStats(mapApiResponse(data))

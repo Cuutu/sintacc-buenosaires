@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
+
+export const dynamic = "force-dynamic"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { User } from "@/models/User"
@@ -14,11 +16,14 @@ export async function GET() {
       User.countDocuments(),
     ])
     
-    return NextResponse.json({
-      placesCount,
-      reviewsCount,
-      usersCount,
-    })
+    return NextResponse.json(
+      { placesCount, reviewsCount, usersCount },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    )
   } catch (error) {
     console.error("Error fetching stats:", error)
     return NextResponse.json(
