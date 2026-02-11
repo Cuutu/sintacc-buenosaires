@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
+import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
 import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil } from "lucide-react"
 
 type SuggestionItem = {
@@ -76,6 +77,7 @@ export default function AdminPage() {
   const [reviewFilter, setReviewFilter] = useState<string>("")
   const [placeFilter, setPlaceFilter] = useState<string>("")
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
+  const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
 
   useEffect(() => {
     if (session?.user?.role !== "admin") {
@@ -528,8 +530,16 @@ export default function AdminPage() {
                         </Badge>
                       </div>
                       <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setEditingPlaceId(place._id)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Link href={`/lugar/${place._id}`} target="_blank">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" title="Ver en vista pública">
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -547,6 +557,17 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
+          )}
+          {editingPlaceId && (
+            <PlaceEditModal
+              placeId={editingPlaceId}
+              open={!!editingPlaceId}
+              onOpenChange={(open) => !open && setEditingPlaceId(null)}
+              onSaved={() => {
+                fetchPlaces(placeFilter || undefined)
+                setEditingPlaceId(null)
+              }}
+            />
           )}
         </TabsContent>
 
