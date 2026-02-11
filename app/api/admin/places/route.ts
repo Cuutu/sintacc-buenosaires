@@ -14,13 +14,30 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get("status") // "approved" | "pending" | omit for all
+    const search = searchParams.get("search")?.trim()
+    const type = searchParams.get("type")
+    const neighborhood = searchParams.get("neighborhood")
     const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    const limit = parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
 
     const query: Record<string, unknown> = {}
     if (status === "approved" || status === "pending") {
       query.status = status
+    }
+    if (type) {
+      query.type = type
+    }
+    if (neighborhood) {
+      query.neighborhood = neighborhood
+    }
+    if (search && search.length >= 2) {
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      query.$or = [
+        { name: regex },
+        { address: regex },
+        { neighborhood: regex },
+      ]
     }
 
     const places = await Place.find(query)

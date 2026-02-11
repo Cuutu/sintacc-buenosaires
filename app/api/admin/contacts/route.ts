@@ -10,7 +10,21 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    const contacts = await Contact.find()
+    const searchParams = request.nextUrl.searchParams
+    const search = searchParams.get("search")?.trim()
+
+    const query: Record<string, unknown> = {}
+    if (search && search.length >= 2) {
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      query.$or = [
+        { name: regex },
+        { email: regex },
+        { subject: regex },
+        { message: regex },
+      ]
+    }
+
+    const contacts = await Contact.find(query)
       .populate("userId", "name email")
       .sort({ createdAt: -1 })
       .lean()

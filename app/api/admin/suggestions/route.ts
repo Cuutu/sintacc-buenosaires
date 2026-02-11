@@ -13,8 +13,19 @@ export async function GET(request: NextRequest) {
     
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get("status") || "pending"
-    
-    const suggestions = await Suggestion.find({ status })
+    const search = searchParams.get("search")?.trim()
+
+    const query: Record<string, unknown> = { status }
+    if (search && search.length >= 2) {
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      query.$or = [
+        { "placeDraft.name": regex },
+        { "placeDraft.address": regex },
+        { "placeDraft.neighborhood": regex },
+      ]
+    }
+
+    const suggestions = await Suggestion.find(query)
       .populate("suggestedByUserId", "name email")
       .sort({ createdAt: -1 })
       .lean()

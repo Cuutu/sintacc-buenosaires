@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { TYPES } from "@/lib/constants"
+import { TYPES, NEIGHBORHOODS } from "@/lib/constants"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
-import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil } from "lucide-react"
+import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 type SuggestionItem = {
   _id: string
@@ -76,6 +77,12 @@ export default function AdminPage() {
   const [contactsLoading, setContactsLoading] = useState(false)
   const [reviewFilter, setReviewFilter] = useState<string>("")
   const [placeFilter, setPlaceFilter] = useState<string>("")
+  const [suggestionSearch, setSuggestionSearch] = useState("")
+  const [placeSearch, setPlaceSearch] = useState("")
+  const [placeTypeFilter, setPlaceTypeFilter] = useState("")
+  const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
+  const [reviewSearch, setReviewSearch] = useState("")
+  const [contactSearch, setContactSearch] = useState("")
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
   const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
 
@@ -89,7 +96,9 @@ export default function AdminPage() {
 
   const fetchSuggestions = async () => {
     try {
-      const res = await fetch("/api/admin/suggestions?status=pending")
+      const params = new URLSearchParams({ status: "pending" })
+      if (suggestionSearch.trim()) params.set("search", suggestionSearch.trim())
+      const res = await fetch(`/api/admin/suggestions?${params}`)
       const data = await res.json()
       setSuggestions(data.suggestions || [])
     } catch (error) {
@@ -99,12 +108,24 @@ export default function AdminPage() {
     }
   }
 
+  const suggestionSearchMounted = useRef(false)
+  useEffect(() => {
+    if (!suggestionSearchMounted.current) {
+      suggestionSearchMounted.current = true
+      return
+    }
+    const t = setTimeout(fetchSuggestions, 400)
+    return () => clearTimeout(t)
+  }, [suggestionSearch])
+
   const fetchReviews = async (status?: string) => {
     setReviewsLoading(true)
     try {
+      const params = new URLSearchParams()
       const filter = status ?? reviewFilter
-      const url = filter ? `/api/admin/reviews?status=${filter}` : "/api/admin/reviews"
-      const res = await fetch(url)
+      if (filter) params.set("status", filter)
+      if (reviewSearch.trim()) params.set("search", reviewSearch.trim())
+      const res = await fetch(`/api/admin/reviews?${params}`)
       const data = await res.json()
       setReviews(data.reviews || [])
     } catch (error) {
@@ -117,9 +138,13 @@ export default function AdminPage() {
   const fetchPlaces = async (status?: string) => {
     setPlacesLoading(true)
     try {
+      const params = new URLSearchParams()
       const filter = status ?? placeFilter
-      const url = filter ? `/api/admin/places?status=${filter}` : "/api/admin/places"
-      const res = await fetch(url)
+      if (filter) params.set("status", filter)
+      if (placeSearch.trim()) params.set("search", placeSearch.trim())
+      if (placeTypeFilter) params.set("type", placeTypeFilter)
+      if (placeNeighborhoodFilter) params.set("neighborhood", placeNeighborhoodFilter)
+      const res = await fetch(`/api/admin/places?${params}`)
       const data = await res.json()
       setPlaces(data.places || [])
     } catch (error) {
@@ -132,7 +157,9 @@ export default function AdminPage() {
   const fetchContacts = async () => {
     setContactsLoading(true)
     try {
-      const res = await fetch("/api/admin/contacts")
+      const params = new URLSearchParams()
+      if (contactSearch.trim()) params.set("search", contactSearch.trim())
+      const res = await fetch(`/api/admin/contacts?${params}`)
       const data = await res.json()
       setContacts(data.contacts || [])
     } catch (error) {
@@ -224,6 +251,17 @@ export default function AdminPage() {
         </TabsList>
 
         <TabsContent value="suggestions" className="mt-4">
+          <div className="flex gap-2 mb-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre, dirección, barrio..."
+                value={suggestionSearch}
+                onChange={(e) => setSuggestionSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           {loading ? (
             <div className="text-center py-8">Cargando...</div>
           ) : suggestions.length === 0 ? (
@@ -352,7 +390,17 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-4">
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por lugar, comentario..."
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchReviews()}
+                className="pl-9"
+              />
+            </div>
             <Button
               variant={reviewFilter === "" ? "default" : "outline"}
               size="sm"
@@ -382,6 +430,9 @@ export default function AdminPage() {
               }}
             >
               Ocultas
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => fetchReviews()}>
+              Buscar
             </Button>
           </div>
           {reviewsLoading ? (
@@ -469,7 +520,47 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="places" className="mt-4">
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre, dirección, barrio..."
+                value={placeSearch}
+                onChange={(e) => setPlaceSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchPlaces()}
+                className="pl-9"
+              />
+            </div>
+            <select
+              value={placeTypeFilter}
+              onChange={(e) => {
+                setPlaceTypeFilter(e.target.value)
+                setTimeout(() => fetchPlaces(), 0)
+              }}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Todos los tipos</option>
+              {TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.emoji} {t.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={placeNeighborhoodFilter}
+              onChange={(e) => {
+                setPlaceNeighborhoodFilter(e.target.value)
+                setTimeout(() => fetchPlaces(), 0)
+              }}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Todos los barrios</option>
+              {NEIGHBORHOODS.filter((n) => n !== "Otro").map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
             <Button
               variant={placeFilter === "" ? "default" : "outline"}
               size="sm"
@@ -499,6 +590,9 @@ export default function AdminPage() {
               }}
             >
               Pendientes
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => fetchPlaces()}>
+              Buscar
             </Button>
           </div>
           {placesLoading ? (
@@ -572,6 +666,21 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="contacts" className="mt-4">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre, email, asunto, mensaje..."
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchContacts()}
+                className="pl-9"
+              />
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => fetchContacts()}>
+              Buscar
+            </Button>
+          </div>
           {contactsLoading ? (
             <div className="text-center py-8">Cargando contactos...</div>
           ) : contacts.length === 0 ? (

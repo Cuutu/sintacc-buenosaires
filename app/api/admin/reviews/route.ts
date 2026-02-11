@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
+import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
-import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,13 +13,24 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get("status") // "visible" | "hidden" | omit for all
+    const search = searchParams.get("search")?.trim()
     const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    const limit = parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
 
     const query: Record<string, unknown> = {}
     if (status === "visible" || status === "hidden") {
       query.status = status
+    }
+    if (search && search.length >= 2) {
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      const matchingPlaceIds = await Place.find({
+        $or: [{ name: regex }, { address: regex }, { neighborhood: regex }],
+      }).distinct("_id")
+      query.$or = [
+        { comment: regex },
+        { placeId: { $in: matchingPlaceIds } },
+      ]
     }
 
     const reviews = await Review.find(query)

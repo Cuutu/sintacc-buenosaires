@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
+import { MapPickerModal } from "@/components/map-picker-modal"
 import { geocodeAddress } from "@/lib/geocode"
 import { toast } from "sonner"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
-import { ChevronDown, ChevronUp, Link2 } from "lucide-react"
+import { ChevronDown, ChevronUp, Link2, MapPin } from "lucide-react"
 
 export default function SugerirPage() {
   const { data: session } = useSession()
@@ -19,6 +20,7 @@ export default function SugerirPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [quickMode, setQuickMode] = useState(false)
+  const [mapPickerOpen, setMapPickerOpen] = useState(false)
   const [quickData, setQuickData] = useState({
     sourceLink: "",
     safetyLevel: "" as "" | "dedicated_gf" | "gf_options",
@@ -300,9 +302,30 @@ export default function SugerirPage() {
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Escribí la dirección
+                Escribí la dirección y seleccionala de la lista
               </p>
+              <button
+                type="button"
+                onClick={() => setMapPickerOpen(true)}
+                className="mt-2 flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <MapPin className="h-4 w-4" />
+                ¿No encontrás la dirección? Hacé click acá para ubicarla en el mapa
+              </button>
             </div>
+            <MapPickerModal
+              open={mapPickerOpen}
+              onOpenChange={setMapPickerOpen}
+              onSelect={(result) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  address: result.address,
+                  lat: result.lat.toString(),
+                  lng: result.lng.toString(),
+                  neighborhood: result.neighborhood || "Otro",
+                }))
+              }}
+            />
 
             <div>
               <Label>Horario (opcional)</Label>
