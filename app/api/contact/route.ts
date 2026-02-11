@@ -18,6 +18,12 @@ function getContactEmail(): string | null {
   return adminEmails?.[0] ?? null
 }
 
+function getAppBaseUrl(): string {
+  const url = process.env.NEXTAUTH_URL?.trim()
+  if (url) return url.replace(/\/$/, "")
+  return "https://sintacc-map.vercel.app"
+}
+
 function buildContactEmailHtml({
   subject,
   name,
@@ -29,6 +35,9 @@ function buildContactEmailHtml({
   email: string
   message: string
 }): string {
+  const baseUrl = getAppBaseUrl()
+  const logoUrl = `${baseUrl}/celimaplogocompleto.png`
+  const iconUrl = `${baseUrl}/CelimapLOGO.png`
   return `
 <!DOCTYPE html>
 <html>
@@ -42,13 +51,11 @@ function buildContactEmailHtml({
     <tr>
       <td align="center" style="padding:40px 20px;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
-          <!-- Header -->
+          <!-- Header con logo -->
           <tr>
             <td style="padding-bottom:32px;text-align:center;">
-              <div style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);border-radius:12px;">
-                <span style="font-size:20px;font-weight:700;color:#10b981;">Celimap</span>
-                <span style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#10b981;opacity:0.9;">Contacto</span>
-              </div>
+              <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+              <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#10b981;font-weight:600;">Nueva consulta de contacto</p>
             </td>
           </tr>
           <!-- Card -->
@@ -97,6 +104,7 @@ function buildContactEmailHtml({
           <!-- Footer -->
           <tr>
             <td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
+              <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
               <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en Buenos Aires</p>
               <p style="margin:6px 0 0;font-size:11px;color:#3f3f46;">Consultas de la comunidad celíaca</p>
             </td>

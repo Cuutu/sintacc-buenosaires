@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { useSession, signIn } from "next-auth/react"
 import {
   Dialog,
@@ -68,6 +69,15 @@ export function ContactModal({ open, onOpenChange }: ContactModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/celimaplogocompleto.png"
+            alt="Celimap"
+            width={140}
+            height={36}
+            className="h-9 w-auto"
+          />
+        </div>
         <DialogHeader>
           <DialogTitle>Contacto</DialogTitle>
           <DialogDescription>
@@ -89,6 +99,13 @@ export function ContactModal({ open, onOpenChange }: ContactModalProps) {
           </div>
         ) : success ? (
           <div className="py-6 text-center">
+            <Image
+              src="/CelimapLOGO.png"
+              alt="Celimap"
+              width={48}
+              height={48}
+              className="h-12 w-auto mx-auto mb-3 opacity-90"
+            />
             <p className="text-primary font-medium">¡Mensaje enviado!</p>
             <p className="text-sm text-muted-foreground mt-1">
               Te responderemos a la brevedad.
