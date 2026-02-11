@@ -27,6 +27,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   const [geocoding, setGeocoding] = useState(false)
   const [error, setError] = useState("")
   const [mounted, setMounted] = useState(false)
+  const [debugInfo, setDebugInfo] = useState("")
 
   useEffect(() => {
     setMounted(true)
@@ -44,6 +45,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     mapboxgl.accessToken = token
     setPicked(null)
     setError("")
+    setDebugInfo("")
     if (markerRef.current) {
       markerRef.current.remove()
       markerRef.current = null
@@ -54,16 +56,37 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
     function initMap() {
       if (!container || !open) return
-      const mapInstance = new mapboxgl.Map({
-        container,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: CABA_CENTER,
-        zoom: CABA_ZOOM,
-      })
-      map.current = mapInstance
+      try {
+        const mapInstance = new mapboxgl.Map({
+          container,
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: CABA_CENTER,
+          zoom: CABA_ZOOM,
+        })
+        map.current = mapInstance
 
-      mapInstance.on("load", () => mapInstance.resize())
-      mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right")
+        mapInstance.on("load", () => {
+          mapInstance.resize()
+          setDebugInfo("Mapa cargado correctamente")
+        })
+        mapInstance.on("error", (ev: any) => {
+          const message =
+            ev?.error?.message ||
+            ev?.error?.statusText ||
+            "Error desconocido de Mapbox"
+          console.error("Mapbox error in picker:", ev?.error || ev)
+          setError(
+            `Mapbox no pudo cargar el mapa. ${message}. Si estás en Vercel, revisá NEXT_PUBLIC_MAPBOX_TOKEN y Allowed URLs del token.`
+          )
+        })
+        mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right")
+      } catch (err: any) {
+        console.error("Error creating map picker:", err)
+        setError(
+          `No se pudo inicializar el mapa. ${err?.message || "Error desconocido"}`
+        )
+        return
+      }
 
       const handleClick = (e: mapboxgl.MapMouseEvent) => {
         const { lng, lat } = e.lngLat
@@ -87,9 +110,19 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
     const timer = setTimeout(() => {
       if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+        setDebugInfo(`Contenedor ${container.offsetWidth}x${container.offsetHeight}`)
         initMap()
       } else {
-        const retry = setTimeout(initMap, 200)
+        const retry = setTimeout(() => {
+          if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+            setError(
+              "El contenedor del mapa quedó en 0x0. Esto suele ser un problema de layout/render en producción."
+            )
+            return
+          }
+          setDebugInfo(`Retry contenedor ${container.offsetWidth}x${container.offsetHeight}`)
+          initMap()
+        }, 200)
         cleanup = () => clearTimeout(retry)
       }
     }, 50)
@@ -163,6 +196,9 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
 
         {error && (
           <p className="px-6 py-2 text-sm text-destructive bg-destructive/10">{error}</p>
+        )}
+        {!error && debugInfo && (
+          <p className="px-6 py-2 text-xs text-muted-foreground bg-muted/20">{debugInfo}</p>
         )}
 
         <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
