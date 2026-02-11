@@ -4,6 +4,7 @@ export { Review, type IReview } from "./Review"
 export { Suggestion, type ISuggestion } from "./Suggestion"
 export { RateLimit, type IRateLimit } from "./RateLimit"
 export { Favorite, type IFavorite } from "./Favorite"
+export { Contact, type IContact } from "./Contact"
 
 // Fase 2 models (scaffolded)
 import mongoose from "mongoose"

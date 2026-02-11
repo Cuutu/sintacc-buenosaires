@@ -1,14 +1,20 @@
 import Link from "next/link"
-import { MapPin } from "lucide-react"
+import Image from "next/image"
+import { ContactFooterButton } from "@/components/ContactFooterButton"
 
 export function Footer() {
   return (
     <footer className="border-t border-border/50 bg-card/50 mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
-            <span className="font-bold text-lg">Celimap</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/celimaplogocompleto.png"
+              alt="Celimap"
+              width={130}
+              height={34}
+              className="h-7 w-auto"
+            />
           </Link>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <Link href="/mapa" className="hover:text-foreground transition-colors">
@@ -17,6 +23,7 @@ export function Footer() {
             <Link href="/sugerir" className="hover:text-foreground transition-colors">
               Sugerir lugar
             </Link>
+            <ContactFooterButton />
             <Link href="/login" className="hover:text-foreground transition-colors">
               Iniciar sesión
             </Link>

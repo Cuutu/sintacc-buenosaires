@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { MapPin, User, LogOut, LogIn, Shield, Heart } from "lucide-react"
+import { User, LogOut, LogIn, Shield, Heart } from "lucide-react"
 import { features } from "@/lib/features"
 
 export function Navbar() {
@@ -13,9 +14,15 @@ export function Navbar() {
     <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex h-14 md:h-16 items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <MapPin className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">Celimap</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/celimaplogocompleto.png"
+              alt="Celimap"
+              width={140}
+              height={36}
+              className="h-8 w-auto md:h-9"
+              priority
+            />
           </Link>
 
           <div className="flex items-center space-x-2 md:space-x-4">

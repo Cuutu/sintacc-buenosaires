@@ -15,6 +15,9 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Celimap - Lugares sin gluten en Buenos Aires",
   description: "Encuentra lugares certificados sin TACC y opciones seguras para celíacos en Buenos Aires",
+  icons: {
+    icon: "/CelimapLOGO.png",
+  },
 };
 
 export default function RootLayout({

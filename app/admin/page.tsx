@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
-import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff } from "lucide-react"
+import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail } from "lucide-react"
 
 type SuggestionItem = {
   _id: string
@@ -47,15 +47,28 @@ type PlaceItem = {
   stats?: { avgRating: number; totalReviews: number }
 }
 
+type ContactItem = {
+  _id: string
+  name: string
+  email: string
+  subject: string
+  message: string
+  status: string
+  createdAt: string
+  userId?: { name?: string; email?: string }
+}
+
 export default function AdminPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [places, setPlaces] = useState<PlaceItem[]>([])
+  const [contacts, setContacts] = useState<ContactItem[]>([])
   const [loading, setLoading] = useState(true)
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [placesLoading, setPlacesLoading] = useState(false)
+  const [contactsLoading, setContactsLoading] = useState(false)
   const [reviewFilter, setReviewFilter] = useState<string>("")
   const [placeFilter, setPlaceFilter] = useState<string>("")
 
@@ -106,6 +119,19 @@ export default function AdminPage() {
       console.error("Error fetching places:", error)
     } finally {
       setPlacesLoading(false)
+    }
+  }
+
+  const fetchContacts = async () => {
+    setContactsLoading(true)
+    try {
+      const res = await fetch("/api/admin/contacts")
+      const data = await res.json()
+      setContacts(data.contacts || [])
+    } catch (error) {
+      console.error("Error fetching contacts:", error)
+    } finally {
+      setContactsLoading(false)
     }
   }
 
@@ -184,6 +210,9 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="places" onClick={() => fetchPlaces()}>
             Lugares
+          </TabsTrigger>
+          <TabsTrigger value="contacts" onClick={() => fetchContacts()}>
+            Contactos ({contacts.length})
           </TabsTrigger>
         </TabsList>
 
@@ -458,6 +487,45 @@ export default function AdminPage() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="contacts" className="mt-4">
+          {contactsLoading ? (
+            <div className="text-center py-8">Cargando contactos...</div>
+          ) : contacts.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No hay mensajes de contacto
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {contacts.map((c: ContactItem) => (
+                <Card key={c._id}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-2">
+                      <Mail className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{c.subject}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {c.name} · {c.email}
+                        </p>
+                        <p className="text-sm mt-2 whitespace-pre-wrap">{c.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(c.createdAt).toLocaleString("es-AR")}
+                        </p>
+                      </div>
+                      <a href={`mailto:${c.email}?subject=Re: ${encodeURIComponent(c.subject)}`}>
+                        <Button variant="outline" size="sm">
+                          Responder
+                        </Button>
+                      </a>
                     </div>
                   </CardContent>
                 </Card>
