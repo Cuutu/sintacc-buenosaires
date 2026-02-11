@@ -95,7 +95,10 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     useEffect(() => {
       const m = map.current
       if (!m || !onBoundsChange) return
-      const emitBounds = () => onBoundsChangeRef.current?.(m.getBounds())
+      const emitBounds = () => {
+        const b = m.getBounds()
+        if (b) onBoundsChangeRef.current?.(b)
+      }
       m.on("load", emitBounds)
       m.on("moveend", emitBounds)
       return () => {
