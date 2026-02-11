@@ -45,6 +45,9 @@ export const suggestionSchema = placeSchema.extend({
   // Same as place but without status
 })
 
+/** Para que el admin edite el placeDraft antes de aprobar (todos los campos opcionales) */
+export const placeDraftUpdateSchema = placeSchema.partial()
+
 const INSTAGRAM_REGEX = /instagram\.com|instagr\.am/
 const GOOGLE_MAPS_REGEX = /google\.com\/maps|goo\.gl\/maps|maps\.google|maps\.app\.goo\.gl/
 

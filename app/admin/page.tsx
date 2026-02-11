@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
-import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail } from "lucide-react"
+import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
+import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil } from "lucide-react"
 
 type SuggestionItem = {
   _id: string
@@ -74,6 +75,7 @@ export default function AdminPage() {
   const [contactsLoading, setContactsLoading] = useState(false)
   const [reviewFilter, setReviewFilter] = useState<string>("")
   const [placeFilter, setPlaceFilter] = useState<string>("")
+  const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
 
   useEffect(() => {
     if (session?.user?.role !== "admin") {
@@ -310,6 +312,14 @@ export default function AdminPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingSuggestion(suggestion)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button
                         onClick={() => handleSuggestionAction(suggestion._id, "approve")}
                         variant="default"
                       >
@@ -326,6 +336,16 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
+          )}
+          {editingSuggestion && (
+            <SuggestionEditModal
+              suggestionId={editingSuggestion._id}
+              placeDraft={editingSuggestion.placeDraft as any}
+              open={!!editingSuggestion}
+              onOpenChange={(open) => !open && setEditingSuggestion(null)}
+              onSaved={fetchSuggestions}
+              onApproved={fetchSuggestions}
+            />
           )}
         </TabsContent>
 
