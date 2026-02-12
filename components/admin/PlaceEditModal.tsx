@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { geocodeAddress } from "@/lib/geocode"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
+import { ImageUpload } from "@/components/image-upload"
 import { toast } from "sonner"
 
 type PlaceData = {
@@ -30,6 +31,7 @@ type PlaceData = {
   contact?: { instagram?: string; url?: string; phone?: string; whatsapp?: string }
   tags?: string[]
   safetyLevel?: string
+  photos?: string[]
 }
 
 type Props = {
@@ -54,6 +56,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
     contact: { instagram: "", url: "", phone: "", whatsapp: "" },
     tags: [] as string[],
     safetyLevel: "" as string,
+    photos: [] as string[],
   })
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(false)
@@ -90,6 +93,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
             },
             tags: place.tags || [],
             safetyLevel: place.safetyLevel || "",
+            photos: place.photos || [],
           })
         })
         .catch(() => setError("Error al cargar el lugar"))
@@ -145,6 +149,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       },
       tags: formData.tags.length ? formData.tags : undefined,
       safetyLevel: formData.safetyLevel || undefined,
+      photos: formData.photos.length ? formData.photos : undefined,
     }
   }
 
@@ -326,6 +331,18 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                 />
                 <span className="text-sm">Tiene delivery</span>
               </label>
+            </div>
+            <div>
+              <Label>Foto de portada (para el home)</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                La primera imagen se usa en tarjetas y búsquedas. Máx. 3 fotos.
+              </p>
+              <ImageUpload
+                value={formData.photos}
+                onChange={(urls) => setFormData({ ...formData, photos: urls })}
+                maxCount={3}
+                folder="places"
+              />
             </div>
             <div>
               <Label>Tags</Label>

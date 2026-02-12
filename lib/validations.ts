@@ -26,7 +26,7 @@ export const placeSchema = z.object({
     pedidosya: z.string().optional(),
     other: z.string().optional(),
   }).optional(),
-  photos: z.array(z.string().url()).default([]),
+  photos: z.array(z.string().url()).max(3).default([]),
   status: z.enum(["approved", "pending"]).optional(),
 })
 
@@ -39,7 +39,7 @@ export const reviewSchema = z.object({
   // Fase 2
   contaminationIncident: z.boolean().optional(),
   visitDate: z.string().datetime().optional(),
-  evidencePhotos: z.array(z.string().url()).optional(),
+  evidencePhotos: z.array(z.string().url()).max(3).optional(),
 })
 
 export const suggestionSchema = placeSchema.extend({

@@ -382,6 +382,27 @@ export default function LugarPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="mb-2 text-base">{review.comment}</p>
+                    {review.evidencePhotos && review.evidencePhotos.length > 0 && (
+                      <div className="flex gap-2 mb-3 flex-wrap">
+                        {review.evidencePhotos.map((url: string) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-20 h-20 rounded-lg overflow-hidden border border-border shrink-0 hover:opacity-90"
+                          >
+                            <Image
+                              src={url}
+                              alt="Foto de la reseña"
+                              width={80}
+                              height={80}
+                              className="object-cover w-full h-full"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex gap-2 flex-wrap">
                       {review.safeFeeling && (
                         <Badge variant="default" className="min-h-[44px]">Me sentí seguro</Badge>

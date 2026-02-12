@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/image-upload"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Star } from "lucide-react"
 
@@ -22,6 +23,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
   const [safeFeeling, setSafeFeeling] = useState(true)
   const [separateKitchen, setSeparateKitchen] = useState<"yes" | "no" | "unknown">("unknown")
   const [comment, setComment] = useState("")
+  const [evidencePhotos, setEvidencePhotos] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -51,6 +53,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
           safeFeeling,
           separateKitchen,
           comment,
+          evidencePhotos: evidencePhotos.length ? evidencePhotos : undefined,
         }),
       })
 
@@ -65,6 +68,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
       setSafeFeeling(true)
       setSeparateKitchen("unknown")
       setComment("")
+      setEvidencePhotos([])
       
       if (onSuccess) {
         onSuccess()
@@ -162,6 +166,19 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
             <p className="text-sm text-muted-foreground mt-1">
               {comment.length}/800 caracteres
             </p>
+          </div>
+
+          <div>
+            <Label className="text-base">Fotos (opcional)</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Subí hasta 3 fotos de tu experiencia
+            </p>
+            <ImageUpload
+              value={evidencePhotos}
+              onChange={setEvidencePhotos}
+              maxCount={3}
+              folder="reviews"
+            />
           </div>
 
           {error && (
