@@ -22,8 +22,17 @@ export async function GET(request: NextRequest) {
     
     const query: any = { status: "approved" }
     
-    if (search) {
-      query.$text = { $search: search }
+    // Búsqueda por nombre, dirección o barrio (cada palabra debe coincidir en algún campo)
+    if (search && search.trim()) {
+      const words = search.trim().split(/\s+/).filter(Boolean)
+      const regexes = words.map((w) => ({
+        $or: [
+          { name: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+          { address: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+          { neighborhood: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+        ],
+      }))
+      query.$and = regexes
     }
     
     if (type) {
@@ -43,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
     
     const places = await Place.find(query)
-      .sort(search ? { score: { $meta: "textScore" } } : { createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()

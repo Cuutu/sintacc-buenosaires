@@ -1,4 +1,4 @@
-import { NEIGHBORHOODS } from "./constants"
+import { LOCALITIES } from "./constants"
 
 export interface GeocodeResult {
   address: string
@@ -7,23 +7,31 @@ export interface GeocodeResult {
   neighborhood?: string
 }
 
-// Barrios para matchear con Mapbox (NEIGHBORHOODS sin "Otro" + extras que Mapbox puede devolver)
-const MATCH_NEIGHBORHOODS = [
-  ...NEIGHBORHOODS.filter((n) => n !== "Otro"),
-  "Parque Chas", "Villa Ortúzar", "Chacarita", "Paternal", "Versalles",
-  "Liniers", "Flores", "Floresta", "Vélez Sarsfield", "Monte Castro",
-  "Villa Real", "Villa del Parque", "Villa Santa Rita", "Coghlan", "San Nicolás",
-]
-
-function matchNeighborhood(placeName: string, context?: Array<{ id: string; text: string }>): string | undefined {
+/** Extrae la localidad (barrio o ciudad) del resultado de Mapbox */
+export function extractLocality(
+  placeName: string,
+  context?: Array<{ id: string; text: string }>
+): string | undefined {
   const searchText = placeName.toLowerCase()
-  const contextText = context?.map(c => c.text.toLowerCase()).join(" ") || ""
+  const contextText = context?.map((c) => c.text.toLowerCase()).join(" ") || ""
 
-  for (const hood of MATCH_NEIGHBORHOODS) {
-    if (searchText.includes(hood.toLowerCase()) || contextText.includes(hood.toLowerCase())) {
-      return hood
+  // 1. Matchear contra nuestra lista de localidades (CABA + ciudades Argentina)
+  for (const loc of LOCALITIES) {
+    const locLower = loc.toLowerCase()
+    if (searchText.includes(locLower) || contextText.includes(locLower)) {
+      return loc
     }
   }
+
+  // 2. Extraer de Mapbox context: neighborhood, locality o place
+  if (context?.length) {
+    const priority = ["neighborhood", "locality", "place"]
+    for (const type of priority) {
+      const item = context.find((c) => c.id.startsWith(`${type}.`))
+      if (item?.text?.trim()) return item.text.trim()
+    }
+  }
+
   return undefined
 }
 
@@ -51,7 +59,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     if (!feature?.center) return null
 
     const [lng, lat] = feature.center
-    const neighborhood = matchNeighborhood(feature.place_name, feature.context)
+    const neighborhood = extractLocality(feature.place_name, feature.context)
 
     return {
       address: feature.place_name,
@@ -85,7 +93,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<GeocodeR
     if (!feature?.center) return null
 
     const [lngRes, latRes] = feature.center
-    const neighborhood = matchNeighborhood(feature.place_name, feature.context)
+    const neighborhood = extractLocality(feature.place_name, feature.context)
 
     return {
       address: feature.place_name,

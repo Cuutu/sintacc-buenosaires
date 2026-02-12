@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { TYPES, NEIGHBORHOODS } from "@/lib/constants"
+import { TYPES, LOCALITIES } from "@/lib/constants"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
 import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search } from "lucide-react"
@@ -255,7 +255,7 @@ export default function AdminPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, dirección, barrio..."
+                placeholder="Buscar por nombre, dirección, localidad..."
                 value={suggestionSearch}
                 onChange={(e) => setSuggestionSearch(e.target.value)}
                 className="pl-9"
@@ -298,7 +298,7 @@ export default function AdminPage() {
                         <strong>Dirección:</strong> {suggestion.placeDraft.address}
                       </p>
                       <p>
-                        <strong>Barrio:</strong> {suggestion.placeDraft.neighborhood}
+                        <strong>Localidad:</strong> {suggestion.placeDraft.neighborhood}
                       </p>
                       {suggestion.placeDraft.openingHours && (
                         <p>
@@ -524,7 +524,7 @@ export default function AdminPage() {
             <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, dirección, barrio..."
+                placeholder="Buscar por nombre, dirección, localidad..."
                 value={placeSearch}
                 onChange={(e) => setPlaceSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchPlaces()}
@@ -554,8 +554,8 @@ export default function AdminPage() {
               }}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">Todos los barrios</option>
-              {NEIGHBORHOODS.filter((n) => n !== "Otro").map((n) => (
+              <option value="">Todas las localidades</option>
+              {LOCALITIES.filter((n) => n !== "Otro").map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>

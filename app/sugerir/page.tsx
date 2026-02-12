@@ -298,7 +298,7 @@ export default function SugerirPage() {
                     neighborhood: result.neighborhood || "Otro",
                   })
                 }}
-                placeholder="Escribí una dirección o lugar en Buenos Aires..."
+                placeholder="Escribí una dirección o lugar en Argentina..."
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">

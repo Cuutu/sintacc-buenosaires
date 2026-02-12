@@ -34,34 +34,13 @@ interface AddressAutocompleteProps {
   required?: boolean
 }
 
-// Barrios de Buenos Aires para matchear con resultados de Mapbox
-const BUENOS_AIRES_NEIGHBORHOODS = [
-  "Palermo", "Recoleta", "San Telmo", "Puerto Madero", "Belgrano",
-  "Villa Crespo", "Caballito", "Almagro", "Villa Urquiza", "Colegiales",
-  "Balvanera", "Monserrat", "Retiro", "La Boca", "Barracas",
-  "Parque Chas", "Villa Ortúzar", "Chacarita", "Paternal", "Versalles",
-  "Liniers", "Flores", "Floresta", "Vélez Sarsfield", "Monte Castro",
-  "Villa Real", "Villa del Parque", "Villa Santa Rita", "Coghlan",
-  "Saavedra", "Núñez", "Parque Chacabuco", "Constitución", "San Nicolás",
-]
-
-function matchNeighborhood(placeName: string, context?: Array<{ id: string; text: string }>): string | undefined {
-  const searchText = placeName.toLowerCase()
-  const contextText = context?.map(c => c.text.toLowerCase()).join(" ") || ""
-
-  for (const hood of BUENOS_AIRES_NEIGHBORHOODS) {
-    if (searchText.includes(hood.toLowerCase()) || contextText.includes(hood.toLowerCase())) {
-      return hood
-    }
-  }
-  return undefined
-}
+import { extractLocality } from "@/lib/geocode"
 
 export function AddressAutocomplete({
   value,
   onChange,
   onSelect,
-  placeholder = "Buscar dirección en Buenos Aires...",
+  placeholder = "Buscar dirección en Argentina...",
   className,
   required,
 }: AddressAutocompleteProps) {
@@ -138,7 +117,7 @@ export function AddressAutocomplete({
 
   const handleSelect = (feature: MapboxFeature) => {
     const [lng, lat] = feature.center
-    const neighborhood = matchNeighborhood(feature.place_name, feature.context)
+    const neighborhood = extractLocality(feature.place_name, feature.context)
 
     onSelect({
       address: feature.place_name,

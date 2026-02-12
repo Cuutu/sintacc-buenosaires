@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { geocodeAddress } from "@/lib/geocode"
-import { TYPES, PLACE_TAGS } from "@/lib/constants"
+import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
 
 type PlaceDraft = {
@@ -279,16 +279,22 @@ export function SuggestionEditModal({
                   neighborhood: r.neighborhood || "Otro",
                 })
               }
-              placeholder="Dirección en Buenos Aires..."
+              placeholder="Dirección en Argentina..."
             />
           </div>
           <div>
-            <Label>Barrio *</Label>
+            <Label>Localidad *</Label>
             <Input
               value={formData.neighborhood}
               onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-              placeholder="Ej: Palermo, Villa Crespo"
+              placeholder="Ej: Palermo, Mar del Plata, Bahía Blanca"
+              list="suggestion-localities-list"
             />
+            <datalist id="suggestion-localities-list">
+              {LOCALITIES.map((loc) => (
+                <option key={loc} value={loc} />
+              ))}
+            </datalist>
           </div>
           <div>
             <Label>Nivel sin gluten</Label>

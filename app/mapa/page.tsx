@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
 import type { IPlace } from "@/models/Place"
 
@@ -9,22 +9,44 @@ const SEARCH_DEBOUNCE_MS = 300
 
 function MapaContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
-  const [filters, setFilters] = useState<MapFilters>({
+  const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
     tags: [],
     type: undefined,
     neighborhood: undefined,
     safetyLevel: undefined,
-  })
-  const [debouncedSearch, setDebouncedSearch] = useState(filters.search)
+  }))
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => searchParams.get("search") || ""
+  )
+
+  // Sincronizar URL ?search= con el estado cuando cambia la URL
+  useEffect(() => {
+    const urlSearch = searchParams.get("search") || ""
+    setFilters((f) => (f.search !== urlSearch ? { ...f, search: urlSearch } : f))
+    setDebouncedSearch((prev) => (prev !== urlSearch ? urlSearch : prev))
+  }, [searchParams])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(filters.search), SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [filters.search])
+
+  // Actualizar la URL cuando cambia el search (para que refresh/back mantenga la búsqueda)
+  useEffect(() => {
+    const urlSearch = searchParams.get("search") || ""
+    if (debouncedSearch === urlSearch) return
+    const params = new URLSearchParams(searchParams.toString())
+    if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
+    else params.delete("search")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [debouncedSearch, pathname, router, searchParams])
 
   const fetchPlaces = useCallback(async () => {
     setLoading(true)
