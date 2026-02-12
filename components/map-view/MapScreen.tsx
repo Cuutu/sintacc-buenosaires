@@ -12,6 +12,7 @@ interface MapScreenProps {
   filters: MapFilters
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
+  searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
 }
@@ -22,6 +23,7 @@ export function MapScreen({
   filters,
   onFiltersChange,
   onSearchChange,
+  searchQuery,
   selectedPlaceId,
   onPlaceSelect,
 }: MapScreenProps) {
@@ -35,6 +37,7 @@ export function MapScreen({
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
+        searchQuery={searchQuery}
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
       />
@@ -48,6 +51,7 @@ export function MapScreen({
       filters={filters}
       onFiltersChange={onFiltersChange}
       onSearchChange={onSearchChange}
+      searchQuery={searchQuery}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={onPlaceSelect}
     />

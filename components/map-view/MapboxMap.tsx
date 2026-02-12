@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
 import { CABA_CENTER, CABA_ZOOM } from "./geo"
+import { geocodeAddress } from "@/lib/geocode"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 
 export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
@@ -27,6 +28,7 @@ interface MapboxMapProps {
   selectedPlaceId?: string
   onPlaceSelect?: (place: IPlace) => void
   onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
+  searchQuery?: string
   darkStyle?: boolean
   reduceMotion?: boolean
 }
@@ -38,6 +40,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       selectedPlaceId,
       onPlaceSelect,
       onBoundsChange,
+      searchQuery,
       darkStyle = true,
       reduceMotion = false,
     },
@@ -99,6 +102,20 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       return () => {}
     }, [darkStyle])
+
+    // Cuando la búsqueda cambia, volar a la localidad si Mapbox la encuentra
+    useEffect(() => {
+      if (!searchQuery?.trim()) return
+      geocodeAddress(searchQuery.trim()).then((geo) => {
+        if (geo && map.current) {
+          map.current.flyTo({
+            center: [geo.lng, geo.lat],
+            zoom: 13,
+            duration: reduceMotion ? 0 : 1000,
+          })
+        }
+      })
+    }, [searchQuery, reduceMotion])
 
     useEffect(() => {
       const m = map.current

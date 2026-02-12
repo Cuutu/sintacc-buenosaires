@@ -17,6 +17,7 @@ interface MapMobileProps {
   filters: MapFilters
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
+  searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
 }
@@ -27,6 +28,7 @@ export function MapMobile({
   filters,
   onFiltersChange,
   onSearchChange,
+  searchQuery,
   selectedPlaceId,
   onPlaceSelect,
 }: MapMobileProps) {
@@ -83,6 +85,7 @@ export function MapMobile({
           selectedPlaceId={selectedPlaceId ?? undefined}
           onPlaceSelect={handlePlaceSelect}
           onBoundsChange={setBounds}
+          searchQuery={searchQuery}
           darkStyle
           reduceMotion={reduceMotion}
         />

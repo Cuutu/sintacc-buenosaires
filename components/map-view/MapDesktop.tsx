@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import mapboxgl from "mapbox-gl"
-import { MapboxMap } from "./MapboxMap"
+import { MapboxMap, type MapboxMapRef } from "./MapboxMap"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
@@ -15,6 +15,7 @@ interface MapDesktopProps {
   filters: MapFilters
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
+  searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
 }
@@ -25,10 +26,12 @@ export function MapDesktop({
   filters,
   onFiltersChange,
   onSearchChange,
+  searchQuery,
   selectedPlaceId,
   onPlaceSelect,
 }: MapDesktopProps) {
   const reduceMotion = usePrefersReducedMotion()
+  const mapRef = React.useRef<MapboxMapRef>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
 
   const visiblePlaces = React.useMemo(() => {
@@ -46,10 +49,12 @@ export function MapDesktop({
     <div className="grid grid-cols-12 h-full w-full">
       <div className="col-span-7 relative">
         <MapboxMap
+          ref={mapRef}
           places={places}
           selectedPlaceId={selectedPlaceId ?? undefined}
           onPlaceSelect={onPlaceSelect}
           onBoundsChange={setBounds}
+          searchQuery={searchQuery}
           darkStyle={false}
           reduceMotion={reduceMotion}
         />

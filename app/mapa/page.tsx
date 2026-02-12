@@ -82,6 +82,7 @@ function MapaContent() {
       filters={filters}
       onFiltersChange={setFilters}
       onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
+      searchQuery={debouncedSearch}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
     />
