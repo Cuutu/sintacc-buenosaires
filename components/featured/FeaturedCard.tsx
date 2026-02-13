@@ -5,6 +5,7 @@ import { MapPin, Star } from "lucide-react"
 import type { PlaceWithStats } from "./featured-utils"
 import { getSafetyBadge, getDisplayTags } from "./featured-utils"
 import { TagBadge } from "@/components/TagBadge"
+import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 
 interface FeaturedCardProps {
   place: PlaceWithStats
@@ -31,6 +32,12 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent" />
+        )}
+        {/* Contamination risk - top right if exists */}
+        {(place.stats?.contaminationReportsCount ?? 0) > 0 && (
+          <div className="absolute top-3 right-3">
+            <ContaminationRiskBadge count={place.stats?.contaminationReportsCount ?? 0} variant="card" />
+          </div>
         )}
         {/* Safety badge - top left */}
         <div className="absolute top-3 left-3">

@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReviewForm } from "@/components/review-form"
+import { ContaminationReportForm } from "@/components/contamination-report-form"
+import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 import { SafetyBadge } from "@/components/safety-badge"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { TagBadge } from "@/components/TagBadge"
@@ -25,6 +27,7 @@ import {
   MapPinned,
   Clock,
   Package,
+  AlertTriangle,
 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -35,6 +38,12 @@ export default function LugarPage() {
   const params = useParams()
   const [place, setPlace] = useState<IPlace & { stats?: any } | null>(null)
   const [reviews, setReviews] = useState<IReview[]>([])
+  const [contaminationReports, setContaminationReports] = useState<Array<{
+    _id: string
+    comment: string
+    createdAt: string
+    userId?: { name?: string }
+  }>>([])
   const [reviewSort, setReviewSort] = useState<"recent" | "rating">("recent")
   const [loading, setLoading] = useState(true)
 
@@ -42,6 +51,7 @@ export default function LugarPage() {
     if (params.id) {
       fetchPlace()
       fetchReviews()
+      fetchContaminationReports()
     }
   }, [params.id])
 
@@ -64,6 +74,16 @@ export default function LugarPage() {
       setReviews(data.reviews || [])
     } catch (error) {
       console.error("Error fetching reviews:", error)
+    }
+  }
+
+  const fetchContaminationReports = async () => {
+    try {
+      const res = await fetch(`/api/contamination-reports?placeId=${params.id}`)
+      const data = await res.json()
+      setContaminationReports(data.reports || [])
+    } catch (error) {
+      console.error("Error fetching contamination reports:", error)
     }
   }
 
@@ -223,6 +243,25 @@ export default function LugarPage() {
             </div>
           )}
 
+          {place.stats?.contaminationReportsCount > 0 && (
+            <div className="mb-4">
+              <ContaminationRiskBadge
+                count={place.stats.contaminationReportsCount}
+                variant="banner"
+              />
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 items-center mb-4">
+            <ContaminationReportForm
+              placeId={params.id as string}
+              onSuccess={() => {
+                fetchPlace()
+                fetchContaminationReports()
+              }}
+            />
+          </div>
+
           <div className="flex flex-wrap gap-2 mb-4">
             {displayTypes.map((t) => (
               <Badge key={t} variant="secondary" className="bg-primary/10 text-primary min-h-[44px] px-4">
@@ -305,6 +344,26 @@ export default function LugarPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="reviews" className="mt-4">
+          {contaminationReports.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <h3 className="font-semibold text-amber-600 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Reportes de contaminación ({contaminationReports.length})
+              </h3>
+              <div className="space-y-3">
+                {contaminationReports.map((report: any) => (
+                  <Card key={report._id} className="border-amber-500/30 bg-amber-500/5">
+                    <CardContent className="pt-4">
+                      <p className="text-sm">{report.comment}</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {new Date(report.createdAt).toLocaleDateString("es-AR")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
           {reviews.length > 0 && (
             <div className="flex gap-2 mb-4 flex-wrap">
               <Button

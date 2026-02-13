@@ -30,6 +30,11 @@ export const placeSchema = z.object({
   status: z.enum(["approved", "pending"]).optional(),
 })
 
+export const contaminationReportSchema = z.object({
+  placeId: z.string().min(1),
+  comment: z.string().min(10, "Contá tu experiencia en al menos 10 caracteres").max(1000).trim(),
+})
+
 export const reviewSchema = z.object({
   placeId: z.string().min(1),
   rating: z.number().int().min(1).max(5),

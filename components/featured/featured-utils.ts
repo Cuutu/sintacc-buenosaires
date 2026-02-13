@@ -7,7 +7,7 @@ export type PlaceWithStats = {
   tags?: string[]
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   delivery?: { available?: boolean }
-  stats?: { avgRating?: number; totalReviews?: number }
+  stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
 }
 
 const SAFETY_CONFIG = {

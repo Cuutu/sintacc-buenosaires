@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TagBadge } from "@/components/TagBadge"
+import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 import Link from "next/link"
 import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { isOpenNow } from "@/lib/opening-hours"
 
 interface PlaceCardProps {
-  place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }
+  place: IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
   onMapClick?: (place: IPlace) => void
 }
 
@@ -74,13 +75,16 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
               )}
             </div>
             <div className="flex flex-wrap gap-1.5 items-center">
+              {(place.stats?.contaminationReportsCount ?? 0) > 0 && (
+                <ContaminationRiskBadge count={place.stats?.contaminationReportsCount ?? 0} variant="card" />
+              )}
               {place.openingHours && (() => {
                 const open = isOpenNow(place.openingHours)
                 if (open === true) return <Badge key="open" className="text-xs bg-primary/20 text-primary">Abierto</Badge>
                 if (open === false) return <Badge key="closed" variant="secondary" className="text-xs">Cerrado</Badge>
                 return null
               })()}
-              {place.tags.slice(0, 3).map((tag) => (
+              {(place.tags ?? []).slice(0, 3).map((tag) => (
                 <TagBadge key={tag} tag={tag} size="sm" />
               ))}
             </div>

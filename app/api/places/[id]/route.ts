@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
+import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
 import mongoose from "mongoose"
@@ -34,20 +35,26 @@ export async function GET(
       placeId: new mongoose.Types.ObjectId(params.id),
       status: "visible",
     }).lean()
-    
+
+    const contaminationReportsCount = await ContaminationReport.countDocuments({
+      placeId: new mongoose.Types.ObjectId(params.id),
+      status: "visible",
+    })
+
     const avgRating =
       reviews.length > 0
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
         : 0
-    
+
     const safeFeelingCount = reviews.filter((r) => r.safeFeeling).length
-    
+
     return NextResponse.json({
       ...place,
       stats: {
         totalReviews: reviews.length,
         avgRating: Math.round(avgRating * 10) / 10,
         safeFeelingCount,
+        contaminationReportsCount,
       },
     })
   } catch (error) {

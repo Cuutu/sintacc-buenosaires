@@ -172,12 +172,17 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
         const effectiveSafety = inferSafetyLevel(place as any)
         const safetyCfg = getSafetyBadge(effectiveSafety)
+        const contaminationCount = (place as any).stats?.contaminationReportsCount ?? 0
+        const contaminationBadge = contaminationCount > 0
+          ? `<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);">⚠️ Riesgo de contaminación</span>`
+          : ""
 
         const popupHtml = `<div class="celimap-popup-content" style="background:#1a1a1f;padding:14px;min-width:240px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
           <span style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;background:${config.bg}">${config.emoji} ${config.label}</span>
           <h3 style="font-weight:700;font-size:15px;margin:0 0 6px 0;color:#f5f5f5;">${place.name}</h3>
           <p style="font-size:12px;color:#a1a1aa;margin:0 0 8px 0;line-height:1.4;">📍 ${place.address}</p>
           <div style="margin-top:8px;flex-wrap:wrap;display:flex;gap:4px;">
+            ${contaminationBadge}
             <span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:#a1a1aa;">${safetyCfg.dot} ${safetyCfg.label}</span>
           </div>
           <a href="/lugar/${place._id.toString()}" style="display:inline-block;margin-top:10px;font-size:12px;font-weight:600;color:#10b981;text-decoration:none;">Ver más →</a>

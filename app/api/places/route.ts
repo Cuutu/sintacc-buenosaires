@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
+import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
 import mongoose from "mongoose"
@@ -64,17 +65,32 @@ export async function GET(request: NextRequest) {
       { $match: { placeId: { $in: placeIds }, status: "visible" } },
       { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
     ])
-    
-    const statsMap = new Map(
-      reviewStats.map((s: any) => [
-        s._id.toString(),
-        { avgRating: Math.round(s.avgRating * 10) / 10, totalReviews: s.count },
-      ])
-    )
-    
+    const contaminationCounts = await ContaminationReport.aggregate([
+      { $match: { placeId: { $in: placeIds }, status: "visible" } },
+      { $group: { _id: "$placeId", count: { $sum: 1 } } },
+    ])
+
+    const statsMap = new Map<string, { avgRating: number; totalReviews: number; contaminationReportsCount: number }>()
+    placeIds.forEach((id: any) => {
+      statsMap.set(id.toString(), { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 })
+    })
+    reviewStats.forEach((s: any) => {
+      const entry = statsMap.get(s._id.toString())!
+      entry.avgRating = Math.round(s.avgRating * 10) / 10
+      entry.totalReviews = s.count
+    })
+    contaminationCounts.forEach((c: any) => {
+      const entry = statsMap.get(c._id.toString())
+      if (entry) entry.contaminationReportsCount = c.count
+    })
+
     const placesWithStats = places.map((p: any) => ({
       ...p,
-      stats: statsMap.get(p._id.toString()) || { avgRating: 0, totalReviews: 0 },
+      stats: statsMap.get(p._id.toString()) || {
+        avgRating: 0,
+        totalReviews: 0,
+        contaminationReportsCount: 0,
+      },
     }))
     
     return NextResponse.json({

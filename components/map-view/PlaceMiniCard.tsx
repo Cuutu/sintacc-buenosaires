@@ -5,9 +5,10 @@ import { Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IPlace } from "@/models/Place"
 import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
+import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 
 interface PlaceMiniCardProps {
-  place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }
+  place: IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
   selected?: boolean
 }
 
@@ -64,6 +65,9 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
               {stats.avgRating?.toFixed(1)} ({stats.totalReviews})
             </span>
+          )}
+          {(stats.contaminationReportsCount ?? 0) > 0 && (
+            <ContaminationRiskBadge count={stats.contaminationReportsCount ?? 0} variant="inline" />
           )}
           {safetyConfig && (
             <span
