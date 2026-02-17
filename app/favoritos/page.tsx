@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { PlaceCard } from "@/components/place-card"
 import { features } from "@/lib/features"
 import { IPlace } from "@/models/Place"
+import { fetchApi } from "@/lib/fetchApi"
+import { toast } from "sonner"
 
 export default function FavoritosPage() {
   const { data: session } = useSession()
@@ -30,11 +32,12 @@ export default function FavoritosPage() {
 
   const fetchFavorites = async () => {
     try {
-      const res = await fetch("/api/favorites")
-      const data = await res.json()
-      setFavorites(data.favorites?.map((f: any) => f.placeId) || [])
-    } catch (error) {
-      console.error("Error fetching favorites:", error)
+      const data = await fetchApi<{
+        favorites: Array<{ placeId: IPlace }>
+      }>("/api/favorites")
+      setFavorites(data.favorites?.map((f) => f.placeId) || [])
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar favoritos")
     } finally {
       setLoading(false)
     }

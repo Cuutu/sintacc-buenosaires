@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error fetching admin places:", error)
+    logApiError("/api/admin/places", error, { request })
     return NextResponse.json(
       { error: "Error al obtener lugares" },
       { status: 500 }

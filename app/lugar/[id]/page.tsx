@@ -31,6 +31,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
+import { fetchApi } from "@/lib/fetchApi"
 import { TYPES } from "@/lib/constants"
 import { isOpenNow } from "@/lib/opening-hours"
 
@@ -46,6 +47,12 @@ export default function LugarPage() {
   }>>([])
   const [reviewSort, setReviewSort] = useState<"recent" | "rating">("recent")
   const [loading, setLoading] = useState(true)
+  const [reviewsPagination, setReviewsPagination] = useState<{
+    page: number
+    pages: number
+    total: number
+  } | null>(null)
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -57,33 +64,60 @@ export default function LugarPage() {
 
   const fetchPlace = async () => {
     try {
-      const res = await fetch(`/api/places/${params.id}`)
-      const data = await res.json()
+      const data = await fetchApi<IPlace & { stats?: unknown }>(
+        `/api/places/${params.id}`
+      )
       setPlace(data)
-    } catch (error) {
-      console.error("Error fetching place:", error)
+    } catch (error: any) {
+      setPlace(null)
+      if (error?.status !== 404) {
+        toast.error(error?.message || "Error al cargar el lugar")
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (page: number = 1, append: boolean = false) => {
     try {
-      const res = await fetch(`/api/reviews?placeId=${params.id}`)
-      const data = await res.json()
-      setReviews(data.reviews || [])
-    } catch (error) {
-      console.error("Error fetching reviews:", error)
+      if (append) setLoadingMoreReviews(true)
+      const data = await fetchApi<{
+        reviews: IReview[]
+        pagination: { page: number; pages: number; total: number }
+      }>(`/api/reviews?placeId=${params.id}&page=${page}&limit=20`)
+      const newReviews = data.reviews || []
+      setReviews((prev) => (append ? [...prev, ...newReviews] : newReviews))
+      setReviewsPagination(
+        data.pagination
+          ? {
+              page: data.pagination.page,
+              pages: data.pagination.pages,
+              total: data.pagination.total,
+            }
+          : null
+      )
+    } catch (error: any) {
+      if (!append) toast.error(error?.message || "Error al cargar reseñas")
+    } finally {
+      if (append) setLoadingMoreReviews(false)
     }
   }
 
   const fetchContaminationReports = async () => {
     try {
-      const res = await fetch(`/api/contamination-reports?placeId=${params.id}`)
-      const data = await res.json()
+      const data = await fetchApi<{
+        reports: Array<{
+          _id: string
+          comment: string
+          createdAt: string
+          userId?: { name?: string }
+        }>
+      }>(
+        `/api/contamination-reports?placeId=${params.id}`
+      )
       setContaminationReports(data.reports || [])
-    } catch (error) {
-      console.error("Error fetching contamination reports:", error)
+    } catch {
+      // Silencioso: no es crítico para la vista principal
     }
   }
 
@@ -392,7 +426,8 @@ export default function LugarPage() {
                 </CardContent>
               </Card>
             ) : (
-              sortedReviews.map((review: any) => (
+              <>
+              {sortedReviews.map((review: any) => (
                 <Card key={review._id} className={review.pinned ? "border-primary/50" : ""}>
                   <CardHeader>
                     <div className="flex items-center justify-between flex-wrap gap-2">
@@ -472,7 +507,20 @@ export default function LugarPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))
+              ))}
+              {reviewsPagination &&
+                reviewsPagination.page < reviewsPagination.pages && (
+                  <div className="pt-4 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchReviews(reviewsPagination.page + 1, true)}
+                      disabled={loadingMoreReviews}
+                    >
+                      {loadingMoreReviews ? "Cargando..." : "Ver más reseñas"}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </TabsContent>

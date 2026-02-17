@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error fetching admin reviews:", error)
+    logApiError("/api/admin/reviews", error, { request })
     return NextResponse.json(
       { error: "Error al obtener reseñas" },
       { status: 500 }

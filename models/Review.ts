@@ -82,6 +82,7 @@ const ReviewSchema = new Schema<IReview>(
 )
 
 ReviewSchema.index({ placeId: 1, status: 1 })
+ReviewSchema.index({ placeId: 1, createdAt: -1 })
 ReviewSchema.index({ userId: 1, createdAt: -1 })
 
 export const Review: Model<IReview> =

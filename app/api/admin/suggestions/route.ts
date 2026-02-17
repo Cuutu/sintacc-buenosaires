@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
 import { requireAdmin } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ suggestions })
   } catch (error) {
-    console.error("Error fetching suggestions:", error)
+    logApiError("/api/admin/suggestions", error, { request })
     return NextResponse.json(
       { error: "Error al obtener sugerencias" },
       { status: 500 }

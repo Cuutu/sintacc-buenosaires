@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Contact } from "@/models/Contact"
 import { requireAdmin } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ contacts })
   } catch (error) {
-    console.error("Error fetching contacts:", error)
+    logApiError("/api/admin/contacts", error, { request })
     return NextResponse.json(
       { error: "Error al obtener contactos" },
       { status: 500 }

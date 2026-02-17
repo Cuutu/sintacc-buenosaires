@@ -14,7 +14,7 @@ Las consultas del formulario de contacto se envían por email a tu casilla cuand
 3. **Configurar variables en `.env.local`**
 
    ```env
-   CONTACT_EMAIL=franco.l.varela99@gmail.com
+   CONTACT_EMAIL=tu-email@ejemplo.com
    RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
    RESEND_FROM_DOMAIN=onboarding@resend.dev
    ```
@@ -31,5 +31,5 @@ Las consultas del formulario de contacto se envían por email a tu casilla cuand
 
 Cuando alguien envía una consulta desde el formulario:
 1. Se guarda en la base de datos y aparece en el panel admin.
-2. Se envía un email a `franco.l.varela99@gmail.com` con el asunto `[Celimap] ...` y el mensaje.
+2. Se envía un email a `tu-email@ejemplo.com` con el asunto `[Celimap] ...` y el mensaje.
 3. El `replyTo` es el email del usuario, así que podés responder directamente para contactarlo.

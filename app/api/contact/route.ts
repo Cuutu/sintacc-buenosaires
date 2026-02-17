@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Contact } from "@/models/Contact"
 import { requireAuth } from "@/lib/middleware"
+import { checkRateLimit, checkRateLimitByIp } from "@/lib/rate-limit"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { z } from "zod"
 import { Resend } from "resend"
@@ -125,6 +127,27 @@ export async function POST(request: NextRequest) {
 
     await connectDB()
 
+    const [userLimit, ipLimit] = await Promise.all([
+      checkRateLimit(session.user.id, "contact", 5),
+      checkRateLimitByIp(request, "contact_ip", 20, 1440),
+    ])
+    if (!userLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés enviar hasta 5 mensajes de contacto por día. Quedan ${userLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
+    }
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Demasiadas solicitudes desde esta dirección. Volvé a intentar mañana.`,
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const validated = contactSchema.parse(body)
 
@@ -187,7 +210,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating contact:", error)
+    logApiError("/api/contact", error, { request })
     return NextResponse.json(
       { error: "Error al enviar mensaje" },
       { status: 500 }

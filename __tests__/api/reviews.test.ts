@@ -1,4 +1,4 @@
-import { POST } from "@/app/api/reviews/route"
+import { GET, POST } from "@/app/api/reviews/route"
 import { NextRequest } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Review } from "@/models/Review"
@@ -89,5 +89,47 @@ describe("POST /api/reviews", () => {
 
     const response = await POST(request)
     expect(response.status).toBe(429)
+  })
+})
+
+describe("GET /api/reviews", () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    const mockReviews = [
+      {
+        _id: "r1",
+        placeId: "place123",
+        rating: 5,
+        comment: "Excelente",
+        userId: { name: "Test User" },
+      },
+    ]
+    require("@/models/Review").Review.find = jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          skip: jest.fn().mockReturnValue({
+            limit: jest.fn().mockReturnValue({
+              lean: jest.fn().mockResolvedValue(mockReviews),
+            }),
+          }),
+        }),
+      }),
+    })
+    require("@/models/Review").Review.countDocuments = jest.fn().mockResolvedValue(1)
+  })
+
+  it("returns reviews with pagination", async () => {
+    const request = new NextRequest("http://localhost:3000/api/reviews?placeId=place123")
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.reviews).toHaveLength(1)
+    expect(data.pagination).toEqual({
+      page: 1,
+      limit: 20,
+      total: 1,
+      pages: 1,
+    })
   })
 })

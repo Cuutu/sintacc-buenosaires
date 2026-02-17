@@ -5,6 +5,7 @@ import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
 export async function GET(
@@ -22,43 +23,51 @@ export async function GET(
     }
     
     const place = await Place.findById(params.id).lean()
-    
+
     if (!place) {
       return NextResponse.json(
         { error: "Lugar no encontrado" },
         { status: 404 }
       )
     }
-    
-    // Get reviews stats
-    const reviews = await Review.find({
-      placeId: new mongoose.Types.ObjectId(params.id),
-      status: "visible",
-    }).lean()
 
-    const contaminationReportsCount = await ContaminationReport.countDocuments({
-      placeId: new mongoose.Types.ObjectId(params.id),
-      status: "visible",
-    })
+    const placeObjectId = new mongoose.Types.ObjectId(params.id)
 
-    const avgRating =
-      reviews.length > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        : 0
+    const [reviewStats, contaminationReportsCount] = await Promise.all([
+      Review.aggregate([
+        { $match: { placeId: placeObjectId, status: "visible" } },
+        {
+          $group: {
+            _id: null,
+            avgRating: { $avg: "$rating" },
+            totalReviews: { $sum: 1 },
+            safeFeelingCount: { $sum: { $cond: ["$safeFeeling", 1, 0] } },
+          },
+        },
+      ]),
+      ContaminationReport.countDocuments({
+        placeId: placeObjectId,
+        status: "visible",
+      }),
+    ])
 
-    const safeFeelingCount = reviews.filter((r) => r.safeFeeling).length
+    const stats = reviewStats[0] || {
+      avgRating: 0,
+      totalReviews: 0,
+      safeFeelingCount: 0,
+    }
 
     return NextResponse.json({
       ...place,
       stats: {
-        totalReviews: reviews.length,
-        avgRating: Math.round(avgRating * 10) / 10,
-        safeFeelingCount,
+        totalReviews: stats.totalReviews,
+        avgRating: Math.round((stats.avgRating || 0) * 10) / 10,
+        safeFeelingCount: stats.safeFeelingCount,
         contaminationReportsCount,
       },
     })
   } catch (error) {
-    console.error("Error fetching place:", error)
+    logApiError("/api/places/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al obtener lugar" },
       { status: 500 }
@@ -107,7 +116,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    console.error("Error updating place:", error)
+    logApiError("/api/places/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al actualizar lugar" },
       { status: 500 }
@@ -143,7 +152,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Lugar eliminado correctamente" })
   } catch (error) {
-    console.error("Error deleting place:", error)
+    logApiError("/api/places/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al eliminar lugar" },
       { status: 500 }

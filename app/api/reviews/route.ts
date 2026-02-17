@@ -6,33 +6,58 @@ import { requireAuth } from "@/lib/middleware"
 import { reviewSchema } from "@/lib/validations"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
+import { logApiError } from "@/lib/logger"
+import { getClientIp } from "@/lib/rate-limit"
 import mongoose from "mongoose"
+
+const REVIEWS_DEFAULT_LIMIT = 20
+const REVIEWS_MAX_LIMIT = 50
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
-    
+
     const searchParams = request.nextUrl.searchParams
     const placeId = searchParams.get("placeId")
-    
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(
+      REVIEWS_MAX_LIMIT,
+      Math.max(1, parseInt(searchParams.get("limit") || String(REVIEWS_DEFAULT_LIMIT), 10))
+    )
+    const skip = (page - 1) * limit
+
     if (!placeId || !mongoose.Types.ObjectId.isValid(placeId)) {
       return NextResponse.json(
         { error: "placeId inválido" },
         { status: 400 }
       )
     }
-    
-    const reviews = await Review.find({
-      placeId: new mongoose.Types.ObjectId(placeId),
-      status: "visible",
+
+    const placeObjectId = new mongoose.Types.ObjectId(placeId)
+    const [reviews, total] = await Promise.all([
+      Review.find({
+        placeId: placeObjectId,
+        status: "visible",
+      })
+        .populate("userId", "name image")
+        .sort({ pinned: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Review.countDocuments({ placeId: placeObjectId, status: "visible" }),
+    ])
+
+    return NextResponse.json({
+      reviews,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
     })
-      .populate("userId", "name image")
-      .sort({ pinned: -1, createdAt: -1 })
-      .lean()
-    
-    return NextResponse.json({ reviews })
   } catch (error) {
-    console.error("Error fetching reviews:", error)
+    logApiError("/api/reviews", error, { request })
     return NextResponse.json(
       { error: "Error al obtener reseñas" },
       { status: 500 }
@@ -107,7 +132,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating review:", error)
+    logApiError("/api/reviews", error, { request })
     return NextResponse.json(
       { error: "Error al crear reseña" },
       { status: 500 }

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "check-env": "tsx scripts/check-env.ts",
+    "check-indexes": "tsx scripts/check-indexes.ts",
     "generate-noise": "node scripts/generate-noise.js",
     "test": "jest",
     "test:watch": "jest --watch"

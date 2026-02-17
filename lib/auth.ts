@@ -6,6 +6,10 @@ import { User } from "@/models/User"
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || []
 
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -43,18 +47,26 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    async session({ session, token }) {
-      if (session.user?.email) {
+    async jwt({ token, user: providerUser }) {
+      if (token.id) return token
+      if (providerUser?.email) {
         try {
           await connectDB()
-          const user = await User.findOne({ email: session.user.email })
-          if (user) {
-            session.user.id = user._id.toString()
-            session.user.role = user.role
+          const dbUser = await User.findOne({ email: providerUser.email })
+          if (dbUser) {
+            token.id = dbUser._id.toString()
+            token.role = dbUser.role
           }
         } catch (error) {
-          console.error("Error in session callback:", error)
+          console.error("Error in jwt callback:", error)
         }
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string
+        session.user.role = (token.role as "user" | "admin") || "user"
       }
       return session
     },
@@ -62,6 +74,13 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string
+    role?: "user" | "admin"
+  }
 }
 
 declare module "next-auth" {

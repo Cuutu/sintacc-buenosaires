@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
 export async function PATCH(
@@ -60,7 +61,7 @@ export async function PATCH(
       review,
     })
   } catch (error) {
-    console.error("Error updating review:", error)
+    logApiError("/api/admin/reviews/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al actualizar reseña" },
       { status: 500 }

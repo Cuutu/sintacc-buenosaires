@@ -29,7 +29,6 @@ const RateLimitSchema = new Schema<IRateLimit>(
     date: {
       type: Date,
       required: true,
-      index: true,
     },
   },
   {
@@ -38,6 +37,7 @@ const RateLimitSchema = new Schema<IRateLimit>(
 )
 
 RateLimitSchema.index({ userId: 1, type: 1, date: 1 }, { unique: true })
+RateLimitSchema.index({ date: 1 }, { expireAfterSeconds: 86400 * 8 })
 
 export const RateLimit: Model<IRateLimit> =
   mongoose.models.RateLimit ||

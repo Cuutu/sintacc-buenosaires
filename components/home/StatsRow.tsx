@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { MapPin, Star, Users, LucideIcon } from "lucide-react"
+import { fetchApi } from "@/lib/fetchApi"
 import {
   pluralizeLocales,
   pluralizeExperiences,
@@ -94,8 +95,10 @@ export function StatsRow() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/stats", { cache: "no-store" })
-      .then((res) => res.json())
+    fetchApi<{ placesCount?: number; reviewsCount?: number; usersCount?: number }>(
+      "/api/stats",
+      { cache: "no-store" }
+    )
       .then((data) => setStats(mapApiResponse(data)))
       .catch(() => setStats({ places: null, reviews: null, users: null }))
       .finally(() => setIsLoading(false))

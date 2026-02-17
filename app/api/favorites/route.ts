@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Favorite } from "@/models/Favorite"
 import { requireAuth } from "@/lib/middleware"
+import { logApiError } from "@/lib/logger"
 import { features } from "@/lib/features"
 import mongoose from "mongoose"
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ favorites })
   } catch (error) {
-    console.error("Error fetching favorites:", error)
+    logApiError("/api/favorites", error, { request })
     return NextResponse.json(
       { error: "Error al obtener favoritos" },
       { status: 500 }
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating favorite:", error)
+    logApiError("/api/favorites", error, { request })
     return NextResponse.json(
       { error: "Error al agregar a favoritos" },
       { status: 500 }
@@ -113,7 +114,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ message: "Eliminado de favoritos" })
   } catch (error) {
-    console.error("Error deleting favorite:", error)
+    logApiError("/api/favorites", error, { request })
     return NextResponse.json(
       { error: "Error al eliminar de favoritos" },
       { status: 500 }

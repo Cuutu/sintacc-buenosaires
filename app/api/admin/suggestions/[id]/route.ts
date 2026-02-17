@@ -4,6 +4,7 @@ import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema, placeDraftUpdateSchema } from "@/lib/validations"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 
@@ -100,7 +101,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    console.error("Error processing suggestion:", error)
+    logApiError("/api/admin/suggestions/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al procesar sugerencia" },
       { status: 500 }
@@ -161,7 +162,7 @@ export async function POST(
         { status: 400 }
       )
     }
-    console.error("Error accepting suggestion:", error)
+    logApiError("/api/admin/suggestions/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al aprobar sugerencia" },
       { status: 500 }

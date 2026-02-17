@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FeaturedCarousel } from "./FeaturedCarousel"
 import type { PlaceWithStats } from "./featured-utils"
+import { fetchApi } from "@/lib/fetchApi"
 
 const TARGET_COUNT = 3
 const FETCH_LIMIT = 12
@@ -27,8 +28,7 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
       setIsLoading(false)
       return
     }
-    fetch(`/api/places?limit=${FETCH_LIMIT}`)
-      .then((res) => res.json())
+    fetchApi<{ places: PlaceWithStats[] }>(`/api/places?limit=${FETCH_LIMIT}`)
       .then((data) => setPlaces(data.places ?? []))
       .catch(() => setPlaces([]))
       .finally(() => setIsLoading(false))

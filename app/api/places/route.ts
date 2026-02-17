@@ -5,6 +5,7 @@ import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -17,8 +18,8 @@ export async function GET(request: NextRequest) {
     const neighborhood = searchParams.get("neighborhood")
     const tags = searchParams.get("tags")?.split(",").filter(Boolean)
     const safetyLevel = searchParams.get("safetyLevel")
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
     const skip = (page - 1) * limit
     
     const query: any = { status: "approved" }
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error fetching places:", error)
+    logApiError("/api/places", error, { request })
     return NextResponse.json(
       { error: "Error al obtener lugares" },
       { status: 500 }
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating place:", error)
+    logApiError("/api/places", error, { request })
     return NextResponse.json(
       { error: "Error al crear lugar" },
       { status: 500 }

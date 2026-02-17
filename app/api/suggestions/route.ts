@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Suggestion } from "@/models/Suggestion"
 import { requireAuth } from "@/lib/middleware"
+import { checkRateLimit, checkRateLimitByIp } from "@/lib/rate-limit"
+import { logApiError } from "@/lib/logger"
 import {
   suggestionSchema,
   quickSuggestionSchema,
@@ -39,6 +41,27 @@ export async function POST(request: NextRequest) {
 
     await connectDB()
 
+    const [userLimit, ipLimit] = await Promise.all([
+      checkRateLimit(session.user.id, "suggestion", 10),
+      checkRateLimitByIp(request, "suggestion_ip", 30, 1440),
+    ])
+    if (!userLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés sugerir hasta 10 lugares por día. Quedan ${userLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
+    }
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Demasiadas solicitudes desde esta dirección. Volvé a intentar mañana.`,
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
 
     let placeDraft: Record<string, unknown>
@@ -70,7 +93,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating suggestion:", error)
+    logApiError("/api/suggestions", error, { request })
     return NextResponse.json(
       { error: "Error al crear sugerencia" },
       { status: 500 }

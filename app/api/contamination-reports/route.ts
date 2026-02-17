@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/middleware"
 import { contaminationReportSchema } from "@/lib/validations"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
+import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ reports })
   } catch (error) {
-    console.error("Error fetching contamination reports:", error)
+    logApiError("/api/contamination-reports", error, { request })
     return NextResponse.json(
       { error: "Error al obtener reportes" },
       { status: 500 }
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error("Error creating contamination report:", error)
+    logApiError("/api/contamination-reports", error, { request })
     return NextResponse.json(
       { error: "Error al crear reporte" },
       { status: 500 }

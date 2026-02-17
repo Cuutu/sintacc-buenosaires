@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
 import type { IPlace } from "@/models/Place"
+import { fetchApi } from "@/lib/fetchApi"
+import { toast } from "sonner"
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -60,11 +62,12 @@ function MapaContent() {
       if (filters.tags?.length) params.append("tags", filters.tags.join(","))
       if (filters.safetyLevel) params.append("safetyLevel", filters.safetyLevel)
 
-      const res = await fetch(`/api/places?${params.toString()}`)
-      const data = await res.json()
+      const data = await fetchApi<{ places: IPlace[] }>(
+        `/api/places?${params.toString()}`
+      )
       setPlaces(data.places || [])
-    } catch (error) {
-      console.error("Error fetching places:", error)
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar lugares")
       setPlaces([])
     } finally {
       setLoading(false)

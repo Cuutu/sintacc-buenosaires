@@ -15,6 +15,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
+import { fetchApi } from "@/lib/fetchApi"
 import { TagBadge } from "@/components/TagBadge"
 import { isOpenNow } from "@/lib/opening-hours"
 
@@ -31,9 +32,8 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
   useEffect(() => {
     if (open && placeId) {
       setLoading(true)
-      fetch(`/api/places/${placeId}`)
-        .then((res) => res.json())
-        .then((data) => setPlace(data))
+      fetchApi<IPlace & { stats?: unknown }>(`/api/places/${placeId}`)
+        .then(setPlace)
         .catch(() => setPlace(null))
         .finally(() => setLoading(false))
     } else {

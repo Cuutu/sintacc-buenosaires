@@ -3,7 +3,19 @@ import { v2 as cloudinary } from "cloudinary"
 import { requireAuth, requireAdmin } from "@/lib/middleware"
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
+const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"] as const
+const MAGIC_BYTES: Record<string, (buf: Buffer) => boolean> = {
+  "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8,
+  "image/png": (b) =>
+    b[0] === 0x89 &&
+    b[1] === 0x50 &&
+    b[2] === 0x4e &&
+    b[3] === 0x47,
+  "image/webp": (b) =>
+    b.length >= 12 &&
+    b.toString("ascii", 0, 4) === "RIFF" &&
+    b.toString("ascii", 8, 12) === "WEBP",
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,10 +23,13 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+const ALLOWED_FOLDERS: readonly string[] = ["celimap", "places"]
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const folder = (formData.get("folder") as string) || "celimap"
+    const folderRaw = (formData.get("folder") as string) || "celimap"
+    const folder = ALLOWED_FOLDERS.includes(folderRaw) ? folderRaw : "celimap"
     const file = formData.get("file")
 
     const session =
@@ -38,7 +53,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const mime = file.type?.toLowerCase()
+    if (!mime || !ALLOWED_MIMES.includes(mime as any)) {
       return NextResponse.json(
         { error: "Tipo de archivo no permitido. Usá JPEG, PNG o WebP" },
         { status: 400 }
@@ -53,8 +69,16 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    const validator = MAGIC_BYTES[mime]
+    if (validator && !validator(buffer)) {
+      return NextResponse.json(
+        { error: "El archivo no coincide con su tipo declarado" },
+        { status: 400 }
+      )
+    }
+
     const base64 = buffer.toString("base64")
-    const dataUri = `data:${file.type};base64,${base64}`
+    const dataUri = `data:${mime};base64,${base64}`
 
     const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
       cloudinary.uploader.upload(
@@ -70,7 +94,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: result.secure_url })
   } catch (error: unknown) {
-    console.error("Upload error:", error)
+    const { logApiError } = await import("@/lib/logger")
+    logApiError("/api/upload", error, { request })
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Error al subir la imagen" },
       { status: 500 }
