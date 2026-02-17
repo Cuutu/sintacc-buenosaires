@@ -10,6 +10,10 @@ export const placeSchema = z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
   }),
+  addressText: z.string().max(500).optional(),
+  locationPrecision: z.enum(["exact", "approx"]).optional(),
+  userProvidedNeighborhood: z.string().max(100).optional(),
+  userProvidedReference: z.string().max(200).optional(),
   tags: z.array(z.string()).default([]),
   contact: z
     .object({

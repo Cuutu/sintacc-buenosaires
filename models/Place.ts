@@ -11,6 +11,14 @@ export interface IPlace extends Document {
     lat: number
     lng: number
   }
+  /** Dirección humana detectada (reverse geocode) o ingresada */
+  addressText?: string
+  /** exact = calle/POI; approx = usuario marcó "aproximada" */
+  locationPrecision?: "exact" | "approx"
+  /** Si reverse falló, usuario ingresó barrio */
+  userProvidedNeighborhood?: string
+  /** Si reverse falló, referencia opcional */
+  userProvidedReference?: string
   tags: string[]
   contact?: {
     instagram?: string
@@ -61,15 +69,13 @@ const PlaceSchema = new Schema<IPlace>(
       index: true,
     },
     location: {
-      lat: {
-        type: Number,
-        required: true,
-      },
-      lng: {
-        type: Number,
-        required: true,
-      },
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
     },
+    addressText: String,
+    locationPrecision: { type: String, enum: ["exact", "approx"] },
+    userProvidedNeighborhood: String,
+    userProvidedReference: String,
     tags: {
       type: [String],
       default: [],

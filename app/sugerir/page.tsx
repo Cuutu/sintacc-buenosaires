@@ -33,6 +33,10 @@ export default function SugerirPage() {
     neighborhood: "",
     lat: "",
     lng: "",
+    addressText: "",
+    locationPrecision: "exact" as "exact" | "approx",
+    userProvidedNeighborhood: "",
+    userProvidedReference: "",
     tags: [] as string[],
     openingHours: "",
     delivery: {
@@ -156,6 +160,10 @@ export default function SugerirPage() {
         lat: parseFloat(dataToSubmit.lat),
         lng: parseFloat(dataToSubmit.lng),
       },
+      addressText: dataToSubmit.addressText || undefined,
+      locationPrecision: dataToSubmit.locationPrecision || "exact",
+      userProvidedNeighborhood: dataToSubmit.userProvidedNeighborhood?.trim() || undefined,
+      userProvidedReference: dataToSubmit.userProvidedReference?.trim() || undefined,
     }
 
     try {
@@ -323,6 +331,10 @@ export default function SugerirPage() {
                   lat: result.lat.toString(),
                   lng: result.lng.toString(),
                   neighborhood: result.neighborhood || "Otro",
+                  addressText: result.addressText || result.address,
+                  locationPrecision: result.locationPrecision,
+                  userProvidedNeighborhood: result.userProvidedNeighborhood || "",
+                  userProvidedReference: result.userProvidedReference || "",
                 }))
               }}
             />
