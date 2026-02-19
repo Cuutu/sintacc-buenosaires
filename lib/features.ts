@@ -9,7 +9,7 @@ export const features = {
   // Fase 2 features
   safetyLevel: FEATURES.includes("phase2"),
   photos: FEATURES.includes("phase2"),
-  nearMe: FEATURES.includes("phase2"),
+  nearMe: true,
   favorites: true,
   communityConfidence: FEATURES.includes("phase2"),
   freshness: FEATURES.includes("phase2"),

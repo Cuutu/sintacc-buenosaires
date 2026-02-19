@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   Heart,
   MessageCircle,
+  ChevronDown,
 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -56,7 +57,9 @@ export default function LugarPage() {
   } | null>(null)
   const [loadingMoreReviews, setLoadingMoreReviews] = useState(false)
   const [nearbyPlaces, setNearbyPlaces] = useState<Array<IPlace & { stats?: { avgRating?: number; totalReviews?: number }; distance?: number }>>([])
+  const [loadingNearby, setLoadingNearby] = useState(true)
   const [reviewsExpanded, setReviewsExpanded] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
   const INITIAL_REVIEWS = 4
 
   useEffect(() => {
@@ -133,7 +136,11 @@ export default function LugarPage() {
   }
 
   const fetchNearby = async () => {
-    if (!place?.location) return
+    if (!place?.location) {
+      setLoadingNearby(false)
+      return
+    }
+    setLoadingNearby(true)
     try {
       const data = await fetchApi<{ places: Array<IPlace & { distance?: number }> }>(
         `/api/places/near?lat=${place.location.lat}&lng=${place.location.lng}&radius=2000`
@@ -141,7 +148,9 @@ export default function LugarPage() {
       const filtered = (data.places || []).filter((p: any) => p._id.toString() !== params.id).slice(0, 6)
       setNearbyPlaces(filtered)
     } catch {
-      // Silencioso
+      setNearbyPlaces([])
+    } finally {
+      setLoadingNearby(false)
     }
   }
 
@@ -365,12 +374,12 @@ export default function LugarPage() {
       <section className="mb-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <h2 className="text-xl font-semibold">💬 Reseñas de la comunidad</h2>
-          <Button variant="outline" size="sm" onClick={() => document.getElementById("review-form")?.scrollIntoView({ behavior: "smooth" })}>
+          <Button variant="outline" size="sm" onClick={() => setShowReviewForm(true)}>
             Escribir reseña
           </Button>
         </div>
 
-        {reviews.length === 0 ? (
+        {reviews.length === 0 && !showReviewForm && (
           <Card className="border-dashed bg-muted/30">
             <CardContent className="py-12 text-center">
               <div className="flex flex-col items-center gap-3 mb-6">
@@ -380,12 +389,14 @@ export default function LugarPage() {
                   <p className="text-muted-foreground">Contanos si fue seguro, como fue la atención</p>
                 </div>
               </div>
-              <Button size="lg" onClick={() => document.getElementById("review-form")?.scrollIntoView({ behavior: "smooth" })}>
+              <Button size="lg" onClick={() => setShowReviewForm(true)}>
                 Escribir primera reseña
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {reviews.length > 0 && (
           <>
             <div className="flex gap-2 mb-4 flex-wrap">
               <Button variant={reviewSort === "recent" ? "default" : "outline"} size="sm" onClick={() => setReviewSort("recent")}>Más recientes</Button>
@@ -453,15 +464,37 @@ export default function LugarPage() {
           </>
         )}
 
-        <div id="review-form" className="mt-8">
-          <ReviewForm placeId={params.id as string} onSuccess={fetchReviews} />
-        </div>
+        {reviews.length > 0 && !showReviewForm && (
+          <div className="pt-4">
+            <Button variant="outline" onClick={() => setShowReviewForm(true)}>Escribir reseña</Button>
+          </div>
+        )}
+
+        {showReviewForm && (
+          <div id="review-form" className="mt-6">
+            <div className="mb-3">
+              <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>
+                ← Volver
+              </Button>
+            </div>
+            <ReviewForm
+              placeId={params.id as string}
+              onSuccess={() => {
+                fetchReviews()
+                setShowReviewForm(false)
+              }}
+            />
+          </div>
+        )}
       </section>
 
       {/* Cerca de este lugar */}
-      {nearbyPlaces.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Cerca de este lugar</h2>
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold mb-4 flex items-center justify-between">
+          Cerca de este lugar
+          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+        </h2>
+        {nearbyPlaces.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {nearbyPlaces.map((p: any) => (
               <Link key={p._id} href={`/lugar/${p._id}`}>
@@ -498,8 +531,12 @@ export default function LugarPage() {
               </Link>
             ))}
           </div>
-        </section>
-      )}
+        ) : loadingNearby ? (
+          <p className="text-muted-foreground text-sm py-4">Cargando lugares cercanos...</p>
+        ) : (
+          <p className="text-muted-foreground text-sm py-4">No se encontraron lugares cercanos.</p>
+        )}
+      </section>
 
       <StickyActionBarMobile place={place} />
     </div>
