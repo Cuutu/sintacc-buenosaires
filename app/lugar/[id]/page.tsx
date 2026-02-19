@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,15 +25,20 @@ import {
   Package,
   AlertTriangle,
   CheckCircle2,
+  Heart,
+  MessageCircle,
 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { fetchApi } from "@/lib/fetchApi"
 import { TYPES } from "@/lib/constants"
+import { features } from "@/lib/features"
 import { isOpenNow } from "@/lib/opening-hours"
 
 export default function LugarPage() {
   const params = useParams()
+  const router = useRouter()
+  const { data: session } = useSession()
   const [place, setPlace] = useState<IPlace & { stats?: any } | null>(null)
   const [reviews, setReviews] = useState<IReview[]>([])
   const [contaminationReports, setContaminationReports] = useState<Array<{
@@ -188,7 +194,10 @@ export default function LugarPage() {
             </div>
             <div>
               <p className="text-lg md:text-xl font-bold tracking-tight text-white">VERIFICADO SIN TACC</p>
-              <p className="text-sm md:text-base text-emerald-200/90 mt-0.5">Sin reportes de contaminación</p>
+              <p className="text-sm md:text-base text-emerald-200/90 mt-0.5 flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                Sin reportes de contaminación
+              </p>
             </div>
           </div>
         </div>
@@ -214,12 +223,15 @@ export default function LugarPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 min-h-screen">
-      {/* Hero: info 60% primero (izq), imagen 40% segundo (der) - Safety Status es el elemento principal */}
-      <div className="grid grid-cols-1 md:grid-cols-[60%_40%] gap-6 md:gap-8 mb-10">
-        {/* LEFT (60%): Info - Safety Status PRIMERO */}
-        <div className="order-1 space-y-6">
-          <SafetyCard />
+      {/* Hero: imagen izq 40%, info der 60% - orden: Nombre, Rating, Safety, Dirección, Botones, Links */}
+      <div className="grid grid-cols-1 md:grid-cols-[40%_60%] gap-6 md:gap-8 mb-10">
+        {/* LEFT (40%): Imagen */}
+        <div className="order-1">
+          <PhotoStrip photos={place.photos} name={place.name} type={place.type} types={place.types} />
+        </div>
 
+        {/* RIGHT (60%): Info */}
+        <div className="order-2 space-y-5">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{place.name}</h1>
 
           {place.stats?.avgRating != null && (
@@ -233,10 +245,12 @@ export default function LugarPage() {
                 ))}
               </div>
               <span className="font-semibold">{place.stats.avgRating.toFixed(1)}</span>
-              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">•</span>
               <span className="text-muted-foreground">{place.stats.totalReviews} {place.stats.totalReviews === 1 ? "reseña" : "reseñas"}</span>
             </div>
           )}
+
+          <SafetyCard />
 
           <div className="flex items-start gap-2">
             <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
@@ -250,36 +264,41 @@ export default function LugarPage() {
                 Cómo llegar
               </Link>
             </Button>
+            {session && features.favorites ? (
+              <FavoriteButton placeId={place._id.toString()} showLabel />
+            ) : (
+              <Button variant="outline" size="lg" className="min-h-[48px]" onClick={() => !session && router.push("/login")}>
+                <Heart className="h-5 w-5 mr-2" />
+                Guardar
+              </Button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
             <ContaminationReportForm
               placeId={params.id as string}
               onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
               trigger={
-                <Button variant="outline" size="lg" className="min-h-[48px]">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
+                <button type="button" className="inline-flex items-center gap-2 text-sm text-primary hover:underline text-left">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
                   Reportar contaminación
-                </Button>
+                </button>
               }
             />
-            <FavoriteButton placeId={place._id.toString()} />
+            {place.contact?.url && (
+              <a href={place.contact.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                <Globe className="h-4 w-4 shrink-0" />
+                Sitio web
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+            {place.contact?.instagram && (
+              <a href={`https://instagram.com/${place.contact.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                <Instagram className="h-4 w-4 shrink-0" />
+                Instagram @{place.contact.instagram.replace("@", "")}
+              </a>
+            )}
           </div>
-
-          {(place.contact?.instagram || place.contact?.url) && (
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-border/50">
-              {place.contact.instagram && (
-                <a href={`https://instagram.com/${place.contact.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Instagram className="h-4 w-4 shrink-0" />
-                  Instagram @{place.contact.instagram.replace("@", "")}
-                </a>
-              )}
-              {place.contact.url && (
-                <a href={place.contact.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Globe className="h-4 w-4 shrink-0" />
-                  Sitio web
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          )}
 
           {place.openingHours && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -320,11 +339,6 @@ export default function LugarPage() {
             {place.tags?.map((tag) => <TagBadge key={tag} tag={tag} />)}
           </div>
         </div>
-
-        {/* RIGHT (40%): Imagen - no dominante */}
-        <div className="order-2">
-          <PhotoStrip photos={place.photos} name={place.name} type={place.type} types={place.types} />
-        </div>
       </div>
 
       {/* Reportes de contaminación */}
@@ -357,10 +371,15 @@ export default function LugarPage() {
         </div>
 
         {reviews.length === 0 ? (
-          <Card className="border-dashed">
+          <Card className="border-dashed bg-muted/30">
             <CardContent className="py-12 text-center">
-              <p className="text-lg font-medium mb-2">Este lugar todavía no tiene reseñas.</p>
-              <p className="text-muted-foreground mb-6">Ayudá a otros celíacos contando tu experiencia.</p>
+              <div className="flex flex-col items-center gap-3 mb-6">
+                <MessageCircle className="h-10 w-10 text-muted-foreground" />
+                <div>
+                  <p className="text-lg font-medium mb-1">Todavía no hay reseñas. Ayudá a otros celíacos:</p>
+                  <p className="text-muted-foreground">Contanos si fue seguro, como fue la atención</p>
+                </div>
+              </div>
               <Button size="lg" onClick={() => document.getElementById("review-form")?.scrollIntoView({ behavior: "smooth" })}>
                 Escribir primera reseña
               </Button>

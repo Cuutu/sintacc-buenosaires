@@ -44,8 +44,9 @@ export function Navbar() {
                 )}
                 {session.user.role === "admin" && (
                   <Link href="/admin">
-                    <Button variant="ghost" size="icon">
-                      <Shield className="h-5 w-5" />
+                    <Button variant="ghost" size="sm" className="min-h-[44px]" title="Panel de administración">
+                      <Shield className="h-5 w-5 mr-1.5" />
+                      <span className="hidden sm:inline">Admin</span>
                     </Button>
                   </Link>
                 )}

@@ -8,9 +8,11 @@ import { features } from "@/lib/features"
 
 interface FavoriteButtonProps {
   placeId: string
+  /** Si true, muestra "Guardar" y usa estilo outline (para hero) */
+  showLabel?: boolean
 }
 
-export function FavoriteButton({ placeId }: FavoriteButtonProps) {
+export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
   const { data: session } = useSession()
   const [isFavorite, setIsFavorite] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -61,16 +63,18 @@ export function FavoriteButton({ placeId }: FavoriteButtonProps) {
 
   return (
     <Button
-      variant="ghost"
-      size="icon"
+      variant={showLabel ? "outline" : "ghost"}
+      size={showLabel ? "lg" : "icon"}
+      className={showLabel ? "min-h-[48px]" : undefined}
       onClick={toggleFavorite}
       disabled={loading}
     >
       <Heart
-        className={`h-5 w-5 ${
+        className={`h-5 w-5 ${showLabel ? "mr-2" : ""} ${
           isFavorite ? "fill-red-500 text-red-500" : ""
         }`}
       />
+      {showLabel && "Guardar"}
     </Button>
   )
 }

@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { PlaceCard } from "@/components/place-card"
-import { features } from "@/lib/features"
 import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { toast } from "sonner"
@@ -17,11 +16,6 @@ export default function FavoritosPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!features.favorites) {
-      router.push("/")
-      return
-    }
-
     if (!session) {
       router.push("/login")
       return
@@ -43,24 +37,20 @@ export default function FavoritosPage() {
     }
   }
 
-  if (!features.favorites) {
-    return null
-  }
-
   if (!session) {
     return null
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Mis favoritos</h1>
+      <h1 className="text-3xl font-bold mb-8">Lugares guardados</h1>
 
       {loading ? (
         <div className="text-center py-8">Cargando...</div>
       ) : favorites.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No tienes favoritos aún. Agrega lugares desde el mapa o las páginas de detalle.
+            Todavía no guardaste ningún lugar. Cuando le des Guardar a un lugar en su página de detalle, aparecerá acá.
           </CardContent>
         </Card>
       ) : (

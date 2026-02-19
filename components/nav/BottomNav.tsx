@@ -10,7 +10,7 @@ import { features } from "@/lib/features"
 const BASE_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/mapa", label: "Mapa", icon: MapPin },
-  ...(features.favorites ? [{ href: "/favoritos", label: "Favoritos", icon: Heart }] : []),
+  ...(features.favorites ? [{ href: "/favoritos", label: "Guardados", icon: Heart }] : []),
   { href: "/login", label: "Perfil", icon: User },
 ]
 
