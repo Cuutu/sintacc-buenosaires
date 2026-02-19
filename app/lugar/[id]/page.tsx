@@ -178,77 +178,65 @@ export default function LugarPage() {
   const visibleReviews = reviewsExpanded ? sortedReviews : sortedReviews.slice(0, INITIAL_REVIEWS)
   const hasMoreReviews = sortedReviews.length > INITIAL_REVIEWS
 
+  const SafetyCard = () => {
+    if (isVerified) {
+      return (
+        <div className="w-full rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/90 via-emerald-900/70 to-emerald-950/90 p-6 md:p-8">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center rounded-full bg-emerald-500/30">
+              <CheckCircle2 className="h-8 w-8 md:h-10 md:w-10 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold tracking-tight text-white">VERIFICADO SIN TACC</p>
+              <p className="text-sm md:text-base text-emerald-200/90 mt-0.5">Sin reportes de contaminación</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    if (reportCount > 0) {
+      return (
+        <div className="w-full rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/90 via-amber-900/70 to-amber-950/90 p-6 md:p-8">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center rounded-full bg-amber-500/30">
+              <AlertTriangle className="h-8 w-8 md:h-10 md:w-10 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold tracking-tight text-amber-100">REPORTES DE CONTAMINACIÓN</p>
+              <p className="text-sm md:text-base text-amber-200/90 mt-0.5">{reportCount} {reportCount === 1 ? "reporte" : "reportes"} de usuarios</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 min-h-screen">
-      {/* Hero: grid 40% / 60% desktop, 1 col mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-[40%_60%] gap-6 md:gap-8 mb-10">
-        {/* LEFT: Imagen */}
-        <div className="order-2 md:order-1">
-          <PhotoStrip photos={place.photos} name={place.name} type={place.type} types={place.types} />
-        </div>
+      {/* Hero: info 60% primero (izq), imagen 40% segundo (der) - Safety Status es el elemento principal */}
+      <div className="grid grid-cols-1 md:grid-cols-[60%_40%] gap-6 md:gap-8 mb-10">
+        {/* LEFT (60%): Info - Safety Status PRIMERO */}
+        <div className="order-1 space-y-6">
+          <SafetyCard />
 
-        {/* RIGHT: Info - mobile: SafetyStatus primero */}
-        <div className="order-1 md:order-2 space-y-5">
-          {/* Mobile: SafetyStatus arriba del todo */}
-          <div className="md:hidden">
-            {isVerified ? (
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl border-2 bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-6 w-6 shrink-0" />
-                <div>
-                  <p className="font-bold text-base">VERIFICADO SIN TACC</p>
-                  <p className="text-sm opacity-90">Sin reportes de contaminación</p>
-                </div>
-              </div>
-            ) : reportCount > 0 ? (
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl border-2 bg-amber-500/15 border-amber-500/60 text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="h-6 w-6 shrink-0" />
-                <div>
-                  <p className="font-bold text-base">REPORTES DE CONTAMINACIÓN</p>
-                  <p className="text-sm opacity-90">{reportCount} {reportCount === 1 ? "reporte" : "reportes"} de usuarios</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{place.name}</h1>
 
-          <div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{place.name}</h1>
-            {place.stats?.avgRating != null && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${i <= Math.round(place.stats!.avgRating!) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/50"}`}
-                    />
-                  ))}
-                </div>
-                <span className="font-semibold">{place.stats.avgRating.toFixed(1)}</span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground">{place.stats.totalReviews} {place.stats.totalReviews === 1 ? "reseña" : "reseñas"}</span>
+          {place.stats?.avgRating != null && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${i <= Math.round(place.stats!.avgRating!) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/50"}`}
+                  />
+                ))}
               </div>
-            )}
-          </div>
-
-          {/* Desktop: SafetyStatus */}
-          <div className="hidden md:block">
-            {isVerified ? (
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl border-2 bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-6 w-6 shrink-0" />
-                <div>
-                  <p className="font-bold text-lg">VERIFICADO SIN TACC</p>
-                  <p className="text-sm opacity-90">Sin reportes de contaminación</p>
-                </div>
-              </div>
-            ) : reportCount > 0 ? (
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl border-2 bg-amber-500/15 border-amber-500/60 text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="h-6 w-6 shrink-0" />
-                <div>
-                  <p className="font-bold text-lg">REPORTES DE CONTAMINACIÓN</p>
-                  <p className="text-sm opacity-90">{reportCount} {reportCount === 1 ? "reporte" : "reportes"} de usuarios</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
+              <span className="font-semibold">{place.stats.avgRating.toFixed(1)}</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">{place.stats.totalReviews} {place.stats.totalReviews === 1 ? "reseña" : "reseñas"}</span>
+            </div>
+          )}
 
           <div className="flex items-start gap-2">
             <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
@@ -262,16 +250,17 @@ export default function LugarPage() {
                 Cómo llegar
               </Link>
             </Button>
-            <FavoriteButton placeId={place._id.toString()} />
             <ContaminationReportForm
               placeId={params.id as string}
               onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
               trigger={
-                <Button variant="outline" size="lg" className="min-h-[48px] border-amber-500/50 text-amber-600 hover:bg-amber-500/10">
+                <Button variant="outline" size="lg" className="min-h-[48px]">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
                   Reportar contaminación
                 </Button>
               }
             />
+            <FavoriteButton placeId={place._id.toString()} />
           </div>
 
           {(place.contact?.instagram || place.contact?.url) && (
@@ -330,6 +319,11 @@ export default function LugarPage() {
           <div className="flex flex-wrap gap-2">
             {place.tags?.map((tag) => <TagBadge key={tag} tag={tag} />)}
           </div>
+        </div>
+
+        {/* RIGHT (40%): Imagen - no dominante */}
+        <div className="order-2">
+          <PhotoStrip photos={place.photos} name={place.name} type={place.type} types={place.types} />
         </div>
       </div>
 
