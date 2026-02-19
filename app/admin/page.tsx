@@ -65,7 +65,7 @@ type ContactItem = {
 }
 
 export default function AdminPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
   const [reviews, setReviews] = useState<ReviewItem[]>([])
@@ -87,12 +87,13 @@ export default function AdminPage() {
   const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (session?.user?.role !== "admin") {
+    if (status === "loading") return
+    if (status === "unauthenticated" || session?.user?.role !== "admin") {
       router.push("/")
       return
     }
     fetchSuggestions()
-  }, [session, router])
+  }, [session, status, router])
 
   const fetchSuggestions = async () => {
     try {
@@ -228,7 +229,17 @@ export default function AdminPage() {
 
   const getTypeLabel = (type: string) => TYPES.find((t) => t.value === type)?.label || type
 
-  if (session?.user?.role !== "admin") {
+  if (status === "loading") {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 w-48 bg-muted rounded" />
+          <div className="h-64 bg-muted rounded" />
+        </div>
+      </div>
+    )
+  }
+  if (status === "unauthenticated" || session?.user?.role !== "admin") {
     return null
   }
 
