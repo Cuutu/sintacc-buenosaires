@@ -71,7 +71,7 @@ export function ContaminationReportForm({
   const defaultTrigger = (
     <Button variant="outline" className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10 min-h-[44px]">
       <AlertTriangle className="h-4 w-4 mr-2" />
-      Me contaminé
+      Reportar contaminación
     </Button>
   )
 
