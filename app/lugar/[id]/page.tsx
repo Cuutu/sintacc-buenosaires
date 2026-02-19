@@ -34,6 +34,7 @@ import { toast } from "sonner"
 import { fetchApi } from "@/lib/fetchApi"
 import { TYPES } from "@/lib/constants"
 import { features } from "@/lib/features"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { isOpenNow } from "@/lib/opening-hours"
 
 export default function LugarPage() {
@@ -181,7 +182,9 @@ export default function LugarPage() {
 
   const mapsUrl = place ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}` : ""
   const reportCount = place?.stats?.contaminationReportsCount ?? 0
-  const isVerified = reportCount === 0
+  const effectiveSafety = place ? inferSafetyLevel(place) : undefined
+  const isDedicated = effectiveSafety === "dedicated_gf"
+  const hasReports = reportCount > 0
 
   if (loading) {
     return (
@@ -212,7 +215,22 @@ export default function LugarPage() {
   const hasMoreReviews = sortedReviews.length > INITIAL_REVIEWS
 
   const SafetyCard = () => {
-    if (isVerified) {
+    if (hasReports) {
+      return (
+        <div className="w-full rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/90 via-amber-900/70 to-amber-950/90 p-6 md:p-8">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center rounded-full bg-amber-500/30">
+              <AlertTriangle className="h-8 w-8 md:h-10 md:w-10 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold tracking-tight text-amber-100">REPORTES DE CONTAMINACIÓN</p>
+              <p className="text-sm md:text-base text-amber-200/90 mt-0.5">{reportCount} {reportCount === 1 ? "reporte" : "reportes"} de usuarios</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    if (!hasReports && isDedicated) {
       return (
         <div className="w-full rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/90 via-emerald-900/70 to-emerald-950/90 p-6 md:p-8">
           <div className="flex items-center gap-4 md:gap-6">
@@ -230,16 +248,18 @@ export default function LugarPage() {
         </div>
       )
     }
-    if (reportCount > 0) {
+    if (!hasReports) {
       return (
-        <div className="w-full rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/90 via-amber-900/70 to-amber-950/90 p-6 md:p-8">
+        <div className="w-full rounded-2xl border border-slate-500/30 bg-gradient-to-br from-slate-800/90 via-slate-800/70 to-slate-900/90 p-6 md:p-8">
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center rounded-full bg-amber-500/30">
-              <AlertTriangle className="h-8 w-8 md:h-10 md:w-10 text-amber-400" />
+            <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center rounded-full bg-slate-500/30">
+              <CheckCircle2 className="h-8 w-8 md:h-10 md:w-10 text-slate-400" />
             </div>
             <div>
-              <p className="text-lg md:text-xl font-bold tracking-tight text-amber-100">REPORTES DE CONTAMINACIÓN</p>
-              <p className="text-sm md:text-base text-amber-200/90 mt-0.5">{reportCount} {reportCount === 1 ? "reporte" : "reportes"} de usuarios</p>
+              <p className="text-lg md:text-xl font-bold tracking-tight text-white">Sin reportes de contaminación</p>
+              <p className="text-sm md:text-base text-slate-300/90 mt-0.5">
+                Ningún usuario reportó problemas de contaminación
+              </p>
             </div>
           </div>
         </div>
