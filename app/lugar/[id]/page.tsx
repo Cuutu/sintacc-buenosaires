@@ -71,10 +71,14 @@ export default function LugarPage() {
   }, [params.id])
 
   useEffect(() => {
-    if (place?.location?.lat != null && place?.location?.lng != null) {
+    const hasLocation = place?.location?.lat != null && place?.location?.lng != null
+    const hasNeighborhood = Boolean(place?.neighborhood)
+    if (place && (hasLocation || hasNeighborhood)) {
       fetchNearby()
+    } else if (place !== undefined) {
+      setLoadingNearby(false)
     }
-  }, [place?._id, place?.location?.lat, place?.location?.lng])
+  }, [place?._id, place?.location?.lat, place?.location?.lng, place?.neighborhood])
 
   const fetchPlace = async () => {
     try {
@@ -136,16 +140,30 @@ export default function LugarPage() {
   }
 
   const fetchNearby = async () => {
-    if (!place?.location) {
+    if (!place) {
       setLoadingNearby(false)
       return
     }
     setLoadingNearby(true)
     try {
-      const data = await fetchApi<{ places: Array<IPlace & { distance?: number }> }>(
-        `/api/places/near?lat=${place.location.lat}&lng=${place.location.lng}&radius=2000`
-      )
-      const filtered = (data.places || []).filter((p: any) => p._id.toString() !== params.id).slice(0, 6)
+      // Buscar por geolocalización; si no hay resultados, usar lugares del mismo barrio
+      let places: Array<IPlace & { distance?: number; stats?: any }> = []
+      if (place.location?.lat != null && place.location?.lng != null) {
+        const nearData = await fetchApi<{ places: Array<IPlace & { distance?: number }> }>(
+          `/api/places/near?lat=${place.location.lat}&lng=${place.location.lng}&radius=2000`
+        )
+        places = nearData.places || []
+      }
+      // Fallback: si geo no devuelve resultados, usar lugares del mismo barrio
+      if (places.length === 0 && place.neighborhood) {
+        const listData = await fetchApi<{ places: Array<IPlace & { stats?: any }> }>(
+          `/api/places?neighborhood=${encodeURIComponent(place.neighborhood)}&limit=7`
+        )
+        places = listData.places || []
+      }
+      const filtered = places
+        .filter((p: any) => p._id?.toString() !== params.id)
+        .slice(0, 6)
       setNearbyPlaces(filtered)
     } catch {
       setNearbyPlaces([])
