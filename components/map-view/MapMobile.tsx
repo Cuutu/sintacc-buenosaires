@@ -21,6 +21,10 @@ interface MapMobileProps {
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
   placeIdToFocus?: string | null
+  /** Si true, el BottomSheet empieza abierto (desde ?list=open) */
+  listOpen?: boolean
+  /** Callback cuando el usuario cierra el sheet manualmente */
+  onSheetCollapse?: () => void
 }
 
 export function MapMobile({
@@ -33,10 +37,12 @@ export function MapMobile({
   selectedPlaceId,
   onPlaceSelect,
   placeIdToFocus,
+  listOpen = false,
+  onSheetCollapse,
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
-  const [sheetSnap, setSheetSnap] = React.useState<SheetSnap>("half")
+  const [sheetSnap, setSheetSnap] = React.useState<SheetSnap>(listOpen ? "half" : "collapsed")
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
 
   const visiblePlaces = React.useMemo(() => {
@@ -71,6 +77,19 @@ export function MapMobile({
       setSheetSnap("half")
     }
   }
+
+  // Sincronizar listOpen con el sheet cuando cambia la URL
+  React.useEffect(() => {
+    setSheetSnap(listOpen ? "half" : "collapsed")
+  }, [listOpen])
+
+  const handleSnapChange = React.useCallback(
+    (snap: SheetSnap) => {
+      setSheetSnap(snap)
+      if (snap === "collapsed") onSheetCollapse?.()
+    },
+    [onSheetCollapse]
+  )
 
   // Centrar mapa en lugar cuando placeIdToFocus está en la lista
   React.useEffect(() => {
@@ -109,8 +128,8 @@ export function MapMobile({
       />
 
       <MapBottomSheet
-        initialSnap="half"
-        onSnapChange={setSheetSnap}
+        initialSnap={listOpen ? "half" : "collapsed"}
+        onSnapChange={handleSnapChange}
         reduceMotion={reduceMotion}
       >
         <div className="pt-2">

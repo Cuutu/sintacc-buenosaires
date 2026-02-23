@@ -14,6 +14,7 @@ function MapaContent() {
   const router = useRouter()
   const pathname = usePathname()
   const placeIdFromUrl = searchParams.get("place")
+  const listOpen = searchParams.get("list") === "open"
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
@@ -84,6 +85,13 @@ function MapaContent() {
     if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
   }, [placeIdFromUrl])
 
+  const handleSheetCollapse = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("list")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
+
   return (
     <MapScreen
       places={places}
@@ -95,6 +103,8 @@ function MapaContent() {
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
       placeIdToFocus={placeIdFromUrl}
+      listOpen={listOpen}
+      onSheetCollapse={handleSheetCollapse}
     />
   )
 }

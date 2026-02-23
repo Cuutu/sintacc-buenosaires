@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BottomNav } from "@/components/nav/BottomNav"
@@ -36,8 +37,12 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
       {/* Footer: solo desktop */}
       {!isMobile && <Footer />}
 
-      {/* BottomNav: solo mobile */}
-      {isMobile && <BottomNav />}
+      {/* BottomNav: solo mobile (Suspense por useSearchParams) */}
+      {isMobile && (
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
+      )}
     </>
   )
 }

@@ -17,6 +17,10 @@ interface MapScreenProps {
   onPlaceSelect: (place: IPlace) => void
   /** ID de lugar para centrar el mapa (ej. desde ?place=id) */
   placeIdToFocus?: string | null
+  /** Si true, el BottomSheet empieza abierto (desde ?list=open) */
+  listOpen?: boolean
+  /** Callback cuando el usuario cierra el sheet manualmente */
+  onSheetCollapse?: () => void
 }
 
 export function MapScreen({
@@ -29,6 +33,8 @@ export function MapScreen({
   selectedPlaceId,
   onPlaceSelect,
   placeIdToFocus,
+  listOpen,
+  onSheetCollapse,
 }: MapScreenProps) {
   const isMobile = useIsMobile()
 
@@ -44,6 +50,8 @@ export function MapScreen({
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
         placeIdToFocus={placeIdToFocus}
+        listOpen={listOpen}
+        onSheetCollapse={onSheetCollapse}
       />
     )
   }
