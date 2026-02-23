@@ -21,7 +21,7 @@ export function SugerirMobileFlow({ onRequireLogin }: SugerirMobileFlowProps) {
   const { data: session } = useSession()
   const router = useRouter()
   const [step, setStep] = useState<1 | 2>(1)
-  const [mapPickerOpen, setMapPickerOpen] = useState(true)
+  const [mapPickerOpen, setMapPickerOpen] = useState(false)
   const [locationData, setLocationData] = useState<MapPickerResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
