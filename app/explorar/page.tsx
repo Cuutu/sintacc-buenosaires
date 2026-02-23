@@ -94,9 +94,25 @@ export default function ExplorarPage() {
     ? nearby.filter((p) => p.type === selectedType || p.types?.includes(selectedType))
     : nearby
 
+  const totalResults = [
+    ...filteredNearby,
+    ...filteredBestRated.filter((p) => !filteredNearby.some((n) => n._id.toString() === p._id.toString())),
+    ...filteredNew.filter(
+      (p) =>
+        !filteredNearby.some((n) => n._id.toString() === p._id.toString()) &&
+        !filteredBestRated.some((b) => b._id.toString() === p._id.toString())
+    ),
+  ]
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Explorar</h1>
+      <h1 className="text-2xl font-bold mb-2">Explorar</h1>
+      <p className="text-muted-foreground mb-6">
+        Resultados
+        <span className="font-medium text-foreground ml-2">
+          {totalResults.length} lugar{totalResults.length !== 1 ? "es" : ""}
+        </span>
+      </p>
 
       {/* Category chips */}
       <div className="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">

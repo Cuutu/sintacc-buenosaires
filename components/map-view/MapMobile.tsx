@@ -114,12 +114,6 @@ export function MapMobile({
         reduceMotion={reduceMotion}
       >
         <div className="pt-2">
-          <h2 className="text-lg font-semibold mb-3 px-4">
-            Resultados
-            <span className="text-muted-foreground font-normal ml-2">
-              {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
-            </span>
-          </h2>
           <PlacesList
             places={visiblePlaces}
             selectedPlaceId={selectedPlaceId}

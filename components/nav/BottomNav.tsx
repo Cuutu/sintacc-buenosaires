@@ -13,7 +13,7 @@ const MOBILE_NAV_ITEMS = [
   { href: "/explorar", label: "Explorar", icon: Compass },
   {
     href: "/perfil",
-    label: "Mi Celimap",
+    label: "Perfil",
     icon: User,
     fallbackHref: "/login",
     fallbackLabel: "Perfil",
@@ -33,7 +33,7 @@ export function BottomNav() {
       }
     }
     if ("fallbackHref" in item && session) {
-      return { ...item, href: "/perfil", label: "Mi Celimap" }
+      return { ...item, href: "/perfil", label: "Perfil" }
     }
     return item
   })
