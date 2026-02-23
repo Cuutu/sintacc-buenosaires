@@ -7,6 +7,7 @@ import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import { toast } from "sonner"
 import mapboxgl from "mapbox-gl"
 import { CABA_CENTER, filterPlacesInBounds } from "./geo"
 import type { IPlace } from "@/models/Place"
@@ -56,18 +57,26 @@ export function MapMobile({
   }, [places, bounds, selectedPlaceId])
 
   const goToNearMe = () => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no soporta geolocalización")
+      return
+    }
+    toast.loading("Obteniendo tu ubicación...", { id: "location" })
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
         mapRef.current?.flyTo(longitude, latitude, 14)
+        toast.success("Ubicación encontrada", { id: "location" })
       },
-      () => {}
+      (err) => {
+        if (err.code === 1) {
+          toast.error("Permití el acceso a la ubicación para ver lugares cerca tuyo", { id: "location" })
+        } else {
+          toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", { id: "location" })
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
-  }
-
-  const goToRecenter = () => {
-    mapRef.current?.flyTo(CABA_CENTER[0], CABA_CENTER[1], 12)
   }
 
   const handlePlaceSelect = (place: IPlace) => {
@@ -113,7 +122,6 @@ export function MapMobile({
 
       <FabButtons
         onNearMe={goToNearMe}
-        onRecenter={goToRecenter}
         bottomOffset={listOpen ? "calc(18vh + 1rem)" : "1rem"}
       />
 
