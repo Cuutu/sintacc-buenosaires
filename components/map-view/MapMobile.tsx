@@ -42,7 +42,6 @@ export function MapMobile({
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
-  const [sheetSnap, setSheetSnap] = React.useState<SheetSnap>(listOpen ? "half" : "collapsed")
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
 
   const visiblePlaces = React.useMemo(() => {
@@ -73,19 +72,10 @@ export function MapMobile({
 
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
-    if (sheetSnap === "collapsed") {
-      setSheetSnap("half")
-    }
   }
-
-  // Sincronizar listOpen con el sheet cuando cambia la URL
-  React.useEffect(() => {
-    setSheetSnap(listOpen ? "half" : "collapsed")
-  }, [listOpen])
 
   const handleSnapChange = React.useCallback(
     (snap: SheetSnap) => {
-      setSheetSnap(snap)
       if (snap === "collapsed") onSheetCollapse?.()
     },
     [onSheetCollapse]
@@ -124,22 +114,24 @@ export function MapMobile({
       <FabButtons
         onNearMe={goToNearMe}
         onRecenter={goToRecenter}
-        bottomOffset="calc(18vh + 1rem)"
+        bottomOffset={listOpen ? "calc(18vh + 1rem)" : "1rem"}
       />
 
-      <MapBottomSheet
-        initialSnap={listOpen ? "half" : "collapsed"}
-        onSnapChange={handleSnapChange}
-        reduceMotion={reduceMotion}
-      >
-        <div className="pt-2">
-          <PlacesList
-            places={visiblePlaces}
-            selectedPlaceId={selectedPlaceId}
-            loading={loading}
-          />
-        </div>
-      </MapBottomSheet>
+      {listOpen && (
+        <MapBottomSheet
+          initialSnap="half"
+          onSnapChange={handleSnapChange}
+          reduceMotion={reduceMotion}
+        >
+          <div className="pt-2">
+            <PlacesList
+              places={visiblePlaces}
+              selectedPlaceId={selectedPlaceId}
+              loading={loading}
+            />
+          </div>
+        </MapBottomSheet>
+      )}
     </div>
   )
 }
