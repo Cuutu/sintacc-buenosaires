@@ -122,7 +122,7 @@ export function MapMobile({
 
       <FabButtons
         onNearMe={goToNearMe}
-        bottomOffset={listOpen ? "calc(18vh + 1rem)" : "1rem"}
+        bottomOffset={listOpen ? "calc(18vh + 1rem)" : "calc(5rem + 1rem + env(safe-area-inset-bottom))"}
       />
 
       {listOpen && (

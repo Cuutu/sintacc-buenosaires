@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * Nota: Mapbox GL JS envía telemetría a events.mapbox.com. Si usás bloqueador de anuncios
+ * (uBlock, Brave, etc.) verás `ERR_BLOCKED_BY_CLIENT` en consola. El mapa funciona igual.
+ * Mapbox no ofrece opción para desactivar esto en la versión GL JS.
+ */
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
