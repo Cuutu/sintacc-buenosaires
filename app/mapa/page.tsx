@@ -13,9 +13,10 @@ function MapaContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const placeIdFromUrl = searchParams.get("place")
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
   const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
     tags: [],
@@ -78,6 +79,11 @@ function MapaContent() {
     fetchPlaces()
   }, [fetchPlaces])
 
+  // Sincronizar ?place= con selectedPlaceId
+  useEffect(() => {
+    if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
+  }, [placeIdFromUrl])
+
   return (
     <MapScreen
       places={places}
@@ -88,6 +94,7 @@ function MapaContent() {
       searchQuery={debouncedSearch}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
+      placeIdToFocus={placeIdFromUrl}
     />
   )
 }

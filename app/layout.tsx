@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
-import { BottomNav } from "@/components/nav/BottomNav";
+import { LayoutChrome } from "@/components/layout/LayoutChrome";
+import { MobileShell } from "@/components/layout/MobileShell";
 import { Toaster } from "sonner";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -29,12 +28,9 @@ export default function RootLayout({
     <html lang="es" className={jakarta.variable}>
       <body className="font-sans antialiased">
         <Providers>
-          <Navbar />
-          <main className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-            {children}
-          </main>
-          <Footer />
-          <BottomNav />
+          <MobileShell>
+            <LayoutChrome>{children}</LayoutChrome>
+          </MobileShell>
           <Toaster position="top-center" richColors closeButton />
         </Providers>
       </body>

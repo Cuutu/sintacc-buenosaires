@@ -15,6 +15,8 @@ interface MapScreenProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  /** ID de lugar para centrar el mapa (ej. desde ?place=id) */
+  placeIdToFocus?: string | null
 }
 
 export function MapScreen({
@@ -26,6 +28,7 @@ export function MapScreen({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  placeIdToFocus,
 }: MapScreenProps) {
   const isMobile = useIsMobile()
 
@@ -40,6 +43,7 @@ export function MapScreen({
         searchQuery={searchQuery}
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
+        placeIdToFocus={placeIdToFocus}
       />
     )
   }

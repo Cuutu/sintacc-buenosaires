@@ -20,6 +20,7 @@ interface MapMobileProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  placeIdToFocus?: string | null
 }
 
 export function MapMobile({
@@ -31,6 +32,7 @@ export function MapMobile({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  placeIdToFocus,
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
@@ -69,6 +71,15 @@ export function MapMobile({
       setSheetSnap("half")
     }
   }
+
+  // Centrar mapa en lugar cuando placeIdToFocus está en la lista
+  React.useEffect(() => {
+    if (!placeIdToFocus || !mapRef.current) return
+    const place = places.find((p) => p._id.toString() === placeIdToFocus)
+    if (place?.location) {
+      mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+    }
+  }, [placeIdToFocus, places])
 
   return (
     <div className="relative w-full h-full min-h-[100dvh] overflow-hidden">

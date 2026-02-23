@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils"
 export type SheetSnap = "collapsed" | "half" | "full"
 
 const SNAP_RATIOS: Record<SheetSnap, number> = {
-  collapsed: 0.18,
+  collapsed: 0.2,
   half: 0.5,
-  full: 0.85,
+  full: 0.9,
 }
 
 interface BottomSheetProps {
@@ -28,7 +28,7 @@ export function MapBottomSheet({
 }: BottomSheetProps) {
   const getHeights = () => {
     const h = typeof window !== "undefined" ? window.innerHeight : 600
-    return { collapsed: h * 0.18, half: h * 0.5, full: h * 0.85 }
+    return { collapsed: h * 0.2, half: h * 0.5, full: h * 0.9 }
   }
   const [snapHeights, setSnapHeights] = React.useState(getHeights)
   const [heightPx, setHeightPx] = React.useState(() => getHeights()[initialSnap])

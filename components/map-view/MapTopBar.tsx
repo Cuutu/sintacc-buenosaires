@@ -96,7 +96,7 @@ export function MapTopBar({
         "px-4 pt-3 pb-2 bg-black/40 backdrop-blur-md",
         isSidebar
           ? "border-b border-white/10 px-5 pt-4 pb-4 shrink-0"
-          : "fixed top-16 left-0 right-0 z-30 border-b border-white/10 md:top-6 md:left-6 md:right-auto md:max-w-md md:rounded-2xl md:border md:border-white/10 md:px-5 md:pt-5 md:pb-4 md:shadow-xl md:shadow-black/30 md:border-white/20"
+          : "fixed top-0 left-0 right-0 z-30 border-b border-white/10 pt-[env(safe-area-inset-top)] md:top-6 md:left-6 md:right-auto md:max-w-md md:rounded-2xl md:border md:border-white/10 md:px-5 md:pt-5 md:pb-4 md:shadow-xl md:shadow-black/30 md:border-white/20 md:pt-5"
       )}
     >
       <div className="flex gap-2 mb-3 md:mb-4">

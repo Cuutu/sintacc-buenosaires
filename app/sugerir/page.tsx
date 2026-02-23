@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useIsMobile } from "@/components/map-view/useMediaQuery"
+import { SugerirMobileFlow } from "@/components/sugerir/SugerirMobileFlow"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -71,6 +73,8 @@ export default function SugerirPage() {
     }))
   }
 
+  const isMobile = useIsMobile()
+
   if (!session) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -81,6 +85,12 @@ export default function SugerirPage() {
           </CardContent>
         </Card>
       </div>
+    )
+  }
+
+  if (isMobile) {
+    return (
+      <SugerirMobileFlow onRequireLogin={() => router.push("/login")} />
     )
   }
 

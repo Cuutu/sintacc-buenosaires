@@ -54,7 +54,7 @@ export default function PerfilPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-lg">
-      <h1 className="text-2xl font-bold mb-6">Mi perfil</h1>
+      <h1 className="text-2xl font-bold mb-6">Mi Celimap</h1>
 
       <Card className="border-white/10 bg-white/5 backdrop-blur-md">
         <CardHeader>
