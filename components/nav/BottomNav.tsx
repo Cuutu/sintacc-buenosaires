@@ -43,7 +43,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
       role="navigation"
       aria-label="Navegación principal"
     >
@@ -108,6 +108,30 @@ export function BottomNav() {
                 </span>
                 <span className="text-[10px] font-medium mt-0.5">{label}</span>
               </Link>
+            )
+          }
+          if (isCenter && hrefStr === "/sugerir") {
+            return (
+              <button
+                key="sugerir"
+                type="button"
+                onClick={() => router.push("/sugerir")}
+                className={cn(
+                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors cursor-pointer",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "relative -mt-4",
+                  isActive
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={label}
+              >
+                <span className="flex items-center justify-center h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg">
+                  <Icon className="h-6 w-6" aria-hidden />
+                </span>
+                <span className="text-[10px] font-medium mt-0.5">{label}</span>
+              </button>
             )
           }
           return (
