@@ -21,7 +21,7 @@ export default function HomePage() {
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-base font-medium mb-4">
               <Sparkles className="h-4 w-4" />
-              Argentina · Comunidad celíaca
+              Celimap · Mapa para celíacos
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">

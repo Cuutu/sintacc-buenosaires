@@ -13,7 +13,7 @@ export function JsonLdScript() {
     url: BASE_URL,
     logo: `${BASE_URL}/CelimapLOGO.png`,
     description:
-      "Mapa de lugares sin TACC en Argentina. Restaurantes, cafés y panaderías aptas para celíacos.",
+      "Celimap - Mapa para celíacos en Buenos Aires. Restaurantes, cafés y panaderías sin TACC.",
     areaServed: {
       "@type": "City",
       name: "Argentina",
@@ -26,7 +26,7 @@ export function JsonLdScript() {
     "@type": "WebSite",
     name: "Celimap",
     url: BASE_URL,
-    description: "Mapa de lugares sin gluten en Argentina para celíacos.",
+    description: "Celimap - Mapa para celíacos en Buenos Aires. Lugares sin gluten verificados.",
     potentialAction: {
       "@type": "SearchAction",
       target: {
