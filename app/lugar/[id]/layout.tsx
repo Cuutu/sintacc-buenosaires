@@ -25,8 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const p = place as { name: string; neighborhood: string; type: string }
     return {
-      title: `${p.name} | Celimap`,
-      description: `${p.name} - ${p.neighborhood}. Lugar sin TACC en Buenos Aires.`,
+      title: p.name,
+      description: `${p.name} - ${p.neighborhood}. Lugar sin TACC en Argentina. Reseñas y datos de contacto.`,
+      openGraph: {
+        title: `${p.name} | Celimap`,
+        description: `${p.name} en ${p.neighborhood}. Lugar apto para celíacos en Argentina.`,
+      },
     }
   } catch {
     return {
