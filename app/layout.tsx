@@ -18,15 +18,15 @@ const BASE_URL =
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Celimap - Mapa para celíacos en Buenos Aires | Lugares sin gluten",
+    default: "Mapa para celíacos en Buenos Aires | Celimap - Lugares sin gluten",
     template: "%s | Celimap",
   },
   description:
-    "Celimap es el mapa para celíacos en Buenos Aires. Encontrá restaurantes, cafés y panaderías sin TACC. Reseñas de la comunidad, certificados y opciones seguras.",
+    "Mapa para celiacos en Buenos Aires. Celimap: restaurantes, cafés y panaderías sin TACC. Reseñas de la comunidad, certificados y opciones seguras para celíacos.",
   keywords: [
-    "Celimap",
     "mapa para celiacos",
     "mapa para celíacos",
+    "Celimap",
     "mapa celíacos Buenos Aires",
     "lugares sin gluten",
     "sin TACC",
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     locale: "es_AR",
     url: BASE_URL,
     siteName: "Celimap",
-    title: "Celimap - Mapa para celíacos en Buenos Aires",
+    title: "Mapa para celíacos en Buenos Aires | Celimap",
     description:
       "El mapa para celíacos en Buenos Aires. Restaurantes, cafés y panaderías sin TACC. Reseñas de la comunidad.",
-    images: [{ url: "/CelimapLOGO.png", width: 512, height: 512, alt: "Celimap" }],
+    images: [{ url: "/CelimapLOGO.png", width: 512, height: 512, alt: "Celimap - Mapa para celíacos en Buenos Aires" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Celimap - Mapa para celíacos en Buenos Aires",
+    title: "Mapa para celíacos en Buenos Aires | Celimap",
     description: "El mapa para celíacos en Buenos Aires. Lugares sin TACC verificados por la comunidad.",
   },
   robots: { index: true, follow: true },

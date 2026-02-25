@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/mapa-para-celiacos", destination: "/mapa", permanent: true },
+      { source: "/mapa-para-celiacos/", destination: "/mapa", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       {
