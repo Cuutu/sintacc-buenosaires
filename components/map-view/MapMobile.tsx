@@ -62,22 +62,22 @@ export function MapMobile({
       return
     }
     toast.loading("Obteniendo tu ubicación...", { id: "location" })
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords
-        mapRef.current?.flyTo(longitude, latitude, 14)
-        toast.success("Ubicación encontrada", { id: "location" })
-      },
-      (err) => {
-        if (err.code === 1) {
-          toast.error("Permití el acceso a la ubicación para ver lugares cerca tuyo", { id: "location" })
-        } else {
-          toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", { id: "location" })
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    )
+    mapRef.current?.triggerGeolocate()
+    setTimeout(() => toast.dismiss("location"), 5000)
   }
+
+  const handleGeolocateError = React.useCallback((error: GeolocationPositionError) => {
+    toast.dismiss("location")
+    if (error.code === 1) {
+      toast.error("Permití el acceso a la ubicación para verte en el mapa")
+    } else {
+      toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.")
+    }
+  }, [])
+
+  const handleGeolocateSuccess = React.useCallback(() => {
+    toast.success("Ubicación encontrada", { id: "location" })
+  }, [])
 
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
@@ -117,6 +117,9 @@ export function MapMobile({
           searchQuery={searchQuery}
           darkStyle
           reduceMotion={reduceMotion}
+          enableGeolocate
+          onGeolocateError={handleGeolocateError}
+          onGeolocateSuccess={handleGeolocateSuccess}
         />
       </div>
 

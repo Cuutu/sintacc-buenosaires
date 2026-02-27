@@ -26,6 +26,8 @@ export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: st
 export interface MapboxMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void
   setCenter: (lng: number, lat: number) => void
+  /** Solicita permisos de ubicación y muestra al usuario en el mapa (punto azul) */
+  triggerGeolocate: () => void
 }
 
 interface MapboxMapProps {
@@ -36,6 +38,12 @@ interface MapboxMapProps {
   searchQuery?: string
   darkStyle?: boolean
   reduceMotion?: boolean
+  /** Si true, agrega GeolocateControl para mostrar ubicación del usuario (punto azul) */
+  enableGeolocate?: boolean
+  /** Callback cuando falla la geolocalización (ej. permiso denegado) */
+  onGeolocateError?: (error: GeolocationPositionError) => void
+  /** Callback cuando se obtiene la ubicación correctamente */
+  onGeolocateSuccess?: () => void
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -48,6 +56,9 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       searchQuery,
       darkStyle = true,
       reduceMotion = false,
+      enableGeolocate = false,
+      onGeolocateError,
+      onGeolocateSuccess,
     },
     ref
   ) => {
@@ -55,8 +66,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const map = useRef<mapboxgl.Map | null>(null)
     const markersRef = useRef<mapboxgl.Marker[]>([])
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
+    const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
+
+    const triggerGeolocate = useCallback(() => {
+      geolocateControlRef.current?.trigger()
+    }, [])
 
     const flyTo = useCallback(
       (lng: number, lat: number, zoom = 15) => {
@@ -75,7 +91,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       map.current.setCenter([lng, lat])
     }, [])
 
-    useImperativeHandle(ref, () => ({ flyTo, setCenter }), [flyTo, setCenter])
+    useImperativeHandle(ref, () => ({ flyTo, setCenter, triggerGeolocate }), [flyTo, setCenter, triggerGeolocate])
 
     useEffect(() => {
       if (!mapContainer.current) return
@@ -107,6 +123,36 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       return () => {}
     }, [darkStyle])
+
+    // GeolocateControl: punto azul de ubicación del usuario (solo en mobile, se activa con FAB)
+    useEffect(() => {
+      const m = map.current
+      if (!m || !enableGeolocate) return
+
+      if (!navigator.geolocation) return
+
+      const geolocate = new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+        trackUserLocation: true,
+        showUserLocation: true,
+        showUserHeading: false,
+        showAccuracyCircle: true,
+        showButton: false, // Usamos nuestro FAB para activar
+      })
+      const onError = (e: GeolocationPositionError) => onGeolocateError?.(e)
+      const onSuccess = () => onGeolocateSuccess?.()
+      geolocate.on("error", onError)
+      geolocate.on("trackuserlocationstart", onSuccess)
+      m.addControl(geolocate, "top-right")
+      geolocateControlRef.current = geolocate
+
+      return () => {
+        geolocate.off("error", onError)
+        geolocate.off("trackuserlocationstart", onSuccess)
+        m.removeControl(geolocate)
+        geolocateControlRef.current = null
+      }
+    }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
     // Cuando la búsqueda cambia, volar a la localidad si Mapbox la encuentra
     useEffect(() => {
