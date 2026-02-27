@@ -68,10 +68,20 @@ export function MapMobile({
 
   const handleGeolocateError = React.useCallback((error: GeolocationPositionError) => {
     toast.dismiss("location")
+    const retry = () => {
+      toast.loading("Obteniendo tu ubicación...", { id: "location" })
+      mapRef.current?.triggerGeolocate()
+      setTimeout(() => toast.dismiss("location"), 5000)
+    }
     if (error.code === 1) {
-      toast.error("Permití el acceso a la ubicación para verte en el mapa")
+      toast.error(
+        "No se pudo acceder a tu ubicación. Si la bloqueaste antes, activala en la configuración del navegador.",
+        { action: { label: "Reintentar", onClick: retry } }
+      )
     } else {
-      toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.")
+      toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", {
+        action: { label: "Reintentar", onClick: retry },
+      })
     }
   }, [])
 
