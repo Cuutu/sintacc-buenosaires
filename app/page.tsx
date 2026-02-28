@@ -5,6 +5,7 @@ import { MapPin, ArrowRight, Sparkles } from "lucide-react"
 import { StatsRow } from "@/components/home/StatsRow"
 import { FeaturedSection } from "@/components/featured/FeaturedSection"
 import { FeaturedListsSection } from "@/components/home/FeaturedListsSection"
+import { FaqSection } from "@/components/home/FaqSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 export default function HomePage() {
@@ -35,7 +36,7 @@ export default function HomePage() {
               cerca tuyo
             </h1>
             <p className="text-base md:text-lg text-muted-foreground mb-6">
-              El mapa para celiacos en Buenos Aires. Lugares verificados por la comunidad, reseñas reales y opciones sin TACC.
+              El mapa para celíacos sin restricciones. Lugares verificados por la comunidad en todo el mundo, reseñas reales y opciones sin TACC.
             </p>
 
             <div className="mb-6">
@@ -93,10 +94,10 @@ export default function HomePage() {
         <section className="container mx-auto px-4 py-12 md:py-16 border-t border-border/50 scroll-mt-20">
           <div className="max-w-2xl mx-auto text-center space-y-4">
             <h2 className="text-xl font-semibold">
-              El mapa para celíacos que la comunidad de Buenos Aires elige
+              El mapa para celíacos que la comunidad elige en todo el mundo
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Celimap es el mapa para celiacos más completo de CABA y alrededores. Encontrá restaurantes, cafés, panaderías y heladerías sin TACC. Cada lugar tiene reseñas de la comunidad celíaca, nivel de seguridad (100% sin gluten u opciones) y datos de contacto. Actualizamos el mapa constantemente con sugerencias verificadas.
+              Celimap es el mapa para celíacos sin fronteras. Encontrá restaurantes, cafés, panaderías y heladerías sin TACC donde sea que estés. Cada lugar tiene reseñas de la comunidad celíaca, nivel de seguridad (100% sin gluten u opciones) y datos de contacto. Actualizamos el mapa constantemente con sugerencias verificadas.
             </p>
           </div>
         </section>
@@ -104,31 +105,7 @@ export default function HomePage() {
 
       {/* FAQ - coincide con FAQ schema para rich snippets */}
       <ScrollReveal>
-        <section className="container mx-auto px-4 py-12 md:py-16 border-t border-border/50 scroll-mt-20" aria-label="Preguntas frecuentes">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-xl font-semibold text-center mb-8">Preguntas frecuentes sobre el mapa para celíacos</h2>
-            <dl className="space-y-6">
-              <div>
-                <dt className="font-medium text-foreground">¿Qué es el mapa para celíacos?</dt>
-                <dd className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                  El mapa para celíacos de Celimap es una plataforma donde la comunidad comparte restaurantes, cafés y panaderías sin TACC en Buenos Aires. Podés ver el mapa interactivo, filtrar por barrio y nivel de seguridad, y leer reseñas de otros celíacos.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">¿Dónde comer sin gluten en Buenos Aires?</dt>
-                <dd className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                  En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires. Incluye restaurantes 100% sin TACC, cafés con opciones aptas y panaderías certificadas. Cada lugar tiene reseñas de la comunidad celíaca.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">¿Cómo saber si un lugar es seguro para celíacos?</dt>
-                <dd className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                  En Celimap cada lugar tiene un nivel de seguridad: 100% sin gluten (dedicado) u opciones sin gluten. Las reseñas de la comunidad te ayudan a decidir. También podés reportar si tuviste una experiencia de contaminación.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
+        <FaqSection />
       </ScrollReveal>
 
       {/* CTA */}

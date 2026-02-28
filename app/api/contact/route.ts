@@ -107,7 +107,7 @@ function buildContactEmailHtml({
           <tr>
             <td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
               <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
-              <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en Buenos Aires</p>
+              <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en todo el mundo</p>
               <p style="margin:6px 0 0;font-size:11px;color:#3f3f46;">Consultas de la comunidad celíaca</p>
             </td>
           </tr>

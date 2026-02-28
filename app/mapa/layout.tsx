@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mapa para celíacos - Lugares sin TACC en Buenos Aires",
+  title: "Mapa para celíacos - Lugares sin TACC",
   description:
-    "Mapa interactivo para celiacos: restaurantes, cafés y panaderías sin gluten en Buenos Aires. Filtros por barrio, tipo y nivel de seguridad. Lugares verificados por la comunidad.",
+    "Mapa interactivo para celíacos: restaurantes, cafés y panaderías sin gluten en todo el mundo. Filtros por zona, tipo y nivel de seguridad. Lugares verificados por la comunidad.",
 };
 
 export default function MapaLayout({

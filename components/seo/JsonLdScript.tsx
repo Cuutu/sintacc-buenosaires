@@ -10,15 +10,14 @@ export function JsonLdScript() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Celimap",
-    alternateName: ["Mapa para celiacos", "Mapa para celíacos", "Mapa celíacos Buenos Aires"],
+    alternateName: ["Mapa para celiacos", "Mapa para celíacos", "Mapa celíacos mundial"],
     url: BASE_URL,
     logo: `${BASE_URL}/CelimapLOGO.png`,
     description:
-      "Celimap - Mapa para celíacos en Buenos Aires. Restaurantes, cafés y panaderías sin TACC.",
+      "Celimap - Mapa para celíacos sin fronteras. Restaurantes, cafés y panaderías sin TACC en todo el mundo.",
     areaServed: {
-      "@type": "City",
-      name: "Argentina",
-      "@id": "https://www.wikidata.org/wiki/Q1486",
+      "@type": "Place",
+      name: "Worldwide",
     },
   };
 
@@ -28,7 +27,7 @@ export function JsonLdScript() {
     name: "Celimap",
     alternateName: ["Mapa para celiacos", "Mapa para celíacos"],
     url: BASE_URL,
-    description: "Celimap - Mapa para celíacos en Buenos Aires. Lugares sin gluten verificados.",
+    description: "Celimap - Mapa para celíacos sin restricciones. Lugares sin gluten verificados en todo el mundo.",
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -48,15 +47,15 @@ export function JsonLdScript() {
         name: "¿Qué es el mapa para celíacos?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "El mapa para celíacos de Celimap es una plataforma donde la comunidad comparte restaurantes, cafés y panaderías sin TACC en Buenos Aires. Podés ver el mapa interactivo, filtrar por barrio y nivel de seguridad, y leer reseñas de otros celíacos.",
+          text: "Celimap es una plataforma global donde la comunidad comparte restaurantes, cafés y panaderías sin TACC en cualquier parte del mundo. Podés ver el mapa interactivo, filtrar por zona y nivel de seguridad, y leer reseñas de otros celíacos.",
         },
       },
       {
         "@type": "Question",
-        name: "¿Dónde comer sin gluten en Buenos Aires?",
+        name: "¿Dónde comer sin gluten?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires. Incluye restaurantes 100% sin TACC, cafés con opciones aptas y panaderías certificadas. Cada lugar tiene reseñas de la comunidad celíaca.",
+          text: "En Celimap encontrás el mapa de lugares sin gluten sin restricción geográfica. Incluye restaurantes 100% sin TACC, cafés con opciones aptas y panaderías certificadas. Cada lugar tiene reseñas de la comunidad celíaca.",
         },
       },
       {

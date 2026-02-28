@@ -53,7 +53,7 @@ export function StatsGrid() {
       value: stats.places,
       valueLabel: stats.places != null ? pluralizeLocales(stats.places) : "",
       displayValue: stats.places != null ? stats.places.toLocaleString("es-AR") : undefined,
-      subtext: "en CABA (Buenos Aires)",
+      subtext: "en todo el mapa",
       chips: ["Panaderías", "Restaurantes", "Cafés"],
     },
     {
