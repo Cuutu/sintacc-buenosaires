@@ -7,6 +7,8 @@ export { RateLimit, type IRateLimit } from "./RateLimit"
 export { RateLimitIp, type IRateLimitIp } from "./RateLimitIp"
 export { Favorite, type IFavorite } from "./Favorite"
 export { Contact, type IContact } from "./Contact"
+export { List, type IList } from "./List"
+export { ListLike, type IListLike } from "./ListLike"
 
 // Fase 2 models (scaffolded)
 import mongoose from "mongoose"

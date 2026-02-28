@@ -29,6 +29,9 @@ export function Navbar() {
             <Link href="/mapa" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="min-h-[44px]">Mapa</Button>
             </Link>
+            <Link href="/listas" className="hidden sm:block">
+              <Button variant="ghost" size="sm" className="min-h-[44px]">Listas</Button>
+            </Link>
             <Link href="/sugerir" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="min-h-[44px]">Sugerir lugar</Button>
             </Link>

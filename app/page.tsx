@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MapPin, ArrowRight, Sparkles } from "lucide-react"
 import { StatsRow } from "@/components/home/StatsRow"
 import { FeaturedSection } from "@/components/featured/FeaturedSection"
+import { FeaturedListsSection } from "@/components/home/FeaturedListsSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 export default function HomePage() {
@@ -77,6 +78,13 @@ export default function HomePage() {
       <ScrollReveal>
         <div id="lugares" className="container mx-auto px-4 py-12 md:py-16 border-t border-border/50 scroll-mt-20">
           <FeaturedSection />
+        </div>
+      </ScrollReveal>
+
+      {/* Listas destacadas */}
+      <ScrollReveal>
+        <div id="listas" className="container mx-auto px-4 py-12 md:py-16 border-t border-border/50 scroll-mt-20">
+          <FeaturedListsSection />
         </div>
       </ScrollReveal>
 

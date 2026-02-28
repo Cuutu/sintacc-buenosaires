@@ -20,6 +20,9 @@ export function Footer() {
             <Link href="/mapa" className="hover:text-foreground transition-colors">
               Mapa
             </Link>
+            <Link href="/listas" className="hover:text-foreground transition-colors">
+              Listas
+            </Link>
             <Link href="/sugerir" className="hover:text-foreground transition-colors">
               Sugerir lugar
             </Link>
