@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
+import { ListLike } from "@/models/ListLike"
 import { requireAuth } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
@@ -121,7 +122,10 @@ export async function DELETE(
       return NextResponse.json({ error: "No tenés permiso" }, { status: 403 })
     }
 
-    await List.findByIdAndDelete(id)
+    await Promise.all([
+      List.findByIdAndDelete(id),
+      ListLike.deleteMany({ listId: new mongoose.Types.ObjectId(id) }),
+    ])
 
     return NextResponse.json({ message: "Lista eliminada" })
   } catch (error) {

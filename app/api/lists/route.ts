@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
         .populate("createdBy", "name image")
         .lean()
 
-      return NextResponse.json({ lists: myLists })
+      return NextResponse.json({ lists: myLists }, {
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      })
     }
 
     // Top listas públicas (sin auth)
@@ -39,7 +41,9 @@ export async function GET(request: NextRequest) {
       })
       .lean()
 
-    return NextResponse.json({ lists: top })
+    return NextResponse.json({ lists: top }, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    })
   } catch (error) {
     logApiError("/api/lists GET", error, { request })
     return NextResponse.json(

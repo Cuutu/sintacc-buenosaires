@@ -12,7 +12,9 @@ export function FeaturedListsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchApi<{ lists: ListWithDetails[] }>("/api/lists/top?limit=6")
+    fetchApi<{ lists: ListWithDetails[] }>("/api/lists/top?limit=6", {
+      cache: "no-store",
+    })
       .then((data) => setLists(data.lists ?? []))
       .catch(() => setLists([]))
       .finally(() => setLoading(false))

@@ -24,7 +24,11 @@ export async function GET(request: NextRequest) {
       })
       .lean()
 
-    return NextResponse.json({ lists })
+    return NextResponse.json({ lists }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    })
   } catch (error) {
     logApiError("/api/lists/top GET", error, { request })
     return NextResponse.json(
