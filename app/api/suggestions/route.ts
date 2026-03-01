@@ -9,6 +9,7 @@ import {
   quickSuggestionSchema,
   isQuickSuggestion,
 } from "@/lib/validations"
+import { sendSuggestionNewEmail } from "@/lib/email-suggestions"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 
@@ -84,6 +85,13 @@ export async function POST(request: NextRequest) {
     })
 
     await suggestion.save()
+
+    // Email a admins (no bloquea la respuesta)
+    sendSuggestionNewEmail({
+      placeDraft: placeDraft as Record<string, unknown>,
+      suggestedByName: session.user.name ?? "Usuario",
+      suggestedByEmail: session.user.email ?? "",
+    }).catch(() => {})
 
     return NextResponse.json(suggestion, { status: 201 })
   } catch (error: unknown) {

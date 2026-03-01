@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
+import { User } from "@/models/User"
 import { requireAdmin } from "@/lib/middleware"
+import { sendSuggestionApprovedEmail } from "@/lib/email-suggestions"
 import { placeSchema, placeDraftUpdateSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
@@ -81,6 +83,16 @@ export async function PATCH(
       suggestion.status = "approved"
       await suggestion.save()
 
+      // Email al usuario que sugirió (no bloquea la respuesta)
+      const user = await User.findById(suggestion.suggestedByUserId).select("email").lean()
+      if (user?.email) {
+        sendSuggestionApprovedEmail({
+          userEmail: user.email,
+          placeName: (placeData.name as string) || "Lugar",
+          placeId: place._id.toString(),
+        }).catch(() => {})
+      }
+
       return NextResponse.json({
         message: "Sugerencia aprobada y lugar creado",
         place,
@@ -149,6 +161,16 @@ export async function POST(
 
     suggestion.status = "approved"
     await suggestion.save()
+
+    // Email al usuario que sugirió (no bloquea la respuesta)
+    const user = await User.findById(suggestion.suggestedByUserId).select("email").lean()
+    if (user?.email) {
+      sendSuggestionApprovedEmail({
+        userEmail: user.email,
+        placeName: (placeData.name as string) || "Lugar",
+        placeId: place._id.toString(),
+      }).catch(() => {})
+    }
 
     return NextResponse.json({
       message: "Sugerencia aprobada y lugar creado",

@@ -39,7 +39,7 @@ Agregá **cada fila** como una variable (Key = nombre, Value = tu valor).
 6. **CLOUDINARY_*** – Para fotos (si no usás fotos aún, podés dejarlas con valores de prueba y configurar bien después).
 7. **ADMIN_EMAILS** – Emails que pueden entrar al panel admin.
 8. **CONTACT_EMAIL** – Email donde llegan las consultas del formulario de contacto (ej. `tu-email@ejemplo.com`).
-9. **RESEND_API_KEY** y **RESEND_FROM_DOMAIN** – Para que las consultas de contacto lleguen por email. Creá una cuenta en [resend.com](https://resend.com), generá una API key y usá `onboarding@resend.dev` como FROM para pruebas.
+9. **RESEND_API_KEY** y **RESEND_FROM_DOMAIN** – Para emails: consultas de contacto, sugerencias nuevas (a admins) y sugerencias aprobadas (al usuario). Creá una cuenta en [resend.com](https://resend.com), generá una API key y usá `onboarding@resend.dev` como FROM para pruebas.
 10. **FEATURES** – Opcional; si no lo ponés, se usa `phase1`.
 
 ---
