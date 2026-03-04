@@ -7,6 +7,19 @@ import { FeaturedSection } from "@/components/featured/FeaturedSection"
 import { FeaturedListsSection } from "@/components/home/FeaturedListsSection"
 import { FaqSection } from "@/components/home/FaqSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { CITIES } from "@/lib/seo/cities"
+import { CATEGORIES } from "@/lib/seo/cities"
+
+export const metadata = {
+  title: "Mapa para celíacos | Lugares sin gluten en Argentina y el mundo",
+  description:
+    "Mapa para celíacos sin restricciones. Encontrá restaurantes, cafés y panaderías sin TACC en Buenos Aires, Córdoba y toda Argentina. Lugares aptos celíacos verificados por la comunidad.",
+  openGraph: {
+    title: "Mapa para celíacos | Lugares sin gluten en Argentina",
+    description:
+      "Encontrá restaurantes, cafés y panaderías sin TACC. Donde comer sin gluten en Buenos Aires, Córdoba y más. Verificados por la comunidad celíaca.",
+  },
+}
 
 export default function HomePage() {
   return (
@@ -99,6 +112,44 @@ export default function HomePage() {
             <p className="text-muted-foreground leading-relaxed">
               Celimap es el mapa para celíacos sin fronteras. Encontrá restaurantes, cafés, panaderías y heladerías sin TACC donde sea que estés. Cada lugar tiene reseñas de la comunidad celíaca, nivel de seguridad (100% sin gluten u opciones) y datos de contacto. Actualizamos el mapa constantemente con sugerencias verificadas.
             </p>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* Enlaces internos SEO: ciudades y categorías */}
+      <ScrollReveal>
+        <section className="container mx-auto px-4 py-8 md:py-12 border-t border-border/50 scroll-mt-20">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-lg font-semibold mb-4 text-center">
+              Lugares sin gluten por ciudad
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {CITIES.slice(0, 8).map((city) => (
+                <Link
+                  key={city.slug}
+                  href={`/sin-gluten/${city.slug}`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {city.name === "Buenos Aires"
+                    ? "Restaurantes sin gluten en Buenos Aires"
+                    : `Lugares sin gluten en ${city.name}`}
+                </Link>
+              ))}
+            </div>
+            <h2 className="text-lg font-semibold mb-4 text-center">
+              Por tipo de lugar
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2">
+              {CATEGORIES.filter((c) => c.slug !== "otros").map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/${cat.slug}-sin-gluten`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {cat.name} sin gluten
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       </ScrollReveal>

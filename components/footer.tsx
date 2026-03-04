@@ -18,7 +18,16 @@ export function Footer() {
           </Link>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <Link href="/mapa" className="hover:text-foreground transition-colors">
-              Mapa
+              Mapa para celíacos
+            </Link>
+            <Link href="/sin-gluten-argentina" className="hover:text-foreground transition-colors">
+              Lugares sin gluten Argentina
+            </Link>
+            <Link href="/sin-gluten/buenos-aires" className="hover:text-foreground transition-colors">
+              Sin gluten Buenos Aires
+            </Link>
+            <Link href="/restaurantes-sin-gluten" className="hover:text-foreground transition-colors">
+              Restaurantes sin gluten
             </Link>
             <Link href="/listas" className="hover:text-foreground transition-colors">
               Listas

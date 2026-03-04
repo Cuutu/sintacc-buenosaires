@@ -4,6 +4,8 @@ const nextConfig = {
     return [
       { source: "/mapa-para-celiacos", destination: "/mapa", permanent: true },
       { source: "/mapa-para-celiacos/", destination: "/mapa", permanent: true },
+      { source: "/mapa-celiacos", destination: "/mapa", permanent: true },
+      { source: "/sin-gluten", destination: "/sin-gluten-argentina", permanent: true },
     ];
   },
   images: {

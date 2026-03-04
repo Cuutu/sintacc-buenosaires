@@ -42,7 +42,7 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
               {photo ? (
                 <img
                   src={photo}
-                  alt=""
+                  alt={`${list.name} - lugares sin gluten`}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -72,7 +72,7 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
           {photo ? (
             <img
               src={photo}
-              alt=""
+              alt={`${list.name} - lista de lugares sin gluten`}
               className="w-full h-full object-cover transition-transform group-hover:scale-105"
             />
           ) : (
@@ -101,7 +101,7 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
             {list.createdBy?.image ? (
               <img
                 src={list.createdBy.image}
-                alt=""
+                alt={list.createdBy?.name || "Usuario"}
                 className="w-6 h-6 rounded-full"
               />
             ) : (

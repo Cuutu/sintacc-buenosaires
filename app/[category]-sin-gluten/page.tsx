@@ -25,14 +25,14 @@ export async function generateMetadata({
   const { total, pages } = await getPlacesByCategory(category, page)
 
   const noIndex = total === 0
-  const canonical = `${BASE_URL}/${category}-sin-gluten`
+  const canonical = page === 1 ? `${BASE_URL}/${category}-sin-gluten` : `${BASE_URL}/${category}-sin-gluten?page=${page}`
 
   return {
     title: getCategoryTitle(null, category),
     description: getCategoryDescription(null, category, total),
     robots: noIndex ? { index: false, follow: true } : undefined,
     alternates: {
-      canonical: page === 1 ? canonical : undefined,
+      canonical,
     },
   }
 }

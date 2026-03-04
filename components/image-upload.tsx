@@ -79,7 +79,7 @@ export function ImageUpload({
             <div className="w-20 h-20 rounded-lg overflow-hidden border border-border bg-muted">
               <Image
                 src={url}
-                alt=""
+                alt="Foto de lugar sin gluten"
                 width={80}
                 height={80}
                 className="object-cover w-full h-full"

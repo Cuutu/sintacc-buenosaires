@@ -37,6 +37,9 @@ export function CityPageJsonLd({ city, categorySlug, places, faqs }: CityPageJso
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
+    name: categorySlug
+      ? `${categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1)} sin gluten en ${city.name}`
+      : `Lugares sin gluten en ${city.name}`,
     numberOfItems: places.length,
     itemListElement: places.slice(0, 10).map((p, i) => ({
       "@type": "ListItem",

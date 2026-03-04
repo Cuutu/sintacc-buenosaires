@@ -7,7 +7,7 @@ export function getCityTitle(city: City): string {
 
 export function getCityDescription(city: City, total?: number): string {
   const count = total != null ? `${total} lugares` : "lugares"
-  return `Encontrá ${count} sin gluten en ${city.name}. Restaurantes, panaderías, cafés y más opciones celíacas verificadas por la comunidad.`
+  return `Donde comer sin gluten en ${city.name}. Encontrá ${count} aptos celíacos: restaurantes, panaderías y cafés sin TACC verificados por la comunidad.`
 }
 
 export function getCategoryTitle(city: City | null, categorySlug: string): string {
@@ -24,9 +24,9 @@ export function getCategoryDescription(city: City | null, categorySlug: string, 
   const catName = cat?.name ?? categorySlug
   const count = total != null ? `${total} ` : ""
   if (city) {
-    return `Encontrá ${count}${catName.toLowerCase()} sin gluten en ${city.name}. Opciones celíacas verificadas por la comunidad.`
+    return `Donde comer sin gluten en ${city.name}. ${count}${catName.toLowerCase()} aptos celíacos verificados por la comunidad.`
   }
-  return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina. Opciones celíacas verificadas por la comunidad.`
+  return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina. Lugares aptos celíacos verificados por la comunidad.`
 }
 
 export function getSEOTextBlock(city: City, categorySlug?: string): string {

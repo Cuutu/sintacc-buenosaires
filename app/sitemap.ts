@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
+import { List } from "@/models/List"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { getLastPlaceUpdated } from "@/lib/seo/places"
 
@@ -28,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/explorar`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/sugerir`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/sin-gluten-argentina`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/listas`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.7 },
   ]
 
   const seoPages: MetadataRoute.Sitemap = []
@@ -75,24 +77,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   }
 
+  let placeUrls: MetadataRoute.Sitemap = []
+  let listUrls: MetadataRoute.Sitemap = []
+
   try {
     await connectDB()
     const places = await Place.find(
       { status: "approved" },
       { _id: 1, updatedAt: 1 }
     ).lean()
-
-    const placeUrls: MetadataRoute.Sitemap = places.map((p: any) => ({
+    placeUrls = places.map((p: any) => ({
       url: `${base}/lugar/${p._id}`,
       lastModified: p.updatedAt ? new Date(p.updatedAt) : lastModDate,
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }))
 
-    return [...staticPages, ...seoPages, ...placeUrls]
+    try {
+      const lists = await List.find({ isPublic: true }, { _id: 1, updatedAt: 1 }).lean()
+      listUrls = lists.map((l: any) => ({
+        url: `${base}/listas/${l._id}`,
+        lastModified: l.updatedAt ? new Date(l.updatedAt) : lastModDate,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }))
+    } catch {
+      // Listas opcionales
+    }
   } catch (error) {
     const { logApiError } = await import("@/lib/logger")
     logApiError("/sitemap", error)
-    return [...staticPages, ...seoPages]
   }
+
+  return [...staticPages, ...seoPages, ...placeUrls, ...listUrls]
 }

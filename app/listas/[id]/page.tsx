@@ -98,7 +98,7 @@ export default function ListaDetailPage() {
               {list.createdBy?.image ? (
                 <img
                   src={list.createdBy.image}
-                  alt=""
+                  alt={list.createdBy?.name || "Usuario"}
                   className="w-6 h-6 rounded-full"
                 />
               ) : (
