@@ -12,7 +12,7 @@ import { MapPickerModal } from "@/components/map-picker-modal"
 import { geocodeAddress } from "@/lib/geocode"
 import { toast } from "sonner"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
-import { ChevronDown, ChevronUp, Link2, MapPin } from "lucide-react"
+import { ChevronDown, ChevronUp, Link2, MapPin } from "lucide-react" 
 
 export default function SugerirPage() {
   const { data: session } = useSession()
