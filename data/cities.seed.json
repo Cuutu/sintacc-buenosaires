@@ -1,0 +1,157 @@
+[
+  {
+    "slug": "buenos-aires",
+    "name": "Buenos Aires",
+    "province": "CABA",
+    "neighborhoods": [
+      "Palermo",
+      "Recoleta",
+      "San Telmo",
+      "Puerto Madero",
+      "Belgrano",
+      "Villa Crespo",
+      "Caballito",
+      "Almagro",
+      "Villa Urquiza",
+      "Colegiales",
+      "Balvanera",
+      "Monserrat",
+      "La Boca",
+      "Barracas",
+      "Boedo",
+      "Constitución",
+      "Retiro",
+      "Parque Chacabuco",
+      "Núñez",
+      "Saavedra",
+      "San Isidro",
+      "Vicente López",
+      "Tigre",
+      "Avellaneda",
+      "Lanús",
+      "Lomas de Zamora",
+      "Quilmes",
+      "Berazategui",
+      "Florencio Varela",
+      "San Martín",
+      "Tres de Febrero",
+      "Morón",
+      "Merlo",
+      "Moreno"
+    ]
+  },
+  {
+    "slug": "cordoba",
+    "name": "Córdoba",
+    "province": "Córdoba",
+    "neighborhoods": ["Córdoba", "Nueva Córdoba", "Centro", "Alta Córdoba", "Güemes", "Villa Carlos Paz"]
+  },
+  {
+    "slug": "rosario",
+    "name": "Rosario",
+    "province": "Santa Fe",
+    "neighborhoods": ["Rosario", "Centro", "Pichincha", "Echesortu", "Fisherton"]
+  },
+  {
+    "slug": "mendoza",
+    "name": "Mendoza",
+    "province": "Mendoza",
+    "neighborhoods": ["Mendoza", "Centro", "Chacras de Coria", "Godoy Cruz", "Luján de Cuyo"]
+  },
+  {
+    "slug": "la-plata",
+    "name": "La Plata",
+    "province": "Buenos Aires",
+    "neighborhoods": ["La Plata", "Centro", "Gonnet", "City Bell", "Tolosa"]
+  },
+  {
+    "slug": "mar-del-plata",
+    "name": "Mar del Plata",
+    "province": "Buenos Aires",
+    "neighborhoods": ["Mar del Plata", "Centro", "La Perla", "Playa Grande", "Bristol"]
+  },
+  {
+    "slug": "san-miguel-de-tucuman",
+    "name": "San Miguel de Tucumán",
+    "province": "Tucumán",
+    "neighborhoods": ["San Miguel de Tucumán", "Centro", "Yerba Buena"]
+  },
+  {
+    "slug": "salta",
+    "name": "Salta",
+    "province": "Salta",
+    "neighborhoods": ["Salta", "Centro", "Balmaceda", "Villa San Lorenzo"]
+  },
+  {
+    "slug": "santa-fe",
+    "name": "Santa Fe",
+    "province": "Santa Fe",
+    "neighborhoods": ["Santa Fe", "Centro", "Costanera Este", "Sauce Viejo"]
+  },
+  {
+    "slug": "san-juan",
+    "name": "San Juan",
+    "province": "San Juan",
+    "neighborhoods": ["San Juan", "Centro", "Rawson", "Rivadavia"]
+  },
+  {
+    "slug": "resistencia",
+    "name": "Resistencia",
+    "province": "Chaco",
+    "neighborhoods": ["Resistencia", "Centro", "Barranqueras"]
+  },
+  {
+    "slug": "neuquen",
+    "name": "Neuquén",
+    "province": "Neuquén",
+    "neighborhoods": ["Neuquén", "Centro", "Centenario"]
+  },
+  {
+    "slug": "corrientes",
+    "name": "Corrientes",
+    "province": "Corrientes",
+    "neighborhoods": ["Corrientes", "Centro", "Camba Cuá"]
+  },
+  {
+    "slug": "parana",
+    "name": "Paraná",
+    "province": "Entre Ríos",
+    "neighborhoods": ["Paraná", "Centro", "Costanera"]
+  },
+  {
+    "slug": "bahia-blanca",
+    "name": "Bahía Blanca",
+    "province": "Buenos Aires",
+    "neighborhoods": ["Bahía Blanca", "Centro", "Ingeniero White"]
+  },
+  {
+    "slug": "san-luis",
+    "name": "San Luis",
+    "province": "San Luis",
+    "neighborhoods": ["San Luis", "Centro", "La Punta"]
+  },
+  {
+    "slug": "rio-cuarto",
+    "name": "Río Cuarto",
+    "province": "Córdoba",
+    "neighborhoods": ["Río Cuarto", "Centro"]
+  },
+  {
+    "slug": "comodoro-rivadavia",
+    "name": "Comodoro Rivadavia",
+    "province": "Chubut",
+    "neighborhoods": ["Comodoro Rivadavia", "Centro"]
+  },
+  {
+    "slug": "tandil",
+    "name": "Tandil",
+    "province": "Buenos Aires",
+    "neighborhoods": ["Tandil", "Centro", "Gardey"]
+  },
+  {
+    "slug": "ushuaia",
+    "name": "Ushuaia",
+    "province": "Tierra del Fuego",
+    "neighborhoods": ["Ushuaia", "Centro", "Andorra"]
+  }
+]
