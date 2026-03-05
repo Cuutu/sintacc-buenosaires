@@ -10,20 +10,19 @@ import mongoose from "mongoose"
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params
     await connectDB()
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
-    
-    const place = await Place.findById(id).lean()
+
+    const place = await Place.findById(params.id).lean()
 
     if (!place) {
       return NextResponse.json(
@@ -32,7 +31,7 @@ export async function GET(
       )
     }
 
-    const placeObjectId = new mongoose.Types.ObjectId(id)
+    const placeObjectId = new mongoose.Types.ObjectId(params.id)
 
     const [reviewStats, contaminationReportsCount] = await Promise.all([
       Review.aggregate([
@@ -78,38 +77,37 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await requireAdmin(request)
     if (session instanceof NextResponse) return session
 
-    const { id } = await context.params
     await connectDB()
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
-    
+
     const body = await request.json()
     const validated = placeSchema.partial().parse(body)
-    
+
     const place = await Place.findByIdAndUpdate(
-      id,
+      params.id,
       { ...validated, updatedAt: new Date() },
       { new: true }
     )
-    
+
     if (!place) {
       return NextResponse.json(
         { error: "Lugar no encontrado" },
         { status: 404 }
       )
     }
-    
+
     return NextResponse.json(place)
   } catch (error: any) {
     if (error.name === "ZodError") {
@@ -128,23 +126,22 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await requireAdmin(request)
     if (session instanceof NextResponse) return session
 
-    const { id } = await context.params
     await connectDB()
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
 
-    const place = await Place.findByIdAndDelete(id)
+    const place = await Place.findByIdAndDelete(params.id)
 
     if (!place) {
       return NextResponse.json(
@@ -157,7 +154,7 @@ export async function DELETE(
   } catch (error) {
     logApiError("/api/places/[id]", error, { request })
     return NextResponse.json(
-      { error: "Error al eliminar lugar" },
+      { error: "Error al obtener lugar" },
       { status: 500 }
     )
   }
