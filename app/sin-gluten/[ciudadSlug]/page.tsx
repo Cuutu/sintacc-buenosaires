@@ -10,6 +10,7 @@ import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
 import { CityMapEmbed } from "@/components/seo/CityMapEmbed"
+import { EmptyCityPage } from "@/components/seo/EmptyCityPage"
 import { Pagination } from "@/components/seo/Pagination"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ProvincialPage } from "./ProvincialPage"
@@ -68,16 +69,26 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(search.page || "1", 10))
   const { total, pages } = await getPlacesByCity(ciudadSlug, page)
 
-  const noIndex = total === 0
-  const baseCanonical = noIndex ? `${BASE_URL}/sin-gluten-argentina` : `${BASE_URL}/sin-gluten/${ciudadSlug}`
+  const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}`
   const canonical = page === 1 ? baseCanonical : `${baseCanonical}?page=${page}`
 
   return {
-    title: getCityTitle(city),
-    description: getCityDescription(city, total),
-    robots: noIndex ? { index: false, follow: true } : undefined,
+    title: `Lugares sin TACC en ${city.name} | Celimap`,
+    description:
+      total === 0
+        ? `Mapa colaborativo de restaurantes, panaderías y dietéticas sin gluten en ${city.name}. Reseñas de la comunidad celíaca. Agregá lugares y ayudá a otros celíacos.`
+        : getCityDescription(city, total),
     alternates: {
       canonical,
+    },
+    openGraph: {
+      title: `Sin gluten en ${city.name} — Celimap`,
+      description:
+        total === 0
+          ? `Encontrá opciones sin TACC en ${city.name}. Celimap es el mapa colaborativo de la comunidad celíaca.`
+          : getCityDescription(city, total),
+      url: baseCanonical,
+      type: "website",
     },
   }
 }
@@ -121,9 +132,9 @@ export default async function SinGlutenCiudadPage({
 
   if (total === 0) {
     return (
-      <div className="container py-12">
-        <p className="text-muted-foreground">No hay lugares registrados aún en {city.name}.</p>
-      </div>
+      <>
+        <EmptyCityPage citySlug={ciudadSlug} />
+      </>
     )
   }
 
