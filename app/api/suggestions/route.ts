@@ -43,13 +43,13 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const [userLimit, ipLimit] = await Promise.all([
-      checkRateLimit(session.user.id, "suggestion", 10),
-      checkRateLimitByIp(request, "suggestion_ip", 30, 1440),
+      checkRateLimit(session.user.id, "suggestion", 100),
+      checkRateLimitByIp(request, "suggestion_ip", 100, 1440),
     ])
     if (!userLimit.allowed) {
       return NextResponse.json(
         {
-          error: `Límite alcanzado. Podés sugerir hasta 10 lugares por día. Quedan ${userLimit.remaining} disponibles.`,
+          error: `Límite alcanzado. Podés sugerir hasta 100 lugares por día. Quedan ${userLimit.remaining} disponibles.`,
         },
         { status: 429 }
       )
