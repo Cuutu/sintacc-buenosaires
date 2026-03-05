@@ -9,7 +9,9 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
+import { CityMapEmbed } from "@/components/seo/CityMapEmbed"
 import { Pagination } from "@/components/seo/Pagination"
+import { ScrollReveal } from "@/components/scroll-reveal"
 import { ProvincialPage } from "./ProvincialPage"
 
 const BASE_URL = process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
@@ -137,6 +139,11 @@ export default async function SinGlutenCiudadPage({
       <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
         Lugares sin gluten en {city.name}
       </h1>
+      <ScrollReveal>
+        <div className="mb-12">
+          <CityMapEmbed citySlug={ciudadSlug} cityName={city.name} />
+        </div>
+      </ScrollReveal>
       <PlaceListWithFilters
         places={places}
         citySlug={ciudadSlug}
