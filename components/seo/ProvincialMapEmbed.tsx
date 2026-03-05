@@ -7,6 +7,7 @@ import { fetchApi } from "@/lib/fetchApi"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
+import { getProvinceBySlug } from "@/lib/seo/provinces"
 
 interface ProvincialMapEmbedProps {
   provinceSlug: string
@@ -14,6 +15,7 @@ interface ProvincialMapEmbedProps {
 }
 
 export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMapEmbedProps) {
+  const province = getProvinceBySlug(provinceSlug)
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
@@ -57,13 +59,19 @@ export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMap
           searchQuery=""
           selectedPlaceId={selectedPlaceId}
           onPlaceSelect={(p) => setSelectedPlaceId(p._id.toString())}
+          initialCenter={province?.center}
+          initialZoom={province?.zoom}
           placeIdToFocus={null}
           listOpen={false}
         />
       </div>
       <div className="p-3 border-t bg-muted/30 flex justify-center">
         <Link
-          href={`/mapa?citySlugs=${provinceSlug}`}
+          href={
+            province
+              ? `/mapa?citySlugs=${provinceSlug}&lng=${province.center[0]}&lat=${province.center[1]}&zoom=${province.zoom}`
+              : `/mapa?citySlugs=${provinceSlug}`
+          }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
           Ver mapa completo de {provinceName}

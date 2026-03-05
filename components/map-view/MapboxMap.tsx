@@ -36,6 +36,10 @@ interface MapboxMapProps {
   onPlaceSelect?: (place: IPlace) => void
   onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
   searchQuery?: string
+  /** Centro inicial [lng, lat]. Si no se pasa, usa CABA */
+  initialCenter?: [number, number]
+  /** Zoom inicial. Si no se pasa, usa CABA_ZOOM */
+  initialZoom?: number
   darkStyle?: boolean
   reduceMotion?: boolean
   /** Si true, agrega GeolocateControl para mostrar ubicación del usuario (punto azul) */
@@ -54,6 +58,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       onPlaceSelect,
       onBoundsChange,
       searchQuery,
+      initialCenter,
+      initialZoom,
       darkStyle = true,
       reduceMotion = false,
       enableGeolocate = false,
@@ -110,8 +116,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           style: darkStyle
             ? "mapbox://styles/mapbox/dark-v11"
             : "mapbox://styles/mapbox/streets-v12",
-          center: CABA_CENTER,
-          zoom: CABA_ZOOM,
+          center: initialCenter ?? CABA_CENTER,
+          zoom: initialZoom ?? CABA_ZOOM,
         })
         sharedPopupRef.current = new mapboxgl.Popup({
           offset: 25,
@@ -122,7 +128,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
 
       return () => {}
-    }, [darkStyle])
+    }, [darkStyle, initialCenter, initialZoom])
 
     // GeolocateControl: punto azul de ubicación del usuario (solo en mobile, se activa con FAB)
     useEffect(() => {

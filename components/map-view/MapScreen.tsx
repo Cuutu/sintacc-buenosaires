@@ -15,6 +15,10 @@ interface MapScreenProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  /** Centro inicial [lng, lat] del mapa */
+  initialCenter?: [number, number]
+  /** Zoom inicial del mapa */
+  initialZoom?: number
   /** ID de lugar para centrar el mapa (ej. desde ?place=id) */
   placeIdToFocus?: string | null
   /** Si true, el BottomSheet empieza abierto (desde ?list=open) */
@@ -32,6 +36,8 @@ export function MapScreen({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  initialCenter,
+  initialZoom,
   placeIdToFocus,
   listOpen,
   onSheetCollapse,
@@ -49,6 +55,8 @@ export function MapScreen({
         searchQuery={searchQuery}
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
+        initialCenter={initialCenter}
+        initialZoom={initialZoom}
         placeIdToFocus={placeIdToFocus}
         listOpen={listOpen}
         onSheetCollapse={onSheetCollapse}
@@ -66,6 +74,8 @@ export function MapScreen({
       searchQuery={searchQuery}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={onPlaceSelect}
+      initialCenter={initialCenter}
+      initialZoom={initialZoom}
     />
   )
 }

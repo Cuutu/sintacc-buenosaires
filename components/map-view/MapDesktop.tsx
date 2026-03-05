@@ -18,6 +18,8 @@ interface MapDesktopProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  initialCenter?: [number, number]
+  initialZoom?: number
 }
 
 export function MapDesktop({
@@ -29,6 +31,8 @@ export function MapDesktop({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  initialCenter,
+  initialZoom,
 }: MapDesktopProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
@@ -55,6 +59,8 @@ export function MapDesktop({
           onPlaceSelect={onPlaceSelect}
           onBoundsChange={setBounds}
           searchQuery={searchQuery}
+          initialCenter={initialCenter}
+          initialZoom={initialZoom}
           darkStyle={false}
           reduceMotion={reduceMotion}
         />

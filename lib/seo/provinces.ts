@@ -23,6 +23,10 @@ export interface ProvinceConfig {
   name: string
   /** Slugs de ciudades en cities.seed.json que pertenecen a esta provincia */
   citySlugs: string[]
+  /** Centro del mapa [lng, lat] para la ciudad principal */
+  center: [number, number]
+  /** Zoom inicial del mapa (ej. 12 para ciudad, 10 para provincia) */
+  zoom: number
   metaTitle: string
   metaDescription: string
   h1: string
@@ -36,6 +40,8 @@ export const PROVINCES: ProvinceConfig[] = [
     slug: "cordoba",
     name: "Córdoba",
     citySlugs: ["cordoba", "rio-cuarto"],
+    center: [-64.1888, -31.4201], // Ciudad de Córdoba
+    zoom: 12,
     metaTitle: "Sin gluten en Córdoba | Restaurantes y tiendas aptas | Celimap",
     metaDescription:
       "Mapa actualizado de restaurantes, panaderías y dietéticas sin TACC en Córdoba. Encontrá dónde comer y comprar sin gluten en toda la provincia.",

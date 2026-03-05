@@ -21,6 +21,8 @@ interface MapMobileProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  initialCenter?: [number, number]
+  initialZoom?: number
   placeIdToFocus?: string | null
   /** Si true, el BottomSheet empieza abierto (desde ?list=open) */
   listOpen?: boolean
@@ -37,6 +39,8 @@ export function MapMobile({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  initialCenter,
+  initialZoom,
   placeIdToFocus,
   listOpen = false,
   onSheetCollapse,
@@ -125,6 +129,8 @@ export function MapMobile({
           onPlaceSelect={handlePlaceSelect}
           onBoundsChange={setBounds}
           searchQuery={searchQuery}
+          initialCenter={initialCenter}
+          initialZoom={initialZoom}
           darkStyle
           reduceMotion={reduceMotion}
           enableGeolocate

@@ -15,6 +15,20 @@ function MapaContent() {
   const pathname = usePathname()
   const placeIdFromUrl = searchParams.get("place")
   const listOpen = searchParams.get("list") === "open"
+  const latParam = searchParams.get("lat")
+  const lngParam = searchParams.get("lng")
+  const zoomParam = searchParams.get("zoom")
+  const initialCenter: [number, number] | undefined =
+    latParam != null &&
+    lngParam != null &&
+    !Number.isNaN(parseFloat(latParam)) &&
+    !Number.isNaN(parseFloat(lngParam))
+      ? [parseFloat(lngParam), parseFloat(latParam)]
+      : undefined
+  const initialZoom =
+    zoomParam != null && !Number.isNaN(parseInt(zoomParam, 10))
+      ? parseInt(zoomParam, 10)
+      : undefined
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
@@ -104,6 +118,8 @@ function MapaContent() {
       searchQuery={debouncedSearch}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
+      initialCenter={initialCenter}
+      initialZoom={initialZoom}
       placeIdToFocus={placeIdFromUrl}
       listOpen={listOpen}
       onSheetCollapse={handleSheetCollapse}
