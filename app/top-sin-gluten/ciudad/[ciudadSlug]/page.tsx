@@ -2,7 +2,7 @@ import React from "react"
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import Link from "next/link"
-import { getCityBySlug, getTop10CitySlugs } from "@/lib/seo/cities"
+import { getCityBySlug } from "@/lib/seo/cities"
 import { getTopPlaces, getTopNeighborhoods } from "@/lib/seo/places"
 import { getTopRankingTitle, getTopRankingDescription } from "@/lib/seo/templates"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
@@ -10,12 +10,8 @@ import { PlaceCard } from "@/components/place-card"
 import type { PlaceSEO } from "@/lib/seo/places"
 
 export const dynamicParams = true
+export const dynamic = "force-dynamic"
 export const revalidate = 3600
-
-export async function generateStaticParams() {
-  const slugs = getTop10CitySlugs()
-  return slugs.map((ciudadSlug) => ({ ciudadSlug }))
-}
 
 export async function generateMetadata({
   params,
@@ -74,12 +70,12 @@ export default async function TopSinGlutenPage({
         Top lugares sin gluten en {city.name}
       </h1>
       <p className="text-muted-foreground mb-6">
-        Los mejores lugares recomendados por la comunidad celíaca.
+        Los mejores lugares recomendados por la comunidad celiaca.
       </p>
 
       {topNeighborhoods.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Barrios con más opciones</h2>
+          <h2 className="text-lg font-semibold mb-3">Barrios con mas opciones</h2>
           <div className="flex flex-wrap gap-2">
             {topNeighborhoods.map((n) => (
               <Link
@@ -103,7 +99,7 @@ export default async function TopSinGlutenPage({
       </section>
 
       {topPlaces.length === 0 && (
-        <p className="text-muted-foreground">No hay lugares registrados aún en {city.name}.</p>
+        <p className="text-muted-foreground">No hay lugares registrados aun en {city.name}.</p>
       )}
     </div>
   )

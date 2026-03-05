@@ -42,7 +42,7 @@ export async function generateMetadata({
   if (!city || !isValidCategorySlug(category)) return { title: "No encontrado" }
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { total, pages } = await getPlacesByCategoryAndCity(category, ciudadSlug, page)
+  const { total } = await getPlacesByCategoryAndCity(category, ciudadSlug, page)
 
   const noIndex = total === 0
   const baseCanonical = noIndex
@@ -83,16 +83,16 @@ export default async function CategoryCityPage({
 
   const faqs = [
     {
-      question: `¿Hay restaurantes 100% sin gluten en ${city.name}?`,
-      answer: `Sí, varios establecimientos en ${city.name} están certificados o son exclusivamente sin gluten. Buscá el sello "100% sin gluten" en Celimap.`,
+      question: `Hay restaurantes 100% sin gluten en ${city.name}?`,
+      answer: `Si, varios establecimientos en ${city.name} estan certificados o son exclusivamente sin gluten. Busca el sello "100% sin gluten" en Celimap.`,
     },
     {
-      question: `¿Dónde comer sin TACC en ${city.name}?`,
-      answer: `Podés usar el mapa de Celimap para ver todos los lugares verificados en ${city.name}. Filtrá por barrio o tipo de local según tu preferencia.`,
+      question: `Donde comer sin TACC en ${city.name}?`,
+      answer: `Podes usar el mapa de Celimap para ver todos los lugares verificados en ${city.name}. Filtra por barrio o tipo de local segun tu preferencia.`,
     },
     {
-      question: `¿Hay ${catName.toLowerCase()} sin gluten en ${city.name}?`,
-      answer: `Sí, hay ${catName.toLowerCase()} dedicadas y otras con opciones sin TACC en ${city.name}. Revisá las reseñas de la comunidad para más detalles.`,
+      question: `Hay ${catName.toLowerCase()} sin gluten en ${city.name}?`,
+      answer: `Si, hay ${catName.toLowerCase()} dedicadas y otras con opciones sin TACC en ${city.name}. Revisa las resenas de la comunidad para mas detalles.`,
     },
   ]
 
@@ -100,7 +100,7 @@ export default async function CategoryCityPage({
     return (
       <div className="container py-12">
         <p className="text-muted-foreground">
-          No hay {catName.toLowerCase()} registradas aún en {city.name}.
+          No hay {catName.toLowerCase()} registradas aun en {city.name}.
         </p>
       </div>
     )

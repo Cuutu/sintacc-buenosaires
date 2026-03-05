@@ -22,7 +22,7 @@ export async function generateMetadata({
   if (!isValidCategorySlug(category)) return { title: "No encontrado" }
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { total, pages } = await getPlacesByCategory(category, page)
+  const { total } = await getPlacesByCategory(category, page)
 
   const noIndex = total === 0
   const canonical = page === 1 ? `${BASE_URL}/${category}-sin-gluten` : `${BASE_URL}/${category}-sin-gluten?page=${page}`
@@ -56,7 +56,7 @@ export default async function CategoryGlobalPage({
     return (
       <div className="container py-12">
         <p className="text-muted-foreground">
-          No hay {catName.toLowerCase()} registradas aún.
+          No hay {catName.toLowerCase()} registradas aun.
         </p>
       </div>
     )
