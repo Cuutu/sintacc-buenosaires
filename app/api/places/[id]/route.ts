@@ -12,26 +12,28 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const id = params?.id
   try {
-    await connectDB()
-
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
 
-    const place = await Place.findById(params.id).lean()
+    await connectDB()
+
+    const place = await Place.findById(new mongoose.Types.ObjectId(id)).lean()
 
     if (!place) {
+      console.error(`[api/places] No se encontró lugar con id: ${id}`)
       return NextResponse.json(
         { error: "Lugar no encontrado" },
         { status: 404 }
       )
     }
 
-    const placeObjectId = new mongoose.Types.ObjectId(params.id)
+    const placeObjectId = new mongoose.Types.ObjectId(id)
 
     const [reviewStats, contaminationReportsCount] = await Promise.all([
       Review.aggregate([
@@ -67,6 +69,7 @@ export async function GET(
       },
     })
   } catch (error) {
+    console.error("[api/places] Error GET lugar:", error)
     logApiError("/api/places/[id]", error, { request })
     return NextResponse.json(
       { error: "Error al obtener lugar" },

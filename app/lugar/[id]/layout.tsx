@@ -3,6 +3,9 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import mongoose from "mongoose"
 
+export const dynamicParams = true
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ id: string }>
   children: React.ReactNode
@@ -12,16 +15,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const { id } = await params
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return {
-        title: "Lugar no encontrado | Celimap",
-      }
+      return { title: "Lugar no encontrado | Celimap" }
     }
     await connectDB()
-    const place = await Place.findById(id).lean()
+    const place = await Place.findById(new mongoose.Types.ObjectId(id)).lean()
     if (!place) {
-      return {
-        title: "Lugar no encontrado | Celimap",
-      }
+      console.error(`[lugar/[id]] No se encontró lugar con id: ${id}`)
+      return { title: "Lugar no encontrado | Celimap" }
     }
     const p = place as { name: string; neighborhood: string; type: string; photos?: string[] }
     const BASE_URL =
@@ -36,10 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: [{ url: ogImage, width: 1200, height: 630, alt: p.name }],
       },
     }
-  } catch {
-    return {
-      title: "Lugar | Celimap",
-    }
+  } catch (error) {
+    console.error("[lugar/[id]] Error en generateMetadata:", error)
+    return { title: "Lugar | Celimap" }
   }
 }
 
