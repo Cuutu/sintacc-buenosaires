@@ -10,19 +10,20 @@ import mongoose from "mongoose"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params
     await connectDB()
-    
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
     
-    const place = await Place.findById(params.id).lean()
+    const place = await Place.findById(id).lean()
 
     if (!place) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function GET(
       )
     }
 
-    const placeObjectId = new mongoose.Types.ObjectId(params.id)
+    const placeObjectId = new mongoose.Types.ObjectId(id)
 
     const [reviewStats, contaminationReportsCount] = await Promise.all([
       Review.aggregate([
@@ -77,15 +78,16 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAdmin(request)
     if (session instanceof NextResponse) return session
-    
+
+    const { id } = await context.params
     await connectDB()
-    
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
@@ -96,7 +98,7 @@ export async function PATCH(
     const validated = placeSchema.partial().parse(body)
     
     const place = await Place.findByIdAndUpdate(
-      params.id,
+      id,
       { ...validated, updatedAt: new Date() },
       { new: true }
     )
@@ -126,22 +128,23 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAdmin(request)
     if (session instanceof NextResponse) return session
 
+    const { id } = await context.params
     await connectDB()
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
       )
     }
 
-    const place = await Place.findByIdAndDelete(params.id)
+    const place = await Place.findByIdAndDelete(id)
 
     if (!place) {
       return NextResponse.json(

@@ -57,7 +57,9 @@ function MapaContent() {
     try {
       const params = new URLSearchParams()
       params.append("limit", "999") // El mapa debe mostrar todos los lugares
-      if (debouncedSearch) params.append("search", debouncedSearch)
+      const citySlugsFromUrl = searchParams.get("citySlugs")
+      if (citySlugsFromUrl) params.append("citySlugs", citySlugsFromUrl)
+      else if (debouncedSearch) params.append("search", debouncedSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
       if (filters.neighborhood && filters.neighborhood !== "all")
         params.append("neighborhood", filters.neighborhood)
@@ -74,7 +76,7 @@ function MapaContent() {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, filters.type, filters.neighborhood, filters.tags, filters.safetyLevel])
+  }, [debouncedSearch, filters.type, filters.neighborhood, filters.tags, filters.safetyLevel, searchParams])
 
   useEffect(() => {
     fetchPlaces()

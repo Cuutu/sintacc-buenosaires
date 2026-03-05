@@ -77,17 +77,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LugarLayout({ children, params }: Props) {
-  const { id } = await params
   let placeJsonLd = null
-  if (id && mongoose.Types.ObjectId.isValid(id)) {
-    try {
-      const place = await getPlaceWithStats(id)
-      if (place) {
-        placeJsonLd = <PlaceJsonLd place={place} />
+  try {
+    const { id } = await params
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        const place = await getPlaceWithStats(id)
+        if (place) {
+          placeJsonLd = <PlaceJsonLd place={place} />
+        }
+      } catch {
+        // Ignorar errores de DB o schema; el page hace fetch client-side
       }
-    } catch {
-      // Ignorar errores de schema
     }
+  } catch {
+    // Si params falla, igual renderizamos children
   }
   return (
     <>

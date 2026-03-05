@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
+import { getCityBySlug } from "@/lib/seo/cities"
+import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
@@ -16,6 +18,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const type = searchParams.get("type")
     const neighborhood = searchParams.get("neighborhood")
+    const citySlugs = searchParams.get("citySlugs")?.split(",").filter(Boolean)
     const tags = searchParams.get("tags")?.split(",").filter(Boolean)
     const safetyLevel = searchParams.get("safetyLevel")
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
@@ -41,7 +44,24 @@ export async function GET(request: NextRequest) {
       query.type = type
     }
     
-    if (neighborhood) {
+    if (citySlugs && citySlugs.length > 0) {
+      const allNeighborhoods: string[] = []
+      for (const slug of citySlugs) {
+        const province = getProvinceBySlug(slug)
+        if (province) {
+          for (const cs of province.citySlugs) {
+            const city = getCityBySlug(cs)
+            if (city) allNeighborhoods.push(...city.neighborhoods)
+          }
+        } else {
+          const city = getCityBySlug(slug)
+          if (city) allNeighborhoods.push(...city.neighborhoods)
+        }
+      }
+      if (allNeighborhoods.length > 0) {
+        query.neighborhood = { $in: [...new Set(allNeighborhoods)] }
+      }
+    } else if (neighborhood) {
       query.neighborhood = neighborhood
     }
     

@@ -7,6 +7,7 @@ import {
   CATEGORY_SLUG_TO_TYPE,
   CITIES,
 } from "./cities"
+import { getProvinceBySlug } from "./provinces"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 
 const PER_PAGE = 24
@@ -23,6 +24,7 @@ export type PlaceSEO = {
   safetyLevel?: string
   stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
   updatedAt?: Date
+  contact?: { instagram?: string; url?: string }
 }
 
 async function enrichPlacesWithStats(places: any[]): Promise<PlaceSEO[]> {
@@ -213,6 +215,69 @@ export async function getTopPlaces(citySlug: string, limit = 10): Promise<PlaceS
   return enriched
 }
 
+const TYPES_DONDE_COMER = ["restaurant", "cafe", "bakery", "bar", "icecream"]
+const TYPES_DONDE_COMPRAR = ["store"]
+const TYPES_PRODUCTORES = ["other"]
+
+export async function getPlacesByProvince(provinceSlug: string): Promise<{
+  all: PlaceSEO[]
+  dondeComer: PlaceSEO[]
+  dondeComprar: PlaceSEO[]
+  productores: PlaceSEO[]
+  total: number
+}> {
+  const province = getProvinceBySlug(provinceSlug)
+  if (!province) {
+    return { all: [], dondeComer: [], dondeComprar: [], productores: [], total: 0 }
+  }
+
+  const allNeighborhoods: string[] = []
+  for (const citySlug of province.citySlugs) {
+    const city = getCityBySlug(citySlug)
+    if (city) allNeighborhoods.push(...city.neighborhoods)
+  }
+  if (allNeighborhoods.length === 0) {
+    return { all: [], dondeComer: [], dondeComprar: [], productores: [], total: 0 }
+  }
+
+  try {
+    await connectDB()
+    const places = await Place.find({
+      status: "approved",
+      neighborhood: { $in: allNeighborhoods },
+    })
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean()
+
+    const enriched = await enrichPlacesWithStats(places as any[])
+    enriched.sort((a, b) => (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0))
+
+    const dondeComer = enriched.filter((p) => {
+      const t = p.types?.[0] ?? p.type
+      return TYPES_DONDE_COMER.includes(t)
+    })
+    const dondeComprar = enriched.filter((p) => {
+      const t = p.types?.[0] ?? p.type
+      return TYPES_DONDE_COMPRAR.includes(t)
+    })
+    const productores = enriched.filter((p) => {
+      const t = p.types?.[0] ?? p.type
+      return TYPES_PRODUCTORES.includes(t)
+    })
+
+    return {
+      all: enriched,
+      dondeComer,
+      dondeComprar,
+      productores,
+      total: enriched.length,
+    }
+  } catch {
+    return { all: [], dondeComer: [], dondeComprar: [], productores: [], total: 0 }
+  }
+}
+
 export async function getLastPlaceUpdated(): Promise<Date | null> {
   await connectDB()
   const last = await Place.findOne({ status: "approved" })
@@ -234,5 +299,6 @@ function normalizePlace(p: any): PlaceSEO {
     tags: p.tags,
     safetyLevel: inferSafetyLevel(p) ?? p.safetyLevel,
     updatedAt: p.updatedAt,
+    contact: p.contact ? { instagram: p.contact.instagram, url: p.contact.url } : undefined,
   }
 }
