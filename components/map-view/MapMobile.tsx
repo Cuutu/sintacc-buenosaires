@@ -28,6 +28,7 @@ interface MapMobileProps {
   listOpen?: boolean
   /** Callback cuando el usuario cierra el sheet manualmente */
   onSheetCollapse?: () => void
+  onMapMoveEnd?: (zoom: number) => void
 }
 
 export function MapMobile({
@@ -44,6 +45,7 @@ export function MapMobile({
   placeIdToFocus,
   listOpen = false,
   onSheetCollapse,
+  onMapMoveEnd,
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
@@ -128,6 +130,7 @@ export function MapMobile({
           selectedPlaceId={selectedPlaceId ?? undefined}
           onPlaceSelect={handlePlaceSelect}
           onBoundsChange={setBounds}
+          onMoveEnd={onMapMoveEnd}
           searchQuery={searchQuery}
           initialCenter={initialCenter}
           initialZoom={initialZoom}

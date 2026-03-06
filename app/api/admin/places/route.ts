@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")?.trim()
     const type = searchParams.get("type")
     const neighborhood = searchParams.get("neighborhood")
+    const missingInfo = searchParams.get("missingInfo") === "1"
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
@@ -32,13 +33,23 @@ export async function GET(request: NextRequest) {
     if (neighborhood) {
       query.neighborhood = neighborhood
     }
+    if (missingInfo) {
+      query.$or = [
+        { "contact.instagram": { $in: [null, ""] } },
+        { contact: { $exists: false } },
+        { "contact.instagram": { $exists: false } },
+      ]
+    }
     if (search && search.length >= 2) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-      query.$or = [
+      const searchOr = [
         { name: regex },
         { address: regex },
         { neighborhood: regex },
       ]
+      const andClauses = (query.$and as object[]) || []
+      andClauses.push({ $or: searchOr })
+      query.$and = andClauses
     }
 
     const places = await Place.find(query)

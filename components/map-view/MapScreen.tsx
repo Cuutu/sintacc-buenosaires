@@ -25,6 +25,8 @@ interface MapScreenProps {
   listOpen?: boolean
   /** Callback cuando el usuario cierra el sheet manualmente */
   onSheetCollapse?: () => void
+  /** Llamado al hacer zoom/pan con el nivel de zoom actual */
+  onMapMoveEnd?: (zoom: number) => void
 }
 
 export function MapScreen({
@@ -41,6 +43,7 @@ export function MapScreen({
   placeIdToFocus,
   listOpen,
   onSheetCollapse,
+  onMapMoveEnd,
 }: MapScreenProps) {
   const isMobile = useIsMobile()
 
@@ -60,6 +63,7 @@ export function MapScreen({
         placeIdToFocus={placeIdToFocus}
         listOpen={listOpen}
         onSheetCollapse={onSheetCollapse}
+        onMapMoveEnd={onMapMoveEnd}
       />
     )
   }
@@ -74,8 +78,9 @@ export function MapScreen({
       searchQuery={searchQuery}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={onPlaceSelect}
-      initialCenter={initialCenter}
-      initialZoom={initialZoom}
+        initialCenter={initialCenter}
+        initialZoom={initialZoom}
+        onMapMoveEnd={onMapMoveEnd}
     />
   )
 }

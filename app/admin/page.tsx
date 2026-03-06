@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { TYPES, LOCALITIES } from "@/lib/constants"
+import { TYPES } from "@/lib/constants"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
 import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search } from "lucide-react"
@@ -50,6 +50,8 @@ type PlaceItem = {
   address: string
   neighborhood: string
   status: string
+  source?: "excel" | "kml" | "suggestion" | "manual"
+  contact?: { instagram?: string; url?: string; whatsapp?: string; phone?: string }
   stats?: { avgRating: number; totalReviews: number }
 }
 
@@ -81,6 +83,11 @@ export default function AdminPage() {
   const [placeSearch, setPlaceSearch] = useState("")
   const [placeTypeFilter, setPlaceTypeFilter] = useState("")
   const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
+  const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(false)
+  const [placesPagination, setPlacesPagination] = useState<{ total: number; page: number; pages: number } | null>(null)
+  const [neighborhoods, setNeighborhoods] = useState<string[]>([])
+  const [counts, setCounts] = useState<{ suggestionsPending: number; contactsTotal: number; placesTotal: number } | null>(null)
+  const [selectedPlaceIds, setSelectedPlaceIds] = useState<Set<string>>(new Set())
   const [reviewSearch, setReviewSearch] = useState("")
   const [contactSearch, setContactSearch] = useState("")
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
@@ -93,7 +100,20 @@ export default function AdminPage() {
       return
     }
     fetchSuggestions()
+    fetchCounts()
   }, [session, status, router])
+
+  const fetchCounts = async () => {
+    try {
+      const res = await fetch("/api/admin/counts")
+      if (res.ok) {
+        const data = await res.json()
+        setCounts(data)
+      }
+    } catch (e) {
+      console.error("Error fetching counts:", e)
+    }
+  }
 
   const fetchSuggestions = async () => {
     try {
@@ -145,13 +165,27 @@ export default function AdminPage() {
       if (placeSearch.trim()) params.set("search", placeSearch.trim())
       if (placeTypeFilter) params.set("type", placeTypeFilter)
       if (placeNeighborhoodFilter) params.set("neighborhood", placeNeighborhoodFilter)
+      if (placeMissingInfoFilter) params.set("missingInfo", "1")
       const res = await fetch(`/api/admin/places?${params}`)
       const data = await res.json()
       setPlaces(data.places || [])
+      setPlacesPagination(data.pagination || null)
     } catch (error) {
       console.error("Error fetching places:", error)
     } finally {
       setPlacesLoading(false)
+    }
+  }
+
+  const fetchNeighborhoods = async () => {
+    try {
+      const res = await fetch("/api/admin/places/neighborhoods")
+      if (res.ok) {
+        const data = await res.json()
+        setNeighborhoods(data.neighborhoods || [])
+      }
+    } catch (e) {
+      console.error("Error fetching neighborhoods:", e)
     }
   }
 
@@ -183,6 +217,7 @@ export default function AdminPage() {
       if (res.ok) {
         toast.success(action === "approve" ? "Sugerencia aprobada y lugar creado" : "Sugerencia rechazada")
         fetchSuggestions()
+        fetchCounts()
       } else {
         toast.error(data.error || "Error al procesar")
       }
@@ -211,6 +246,50 @@ export default function AdminPage() {
     }
   }
 
+  const handleBulkAction = async (action: "approve" | "delete") => {
+    const ids = Array.from(selectedPlaceIds)
+    if (ids.length === 0) {
+      toast.error("Seleccioná al menos un lugar")
+      return
+    }
+    if (action === "delete" && !confirm(`¿Eliminar ${ids.length} lugar(es)? Esta acción no se puede deshacer.`)) return
+    try {
+      const res = await fetch("/api/admin/places/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, action }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || "Listo")
+        setSelectedPlaceIds(new Set())
+        fetchPlaces()
+        fetchCounts()
+      } else {
+        toast.error(data.error || "Error")
+      }
+    } catch (e) {
+      toast.error("Error al procesar")
+    }
+  }
+
+  const togglePlaceSelection = (id: string) => {
+    setSelectedPlaceIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAllPlaces = () => {
+    if (selectedPlaceIds.size === places.length) {
+      setSelectedPlaceIds(new Set())
+    } else {
+      setSelectedPlaceIds(new Set(places.map((p) => p._id)))
+    }
+  }
+
   const handleDeletePlace = async (id: string, name: string) => {
     if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return
     try {
@@ -218,6 +297,7 @@ export default function AdminPage() {
       if (res.ok) {
         toast.success("Lugar eliminado")
         fetchPlaces()
+        fetchCounts()
       } else {
         const data = await res.json()
         toast.error(data.error || "Error")
@@ -249,15 +329,17 @@ export default function AdminPage() {
 
       <Tabs defaultValue="suggestions">
         <TabsList>
-          <TabsTrigger value="suggestions">Sugerencias ({suggestions.length})</TabsTrigger>
+          <TabsTrigger value="suggestions">
+            Sugerencias ({counts?.suggestionsPending ?? suggestions.length})
+          </TabsTrigger>
           <TabsTrigger value="reviews" onClick={() => fetchReviews()}>
             Reseñas
           </TabsTrigger>
-          <TabsTrigger value="places" onClick={() => fetchPlaces()}>
-            Lugares
+          <TabsTrigger value="places" onClick={() => { fetchPlaces(); fetchNeighborhoods(); }}>
+            Lugares ({placesPagination?.total ?? counts?.placesTotal ?? 0})
           </TabsTrigger>
-          <TabsTrigger value="contacts" onClick={() => fetchContacts()}>
-            Contactos ({contacts.length})
+          <TabsTrigger value="contacts" onClick={() => { fetchContacts(); fetchCounts(); }}>
+            Contactos ({counts?.contactsTotal ?? contacts.length})
           </TabsTrigger>
         </TabsList>
 
@@ -531,6 +613,13 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="places" className="mt-4">
+          <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+            {placesPagination && (
+              <span className="font-medium text-foreground">
+                {placesPagination.total} lugares
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-3 mb-4">
             <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -566,12 +655,24 @@ export default function AdminPage() {
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">Todas las localidades</option>
-              {LOCALITIES.filter((n) => n !== "Otro").map((n) => (
+              {neighborhoods.map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
               ))}
             </select>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={placeMissingInfoFilter}
+                onChange={(e) => {
+                  setPlaceMissingInfoFilter(e.target.checked)
+                  setTimeout(() => fetchPlaces(), 0)
+                }}
+                className="rounded"
+              />
+              Les falta info (sin Instagram)
+            </label>
             <Button
               variant={placeFilter === "" ? "default" : "outline"}
               size="sm"
@@ -605,6 +706,17 @@ export default function AdminPage() {
             <Button size="sm" variant="secondary" onClick={() => fetchPlaces()}>
               Buscar
             </Button>
+            {selectedPlaceIds.size > 0 && (
+              <div className="flex gap-2 items-center">
+                <span className="text-sm text-muted-foreground">{selectedPlaceIds.size} seleccionados</span>
+                <Button size="sm" variant="default" onClick={() => handleBulkAction("approve")}>
+                  Aprobar seleccionados
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleBulkAction("delete")}>
+                  Eliminar seleccionados
+                </Button>
+              </div>
+            )}
           </div>
           {placesLoading ? (
             <div className="text-center py-8">Cargando lugares...</div>
@@ -616,23 +728,65 @@ export default function AdminPage() {
             </Card>
           ) : (
             <div className="space-y-4">
+              {places.length > 0 && (
+                <div className="flex items-center gap-2 pb-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlaceIds.size === places.length && places.length > 0}
+                    onChange={toggleAllPlaces}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-muted-foreground">Seleccionar todos</span>
+                </div>
+              )}
               {places.map((place: PlaceItem) => (
                 <Card key={place._id}>
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium">{place.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {getTypeLabel(place.type)} · {place.neighborhood}
-                        </p>
-                        {place.stats && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {place.stats.avgRating} ⭐ · {place.stats.totalReviews} reseñas
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlaceIds.has(place._id)}
+                          onChange={() => togglePlaceSelection(place._id)}
+                          className="rounded mt-1 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium">{place.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {getTypeLabel(place.type)} · {place.neighborhood}
                           </p>
-                        )}
-                        <Badge variant={place.status === "approved" ? "default" : "secondary"} className="mt-2">
-                          {place.status}
-                        </Badge>
+                          {(place.contact?.instagram || place.contact?.url) && (
+                            <p className="text-xs mt-1">
+                              {place.contact?.instagram ? (
+                                <a
+                                  href={place.contact.instagram.startsWith("http") ? place.contact.instagram : `https://instagram.com/${place.contact.instagram.replace(/^@/, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  {place.contact.instagram.includes("/") ? place.contact.instagram.split("/").pop() : place.contact.instagram.replace(/^@/, "")}
+                                </a>
+                              ) : place.contact?.url ? (
+                                <a href={place.contact.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                  Web
+                                </a>
+                              ) : null}
+                            </p>
+                          )}
+                          {place.stats && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {place.stats.avgRating} ⭐ · {place.stats.totalReviews} reseñas
+                            </p>
+                          )}
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            <Badge variant={place.status === "approved" ? "default" : "secondary"}>
+                              {place.status}
+                            </Badge>
+                            {place.source && (
+                              <Badge variant="outline">{place.source}</Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <Button

@@ -77,7 +77,7 @@ export async function PATCH(
         : currentDraft
 
       const placeData = buildPlaceFromDraft(draft)
-      const place = new Place(placeData)
+      const place = new Place({ ...placeData, source: "suggestion" })
       await place.save()
 
       suggestion.status = "approved"
@@ -156,7 +156,7 @@ export async function POST(
       : currentDraft
 
     const placeData = buildPlaceFromDraft(draft)
-    const place = new Place(placeData)
+    const place = new Place({ ...placeData, source: "suggestion" })
     await place.save()
 
     suggestion.status = "approved"

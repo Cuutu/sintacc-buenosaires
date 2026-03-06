@@ -101,6 +101,19 @@ function MapaContent() {
     if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
   }, [placeIdFromUrl])
 
+  /** Al hacer zoom out (nivel < 8), quitar filtro de ciudad para mostrar todo el país */
+  const handleMapMoveEnd = useCallback(
+    (zoom: number) => {
+      const citySlugsFromUrl = searchParams.get("citySlugs")
+      if (!citySlugsFromUrl || zoom >= 8) return
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("citySlugs")
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [pathname, router, searchParams]
+  )
+
   const handleSheetCollapse = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete("list")
@@ -123,6 +136,7 @@ function MapaContent() {
       placeIdToFocus={placeIdFromUrl}
       listOpen={listOpen}
       onSheetCollapse={handleSheetCollapse}
+      onMapMoveEnd={handleMapMoveEnd}
     />
   )
 }

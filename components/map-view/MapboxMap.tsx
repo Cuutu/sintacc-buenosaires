@@ -35,6 +35,8 @@ interface MapboxMapProps {
   selectedPlaceId?: string
   onPlaceSelect?: (place: IPlace) => void
   onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
+  /** Llamado al terminar move/zoom con el nivel de zoom actual */
+  onMoveEnd?: (zoom: number) => void
   searchQuery?: string
   /** Centro inicial [lng, lat]. Si no se pasa, usa CABA */
   initialCenter?: [number, number]
@@ -57,6 +59,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       selectedPlaceId,
       onPlaceSelect,
       onBoundsChange,
+      onMoveEnd,
       searchQuery,
       initialCenter,
       initialZoom,
@@ -75,6 +78,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
+    const onMoveEndRef = useRef(onMoveEnd)
+    onMoveEndRef.current = onMoveEnd
 
     const triggerGeolocate = useCallback(() => {
       geolocateControlRef.current?.trigger()
@@ -176,18 +181,19 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     useEffect(() => {
       const m = map.current
-      if (!m || !onBoundsChange) return
-      const emitBounds = () => {
+      if (!m) return
+      const onLoadOrMoveEnd = () => {
         const b = m.getBounds()
         if (b) onBoundsChangeRef.current?.(b)
+        onMoveEndRef.current?.(m.getZoom())
       }
-      m.on("load", emitBounds)
-      m.on("moveend", emitBounds)
+      m.on("load", onLoadOrMoveEnd)
+      m.on("moveend", onLoadOrMoveEnd)
       return () => {
-        m.off("load", emitBounds)
-        m.off("moveend", emitBounds)
+        m.off("load", onLoadOrMoveEnd)
+        m.off("moveend", onLoadOrMoveEnd)
       }
-    }, [onBoundsChange])
+    }, [onBoundsChange, onMoveEnd])
 
     useEffect(() => {
       if (!map.current) return

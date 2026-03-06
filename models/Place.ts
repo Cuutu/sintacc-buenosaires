@@ -35,6 +35,8 @@ export interface IPlace extends Document {
   }
   photos: string[]
   status: "approved" | "pending"
+  /** Origen del dato: excel, kml, suggestion, manual */
+  source?: "excel" | "kml" | "suggestion" | "manual"
   // Fase 2
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   lastConfirmedAt?: Date
@@ -108,6 +110,10 @@ const PlaceSchema = new Schema<IPlace>(
       enum: ["approved", "pending"],
       default: "pending",
       index: true,
+    },
+    source: {
+      type: String,
+      enum: ["excel", "kml", "suggestion", "manual"],
     },
     // Fase 2
     safetyLevel: {
