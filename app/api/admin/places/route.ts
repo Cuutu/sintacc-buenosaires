@@ -44,15 +44,16 @@ export async function GET(request: NextRequest) {
       andClauses.push({ $or: missingInfoOr })
       query.$and = andClauses
     }
+    // Sin badge = excluir lugares que tienen safetyLevel o tags que infieren badge
     if (missingBadge) {
-      const missingBadgeOr = [
-        { safetyLevel: { $exists: false } },
-        { safetyLevel: null },
-        { safetyLevel: "" },
-        { safetyLevel: "unknown" },
+      const hasBadgeConditions = [
+        { safetyLevel: { $in: ["dedicated_gf", "gf_options", "cross_contamination_risk"] } },
+        { tags: "100_gf" },
+        { tags: "certificado_sin_tacc" },
+        { tags: "opciones_sin_tacc" },
       ]
       const andClauses = (query.$and as object[]) || []
-      andClauses.push({ $or: missingBadgeOr })
+      andClauses.push({ $nor: hasBadgeConditions })
       query.$and = andClauses
     }
     if (search && search.length >= 2) {
