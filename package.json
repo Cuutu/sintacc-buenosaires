@@ -10,6 +10,7 @@
     "seed": "tsx scripts/seed.ts",
     "check-env": "tsx scripts/check-env.ts",
     "check-indexes": "tsx scripts/check-indexes.ts",
+    "benchmark:api": "tsx scripts/benchmark-api.ts",
     "generate-noise": "node scripts/generate-noise.js",
     "test": "jest",
     "test:watch": "jest --watch"

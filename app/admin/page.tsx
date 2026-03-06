@@ -260,7 +260,10 @@ export default function AdminPage() {
     }
   }
 
-  const handleBulkAction = async (action: "approve" | "delete") => {
+  const handleBulkAction = async (
+    action: "approve" | "delete" | "set_safety_level" | "clear_safety_level",
+    safetyLevel?: "dedicated_gf" | "gf_options"
+  ) => {
     const ids = Array.from(selectedPlaceIds)
     if (ids.length === 0) {
       toast.error("Seleccioná al menos un lugar")
@@ -271,7 +274,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/places/bulk", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids, action }),
+        body: JSON.stringify({ ids, action, safetyLevel }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -751,6 +754,27 @@ export default function AdminPage() {
                 <span className="text-sm text-muted-foreground">{selectedPlaceIds.size} seleccionados</span>
                 <Button size="sm" variant="default" onClick={() => handleBulkAction("approve")}>
                   Aprobar seleccionados
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}
+                >
+                  Marcar 100% sin TACC
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction("set_safety_level", "gf_options")}
+                >
+                  Marcar opciones
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction("clear_safety_level")}
+                >
+                  Quitar badge
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => handleBulkAction("delete")}>
                   Eliminar seleccionados

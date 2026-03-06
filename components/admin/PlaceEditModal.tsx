@@ -62,6 +62,19 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState("")
 
+  const inferSafetyFromTags = (tags: string[]) => {
+    if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) return "dedicated_gf"
+    if (tags.includes("opciones_sin_tacc")) return "gf_options"
+    return ""
+  }
+
+  const syncTagsWithSafety = (tags: string[], safetyLevel: string) => {
+    const next = tags.filter((t) => t !== "100_gf" && t !== "opciones_sin_tacc")
+    if (safetyLevel === "dedicated_gf") next.push("100_gf")
+    if (safetyLevel === "gf_options") next.push("opciones_sin_tacc")
+    return [...new Set(next)]
+  }
+
   useEffect(() => {
     if (open && placeId) {
       setFetching(true)
@@ -69,6 +82,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
         .then((res) => res.json())
         .then((place: PlaceData) => {
           const loc = place.location
+          const baseTags = place.tags || []
+          const normalizedSafety = place.safetyLevel || inferSafetyFromTags(baseTags)
           setFormData({
             name: place.name || "",
             status: place.status || "approved",
@@ -91,8 +106,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
               phone: place.contact?.phone || "",
               whatsapp: place.contact?.whatsapp || "",
             },
-            tags: place.tags || [],
-            safetyLevel: place.safetyLevel || "",
+            tags: syncTagsWithSafety(baseTags, normalizedSafety),
+            safetyLevel: normalizedSafety,
             photos: place.photos || [],
           })
         })
@@ -147,7 +162,9 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
         phone: formData.contact.phone?.trim() || undefined,
         whatsapp: formData.contact.whatsapp?.trim() || undefined,
       },
-      tags: formData.tags.length ? formData.tags : undefined,
+      tags: syncTagsWithSafety(formData.tags, formData.safetyLevel).length
+        ? syncTagsWithSafety(formData.tags, formData.safetyLevel)
+        : undefined,
       safetyLevel: formData.safetyLevel || undefined,
       photos: formData.photos.length ? formData.photos : undefined,
     }
@@ -299,7 +316,13 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   type="button"
                   variant={formData.safetyLevel === "dedicated_gf" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFormData({ ...formData, safetyLevel: "dedicated_gf" })}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      safetyLevel: "dedicated_gf",
+                      tags: syncTagsWithSafety(prev.tags, "dedicated_gf"),
+                    }))
+                  }
                 >
                   100% sin gluten
                 </Button>
@@ -307,11 +330,34 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   type="button"
                   variant={formData.safetyLevel === "gf_options" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFormData({ ...formData, safetyLevel: "gf_options" })}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      safetyLevel: "gf_options",
+                      tags: syncTagsWithSafety(prev.tags, "gf_options"),
+                    }))
+                  }
                 >
                   Opciones
                 </Button>
+                <Button
+                  type="button"
+                  variant={!formData.safetyLevel ? "default" : "outline"}
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      safetyLevel: "",
+                      tags: syncTagsWithSafety(prev.tags, ""),
+                    }))
+                  }
+                >
+                  Sin definir
+                </Button>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Este selector define el badge principal. Los tags se sincronizan automáticamente.
+              </p>
             </div>
             <div>
               <Label>Horario</Label>
@@ -353,7 +399,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
             <div>
               <Label>Tags</Label>
               <div className="flex flex-wrap gap-2 mt-1">
-                {PLACE_TAGS.filter((t) => t.value !== "sin_info").map((t) => (
+                {PLACE_TAGS.filter((t) => !["sin_info", "100_gf", "opciones_sin_tacc"].includes(t.value)).map((t) => (
                   <Button
                     key={t.value}
                     type="button"

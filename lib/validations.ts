@@ -32,6 +32,10 @@ export const placeSchema = z.object({
   }).optional(),
   photos: z.array(z.string().url()).max(3).default([]),
   status: z.enum(["approved", "pending"]).optional(),
+  source: z.enum(["excel", "kml", "suggestion", "manual"]).optional(),
+  safetyLevel: z
+    .enum(["dedicated_gf", "gf_options", "cross_contamination_risk", "unknown"])
+    .optional(),
 })
 
 export const contaminationReportSchema = z.object({
