@@ -85,12 +85,19 @@ export async function PATCH(request: NextRequest) {
           ? ["opciones_sin_tacc"]
           : ["100_gf", "certificado_sin_tacc"]
 
+      // Mongo no permite usar $addToSet y $pull sobre el mismo campo ("tags")
+      // en el mismo update. Lo resolvemos en dos pasos.
+      await Place.updateMany(
+        { _id: { $in: objectIds } },
+        {
+          $pull: { tags: { $in: removeTags } },
+        }
+      )
       const result = await Place.updateMany(
         { _id: { $in: objectIds } },
         {
           $set: { safetyLevel, updatedAt: new Date() },
           $addToSet: { tags: addTag },
-          $pull: { tags: { $in: removeTags } },
         }
       )
 
