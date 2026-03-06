@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type")
     const neighborhood = searchParams.get("neighborhood")
     const missingInfo = searchParams.get("missingInfo") === "1"
+    const missingBadge = searchParams.get("missingBadge") === "1"
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
@@ -34,11 +35,25 @@ export async function GET(request: NextRequest) {
       query.neighborhood = neighborhood
     }
     if (missingInfo) {
-      query.$or = [
+      const missingInfoOr = [
         { "contact.instagram": { $in: [null, ""] } },
         { contact: { $exists: false } },
         { "contact.instagram": { $exists: false } },
       ]
+      const andClauses = (query.$and as object[]) || []
+      andClauses.push({ $or: missingInfoOr })
+      query.$and = andClauses
+    }
+    if (missingBadge) {
+      const missingBadgeOr = [
+        { safetyLevel: { $exists: false } },
+        { safetyLevel: null },
+        { safetyLevel: "" },
+        { safetyLevel: "unknown" },
+      ]
+      const andClauses = (query.$and as object[]) || []
+      andClauses.push({ $or: missingBadgeOr })
+      query.$and = andClauses
     }
     if (search && search.length >= 2) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")

@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
+import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
-import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search } from "lucide-react"
+import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 type SuggestionItem = {
@@ -51,6 +52,8 @@ type PlaceItem = {
   neighborhood: string
   status: string
   source?: "excel" | "kml" | "suggestion" | "manual"
+  safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
+  tags?: string[]
   contact?: { instagram?: string; url?: string; whatsapp?: string; phone?: string }
   stats?: { avgRating: number; totalReviews: number }
 }
@@ -84,6 +87,8 @@ export default function AdminPage() {
   const [placeTypeFilter, setPlaceTypeFilter] = useState("")
   const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
   const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(false)
+  const [placeMissingBadgeFilter, setPlaceMissingBadgeFilter] = useState(false)
+  const [placesPage, setPlacesPage] = useState(1)
   const [placesPagination, setPlacesPagination] = useState<{ total: number; page: number; pages: number } | null>(null)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([])
   const [counts, setCounts] = useState<{ suggestionsPending: number; contactsTotal: number; placesTotal: number } | null>(null)
@@ -156,7 +161,8 @@ export default function AdminPage() {
     }
   }
 
-  const fetchPlaces = async (status?: string) => {
+  const fetchPlaces = async (status?: string, page?: number) => {
+    const p = page ?? placesPage
     setPlacesLoading(true)
     try {
       const params = new URLSearchParams()
@@ -166,6 +172,9 @@ export default function AdminPage() {
       if (placeTypeFilter) params.set("type", placeTypeFilter)
       if (placeNeighborhoodFilter) params.set("neighborhood", placeNeighborhoodFilter)
       if (placeMissingInfoFilter) params.set("missingInfo", "1")
+      if (placeMissingBadgeFilter) params.set("missingBadge", "1")
+      params.set("page", String(p))
+      params.set("limit", "25")
       const res = await fetch(`/api/admin/places?${params}`)
       const data = await res.json()
       setPlaces(data.places || [])
@@ -175,6 +184,11 @@ export default function AdminPage() {
     } finally {
       setPlacesLoading(false)
     }
+  }
+
+  const goToPlacesPage = (p: number) => {
+    setPlacesPage(p)
+    setTimeout(() => fetchPlaces(undefined, p), 0)
   }
 
   const fetchNeighborhoods = async () => {
@@ -613,11 +627,18 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="places" className="mt-4">
-          <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 mb-2 text-sm">
             {placesPagination && (
-              <span className="font-medium text-foreground">
-                {placesPagination.total} lugares
-              </span>
+              <>
+                <span className="font-medium text-foreground">
+                  {placesPagination.total} lugares
+                  {placesPagination.pages > 1 && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      · Página {placesPagination.page} de {placesPagination.pages}
+                    </span>
+                  )}
+                </span>
+              </>
             )}
           </div>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -635,7 +656,8 @@ export default function AdminPage() {
               value={placeTypeFilter}
               onChange={(e) => {
                 setPlaceTypeFilter(e.target.value)
-                setTimeout(() => fetchPlaces(), 0)
+                setPlacesPage(1)
+                setTimeout(() => fetchPlaces(undefined, 1), 0)
               }}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
@@ -650,7 +672,8 @@ export default function AdminPage() {
               value={placeNeighborhoodFilter}
               onChange={(e) => {
                 setPlaceNeighborhoodFilter(e.target.value)
-                setTimeout(() => fetchPlaces(), 0)
+                setPlacesPage(1)
+                setTimeout(() => fetchPlaces(undefined, 1), 0)
               }}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
@@ -667,18 +690,33 @@ export default function AdminPage() {
                 checked={placeMissingInfoFilter}
                 onChange={(e) => {
                   setPlaceMissingInfoFilter(e.target.checked)
-                  setTimeout(() => fetchPlaces(), 0)
+                  setPlacesPage(1)
+                  setTimeout(() => fetchPlaces(undefined, 1), 0)
                 }}
                 className="rounded"
               />
               Les falta info (sin Instagram)
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={placeMissingBadgeFilter}
+                onChange={(e) => {
+                  setPlaceMissingBadgeFilter(e.target.checked)
+                  setPlacesPage(1)
+                  setTimeout(() => fetchPlaces(undefined, 1), 0)
+                }}
+                className="rounded"
+              />
+              Sin badge (sin TACC/opciones/certificado)
             </label>
             <Button
               variant={placeFilter === "" ? "default" : "outline"}
               size="sm"
               onClick={() => {
                 setPlaceFilter("")
-                fetchPlaces("")
+                setPlacesPage(1)
+                fetchPlaces("", 1)
               }}
             >
               Todos
@@ -688,7 +726,8 @@ export default function AdminPage() {
               size="sm"
               onClick={() => {
                 setPlaceFilter("approved")
-                fetchPlaces("approved")
+                setPlacesPage(1)
+                fetchPlaces("approved", 1)
               }}
             >
               Aprobados
@@ -698,12 +737,13 @@ export default function AdminPage() {
               size="sm"
               onClick={() => {
                 setPlaceFilter("pending")
-                fetchPlaces("pending")
+                setPlacesPage(1)
+                fetchPlaces("pending", 1)
               }}
             >
               Pendientes
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => fetchPlaces()}>
+            <Button size="sm" variant="secondary" onClick={() => fetchPlaces(undefined, placesPage)}>
               Buscar
             </Button>
             {selectedPlaceIds.size > 0 && (
@@ -740,7 +780,15 @@ export default function AdminPage() {
                 </div>
               )}
               {places.map((place: PlaceItem) => (
-                <Card key={place._id}>
+                <Card
+                  key={place._id}
+                  className={
+                    (() => {
+                      const l = inferSafetyLevel(place)
+                      return !l || l === "unknown" ? "ring-1 ring-amber-500/30" : undefined
+                    })()
+                  }
+                >
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -779,6 +827,20 @@ export default function AdminPage() {
                             </p>
                           )}
                           <div className="flex gap-2 mt-2 flex-wrap">
+                            {(() => {
+                              const level = inferSafetyLevel(place)
+                              const cfg = getSafetyBadge(level)
+                              const hasBadge = level && level !== "unknown"
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className={hasBadge ? cfg.className : "border-amber-500/60 bg-amber-500/15 text-amber-600 dark:text-amber-400"}
+                                  title={hasBadge ? cfg.label : "Sin clasificar — asignar 100% sin TACC, Opciones o Certificado"}
+                                >
+                                  {cfg.dot} {cfg.label}
+                                </Badge>
+                              )
+                            })()}
                             <Badge variant={place.status === "approved" ? "default" : "secondary"}>
                               {place.status}
                             </Badge>
@@ -817,13 +879,38 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+          {placesPagination && placesPagination.pages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={placesPagination.page <= 1}
+                onClick={() => goToPlacesPage(placesPagination.page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground px-2">
+                Página {placesPagination.page} de {placesPagination.pages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={placesPagination.page >= placesPagination.pages}
+                onClick={() => goToPlacesPage(placesPagination.page + 1)}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
           {editingPlaceId && (
             <PlaceEditModal
               placeId={editingPlaceId}
               open={!!editingPlaceId}
               onOpenChange={(open) => !open && setEditingPlaceId(null)}
               onSaved={() => {
-                fetchPlaces(placeFilter || undefined)
+                fetchPlaces(placeFilter || undefined, placesPage)
                 setEditingPlaceId(null)
               }}
             />
