@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 export async function GET(
   request: NextRequest,
@@ -111,6 +112,7 @@ export async function PATCH(
       )
     }
 
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
     return NextResponse.json(place)
   } catch (error: any) {
     if (error.name === "ZodError") {
@@ -153,6 +155,7 @@ export async function DELETE(
       )
     }
 
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
     return NextResponse.json({ message: "Lugar eliminado correctamente" })
   } catch (error) {
     logApiError("/api/places/[id]", error, { request })

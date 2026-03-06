@@ -132,8 +132,14 @@ const PlaceSchema = new Schema<IPlace>(
 // Indexes
 PlaceSchema.index({ location: "2dsphere" })
 PlaceSchema.index({ name: "text", address: "text", neighborhood: "text" })
+PlaceSchema.index({ status: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, type: 1 })
+PlaceSchema.index({ status: 1, type: 1, createdAt: -1 })
 PlaceSchema.index({ neighborhood: 1, type: 1 })
+PlaceSchema.index({ status: 1, neighborhood: 1, createdAt: -1 })
+PlaceSchema.index({ status: 1, safetyLevel: 1, createdAt: -1 })
+PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })
+PlaceSchema.index({ "contact.instagram": 1, status: 1 })
 
 export const Place: Model<IPlace> =
   mongoose.models.Place || mongoose.model<IPlace>("Place", PlaceSchema)

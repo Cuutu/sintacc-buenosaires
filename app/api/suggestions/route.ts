@@ -12,6 +12,7 @@ import {
 import { sendSuggestionNewEmail } from "@/lib/email-suggestions"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 const CABA_CENTER = { lat: -34.6037, lng: -58.3816 }
 
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
     })
 
     await suggestion.save()
+    invalidateApiCache(["admin:counts"])
 
     // Email a admins (no bloquea la respuesta)
     sendSuggestionNewEmail({

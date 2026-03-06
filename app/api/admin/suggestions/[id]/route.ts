@@ -9,6 +9,7 @@ import { placeSchema, placeDraftUpdateSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 function buildPlaceFromDraft(draft: Record<string, unknown>) {
   const placeData: Record<string, unknown> = {
@@ -79,6 +80,7 @@ export async function PATCH(
       const placeData = buildPlaceFromDraft(draft)
       const place = new Place({ ...placeData, source: "suggestion" })
       await place.save()
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
 
       suggestion.status = "approved"
       await suggestion.save()
@@ -101,6 +103,7 @@ export async function PATCH(
     } else {
       suggestion.status = "rejected"
       await suggestion.save()
+      invalidateApiCache(["admin:counts"])
       return NextResponse.json({
         message: "Sugerencia rechazada",
         suggestion,
@@ -158,6 +161,7 @@ export async function POST(
     const placeData = buildPlaceFromDraft(draft)
     const place = new Place({ ...placeData, source: "suggestion" })
     await place.save()
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
 
     suggestion.status = "approved"
     await suggestion.save()

@@ -7,6 +7,7 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { z } from "zod"
 import { Resend } from "resend"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 const contactSchema = z.object({
   subject: z.string().min(1, "El asunto es requerido").max(200),
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
     })
 
     await contact.save()
+    invalidateApiCache(["admin:counts"])
 
     // Enviar email al admin si está configurado Resend
     const adminEmail = getContactEmail()

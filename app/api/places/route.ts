@@ -9,6 +9,9 @@ import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
+import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
+
+const PUBLIC_PLACES_CACHE_TTL_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,55 +76,68 @@ export async function GET(request: NextRequest) {
       query.safetyLevel = safetyLevel
     }
     
-    const places = await Place.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
-    
-    const total = await Place.countDocuments(query)
-    
-    const placeIds = places.map((p: any) => p._id)
-    const reviewStats = await Review.aggregate([
-      { $match: { placeId: { $in: placeIds }, status: "visible" } },
-      { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
-    ])
-    const contaminationCounts = await ContaminationReport.aggregate([
-      { $match: { placeId: { $in: placeIds }, status: "visible" } },
-      { $group: { _id: "$placeId", count: { $sum: 1 } } },
-    ])
+    const cacheKey = `public:places:${searchParams.toString()}`
+    const data = await getOrSetApiCache(cacheKey, PUBLIC_PLACES_CACHE_TTL_MS, async () => {
+      const places = await Place.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+      
+      const total = await Place.countDocuments(query)
+      
+      const placeIds = places.map((p: any) => p._id)
+      let reviewStats: any[] = []
+      let contaminationCounts: any[] = []
+      if (placeIds.length > 0) {
+        ;[reviewStats, contaminationCounts] = await Promise.all([
+          Review.aggregate([
+            { $match: { placeId: { $in: placeIds }, status: "visible" } },
+            { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
+          ]),
+          ContaminationReport.aggregate([
+            { $match: { placeId: { $in: placeIds }, status: "visible" } },
+            { $group: { _id: "$placeId", count: { $sum: 1 } } },
+          ]),
+        ])
+      }
 
-    const statsMap = new Map<string, { avgRating: number; totalReviews: number; contaminationReportsCount: number }>()
-    placeIds.forEach((id: any) => {
-      statsMap.set(id.toString(), { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 })
-    })
-    reviewStats.forEach((s: any) => {
-      const entry = statsMap.get(s._id.toString())!
-      entry.avgRating = Math.round(s.avgRating * 10) / 10
-      entry.totalReviews = s.count
-    })
-    contaminationCounts.forEach((c: any) => {
-      const entry = statsMap.get(c._id.toString())
-      if (entry) entry.contaminationReportsCount = c.count
+      const statsMap = new Map<string, { avgRating: number; totalReviews: number; contaminationReportsCount: number }>()
+      placeIds.forEach((id: any) => {
+        statsMap.set(id.toString(), { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 })
+      })
+      reviewStats.forEach((s: any) => {
+        const entry = statsMap.get(s._id.toString())!
+        entry.avgRating = Math.round(s.avgRating * 10) / 10
+        entry.totalReviews = s.count
+      })
+      contaminationCounts.forEach((c: any) => {
+        const entry = statsMap.get(c._id.toString())
+        if (entry) entry.contaminationReportsCount = c.count
+      })
+
+      const placesWithStats = places.map((p: any) => ({
+        ...p,
+        stats: statsMap.get(p._id.toString()) || {
+          avgRating: 0,
+          totalReviews: 0,
+          contaminationReportsCount: 0,
+        },
+      }))
+      
+      return {
+        places: placesWithStats,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      }
     })
 
-    const placesWithStats = places.map((p: any) => ({
-      ...p,
-      stats: statsMap.get(p._id.toString()) || {
-        avgRating: 0,
-        totalReviews: 0,
-        contaminationReportsCount: 0,
-      },
-    }))
-    
-    return NextResponse.json({
-      places: placesWithStats,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" },
     })
   } catch (error) {
     logApiError("/api/places", error, { request })
@@ -148,6 +164,7 @@ export async function POST(request: NextRequest) {
     })
     
     await place.save()
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
     
     return NextResponse.json(place, { status: 201 })
   } catch (error: any) {

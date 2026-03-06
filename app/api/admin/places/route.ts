@@ -4,7 +4,9 @@ import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
-import mongoose from "mongoose"
+import { getOrSetApiCache } from "@/lib/api-cache"
+
+const ADMIN_PLACES_CACHE_TTL_MS = 45 * 1000
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,38 +70,48 @@ export async function GET(request: NextRequest) {
       query.$and = andClauses
     }
 
-    const places = await Place.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
+    const cacheKey = `admin:places:${searchParams.toString()}`
+    const data = await getOrSetApiCache(cacheKey, ADMIN_PLACES_CACHE_TTL_MS, async () => {
+      const places = await Place.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
 
-    const total = await Place.countDocuments(query)
-    const placeIds = places.map((p: any) => p._id)
-    const reviewStats = await Review.aggregate([
-      { $match: { placeId: { $in: placeIds }, status: "visible" } },
-      { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
-    ])
-    const statsMap = new Map(
-      reviewStats.map((s: any) => [
-        s._id.toString(),
-        { avgRating: Math.round(s.avgRating * 10) / 10, totalReviews: s.count },
-      ])
-    )
+      const total = await Place.countDocuments(query)
+      const placeIds = places.map((p: any) => p._id)
+      let reviewStats: any[] = []
+      if (placeIds.length > 0) {
+        reviewStats = await Review.aggregate([
+          { $match: { placeId: { $in: placeIds }, status: "visible" } },
+          { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
+        ])
+      }
+      const statsMap = new Map(
+        reviewStats.map((s: any) => [
+          s._id.toString(),
+          { avgRating: Math.round(s.avgRating * 10) / 10, totalReviews: s.count },
+        ])
+      )
 
-    const placesWithStats = places.map((p: any) => ({
-      ...p,
-      stats: statsMap.get(p._id.toString()) || { avgRating: 0, totalReviews: 0 },
-    }))
+      const placesWithStats = places.map((p: any) => ({
+        ...p,
+        stats: statsMap.get(p._id.toString()) || { avgRating: 0, totalReviews: 0 },
+      }))
 
-    return NextResponse.json({
-      places: placesWithStats,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+      return {
+        places: placesWithStats,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      }
+    })
+
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "private, max-age=30" },
     })
   } catch (error) {
     logApiError("/api/admin/places", error, { request })
