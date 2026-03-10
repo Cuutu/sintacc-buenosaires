@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IPlace } from "@/models/Place"
@@ -40,12 +41,14 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
       )}
     >
       {/* Foto */}
-      <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
+      <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
         {place.photos?.[0] ? (
-          <img
+          <Image
             src={place.photos[0]}
             alt={place.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="64px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-2xl">

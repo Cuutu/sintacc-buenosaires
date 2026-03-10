@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,12 +23,7 @@ export default function ListaDetailPage() {
   const [loading, setLoading] = useState(true)
   const [likeLoading, setLikeLoading] = useState(false)
 
-  useEffect(() => {
-    if (!id) return
-    fetchList()
-  }, [id])
-
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     try {
       const data = await fetchApi<ListWithDetails>(`/api/lists/${id}`)
       setList(data)
@@ -36,7 +32,12 @@ export default function ListaDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    fetchList()
+  }, [id, fetchList])
 
   useEffect(() => {
     if (!id || !session) return
@@ -96,11 +97,15 @@ export default function ListaDetailPage() {
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               {list.createdBy?.image ? (
-                <img
-                  src={list.createdBy.image}
-                  alt={list.createdBy?.name || "Usuario"}
-                  className="w-6 h-6 rounded-full"
-                />
+                <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                  <Image
+                    src={list.createdBy.image}
+                    alt={list.createdBy?.name || "Usuario"}
+                    fill
+                    className="object-cover"
+                    sizes="24px"
+                  />
+                </div>
               ) : (
                 <User className="h-4 w-4" />
               )}

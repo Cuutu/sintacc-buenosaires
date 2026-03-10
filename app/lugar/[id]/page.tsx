@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -63,25 +63,7 @@ export default function LugarPage() {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const INITIAL_REVIEWS = 4
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPlace()
-      fetchReviews()
-      fetchContaminationReports()
-    }
-  }, [params.id])
-
-  useEffect(() => {
-    const hasLocation = place?.location?.lat != null && place?.location?.lng != null
-    const hasNeighborhood = Boolean(place?.neighborhood)
-    if (place && (hasLocation || hasNeighborhood)) {
-      fetchNearby()
-    } else if (place !== undefined) {
-      setLoadingNearby(false)
-    }
-  }, [place?._id, place?.location?.lat, place?.location?.lng, place?.neighborhood])
-
-  const fetchPlace = async () => {
+  const fetchPlace = useCallback(async () => {
     try {
       const data = await fetchApi<IPlace & { stats?: unknown }>(
         `/api/places/${params.id}`
@@ -95,9 +77,9 @@ export default function LugarPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
 
-  const fetchReviews = async (page: number = 1, append: boolean = false) => {
+  const fetchReviews = useCallback(async (page: number = 1, append: boolean = false) => {
     try {
       if (append) setLoadingMoreReviews(true)
       const data = await fetchApi<{
@@ -120,9 +102,9 @@ export default function LugarPage() {
     } finally {
       if (append) setLoadingMoreReviews(false)
     }
-  }
+  }, [params.id])
 
-  const fetchContaminationReports = async () => {
+  const fetchContaminationReports = useCallback(async () => {
     try {
       const data = await fetchApi<{
         reports: Array<{
@@ -138,9 +120,9 @@ export default function LugarPage() {
     } catch {
       // Silencioso: no es crítico para la vista principal
     }
-  }
+  }, [params.id])
 
-  const fetchNearby = async () => {
+  const fetchNearby = useCallback(async () => {
     if (!place) {
       setLoadingNearby(false)
       return
@@ -171,7 +153,25 @@ export default function LugarPage() {
     } finally {
       setLoadingNearby(false)
     }
-  }
+  }, [place, params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchPlace()
+      fetchReviews()
+      fetchContaminationReports()
+    }
+  }, [params.id, fetchPlace, fetchReviews, fetchContaminationReports])
+
+  useEffect(() => {
+    const hasLocation = place?.location?.lat != null && place?.location?.lng != null
+    const hasNeighborhood = Boolean(place?.neighborhood)
+    if (place && (hasLocation || hasNeighborhood)) {
+      fetchNearby()
+    } else if (place !== undefined) {
+      setLoadingNearby(false)
+    }
+  }, [place?._id, place?.location?.lat, place?.location?.lng, place?.neighborhood, place, fetchNearby])
 
   const sortedReviews = [...reviews].sort((a, b) => {
     if ((a as any).pinned && !(b as any).pinned) return -1

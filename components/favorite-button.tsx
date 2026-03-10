@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
@@ -17,13 +17,7 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (!features.favorites || !session) return
-
-    checkFavorite()
-  }, [placeId, session])
-
-  const checkFavorite = async () => {
+  const checkFavorite = useCallback(async () => {
     try {
       const res = await fetch("/api/favorites")
       const data = await res.json()
@@ -32,7 +26,13 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
     } catch (error) {
       console.error("Error checking favorite:", error)
     }
-  }
+  }, [placeId])
+
+  useEffect(() => {
+    if (!features.favorites || !session) return
+
+    checkFavorite()
+  }, [placeId, session, checkFavorite])
 
   const toggleFavorite = async () => {
     if (!session) return

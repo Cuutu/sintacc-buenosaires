@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { TagBadge } from "@/components/TagBadge"
 import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 import Link from "next/link"
+import Image from "next/image"
 import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { isOpenNow } from "@/lib/opening-hours"
@@ -30,10 +31,12 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
       <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-border/50 hover:border-primary/50 rounded-xl group bg-card/50">
         {place.photos && place.photos.length > 0 ? (
           <div className="relative h-40 w-full overflow-hidden">
-            <img
+            <Image
               src={place.photos[0]}
               alt={place.name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-2 left-3 right-3">

@@ -10,9 +10,17 @@
 - ✅ Panel de administración
 - ✅ Autenticación con Google (NextAuth)
 - ✅ API completa con validación Zod
-- ✅ Rate limiting con MongoDB
+- ✅ Rate limiting con MongoDB (contact, suggestions, stats)
 - ✅ Sanitización de inputs
 - ✅ Seed script con datos de ejemplo
+- ✅ Helper fetchApi con timeout y manejo de errores
+- ✅ sitemap.ts y robots.txt dinámicos
+- ✅ Review.aggregate en places/[id] para stats
+- ✅ NextAuth JWT strategy
+- ✅ images.remotePatterns (Next.js 14)
+- ✅ Logger estructurado (lib/logger)
+- ✅ /api/health
+- ✅ TTL índices (RateLimit, RateLimitIp)
 
 ## Fase 2 - Diferenciación 🚧 SCAFFOLDED
 
@@ -78,8 +86,8 @@
 #### 3. SEO Serio
 - ⚠️ Pendiente: Páginas dinámicas `/barrio/[neighborhood]`
 - ⚠️ Pendiente: Páginas dinámicas `/tipo/[type]`
-- ⚠️ Pendiente: `sitemap.xml` generado dinámicamente
-- ⚠️ Pendiente: `robots.txt`
+- ✅ `sitemap.xml` generado dinámicamente
+- ✅ `robots.txt`
 - ⚠️ Pendiente: Meta tags OpenGraph por lugar
 - ⚠️ Pendiente: Schema.org LocalBusiness en `/lugar/[id]`
 

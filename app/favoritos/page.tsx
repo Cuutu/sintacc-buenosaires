@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -24,16 +24,7 @@ export default function FavoritosPage() {
   const [listsLoading, setListsLoading] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
-  useEffect(() => {
-    if (!session) {
-      router.push("/login")
-      return
-    }
-
-    fetchFavorites()
-  }, [session, router])
-
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       const data = await fetchApi<{
         favorites: Array<{ placeId: IPlace }>
@@ -44,7 +35,16 @@ export default function FavoritosPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!session) {
+      router.push("/login")
+      return
+    }
+
+    fetchFavorites()
+  }, [session, router, fetchFavorites])
 
   const fetchLists = async () => {
     setListsLoading(true)

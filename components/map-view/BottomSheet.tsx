@@ -59,7 +59,7 @@ export function MapBottomSheet({
 
   React.useEffect(() => {
     applySnap(initialSnap)
-  }, [initialSnap])
+  }, [initialSnap, applySnap])
 
   const getClosestSnap = (h: number): SheetSnap => {
     const dist = (Object.entries(snapHeights) as [SheetSnap, number][]).map(

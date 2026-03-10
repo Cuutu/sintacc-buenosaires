@@ -46,7 +46,7 @@
 │ mongodb.ts (conexión con cache global)    auth.ts (NextAuth + DB en session)  │
 │ rate-limit.ts (MongoDB, checkRateLimit)  validations.ts (Zod + sanitizeHtml) │
 │ middleware.ts (requireAuth/requireAdmin)   features.ts (FEATURES env)          │
-│ geocode.ts (Mapbox API)                   repositories/ (Place, Review)       │
+│ geocode.ts (Mapbox API)                                                       │
 └─────────────────────────────────────────────────────────────────────────────┘
                                          │
                                          ▼
@@ -82,7 +82,7 @@
 | 9 | **Stats API público sin rate limit** | 2 | 4 | `app/api/stats/route.ts` | Rate limit por IP o cache corto (60s) |
 | 10 | **Seed elimina todos los Place** | 5 | 2 | `scripts/seed.ts` L13-14: `Place.deleteMany({})` | Confirmación interactiva o flag `--force` |
 | 11 | **next.config: images.domains deprecated** | 2 | 5 | `next.config.js` L4-5 | Migrar a `images.remotePatterns` (Next.js 14) |
-| 12 | **Repositorios no usados en APIs** | 2 | 3 | `lib/repositories/` existe pero APIs usan modelos directos | Unificar o eliminar repos para evitar duplicación |
+| 12 | ~~Repositorios no usados en APIs~~ | — | — | ~~Resuelto: carpeta `lib/repositories/` eliminada~~ | — |
 | 13 | **No hay sitemap ni robots.txt** | 3 | 5 | No existen `sitemap.ts`, `robots.ts` | Agregar para SEO (places indexables) |
 | 14 | **Varios fetches sin res.ok** | 3 | 4 | `app/mapa/page.tsx`, `favoritos`, `place-detail-modal`, `StatsRow`, etc. | Crear helper `fetchApi` que valide res.ok |
 | 15 | **Rate limit: race condition** | 2 | 2 | `lib/rate-limit.ts`: $inc antes de check, 2 requests simultáneos podrían pasar | Aceptable para 3/día; documentar o usar $max condicional |

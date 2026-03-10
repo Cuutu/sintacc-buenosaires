@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { MapPin, Star } from "lucide-react"
 import type { PlaceWithStats } from "./featured-utils"
 import { getSafetyBadge, getDisplayTags } from "./featured-utils"
@@ -25,10 +26,12 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         {photo ? (
-          <img
+          <Image
             src={photo}
             alt={place.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 400px"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -98,6 +98,20 @@ export default function AdminPage() {
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
   const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
 
+  const fetchSuggestions = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ status: "pending" })
+      if (suggestionSearch.trim()) params.set("search", suggestionSearch.trim())
+      const res = await fetch(`/api/admin/suggestions?${params}`)
+      const data = await res.json()
+      setSuggestions(data.suggestions || [])
+    } catch (error) {
+      console.error("Error fetching suggestions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [suggestionSearch])
+
   useEffect(() => {
     if (status === "loading") return
     if (status === "unauthenticated" || session?.user?.role !== "admin") {
@@ -106,7 +120,7 @@ export default function AdminPage() {
     }
     fetchSuggestions()
     fetchCounts()
-  }, [session, status, router])
+  }, [session, status, router, fetchSuggestions])
 
   const fetchCounts = async () => {
     try {
@@ -120,20 +134,6 @@ export default function AdminPage() {
     }
   }
 
-  const fetchSuggestions = async () => {
-    try {
-      const params = new URLSearchParams({ status: "pending" })
-      if (suggestionSearch.trim()) params.set("search", suggestionSearch.trim())
-      const res = await fetch(`/api/admin/suggestions?${params}`)
-      const data = await res.json()
-      setSuggestions(data.suggestions || [])
-    } catch (error) {
-      console.error("Error fetching suggestions:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const suggestionSearchMounted = useRef(false)
   useEffect(() => {
     if (!suggestionSearchMounted.current) {
@@ -142,7 +142,7 @@ export default function AdminPage() {
     }
     const t = setTimeout(fetchSuggestions, 400)
     return () => clearTimeout(t)
-  }, [suggestionSearch])
+  }, [suggestionSearch, fetchSuggestions])
 
   const fetchReviews = async (status?: string) => {
     setReviewsLoading(true)

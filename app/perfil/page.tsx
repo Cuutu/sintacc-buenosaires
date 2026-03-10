@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { User, LogOut, Heart, MapPin, ChevronRight } from "lucide-react"
@@ -17,15 +18,7 @@ export default function PerfilPage() {
   const [savedPlaces, setSavedPlaces] = useState<IPlace[]>([])
   const [loadingSaved, setLoadingSaved] = useState(true)
 
-  useEffect(() => {
-    if (session) {
-      fetchSavedPlaces()
-    } else {
-      setLoadingSaved(false)
-    }
-  }, [session])
-
-  const fetchSavedPlaces = async () => {
+  const fetchSavedPlaces = useCallback(async () => {
     try {
       const data = await fetchApi<{ favorites: Array<{ placeId: IPlace }> }>("/api/favorites")
       setSavedPlaces(data.favorites?.map((f) => f.placeId) || [])
@@ -34,7 +27,15 @@ export default function PerfilPage() {
     } finally {
       setLoadingSaved(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      fetchSavedPlaces()
+    } else {
+      setLoadingSaved(false)
+    }
+  }, [session, fetchSavedPlaces])
 
   if (status === "loading") {
     return (
@@ -60,11 +61,15 @@ export default function PerfilPage() {
         <CardHeader>
           <div className="flex items-center gap-4">
             {session.user?.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || ""}
-                className="h-16 w-16 rounded-full object-cover"
-              />
+              <div className="relative h-16 w-16 rounded-full overflow-hidden shrink-0">
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || ""}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              </div>
             ) : (
               <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="h-8 w-8 text-primary" />

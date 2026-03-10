@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, MapPin, User } from "lucide-react"
 import { IPlace } from "@/models/Place"
@@ -38,12 +39,14 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
       <Link href={`/listas/${list._id}`}>
         <Card className="overflow-hidden hover:border-primary/50 transition-colors h-full">
           <div className="flex">
-            <div className="w-24 h-24 shrink-0 bg-muted flex items-center justify-center">
+            <div className="relative w-24 h-24 shrink-0 bg-muted flex items-center justify-center overflow-hidden">
               {photo ? (
-                <img
+                <Image
                   src={photo}
                   alt={`${list.name} - lugares sin gluten`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="96px"
                 />
               ) : (
                 <MapPin className="h-8 w-8 text-muted-foreground" />
@@ -70,10 +73,12 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
       <Card className="overflow-hidden hover:border-primary/50 transition-colors h-full group">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {photo ? (
-            <img
+            <Image
               src={photo}
               alt={`${list.name} - lista de lugares sin gluten`}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              fill
+              className="object-cover transition-transform group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -99,11 +104,15 @@ export function ListCard({ list, variant = "default" }: ListCardProps) {
           )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {list.createdBy?.image ? (
-              <img
-                src={list.createdBy.image}
-                alt={list.createdBy?.name || "Usuario"}
-                className="w-6 h-6 rounded-full"
-              />
+              <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                <Image
+                  src={list.createdBy.image}
+                  alt={list.createdBy?.name || "Usuario"}
+                  fill
+                  className="object-cover"
+                  sizes="24px"
+                />
+              </div>
             ) : (
               <User className="h-4 w-4" />
             )}
