@@ -666,78 +666,79 @@ export default function AdminPage() {
             <div className="text-center py-10 text-muted-foreground text-sm">No hay reseñas</div>
           ) : (
             <div className="divide-y divide-border">
-              {reviews.map((review) => (
-                <div key={review._id} className="p-4">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/lugar/${review.placeId._id}`}
-                        target="_blank"
-                        className="text-sm font-bold text-primary hover:underline"
-                      >
-                        {review.placeId.name}
-                      </Link>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                        <span>{review.userId?.name || "Usuario anónimo"}</span>
-                        <span>·</span>
-                        <span className="text-amber-400">
-                          {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
-                        </span>
-                        <span>·</span>
-                        <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
+              {reviews.map((review) => {
+                // placeId puede ser null si el lugar fue eliminado
+                const placeId = review.placeId as any
+                const placeName = placeId?.name ?? "Lugar eliminado"
+                const placeMongoId = placeId?._id?.toString?.() ?? null
+
+                return (
+                  <div key={review._id} className="p-4">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        {placeMongoId ? (
+                          <Link
+                            href={`/lugar/${placeMongoId}`}
+                            target="_blank"
+                            className="text-sm font-bold text-primary hover:underline"
+                          >
+                            {placeName}
+                          </Link>
+                        ) : (
+                          <span className="text-sm font-bold text-muted-foreground">
+                            {placeName}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                          <span>{review.userId?.name || "Usuario anónimo"}</span>
+                          <span>·</span>
+                          <span className="text-amber-400">
+                            {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                          </span>
+                          <span>·</span>
+                          <span>{new Date((review as any).createdAt).toLocaleDateString("es-AR")}</span>
+                        </div>
                       </div>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${
+                        review.status === "visible"
+                          ? "bg-primary/8 text-primary border-primary/20"
+                          : "bg-destructive/8 text-destructive border-destructive/20"
+                      }`}>
+                        {review.status === "visible" ? "✓ visible" : "✕ oculta"}
+                      </span>
                     </div>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${
-                      review.status === "visible"
-                        ? "bg-primary/8 text-primary border-primary/20"
-                        : "bg-destructive/8 text-destructive border-destructive/20"
-                    }`}>
-                      {review.status === "visible" ? "✓ visible" : "✕ oculta"}
-                    </span>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
+                      {review.comment}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(review as any).pinned ? (
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                          onClick={() => handleReviewAction(review._id, "unpin")}>
+                          📌 Quitar destaque
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                          onClick={() => handleReviewAction(review._id, "pin")}>
+                          📌 Destacar
+                        </Button>
+                      )}
+                      {review.status === "visible" ? (
+                        <Button size="sm" variant="outline"
+                          className="h-7 text-xs gap-1 text-amber-500 border-amber-500/30 hover:bg-amber-500/8"
+                          onClick={() => handleReviewAction(review._id, "hide")}>
+                          🙈 Ocultar
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline"
+                          className="h-7 text-xs gap-1 text-primary border-primary/30"
+                          onClick={() => handleReviewAction(review._id, "unhide")}>
+                          ✅ Mostrar
+                        </Button>
+                      )}
+                    </div>
                   </div>
-
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
-                    {review.comment}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {review.pinned ? (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => handleReviewAction(review._id, "unpin")}
-                      >
-                        📌 Quitar destaque
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => handleReviewAction(review._id, "pin")}
-                      >
-                        📌 Destacar
-                      </Button>
-                    )}
-                    {review.status === "visible" ? (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-7 text-xs gap-1 text-amber-500 border-amber-500/30 hover:bg-amber-500/8"
-                        onClick={() => handleReviewAction(review._id, "hide")}
-                      >
-                        🙈 Ocultar
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-7 text-xs gap-1 text-primary border-primary/30"
-                        onClick={() => handleReviewAction(review._id, "unhide")}
-                      >
-                        ✅ Mostrar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -784,7 +785,11 @@ export default function AdminPage() {
                 Buscar
               </Button>
             </div>
+            {/* Fila 1: Estado de publicación */}
             <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider shrink-0">
+                Estado:
+              </span>
               {[
                 { label: "Todos", value: "" },
                 { label: "✅ Publicados", value: "approved" },
@@ -800,33 +805,36 @@ export default function AdminPage() {
                   {f.label}
                 </button>
               ))}
+            </div>
+
+            {/* Fila 2: Clasificación de seguridad — el flujo más importante */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider shrink-0">
+                Clasificación sin TACC:
+              </span>
               <button
                 onClick={() => {
                   setPlaceMissingBadgeFilter(!placeMissingBadgeFilter)
                   setPlacesPage(1)
                   setTimeout(() => fetchPlaces(undefined, 1), 0)
                 }}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
                   placeMissingBadgeFilter
-                    ? "border-amber-500/40 bg-amber-500/8 text-amber-400"
-                    : "border-border bg-card text-muted-foreground"
+                    ? "border-amber-500/50 bg-amber-500/12 text-amber-400"
+                    : "border-border bg-card text-muted-foreground hover:border-amber-500/30"
                 }`}>
-                ⚠️ Sin clasificar
+                ⚠️ Sin clasificar {placeMissingBadgeFilter && "(activo)"}
               </button>
-              <button
-                onClick={() => {
-                  setPlaceMissingInfoFilter(!placeMissingInfoFilter)
-                  setPlacesPage(1)
-                  setTimeout(() => fetchPlaces(undefined, 1), 0)
-                }}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                  placeMissingInfoFilter
-                    ? "border-blue-500/40 bg-blue-500/8 text-blue-400"
-                    : "border-border bg-card text-muted-foreground"
-                }`}>
-                📭 Sin información
-              </button>
-              {/* Selector barrio */}
+              <span className="text-[10px] text-muted-foreground/50 hidden sm:inline">
+                ← seleccioná estos para clasificarlos en masa con los botones de abajo
+              </span>
+            </div>
+
+            {/* Fila 3: Barrio y otros filtros */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider shrink-0">
+                Barrio:
+              </span>
               <select
                 value={placeNeighborhoodFilter}
                 onChange={(e) => {
@@ -841,33 +849,64 @@ export default function AdminPage() {
                   <option key={n} value={n}>{n}</option>
                 ))}
               </select>
+              <button
+                onClick={() => {
+                  setPlaceMissingInfoFilter(!placeMissingInfoFilter)
+                  setPlacesPage(1)
+                  setTimeout(() => fetchPlaces(undefined, 1), 0)
+                }}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  placeMissingInfoFilter
+                    ? "border-blue-500/40 bg-blue-500/8 text-blue-400"
+                    : "border-border bg-card text-muted-foreground"
+                }`}>
+                📭 Sin información de contacto
+              </button>
             </div>
 
             {/* Bulk actions — solo cuando hay seleccionados */}
             {selectedPlaceIds.size > 0 && (
-              <div className="flex flex-wrap gap-2 items-center pt-1 border-t border-border">
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {selectedPlaceIds.size} seleccionado{selectedPlaceIds.size > 1 ? "s" : ""}:
-                </span>
-                <Button size="sm" className="h-7 text-xs" onClick={() => handleBulkAction("approve")}>
-                  ✅ Publicar
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs"
-                  onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}>
-                  🟢 Marcar 100% sin TACC
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs"
-                  onClick={() => handleBulkAction("set_safety_level", "gf_options")}>
-                  🟡 Marcar opciones
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs"
-                  onClick={() => handleBulkAction("clear_safety_level")}>
-                  ⚪ Quitar clasificación
-                </Button>
-                <Button size="sm" variant="destructive" className="h-7 text-xs"
-                  onClick={() => handleBulkAction("delete")}>
-                  🗑 Eliminar seleccionados
-                </Button>
+              <div className="rounded-xl border border-primary/25 bg-primary/4 p-3 space-y-2">
+                <p className="text-xs font-bold flex items-center gap-2">
+                  <span className="bg-primary text-primary-foreground text-[10px] font-mono px-2 py-0.5 rounded-full">
+                    {selectedPlaceIds.size}
+                  </span>
+                  lugar{selectedPlaceIds.size > 1 ? "es" : ""} seleccionado{selectedPlaceIds.size > 1 ? "s" : ""}
+                  — elegí qué hacer:
+                </p>
+                {/* Clasificación — acción principal */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-[10px] text-muted-foreground/60 self-center shrink-0">
+                    Clasificar como:
+                  </span>
+                  <Button size="sm" variant="outline"
+                    className="h-8 text-xs gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/8"
+                    onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}>
+                    🟢 100% sin TACC
+                  </Button>
+                  <Button size="sm" variant="outline"
+                    className="h-8 text-xs gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/8"
+                    onClick={() => handleBulkAction("set_safety_level", "gf_options")}>
+                    🟡 Con opciones sin TACC
+                  </Button>
+                  <Button size="sm" variant="ghost"
+                    className="h-8 text-xs gap-1.5 text-muted-foreground/60 hover:text-muted-foreground"
+                    onClick={() => handleBulkAction("clear_safety_level")}>
+                    ⚪ Quitar clasificación
+                  </Button>
+                </div>
+                {/* Otras acciones — separadas visualmente */}
+                <div className="flex flex-wrap gap-2 pt-1 border-t border-border/40">
+                  <Button size="sm" className="h-8 text-xs"
+                    onClick={() => handleBulkAction("approve")}>
+                    ✅ Publicar seleccionados
+                  </Button>
+                  <Button size="sm" variant="destructive"
+                    className="h-8 text-xs ml-auto"
+                    onClick={() => handleBulkAction("delete")}>
+                    🗑 Eliminar seleccionados
+                  </Button>
+                </div>
               </div>
             )}
           </div>
