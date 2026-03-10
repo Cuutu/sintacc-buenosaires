@@ -18,11 +18,11 @@ export async function POST(
 
     await connectDB()
 
-    const rateLimit = await checkRateLimit(session.user.id, "list_like", 50)
+    const rateLimit = await checkRateLimit(session.user.id, "list_like", 100)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
-          error: `Límite alcanzado. Podés dar hasta 50 likes por día. Quedan ${rateLimit.remaining} disponibles.`,
+          error: `Límite alcanzado. Podés dar hasta 100 likes por día. Quedan ${rateLimit.remaining} disponibles.`,
         },
         { status: 429 }
       )
@@ -51,23 +51,32 @@ export async function POST(
 
     if (existing) {
       await ListLike.findByIdAndDelete(existing._id)
-      list.likesCount = Math.max(0, list.likesCount - 1)
-      await list.save()
-      return NextResponse.json({ liked: false, likesCount: list.likesCount })
+      const updated = await List.findByIdAndUpdate(
+        listId,
+        { $inc: { likesCount: -1 } },
+        { new: true }
+      )
+      const likesCount = Math.max(0, updated?.likesCount ?? 0)
+      return NextResponse.json({ liked: false, likesCount })
     }
 
     await ListLike.create({
       listId: new mongoose.Types.ObjectId(listId),
       userId,
     })
-    list.likesCount += 1
-    await list.save()
-
-    return NextResponse.json({ liked: true, likesCount: list.likesCount })
+    const updated = await List.findByIdAndUpdate(
+      listId,
+      { $inc: { likesCount: 1 } },
+      { new: true }
+    )
+    return NextResponse.json({
+      liked: true,
+      likesCount: updated?.likesCount ?? list.likesCount + 1,
+    })
   } catch (error: any) {
     if (error.code === 11000) {
-      // Duplicate - ya likeó
-      const list = await List.findById(params.id)
+      // Duplicate key - race: otro request ya creó el like
+      const list = await List.findById(params.id).select("likesCount").lean()
       return NextResponse.json({
         liked: true,
         likesCount: list?.likesCount ?? 0,

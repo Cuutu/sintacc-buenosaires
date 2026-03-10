@@ -97,15 +97,13 @@ export default function ListaDetailPage() {
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               {list.createdBy?.image ? (
-                <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
-                  <Image
-                    src={list.createdBy.image}
-                    alt={list.createdBy?.name || "Usuario"}
-                    fill
-                    className="object-cover"
-                    sizes="24px"
-                  />
-                </div>
+                <Image
+                  src={list.createdBy.image}
+                  alt={list.createdBy?.name || "Usuario"}
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 rounded-full object-cover shrink-0"
+                />
               ) : (
                 <User className="h-4 w-4" />
               )}

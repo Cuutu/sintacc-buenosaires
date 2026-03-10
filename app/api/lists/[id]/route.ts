@@ -67,7 +67,7 @@ export async function PATCH(
       return NextResponse.json({ error: "No tenés permiso" }, { status: 403 })
     }
 
-    const rateLimit = await checkRateLimit(session.user.id, "list_patch", 20)
+    const rateLimit = await checkRateLimit(session.user.id, "list_edit", 20)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
