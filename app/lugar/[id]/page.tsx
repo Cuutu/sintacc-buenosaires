@@ -268,7 +268,9 @@ export default function LugarPage() {
             </Link>
           </Button>
           {session && features.favorites ? (
-            <FavoriteButton placeId={place!._id.toString()} showLabel className="w-full" />
+            <div className="w-full [&>button]:w-full">
+              <FavoriteButton placeId={place!._id.toString()} showLabel />
+            </div>
           ) : (
             <Button variant="outline" className="w-full gap-2" onClick={() => !session && router.push("/login")}>
               <Heart className="h-4 w-4" />
