@@ -85,7 +85,7 @@ export function PlaceHeroGallery({
         /* Placeholder sin fotos */
         <div
           className="flex items-center justify-center bg-gradient-to-br from-emerald-950/80 via-emerald-900/30 to-slate-900/80"
-          style={{ height: 280 }}
+          style={{ height: 200 }}
         >
           <span className="text-8xl opacity-30" aria-hidden>
             {typeConfig?.emoji ?? "📍"}

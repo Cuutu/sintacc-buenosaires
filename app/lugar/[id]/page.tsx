@@ -333,19 +333,23 @@ export default function LugarPage() {
               </div>
             )}
             {/* Delivery — solo si existe */}
-            {place!.delivery?.available && (
-              <div className="flex items-center gap-2.5 py-2">
-                <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-xs">
-                  Delivery
-                  {[place!.delivery.rappi, place!.delivery.pedidosya, place!.delivery.other]
-                    .filter(Boolean)
-                    .map((s, i) => (
+            {place!.delivery?.available && (() => {
+              const deliveryServices: string[] = []
+              if (place!.delivery?.rappi) deliveryServices.push("Rappi")
+              if (place!.delivery?.pedidosya) deliveryServices.push("PedidosYa")
+              if (place!.delivery?.other) deliveryServices.push("Otro")
+              return (
+                <div className="flex items-center gap-2.5 py-2">
+                  <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs">
+                    Delivery
+                    {deliveryServices.map((s, i) => (
                       <span key={i} className="text-muted-foreground ml-1">· {s}</span>
                     ))}
-                </span>
-              </div>
-            )}
+                  </span>
+                </div>
+              )
+            })()}
           </div>
         </div>
 
