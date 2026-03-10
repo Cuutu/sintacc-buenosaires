@@ -4,16 +4,13 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
-import { Eye, EyeOff, Trash2, ExternalLink, Pin, PinOff, Mail, Pencil, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 type SuggestionItem = {
@@ -54,6 +51,7 @@ type PlaceItem = {
   source?: "excel" | "kml" | "suggestion" | "manual"
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   tags?: string[]
+  photos?: string[]
   contact?: { instagram?: string; url?: string; whatsapp?: string; phone?: string }
   stats?: { avgRating: number; totalReviews: number }
 }
@@ -97,6 +95,7 @@ export default function AdminPage() {
   const [contactSearch, setContactSearch] = useState("")
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
   const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<"suggestions" | "reviews" | "places" | "contacts">("suggestions")
 
   const fetchSuggestions = useCallback(async () => {
     try {
@@ -341,152 +340,267 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Panel de administración</h1>
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
 
-      <Tabs defaultValue="suggestions">
-        <TabsList>
-          <TabsTrigger value="suggestions">
-            Sugerencias ({counts?.suggestionsPending ?? suggestions.length})
-          </TabsTrigger>
-          <TabsTrigger value="reviews" onClick={() => fetchReviews()}>
-            Reseñas
-          </TabsTrigger>
-          <TabsTrigger value="places" onClick={() => { fetchPlaces(); fetchNeighborhoods(); }}>
-            Lugares ({placesPagination?.total ?? counts?.placesTotal ?? 0})
-          </TabsTrigger>
-          <TabsTrigger value="contacts" onClick={() => { fetchContacts(); fetchCounts(); }}>
-            Contactos ({counts?.contactsTotal ?? contacts.length})
-          </TabsTrigger>
-        </TabsList>
+      {/* ── HEADER ─────────────────────────────────────────── */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight mb-1">
+          Panel de administración
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Hola 👋 — acá vas a ver todo lo que necesita tu atención
+        </p>
+      </div>
 
-        <TabsContent value="suggestions" className="mt-4">
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1 max-w-md">
+      {/* ── STATS — qué requiere acción hoy ────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {/* Sugerencias pendientes — urgente si > 0 */}
+        <button
+          onClick={() => setActiveSection("suggestions")}
+          className={`rounded-xl border p-4 text-left transition-all hover:border-border ${
+            (counts?.suggestionsPending ?? 0) > 0
+              ? "border-red-500/30 bg-red-500/5"
+              : "border-border bg-card"
+          }`}
+        >
+          <div className="text-2xl mb-2">📩</div>
+          <div className={`text-2xl font-extrabold leading-none mb-1 ${
+            (counts?.suggestionsPending ?? 0) > 0 ? "text-red-400" : "text-foreground"
+          }`}>
+            {counts?.suggestionsPending ?? suggestions.length}
+          </div>
+          <div className="text-xs text-muted-foreground leading-snug">
+            Lugares sugeridos esperando revisión
+          </div>
+        </button>
+
+        {/* Contactos — urgente si > 0 */}
+        <button
+          onClick={() => { setActiveSection("contacts"); fetchContacts(); fetchCounts() }}
+          className={`rounded-xl border p-4 text-left transition-all hover:border-border ${
+            (counts?.contactsTotal ?? 0) > 0
+              ? "border-amber-500/30 bg-amber-500/5"
+              : "border-border bg-card"
+          }`}
+        >
+          <div className="text-2xl mb-2">✉️</div>
+          <div className={`text-2xl font-extrabold leading-none mb-1 ${
+            (counts?.contactsTotal ?? 0) > 0 ? "text-amber-400" : "text-foreground"
+          }`}>
+            {counts?.contactsTotal ?? contacts.length}
+          </div>
+          <div className="text-xs text-muted-foreground leading-snug">
+            Mensajes de contacto
+          </div>
+        </button>
+
+        {/* Lugares totales */}
+        <button
+          onClick={() => { setActiveSection("places"); fetchPlaces(); fetchNeighborhoods() }}
+          className="rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-border/80"
+        >
+          <div className="text-2xl mb-2">📍</div>
+          <div className="text-2xl font-extrabold leading-none mb-1">
+            {placesPagination?.total ?? counts?.placesTotal ?? 0}
+          </div>
+          <div className="text-xs text-muted-foreground leading-snug">
+            Lugares publicados en el mapa
+          </div>
+        </button>
+
+        {/* Reseñas */}
+        <button
+          onClick={() => { setActiveSection("reviews"); fetchReviews() }}
+          className="rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-border/80"
+        >
+          <div className="text-2xl mb-2">⭐</div>
+          <div className="text-2xl font-extrabold leading-none mb-1">
+            {reviews.length > 0 ? reviews.length : "—"}
+          </div>
+          <div className="text-xs text-muted-foreground leading-snug">
+            Reseñas de usuarios
+          </div>
+        </button>
+      </div>
+
+      {/* ── NAVEGACIÓN — secciones con descripción ─────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+        {[
+          {
+            key: "suggestions",
+            icon: "📩",
+            label: "Lugares sugeridos",
+            desc: "Revisá y publicá sugerencias de la comunidad",
+            badge: counts?.suggestionsPending ?? suggestions.length,
+            urgent: (counts?.suggestionsPending ?? 0) > 0,
+            onClick: () => setActiveSection("suggestions"),
+          },
+          {
+            key: "reviews",
+            icon: "⭐",
+            label: "Reseñas",
+            desc: "Moderá, destacá u ocultá comentarios",
+            badge: null,
+            urgent: false,
+            onClick: () => { setActiveSection("reviews"); fetchReviews() },
+          },
+          {
+            key: "places",
+            icon: "📍",
+            label: "Lugares",
+            desc: "Editá o eliminá lugares del mapa",
+            badge: placesPagination?.total ?? counts?.placesTotal ?? null,
+            urgent: false,
+            onClick: () => { setActiveSection("places"); fetchPlaces(); fetchNeighborhoods() },
+          },
+          {
+            key: "contacts",
+            icon: "✉️",
+            label: "Mensajes",
+            desc: "Leé y respondé mensajes de usuarios",
+            badge: counts?.contactsTotal ?? null,
+            urgent: (counts?.contactsTotal ?? 0) > 0,
+            onClick: () => { setActiveSection("contacts"); fetchContacts(); fetchCounts() },
+          },
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={item.onClick}
+            className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+              activeSection === item.key
+                ? "border-primary/40 bg-primary/8"
+                : "border-border bg-card hover:border-border/80"
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${
+              item.urgent ? "bg-red-500/10" : "bg-muted"
+            }`}>
+              {item.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold flex items-center gap-2">
+                {item.label}
+                {item.badge != null && item.badge > 0 && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    item.urgent
+                      ? "bg-red-500 text-white"
+                      : "bg-muted text-muted-foreground border border-border"
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          SECCIÓN: SUGERENCIAS
+      ══════════════════════════════════════════════════════ */}
+      {activeSection === "suggestions" && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                📩 Lugares sugeridos
+                {counts?.suggestionsPending != null && counts.suggestionsPending > 0 && (
+                  <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-full">
+                    {counts.suggestionsPending} pendientes
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Revisá cada lugar antes de publicarlo. Podés editar los datos si hay algo incorrecto.
+              </p>
+            </div>
+          </div>
+
+          {/* Buscador */}
+          <div className="px-4 py-2 border-b border-border bg-card/50">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, dirección, localidad..."
+                placeholder="Buscar por nombre, dirección, barrio..."
                 value={suggestionSearch}
                 onChange={(e) => setSuggestionSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-8 text-sm"
               />
             </div>
           </div>
+
           {loading ? (
-            <div className="text-center py-8">Cargando...</div>
+            <div className="text-center py-10 text-muted-foreground text-sm">Cargando...</div>
           ) : suggestions.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No hay sugerencias pendientes
-              </CardContent>
-            </Card>
+            <div className="text-center py-10 text-muted-foreground">
+              <div className="text-3xl mb-2">🎉</div>
+              <p className="text-sm font-medium">¡No hay sugerencias pendientes!</p>
+              <p className="text-xs mt-1">Cuando alguien sugiera un lugar aparecerá acá.</p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {suggestions.map((suggestion: SuggestionItem) => (
-                <Card key={suggestion._id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>{suggestion.placeDraft.name}</CardTitle>
-                      <Badge variant="secondary">
-                        {(suggestion.suggestedByUserId as any)?.name || "Usuario"}
-                      </Badge>
+            <div className="divide-y divide-border">
+              {suggestions
+                .filter((s) => {
+                  if (!suggestionSearch.trim()) return true
+                  const q = suggestionSearch.toLowerCase()
+                  return (
+                    s.placeDraft.name?.toLowerCase().includes(q) ||
+                    s.placeDraft.address?.toLowerCase().includes(q) ||
+                    s.placeDraft.neighborhood?.toLowerCase().includes(q)
+                  )
+                })
+                .map((suggestion, idx) => (
+                  <div key={suggestion._id} className="p-4 flex gap-3 items-start">
+                    {/* Número */}
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs font-bold font-mono flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {idx + 1}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 mb-4">
-                      <p>
-                        <strong>Tipo:</strong>{" "}
-                        {(() => {
-                          const draft = suggestion.placeDraft as Record<string, unknown>
-                          const types = draft.types as string[] | undefined
-                          return Array.isArray(types) && types.length
-                            ? types.map((t) => getTypeLabel(t)).join(", ")
-                            : getTypeLabel(suggestion.placeDraft.type)
-                        })()}
-                      </p>
-                      <p>
-                        <strong>Dirección:</strong> {suggestion.placeDraft.address}
-                      </p>
-                      <p>
-                        <strong>Localidad:</strong> {suggestion.placeDraft.neighborhood}
-                      </p>
-                      {suggestion.placeDraft.openingHours && (
-                        <p>
-                          <strong>Horario:</strong> {suggestion.placeDraft.openingHours}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm mb-1">{suggestion.placeDraft.name}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-1">
+                        <span>{TYPES.find((t) => t.value === (suggestion.placeDraft.types?.[0] ?? suggestion.placeDraft.type))?.emoji} {getTypeLabel(suggestion.placeDraft.types?.[0] ?? suggestion.placeDraft.type)}</span>
+                        <span>·</span>
+                        <span>📍 {suggestion.placeDraft.neighborhood}</span>
+                        <span>·</span>
+                        <span className="truncate max-w-[200px]">{suggestion.placeDraft.address}</span>
+                      </div>
+                      {suggestion.suggestedByUserId?.name && (
+                        <p className="text-xs text-muted-foreground/60 italic mb-3">
+                          Sugerido por {suggestion.suggestedByUserId.name}
                         </p>
                       )}
-                      {suggestion.placeDraft.delivery?.available && (
-                        <p>
-                          <strong>Delivery:</strong>{" "}
-                          {[
-                            suggestion.placeDraft.delivery.rappi && "Rappi",
-                            suggestion.placeDraft.delivery.pedidosya && "PedidosYa",
-                            suggestion.placeDraft.delivery.other && "Otro",
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
-                        </p>
-                      )}
-                      {(suggestion.placeDraft.contact?.instagram || suggestion.placeDraft.contact?.url) && (
-                        <p>
-                          <strong>Link:</strong>{" "}
-                          {suggestion.placeDraft.contact?.instagram ? (
-                            <a
-                              href={suggestion.placeDraft.contact.instagram}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              Instagram
-                            </a>
-                          ) : suggestion.placeDraft.contact?.url ? (
-                            <a
-                              href={suggestion.placeDraft.contact.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              Google Maps
-                            </a>
-                          ) : null}
-                        </p>
-                      )}
-                      {suggestion.placeDraft.safetyLevel && (
-                        <p>
-                          <strong>Nivel:</strong>{" "}
-                          {suggestion.placeDraft.safetyLevel === "dedicated_gf"
-                            ? "100% sin TACC"
-                            : "Opciones sin TACC"}
-                        </p>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          className="h-8 gap-1.5 bg-primary text-primary-foreground"
+                          onClick={() => handleSuggestionAction(suggestion._id, "approve")}
+                        >
+                          ✅ Publicar lugar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5"
+                          onClick={() => setEditingSuggestion(suggestion)}
+                        >
+                          ✏️ Revisar y editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 gap-1.5 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleSuggestionAction(suggestion._id, "reject")}
+                        >
+                          ❌ Rechazar
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingSuggestion(suggestion)}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        onClick={() => handleSuggestionAction(suggestion._id, "approve")}
-                        variant="default"
-                      >
-                        Aprobar
-                      </Button>
-                      <Button
-                        onClick={() => handleSuggestionAction(suggestion._id, "reject")}
-                        variant="destructive"
-                      >
-                        Rechazar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
             </div>
           )}
+
           {editingSuggestion && (
             <SuggestionEditModal
               suggestionId={editingSuggestion._id}
@@ -497,437 +611,374 @@ export default function AdminPage() {
               onApproved={fetchSuggestions}
             />
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="reviews" className="mt-4">
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {/* ══════════════════════════════════════════════════════
+          SECCIÓN: RESEÑAS
+      ══════════════════════════════════════════════════════ */}
+      {activeSection === "reviews" && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-card">
+            <h2 className="text-sm font-bold">⭐ Reseñas</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Podés ocultar reseñas inapropiadas o destacar las más útiles con 📌
+            </p>
+          </div>
+
+          {/* Filtros */}
+          <div className="px-4 py-2 border-b border-border bg-card/50 flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[180px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar por lugar, comentario..."
+                placeholder="Buscar por lugar o comentario..."
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchReviews()}
-                className="pl-9"
+                className="pl-8 h-8 text-sm"
               />
             </div>
-            <Button
-              variant={reviewFilter === "" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setReviewFilter("")
-                fetchReviews("")
-              }}
-            >
-              Todas
-            </Button>
-            <Button
-              variant={reviewFilter === "visible" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setReviewFilter("visible")
-                fetchReviews("visible")
-              }}
-            >
-              Visibles
-            </Button>
-            <Button
-              variant={reviewFilter === "hidden" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setReviewFilter("hidden")
-                fetchReviews("hidden")
-              }}
-            >
-              Ocultas
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => fetchReviews()}>
+            {[
+              { label: "Todas", value: "" },
+              { label: "✅ Visibles", value: "visible" },
+              { label: "🙈 Ocultas", value: "hidden" },
+            ].map((f) => (
+              <button
+                key={f.value}
+                onClick={() => { setReviewFilter(f.value); fetchReviews(f.value) }}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  reviewFilter === f.value
+                    ? "border-primary/40 bg-primary/8 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+            <Button size="sm" variant="secondary" className="h-8" onClick={() => fetchReviews()}>
               Buscar
             </Button>
           </div>
+
           {reviewsLoading ? (
-            <div className="text-center py-8">Cargando reseñas...</div>
+            <div className="text-center py-10 text-muted-foreground text-sm">Cargando reseñas...</div>
           ) : reviews.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No hay reseñas
-              </CardContent>
-            </Card>
+            <div className="text-center py-10 text-muted-foreground text-sm">No hay reseñas</div>
           ) : (
-            <div className="space-y-4">
-              {reviews.map((review: ReviewItem) => (
-                <Card key={review._id}>
-                  <CardContent className="pt-4">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium">
-                          {review.placeId?.name} — {review.userId?.name || "Anónimo"}
-                        </p>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                          {review.comment}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="secondary">{review.rating} ⭐</Badge>
-                          <Badge variant={review.status === "visible" ? "default" : "outline"}>
-                            {review.status === "visible" ? "Visible" : "Oculta"}
-                          </Badge>
-                          {review.pinned && (
-                            <Badge variant="secondary">Fijado</Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <Link href={`/lugar/${review.placeId?._id}`} target="_blank">
-                          <Button variant="ghost" size="icon">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        {review.pinned ? (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleReviewAction(review._id, "unpin")}
-                            title="Desfijar"
-                          >
-                            <PinOff className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleReviewAction(review._id, "pin")}
-                            title="Fijar comentario"
-                          >
-                            <Pin className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {review.status === "visible" ? (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleReviewAction(review._id, "hide")}
-                            title="Ocultar"
-                          >
-                            <EyeOff className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleReviewAction(review._id, "unhide")}
-                            title="Mostrar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
+            <div className="divide-y divide-border">
+              {reviews.map((review) => (
+                <div key={review._id} className="p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/lugar/${review.placeId._id}`}
+                        target="_blank"
+                        className="text-sm font-bold text-primary hover:underline"
+                      >
+                        {review.placeId.name}
+                      </Link>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                        <span>{review.userId?.name || "Usuario anónimo"}</span>
+                        <span>·</span>
+                        <span className="text-amber-400">
+                          {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                        </span>
+                        <span>·</span>
+                        <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${
+                      review.status === "visible"
+                        ? "bg-primary/8 text-primary border-primary/20"
+                        : "bg-destructive/8 text-destructive border-destructive/20"
+                    }`}>
+                      {review.status === "visible" ? "✓ visible" : "✕ oculta"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
+                    {review.comment}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {review.pinned ? (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => handleReviewAction(review._id, "unpin")}
+                      >
+                        📌 Quitar destaque
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => handleReviewAction(review._id, "pin")}
+                      >
+                        📌 Destacar
+                      </Button>
+                    )}
+                    {review.status === "visible" ? (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 text-xs gap-1 text-amber-500 border-amber-500/30 hover:bg-amber-500/8"
+                        onClick={() => handleReviewAction(review._id, "hide")}
+                      >
+                        🙈 Ocultar
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 text-xs gap-1 text-primary border-primary/30"
+                        onClick={() => handleReviewAction(review._id, "unhide")}
+                      >
+                        ✅ Mostrar
+                      </Button>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="places" className="mt-4">
-          <div className="flex items-center justify-between gap-2 mb-2 text-sm">
-            {placesPagination && (
-              <>
-                <span className="font-medium text-foreground">
-                  {placesPagination.total} lugares
-                  {placesPagination.pages > 1 && (
-                    <span className="text-muted-foreground font-normal ml-2">
-                      · Página {placesPagination.page} de {placesPagination.pages}
-                    </span>
-                  )}
-                </span>
-              </>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre, dirección, localidad..."
-                value={placeSearch}
-                onChange={(e) => setPlaceSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && fetchPlaces()}
-                className="pl-9"
-              />
+      {/* ══════════════════════════════════════════════════════
+          SECCIÓN: LUGARES
+      ══════════════════════════════════════════════════════ */}
+      {activeSection === "places" && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                📍 Lugares publicados
+                {placesPagination && (
+                  <span className="text-xs text-muted-foreground font-normal">
+                    {placesPagination.total} en total
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Editá los datos, cambiá el nivel de seguridad o eliminá lugares incorrectos
+              </p>
             </div>
-            <select
-              value={placeTypeFilter}
-              onChange={(e) => {
-                setPlaceTypeFilter(e.target.value)
-                setPlacesPage(1)
-                setTimeout(() => fetchPlaces(undefined, 1), 0)
-              }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Todos los tipos</option>
-              {TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.emoji} {t.label}
-                </option>
+          </div>
+
+          {/* Filtros */}
+          <div className="px-4 py-3 border-b border-border bg-card/50 space-y-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[180px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre, barrio..."
+                  value={placeSearch}
+                  onChange={(e) => setPlaceSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { setPlacesPage(1); fetchPlaces(undefined, 1) }
+                  }}
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
+              <Button size="sm" variant="secondary" className="h-8"
+                onClick={() => { setPlacesPage(1); fetchPlaces(undefined, 1) }}>
+                Buscar
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              {[
+                { label: "Todos", value: "" },
+                { label: "✅ Publicados", value: "approved" },
+                { label: "⏳ Pendientes", value: "pending" },
+              ].map((f) => (
+                <button key={f.value}
+                  onClick={() => { setPlaceFilter(f.value); setPlacesPage(1); fetchPlaces(f.value, 1) }}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                    placeFilter === f.value
+                      ? "border-primary/40 bg-primary/8 text-primary"
+                      : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  }`}>
+                  {f.label}
+                </button>
               ))}
-            </select>
-            <select
-              value={placeNeighborhoodFilter}
-              onChange={(e) => {
-                setPlaceNeighborhoodFilter(e.target.value)
-                setPlacesPage(1)
-                setTimeout(() => fetchPlaces(undefined, 1), 0)
-              }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Todas las localidades</option>
-              {neighborhoods.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={placeMissingInfoFilter}
-                onChange={(e) => {
-                  setPlaceMissingInfoFilter(e.target.checked)
+              <button
+                onClick={() => {
+                  setPlaceMissingBadgeFilter(!placeMissingBadgeFilter)
                   setPlacesPage(1)
                   setTimeout(() => fetchPlaces(undefined, 1), 0)
                 }}
-                className="rounded"
-              />
-              Les falta info (sin Instagram)
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={placeMissingBadgeFilter}
-                onChange={(e) => {
-                  setPlaceMissingBadgeFilter(e.target.checked)
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  placeMissingBadgeFilter
+                    ? "border-amber-500/40 bg-amber-500/8 text-amber-400"
+                    : "border-border bg-card text-muted-foreground"
+                }`}>
+                ⚠️ Sin clasificar
+              </button>
+              <button
+                onClick={() => {
+                  setPlaceMissingInfoFilter(!placeMissingInfoFilter)
                   setPlacesPage(1)
                   setTimeout(() => fetchPlaces(undefined, 1), 0)
                 }}
-                className="rounded"
-              />
-              Sin badge (sin TACC/opciones/certificado)
-            </label>
-            <Button
-              variant={placeFilter === "" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setPlaceFilter("")
-                setPlacesPage(1)
-                fetchPlaces("", 1)
-              }}
-            >
-              Todos
-            </Button>
-            <Button
-              variant={placeFilter === "approved" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setPlaceFilter("approved")
-                setPlacesPage(1)
-                fetchPlaces("approved", 1)
-              }}
-            >
-              Aprobados
-            </Button>
-            <Button
-              variant={placeFilter === "pending" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setPlaceFilter("pending")
-                setPlacesPage(1)
-                fetchPlaces("pending", 1)
-              }}
-            >
-              Pendientes
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => fetchPlaces(undefined, placesPage)}>
-              Buscar
-            </Button>
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  placeMissingInfoFilter
+                    ? "border-blue-500/40 bg-blue-500/8 text-blue-400"
+                    : "border-border bg-card text-muted-foreground"
+                }`}>
+                📭 Sin información
+              </button>
+              {/* Selector barrio */}
+              <select
+                value={placeNeighborhoodFilter}
+                onChange={(e) => {
+                  setPlaceNeighborhoodFilter(e.target.value)
+                  setPlacesPage(1)
+                  setTimeout(() => fetchPlaces(undefined, 1), 0)
+                }}
+                className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground outline-none"
+              >
+                <option value="">Todos los barrios</option>
+                {neighborhoods.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bulk actions — solo cuando hay seleccionados */}
             {selectedPlaceIds.size > 0 && (
-              <div className="flex gap-2 items-center">
-                <span className="text-sm text-muted-foreground">{selectedPlaceIds.size} seleccionados</span>
-                <Button size="sm" variant="default" onClick={() => handleBulkAction("approve")}>
-                  Aprobar seleccionados
+              <div className="flex flex-wrap gap-2 items-center pt-1 border-t border-border">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {selectedPlaceIds.size} seleccionado{selectedPlaceIds.size > 1 ? "s" : ""}:
+                </span>
+                <Button size="sm" className="h-7 text-xs" onClick={() => handleBulkAction("approve")}>
+                  ✅ Publicar
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}
-                >
-                  Marcar 100% sin TACC
+                <Button size="sm" variant="outline" className="h-7 text-xs"
+                  onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}>
+                  🟢 Marcar 100% sin TACC
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleBulkAction("set_safety_level", "gf_options")}
-                >
-                  Marcar opciones
+                <Button size="sm" variant="outline" className="h-7 text-xs"
+                  onClick={() => handleBulkAction("set_safety_level", "gf_options")}>
+                  🟡 Marcar opciones
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleBulkAction("clear_safety_level")}
-                >
-                  Quitar badge
+                <Button size="sm" variant="outline" className="h-7 text-xs"
+                  onClick={() => handleBulkAction("clear_safety_level")}>
+                  ⚪ Quitar clasificación
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleBulkAction("delete")}>
-                  Eliminar seleccionados
+                <Button size="sm" variant="destructive" className="h-7 text-xs"
+                  onClick={() => handleBulkAction("delete")}>
+                  🗑 Eliminar seleccionados
                 </Button>
               </div>
             )}
           </div>
+
           {placesLoading ? (
-            <div className="text-center py-8">Cargando lugares...</div>
+            <div className="text-center py-10 text-muted-foreground text-sm">Cargando lugares...</div>
           ) : places.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No hay lugares
-              </CardContent>
-            </Card>
+            <div className="text-center py-10 text-muted-foreground text-sm">No hay lugares</div>
           ) : (
-            <div className="space-y-4">
-              {places.length > 0 && (
-                <div className="flex items-center gap-2 pb-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedPlaceIds.size === places.length && places.length > 0}
-                    onChange={toggleAllPlaces}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-muted-foreground">Seleccionar todos</span>
-                </div>
-              )}
-              {places.map((place: PlaceItem) => (
-                <Card
-                  key={place._id}
-                  className={
-                    (() => {
-                      const l = inferSafetyLevel(place)
-                      return !l || l === "unknown" ? "ring-1 ring-amber-500/30" : undefined
-                    })()
-                  }
-                >
-                  <CardContent className="pt-4">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex items-start gap-2 flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={selectedPlaceIds.has(place._id)}
-                          onChange={() => togglePlaceSelection(place._id)}
-                          className="rounded mt-1 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{place.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {getTypeLabel(place.type)} · {place.neighborhood}
-                          </p>
-                          {(place.contact?.instagram || place.contact?.url) && (
-                            <p className="text-xs mt-1">
-                              {place.contact?.instagram ? (
-                                <a
-                                  href={place.contact.instagram.startsWith("http") ? place.contact.instagram : `https://instagram.com/${place.contact.instagram.replace(/^@/, "")}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                >
-                                  {place.contact.instagram.includes("/") ? place.contact.instagram.split("/").pop() : place.contact.instagram.replace(/^@/, "")}
-                                </a>
-                              ) : place.contact?.url ? (
-                                <a href={place.contact.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                  Web
-                                </a>
-                              ) : null}
-                            </p>
+            <>
+              {/* Checkbox "seleccionar todos" */}
+              <div className="px-4 py-2 border-b border-border bg-card/30 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedPlaceIds.size === places.length && places.length > 0}
+                  onChange={toggleAllPlaces}
+                  className="rounded"
+                />
+                <span className="text-xs text-muted-foreground">Seleccionar todos en esta página</span>
+              </div>
+
+              <div className="divide-y divide-border">
+                {places.map((place) => {
+                  const level = inferSafetyLevel(place)
+                  const cfg = getSafetyBadge(level)
+                  const hasBadge = level && level !== "unknown"
+                  const safetyLabel = hasBadge ? cfg.label : "Sin clasificar"
+                  const safetyDot = hasBadge ? cfg.dot : "⚠️"
+
+                  return (
+                    <div key={place._id} className="px-4 py-3 flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlaceIds.has(place._id)}
+                        onChange={() => togglePlaceSelection(place._id)}
+                        className="rounded flex-shrink-0"
+                      />
+                      <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-base flex-shrink-0 overflow-hidden">
+                        {place.photos?.[0]
+                          ? <img src={place.photos[0]} alt={place.name} className="w-full h-full object-cover rounded-lg" />
+                          : TYPES.find((t) => t.value === place.type)?.emoji ?? "📍"
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{place.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          <span className="text-xs text-muted-foreground">{place.neighborhood}</span>
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                            hasBadge ? cfg.className : "border-amber-500/30 bg-amber-500/8 text-amber-400"
+                          }`}>
+                            {safetyDot} {safetyLabel}
+                          </span>
+                          {place.stats && place.stats.totalReviews > 0 && (
+                            <span className="text-[10px] text-amber-400">
+                              ★ {place.stats.avgRating} · {place.stats.totalReviews} reseñas
+                            </span>
                           )}
-                          {place.stats && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {place.stats.avgRating} ⭐ · {place.stats.totalReviews} reseñas
-                            </p>
-                          )}
-                          <div className="flex gap-2 mt-2 flex-wrap">
-                            {(() => {
-                              const level = inferSafetyLevel(place)
-                              const cfg = getSafetyBadge(level)
-                              const hasBadge = level && level !== "unknown"
-                              return (
-                                <Badge
-                                  variant="outline"
-                                  className={hasBadge ? cfg.className : "border-amber-500/60 bg-amber-500/15 text-amber-600 dark:text-amber-400"}
-                                  title={hasBadge ? cfg.label : "Sin clasificar — asignar 100% sin TACC, Opciones o Certificado"}
-                                >
-                                  {cfg.dot} {cfg.label}
-                                </Badge>
-                              )
-                            })()}
-                            <Badge variant={place.status === "approved" ? "default" : "secondary"}>
-                              {place.status}
-                            </Badge>
-                            {place.source && (
-                              <Badge variant="outline">{place.source}</Badge>
-                            )}
-                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${
+                            place.status === "approved"
+                              ? "border-primary/20 bg-primary/8 text-primary"
+                              : "border-amber-500/20 bg-amber-500/8 text-amber-400"
+                          }`}>
+                            {place.status === "approved" ? "✓ publicado" : "⏳ pendiente"}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setEditingPlaceId(place._id)}
-                          title="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                          onClick={() => setEditingPlaceId(place._id)}>
+                          ✏️ Editar
                         </Button>
                         <Link href={`/lugar/${place._id}`} target="_blank">
-                          <Button variant="ghost" size="icon" title="Ver en vista pública">
-                            <ExternalLink className="h-4 w-4" />
+                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                            👁 Ver
                           </Button>
                         </Link>
-                        <Button
-                          variant="destructive"
-                          size="icon"
+                        <Button size="sm" variant="ghost"
+                          className="h-7 w-7 p-0 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/8"
                           onClick={() => handleDeletePlace(place._id, place.name)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                          title={`Eliminar ${place.name}`}>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  )
+                })}
+              </div>
+
+              {/* Paginación */}
+              {placesPagination && placesPagination.pages > 1 && (
+                <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
+                  <Button size="sm" variant="outline" className="h-8"
+                    disabled={placesPagination.page <= 1}
+                    onClick={() => goToPlacesPage(placesPagination.page - 1)}>
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <span className="text-xs text-muted-foreground px-2">
+                    Página {placesPagination.page} de {placesPagination.pages}
+                  </span>
+                  <Button size="sm" variant="outline" className="h-8"
+                    disabled={placesPagination.page >= placesPagination.pages}
+                    onClick={() => goToPlacesPage(placesPagination.page + 1)}>
+                    Siguiente
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-          {placesPagination && placesPagination.pages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6 pb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={placesPagination.page <= 1}
-                onClick={() => goToPlacesPage(placesPagination.page - 1)}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Anterior
-              </Button>
-              <span className="text-sm text-muted-foreground px-2">
-                Página {placesPagination.page} de {placesPagination.pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={placesPagination.page >= placesPagination.pages}
-                onClick={() => goToPlacesPage(placesPagination.page + 1)}
-              >
-                Siguiente
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          )}
+
           {editingPlaceId && (
             <PlaceEditModal
               placeId={editingPlaceId}
@@ -939,62 +990,74 @@ export default function AdminPage() {
               }}
             />
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="contacts" className="mt-4">
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {/* ══════════════════════════════════════════════════════
+          SECCIÓN: CONTACTOS
+      ══════════════════════════════════════════════════════ */}
+      {activeSection === "contacts" && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-card">
+            <h2 className="text-sm font-bold">✉️ Mensajes de contacto</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Mensajes que los usuarios te enviaron desde la página de contacto
+            </p>
+          </div>
+          <div className="px-4 py-2 border-b border-border bg-card/50 flex gap-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, email, asunto, mensaje..."
+                placeholder="Buscar por nombre, email, mensaje..."
                 value={contactSearch}
                 onChange={(e) => setContactSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchContacts()}
-                className="pl-9"
+                className="pl-8 h-8 text-sm"
               />
             </div>
-            <Button size="sm" variant="secondary" onClick={() => fetchContacts()}>
+            <Button size="sm" variant="secondary" className="h-8" onClick={() => fetchContacts()}>
               Buscar
             </Button>
           </div>
           {contactsLoading ? (
-            <div className="text-center py-8">Cargando contactos...</div>
+            <div className="text-center py-10 text-muted-foreground text-sm">Cargando mensajes...</div>
           ) : contacts.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No hay mensajes de contacto
-              </CardContent>
-            </Card>
+            <div className="text-center py-10 text-muted-foreground">
+              <div className="text-3xl mb-2">📭</div>
+              <p className="text-sm">No hay mensajes de contacto</p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {contacts.map((c: ContactItem) => (
-                <Card key={c._id}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-start gap-2">
-                      <Mail className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium">{c.subject}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {c.name} · {c.email}
-                        </p>
-                        <p className="text-sm mt-2 whitespace-pre-wrap">{c.message}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(c.createdAt).toLocaleString("es-AR")}
-                        </p>
-                      </div>
+            <div className="divide-y divide-border">
+              {contacts.map((c) => (
+                <div key={c._id} className="p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div>
+                      <p className="text-sm font-bold">{c.subject}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {c.name} · {c.email}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {new Date(c.createdAt).toLocaleDateString("es-AR")}
+                      </span>
                       <a href={`mailto:${c.email}?subject=Re: ${encodeURIComponent(c.subject)}`}>
-                        <Button variant="outline" size="sm">
-                          Responder
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                          ✉️ Responder
                         </Button>
                       </a>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {c.message}
+                  </p>
+                </div>
               ))}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
+
     </div>
   )
 }
