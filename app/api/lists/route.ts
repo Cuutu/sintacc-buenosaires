@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
 import { requireAuth } from "@/lib/middleware"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
@@ -29,20 +30,28 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Top listas públicas (sin auth)
+    // Top listas públicas (sin auth). ?limit= con cap 20
+    const limitParam = request.nextUrl.searchParams.get("limit")
+    const limit = Math.min(
+      parseInt(limitParam || "12", 10) || 12,
+      20
+    )
+
     const top = await List.find({ isPublic: true })
       .sort({ likesCount: -1, createdAt: -1 })
-      .limit(12)
+      .limit(limit)
       .populate("createdBy", "name image")
       .populate({
         path: "placeIds",
         select: "name neighborhood photos type",
-        options: { limit: 3 },
+        options: { limit: 4 },
       })
       .lean()
 
     return NextResponse.json({ lists: top }, {
-      headers: { "Cache-Control": "no-store, max-age=0" },
+      headers: {
+        "Cache-Control": "public, max-age=120, stale-while-revalidate=60",
+      },
     })
   } catch (error) {
     logApiError("/api/lists GET", error, { request })
@@ -60,6 +69,16 @@ export async function POST(request: NextRequest) {
     if (session instanceof NextResponse) return session
 
     await connectDB()
+
+    const rateLimit = await checkRateLimit(session.user.id, "list_create", 5)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés crear hasta 5 listas por día. Quedan ${rateLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
+    }
 
     const body = await request.json()
     const { name, description, placeIds } = body

@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
 import { ListLike } from "@/models/ListLike"
 import { requireAuth } from "@/lib/middleware"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
@@ -66,6 +67,16 @@ export async function PATCH(
       return NextResponse.json({ error: "No tenés permiso" }, { status: 403 })
     }
 
+    const rateLimit = await checkRateLimit(session.user.id, "list_patch", 20)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés editar hasta 20 listas por día. Quedan ${rateLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     if (body.name !== undefined) {
       list.name =
@@ -120,6 +131,16 @@ export async function DELETE(
 
     if (list.createdBy.toString() !== session.user.id) {
       return NextResponse.json({ error: "No tenés permiso" }, { status: 403 })
+    }
+
+    const rateLimit = await checkRateLimit(session.user.id, "list_delete", 10)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés eliminar hasta 10 listas por día. Quedan ${rateLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
     }
 
     await Promise.all([

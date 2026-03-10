@@ -60,6 +60,20 @@
 - ✅ Actualización automática en reviews con `safeFeeling: true`
 - ⚠️ Pendiente: Mostrar "Actualizado hace..." en UI
 
+#### 7. Listas públicas
+- ✅ Modelo List y ListLike
+- ✅ API completa (/api/lists, /api/lists/[id], like) con rate limiting
+- ✅ UI en /favoritos y /listas
+
+#### 8. Infraestructura completada
+- ✅ fetchApi helper con timeout y manejo de errores
+- ✅ Rate limiting en contact, suggestions, stats, listas
+- ✅ Sitemap dinámico y robots.txt
+- ✅ Review.aggregate en places/[id]
+- ✅ NextAuth JWT strategy
+- ✅ Logger JSON estructurado
+- ✅ /api/health
+
 ### Para activar Fase 2:
 1. Configurar `FEATURES=phase1,phase2` en `.env.local`
 2. Completar implementaciones marcadas con ⚠️

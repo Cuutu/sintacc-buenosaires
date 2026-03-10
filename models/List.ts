@@ -52,7 +52,8 @@ const ListSchema = new Schema<IList>(
   }
 )
 
-ListSchema.index({ isPublic: 1, likesCount: -1 })
+ListSchema.index({ isPublic: 1, likesCount: -1, createdAt: -1 })
+ListSchema.index({ createdBy: 1, updatedAt: -1 })
 
 export const List: Model<IList> =
   mongoose.models.List || mongoose.model<IList>("List", ListSchema)

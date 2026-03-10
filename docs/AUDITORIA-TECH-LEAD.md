@@ -132,8 +132,8 @@
 | Env vars requeridas | ⚠️ | check-env.ts existe; CONTACT_EMAIL, RESEND no están en required |
 | Secretos fuera del repo | ✅ | .env en .gitignore |
 | Backups MongoDB | ❓ | Asunción: Atlas backup habilitado |
-| Rate limits | ⚠️ | Reviews y contamination OK; contact, suggestions, stats NO |
-| Monitoreo/alertas | ❌ | Solo console.error |
+| Rate limits | ✅ | reviews, contamination, contact, suggestions, stats, listas |
+| Monitoreo/alertas | ⚠️ | Logger JSON existe; falta alerta en 5xx |
 | CORS | ✅ | Next.js default (same-origin) |
 | HTTPS | ✅ | Vercel lo maneja |
 | Validación de inputs | ✅ | Zod en APIs |
@@ -170,3 +170,11 @@
 - **Jest**: `jest-environment-jsdom` no está instalado → `npm install -D jest-environment-jsdom`
 - **Mongoose**: Duplicate index en `{email:1}` en User model (index: true + schema.index)
 - **ESLint**: Warnings de `react-hooks/exhaustive-deps` y `@next/next/no-img-element` en varios componentes
+
+---
+
+## Modelos nuevos (post-auditoría)
+
+- **List**: listas públicas con likes
+- **ListLike**: registro de likes por usuario
+- Índices recomendados: ver `docs/INDEXES-CHECKLIST.md`

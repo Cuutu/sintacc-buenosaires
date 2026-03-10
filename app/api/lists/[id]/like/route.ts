@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
 import { ListLike } from "@/models/ListLike"
 import { requireAuth } from "@/lib/middleware"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
@@ -16,6 +17,16 @@ export async function POST(
     if (session instanceof NextResponse) return session
 
     await connectDB()
+
+    const rateLimit = await checkRateLimit(session.user.id, "list_like", 50)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Límite alcanzado. Podés dar hasta 50 likes por día. Quedan ${rateLimit.remaining} disponibles.`,
+        },
+        { status: 429 }
+      )
+    }
 
     const listId = params.id
     if (!listId || !mongoose.Types.ObjectId.isValid(listId)) {

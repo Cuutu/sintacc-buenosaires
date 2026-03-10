@@ -81,11 +81,11 @@ export default function ListaDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Link
-        href="/favoritos"
+        href={session ? "/favoritos" : "/listas"}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        Volver a guardados
+        {session ? "Volver a guardados" : "Volver a listas"}
       </Link>
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">

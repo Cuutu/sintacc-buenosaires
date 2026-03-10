@@ -15,6 +15,9 @@
 | RateLimit | `{ date: 1 }` (TTL 8 días) | Limpieza automática |
 | RateLimitIp | `{ ip: 1, type: 1, windowStart: 1 }` (unique) | Rate limit IP |
 | RateLimitIp | `{ windowStart: 1 }` (TTL 8 días) | Limpieza automática |
+| List | `{ isPublic: 1, likesCount: -1, createdAt: -1 }` | Top listas públicas |
+| List | `{ createdBy: 1, updatedAt: -1 }` | Mis listas |
+| ListLike | `{ listId: 1, userId: 1 }` (unique) | Un like por usuario por lista |
 
 ## Verificación
 
