@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,80 +12,96 @@ import { MapPickerModal } from "@/components/map-picker-modal"
 import { geocodeAddress } from "@/lib/geocode"
 import { toast } from "sonner"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
-import { ChevronDown, ChevronUp, Link2, MapPin } from "lucide-react" 
+import { MapPin, Link2, ChevronDown, ChevronUp, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+type Mode = "quick" | "full" | null
+type Step = 0 | 1 | 2
+
+interface QuickData {
+  sourceLink: string
+  safetyLevel: "" | "dedicated_gf" | "gf_options"
+  name: string
+}
+
+interface FormData {
+  name: string
+  types: string[]
+  address: string
+  neighborhood: string
+  lat: string
+  lng: string
+  addressText: string
+  locationPrecision: "exact" | "approx"
+  userProvidedNeighborhood: string
+  userProvidedReference: string
+  tags: string[]
+  openingHours: string
+  delivery: { available: boolean; rappi: string; pedidosya: string; other: string }
+  contact: { instagram: string; whatsapp: string; phone: string; url: string }
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function SugerirPage() {
   const { data: session } = useSession()
   const router = useRouter()
+
+  const [step, setStep] = useState<Step>(0)
+  const [mode, setMode] = useState<Mode>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [quickMode, setQuickMode] = useState(false)
+  const [showOptional, setShowOptional] = useState(false)
   const [mapPickerOpen, setMapPickerOpen] = useState(false)
-  const [quickData, setQuickData] = useState({
+
+  const [quickData, setQuickData] = useState<QuickData>({
     sourceLink: "",
-    safetyLevel: "" as "" | "dedicated_gf" | "gf_options",
+    safetyLevel: "",
     name: "",
   })
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<FormData>({
     name: "",
-    types: [] as string[],
+    types: [],
     address: "",
     neighborhood: "",
     lat: "",
     lng: "",
     addressText: "",
-    locationPrecision: "exact" as "exact" | "approx",
+    locationPrecision: "exact",
     userProvidedNeighborhood: "",
     userProvidedReference: "",
-    tags: [] as string[],
+    tags: [],
     openingHours: "",
-    delivery: {
-      available: false,
-      rappi: "",
-      pedidosya: "",
-      other: "",
-    },
-    contact: {
-      instagram: "",
-      whatsapp: "",
-      phone: "",
-      url: "",
-    },
+    delivery: { available: false, rappi: "", pedidosya: "", other: "" },
+    contact: { instagram: "", whatsapp: "", phone: "", url: "" },
   })
 
-  const toggleTag = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
+  const progressPercent = step === 0 ? 0 : step === 1 ? 50 : 100
+
+  const toggleType = (v: string) =>
+    setFormData((p) => ({
+      ...p,
+      types: p.types.includes(v) ? p.types.filter((t) => t !== v) : [...p.types, v],
     }))
-  }
 
-  const toggleType = (typeValue: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      types: prev.types.includes(typeValue)
-        ? prev.types.filter((t) => t !== typeValue)
-        : [...prev.types, typeValue],
+  const toggleTag = (v: string) =>
+    setFormData((p) => ({
+      ...p,
+      tags: p.tags.includes(v) ? p.tags.filter((t) => t !== v) : [...p.tags, v],
     }))
-  }
 
-  if (!session) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="mb-4">Debes iniciar sesión para sugerir un lugar</p>
-            <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  // ─── Submit modo rápido ──────────────────────────────────────────────────────
 
-  const handleQuickSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleQuickSubmit = async () => {
+    if (!quickData.sourceLink.trim() || !quickData.safetyLevel) {
+      setError("Completá el link y el nivel de seguridad")
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -100,8 +116,7 @@ export default function SugerirPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al crear sugerencia")
-      toast.success("¡Sugerencia enviada! La completaremos nosotros.")
-      router.push("/mapa?success=suggestion")
+      setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al enviar")
     } finally {
@@ -109,14 +124,18 @@ export default function SugerirPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  // ─── Submit modo completo ────────────────────────────────────────────────────
+
+  const handleFullSubmit = async () => {
     setError("")
+
+    if (formData.types.length === 0) {
+      setError("Seleccioná al menos un tipo de lugar")
+      return
+    }
 
     let dataToSubmit = formData
 
-    // Si tiene dirección pero no coordenadas (ej. pegó o escribió sin seleccionar), geocodificar
     if ((!formData.lat || !formData.lng) && formData.address.trim()) {
       const geo = await geocodeAddress(formData.address)
       if (geo) {
@@ -128,375 +147,635 @@ export default function SugerirPage() {
           neighborhood: geo.neighborhood || "Otro",
         }
       } else {
-        setError("No se pudo encontrar la dirección. Probá seleccionando una sugerencia de la lista.")
-        setLoading(false)
+        setError("No se pudo encontrar la dirección. Seleccionala de la lista o usá el mapa.")
         return
       }
     } else if (!formData.lat || !formData.lng) {
-      setError("Agregá una dirección y seleccionala de la lista o escribíla completa.")
-      setLoading(false)
+      setError("Agregá una dirección y seleccionala de la lista.")
       return
     }
 
-    if (formData.types.length === 0) {
-      setError("Seleccioná al menos un tipo de lugar")
-      setLoading(false)
-      return
-    }
-
-    const payload = {
-      ...dataToSubmit,
-      types: dataToSubmit.types,
-      openingHours: dataToSubmit.openingHours || undefined,
-      delivery: dataToSubmit.delivery?.available
-        ? {
-            available: true,
-            rappi: dataToSubmit.delivery.rappi?.trim() || undefined,
-            pedidosya: dataToSubmit.delivery.pedidosya?.trim() || undefined,
-            other: dataToSubmit.delivery.other?.trim() || undefined,
-          }
-        : undefined,
-      location: {
-        lat: parseFloat(dataToSubmit.lat),
-        lng: parseFloat(dataToSubmit.lng),
-      },
-      addressText: dataToSubmit.addressText || undefined,
-      locationPrecision: dataToSubmit.locationPrecision || "exact",
-      userProvidedNeighborhood: dataToSubmit.userProvidedNeighborhood?.trim() || undefined,
-      userProvidedReference: dataToSubmit.userProvidedReference?.trim() || undefined,
-    }
-
+    setLoading(true)
     try {
+      const payload = {
+        ...dataToSubmit,
+        types: dataToSubmit.types,
+        openingHours: dataToSubmit.openingHours || undefined,
+        delivery: dataToSubmit.delivery.available
+          ? {
+              available: true,
+              rappi: dataToSubmit.delivery.rappi.trim() || undefined,
+              pedidosya: dataToSubmit.delivery.pedidosya.trim() || undefined,
+              other: dataToSubmit.delivery.other.trim() || undefined,
+            }
+          : undefined,
+        location: { lat: parseFloat(dataToSubmit.lat), lng: parseFloat(dataToSubmit.lng) },
+        addressText: dataToSubmit.addressText || undefined,
+        locationPrecision: dataToSubmit.locationPrecision || "exact",
+        userProvidedNeighborhood: dataToSubmit.userProvidedNeighborhood.trim() || undefined,
+        userProvidedReference: dataToSubmit.userProvidedReference.trim() || undefined,
+      }
+
       const res = await fetch("/api/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-
       const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || "Error al crear sugerencia")
-      }
-
-      toast.success("¡Sugerencia enviada! Será revisada por el equipo.")
-      router.push("/mapa?success=suggestion")
-    } catch (err: any) {
-      setError(err.message)
+      if (!res.ok) throw new Error(data.error || "Error al crear sugerencia")
+      setStep(2)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al enviar")
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Sugerir un lugar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Modo rápido: solo link + safety */}
-          <div className="mb-6">
-            <button
-              type="button"
-              onClick={() => setQuickMode(!quickMode)}
-              className="flex items-center gap-2 w-full text-left text-sm text-primary hover:underline"
-            >
-              <Link2 className="h-4 w-4" />
-              ¿Solo tenés el link de Instagram o Google Maps?
-              {quickMode ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
-            </button>
-            {quickMode && (
-              <form onSubmit={handleQuickSubmit} className="mt-4 p-4 rounded-lg border border-border bg-muted/30 space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Pegá el link y contanos si es 100% apto o tiene opciones. Nosotros completamos el resto.
-                </p>
-                <div>
-                  <Label>Link (Instagram o Google Maps) *</Label>
-                  <Input
-                    value={quickData.sourceLink}
-                    onChange={(e) => setQuickData({ ...quickData, sourceLink: e.target.value })}
-                    placeholder="https://instagram.com/... o https://maps.google.com/..."
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>¿Es 100% apto o tiene opciones? *</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={quickData.safetyLevel === "dedicated_gf" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setQuickData({ ...quickData, safetyLevel: "dedicated_gf" })}
-                    >
-                      100% sin TACC
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={quickData.safetyLevel === "gf_options" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setQuickData({ ...quickData, safetyLevel: "gf_options" })}
-                    >
-                      Opciones sin TACC
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <Label>Nombre del lugar (opcional)</Label>
-                  <Input
-                    value={quickData.name}
-                    onChange={(e) => setQuickData({ ...quickData, name: e.target.value })}
-                    placeholder="Si lo conocés"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading || !quickData.safetyLevel}
-                >
-                  {loading ? "Enviando..." : "Enviar sugerencia"}
-                </Button>
-              </form>
-            )}
-          </div>
+  // ─── Barra de progreso ───────────────────────────────────────────────────────
 
-          <div className="border-t border-border pt-6">
-            <p className="text-sm text-muted-foreground mb-4">O completá el formulario completo:</p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label>Nombre del lugar *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
+  const ProgressBar = () => (
+    <div className="w-full h-1 bg-muted rounded-full overflow-hidden mb-6">
+      <div
+        className="h-full bg-primary rounded-full transition-all duration-500"
+        style={{ width: `${progressPercent}%` }}
+      />
+    </div>
+  )
+
+  // ─── Guard: sin sesión ───────────────────────────────────────────────────────
+
+  if (!session) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-md">
+        <Card>
+          <CardContent className="py-10 text-center space-y-4">
+            <p className="text-muted-foreground">
+              Iniciá sesión para sugerir un lugar
+            </p>
+            <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // ─── Step 2: Confirmación ────────────────────────────────────────────────────
+
+  if (step === 2) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-md">
+        <ProgressBar />
+        <Card>
+          <CardContent className="py-12 flex flex-col items-center text-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
-
             <div>
-              <Label>Tipo *</Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Seleccioná uno o más tipos que apliquen al lugar
+              <h2 className="text-xl font-bold mb-1">¡Gracias por la sugerencia!</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                La revisamos en las próximas 48 horas. Si todo está bien, la sumamos al mapa.
               </p>
-              <div className="flex flex-wrap gap-2">
-                {TYPES.map((type) => (
-                  <Button
-                    key={type.value}
-                    type="button"
-                    variant={formData.types.includes(type.value) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleType(type.value)}
-                  >
-                    {type.emoji} {type.label}
-                  </Button>
-                ))}
-              </div>
             </div>
-
-            <div>
-              <Label>Dirección *</Label>
-              <AddressAutocomplete
-                value={formData.address}
-                onChange={(address) => setFormData({ ...formData, address })}
-                onSelect={(result) => {
+            <div className="flex gap-3 mt-2 flex-wrap justify-center">
+              <Button onClick={() => router.push("/mapa")}>
+                Ver en el mapa
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep(0)
+                  setMode(null)
+                  setQuickData({ sourceLink: "", safetyLevel: "", name: "" })
                   setFormData({
-                    ...formData,
-                    address: result.address,
-                    lat: result.lat.toString(),
-                    lng: result.lng.toString(),
-                    neighborhood: result.neighborhood || "Otro",
+                    name: "", types: [], address: "", neighborhood: "",
+                    lat: "", lng: "", addressText: "", locationPrecision: "exact",
+                    userProvidedNeighborhood: "", userProvidedReference: "",
+                    tags: [], openingHours: "",
+                    delivery: { available: false, rappi: "", pedidosya: "", other: "" },
+                    contact: { instagram: "", whatsapp: "", phone: "", url: "" },
                   })
                 }}
-                placeholder="Escribí una dirección o lugar en Argentina..."
-                required
+              >
+                Sugerir otro
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // ─── Step 0: Elegir modo ─────────────────────────────────────────────────────
+
+  if (step === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        <button
+          onClick={() => router.push("/mapa")}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al mapa
+        </button>
+
+        <ProgressBar />
+
+        <h1 className="text-2xl font-bold mb-1">Sugerir un lugar</h1>
+        <p className="text-muted-foreground text-sm mb-6">
+          ¿Qué info tenés del lugar? Elegí según lo que sabés.
+        </p>
+
+        <div className="grid gap-3">
+          <button
+            onClick={() => setMode("quick")}
+            className={cn(
+              "text-left rounded-xl border-2 p-5 transition-all",
+              mode === "quick"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-border/80 hover:bg-muted/40"
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🔗</span>
+              <div className="flex-1">
+                <div className="font-semibold flex items-center justify-between">
+                  Solo tengo el link
+                  {mode === "quick" && (
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Instagram, Google Maps, o cualquier red social. Lo completamos nosotros.
+                </p>
+                <span className="inline-block mt-2 text-xs font-medium text-primary bg-primary/10 rounded-full px-2.5 py-0.5">
+                  ⚡ 30 segundos
+                </span>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setMode("full")}
+            className={cn(
+              "text-left rounded-xl border-2 p-5 transition-all",
+              mode === "full"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-border/80 hover:bg-muted/40"
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📋</span>
+              <div className="flex-1">
+                <div className="font-semibold flex items-center justify-between">
+                  Tengo los datos completos
+                  {mode === "full" && (
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Nombre, dirección, tipo de lugar y nivel de seguridad.
+                </p>
+                <span className="inline-block mt-2 text-xs font-medium text-muted-foreground bg-muted rounded-full px-2.5 py-0.5">
+                  📝 ~2 minutos
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <Button
+          className="w-full mt-6"
+          disabled={!mode}
+          onClick={() => setStep(1)}
+        >
+          Continuar
+        </Button>
+      </div>
+    )
+  }
+
+  // ─── Step 1A: Modo rápido ────────────────────────────────────────────────────
+
+  if (step === 1 && mode === "quick") {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        <button
+          onClick={() => { setStep(0); setError("") }}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Cambiar modo
+        </button>
+
+        <ProgressBar />
+
+        <h1 className="text-2xl font-bold mb-1">Pegá el link</h1>
+        <p className="text-muted-foreground text-sm mb-6">
+          Nos encargamos de completar el resto cuando lo revisemos.
+        </p>
+
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <Label>
+              Link del lugar <span className="text-primary">*</span>
+            </Label>
+            <div className="relative">
+              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="instagram.com/... o maps.google.com/..."
+                value={quickData.sourceLink}
+                onChange={(e) => setQuickData({ ...quickData, sourceLink: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Escribí la dirección y seleccionala de la lista
-              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Instagram, Google Maps, Facebook, TikTok...
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>
+              ¿Es 100% apto o tiene opciones? <span className="text-primary">*</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setMapPickerOpen(true)}
-                className="mt-2 flex items-center gap-2 text-sm text-primary hover:underline"
+                onClick={() => setQuickData({ ...quickData, safetyLevel: "dedicated_gf" })}
+                className={cn(
+                  "rounded-lg border-2 p-3 text-center transition-all",
+                  quickData.safetyLevel === "dedicated_gf"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-border/80"
+                )}
               >
-                <MapPin className="h-4 w-4" />
-                ¿No encontrás la dirección? Hacé click acá para ubicarla en el mapa
+                <div className="text-xl mb-1">✅</div>
+                <div className="text-sm font-semibold">100% sin TACC</div>
+                <div className="text-xs text-muted-foreground">Solo hace sin gluten</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickData({ ...quickData, safetyLevel: "gf_options" })}
+                className={cn(
+                  "rounded-lg border-2 p-3 text-center transition-all",
+                  quickData.safetyLevel === "gf_options"
+                    ? "border-yellow-500 bg-yellow-500/5"
+                    : "border-border hover:border-border/80"
+                )}
+              >
+                <div className="text-xl mb-1">🟡</div>
+                <div className="text-sm font-semibold">Tiene opciones</div>
+                <div className="text-xs text-muted-foreground">También tiene con TACC</div>
               </button>
             </div>
-            <MapPickerModal
-              open={mapPickerOpen}
-              onOpenChange={setMapPickerOpen}
-              onSelect={(result) => {
-                setFormData((prev) => ({
-                  ...prev,
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Nombre del lugar (opcional)</Label>
+            <Input
+              placeholder="Si lo sabés..."
+              value={quickData.name}
+              onChange={(e) => setQuickData({ ...quickData, name: e.target.value })}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+              {error}
+            </p>
+          )}
+
+          <Button
+            className="w-full"
+            disabled={loading || !quickData.sourceLink.trim() || !quickData.safetyLevel}
+            onClick={handleQuickSubmit}
+          >
+            {loading ? "Enviando..." : "🚀 Enviar sugerencia"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Step 1B: Modo completo ──────────────────────────────────────────────────
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-lg">
+      <button
+        onClick={() => { setStep(0); setError("") }}
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Cambiar modo
+      </button>
+
+      <ProgressBar />
+
+      <h1 className="text-2xl font-bold mb-1">Datos del lugar</h1>
+      <p className="text-muted-foreground text-sm mb-6">
+        Los campos opcionales los podés completar o dejar vacíos — los revisamos antes de publicar.
+      </p>
+
+      <div className="space-y-5">
+        {/* Nombre */}
+        <div className="space-y-1.5">
+          <Label>Nombre <span className="text-primary">*</span></Label>
+          <Input
+            placeholder="Ej: Panadería El Trigo Libre"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+        </div>
+
+        {/* Tipo */}
+        <div className="space-y-1.5">
+          <Label>Tipo <span className="text-primary">*</span></Label>
+          <p className="text-xs text-muted-foreground">Podés elegir más de uno</p>
+          <div className="flex flex-wrap gap-2">
+            {TYPES.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => toggleType(type.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all",
+                  formData.types.includes(type.value)
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-border/80 text-muted-foreground"
+                )}
+              >
+                {type.emoji} {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Dirección */}
+        <div className="space-y-1.5">
+          <Label>Dirección <span className="text-primary">*</span></Label>
+          <div className="flex gap-2">
+            <AddressAutocomplete
+              value={formData.address}
+              onChange={(address) => setFormData({ ...formData, address })}
+              onSelect={(result) =>
+                setFormData({
+                  ...formData,
                   address: result.address,
                   lat: result.lat.toString(),
                   lng: result.lng.toString(),
                   neighborhood: result.neighborhood || "Otro",
-                  addressText: result.addressText || result.address,
-                  locationPrecision: result.locationPrecision,
-                  userProvidedNeighborhood: result.userProvidedNeighborhood || "",
-                  userProvidedReference: result.userProvidedReference || "",
-                }))
-              }}
+                })
+              }
+              placeholder="Escribí y seleccioná de la lista..."
             />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setMapPickerOpen(true)}
+              title="Ubicar en el mapa"
+            >
+              <MapPin className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            ¿No encontrás la dirección?{" "}
+            <button
+              type="button"
+              onClick={() => setMapPickerOpen(true)}
+              className="text-primary hover:underline"
+            >
+              Ubicala en el mapa
+            </button>
+          </p>
+        </div>
 
-            <div>
-              <Label>Horario (opcional)</Label>
-              <Input
-                value={formData.openingHours}
-                onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
-                placeholder="Ej: Lun-Vie 9-18, Sáb 10-14"
-              />
-            </div>
+        <MapPickerModal
+          open={mapPickerOpen}
+          onOpenChange={setMapPickerOpen}
+          onSelect={(result) =>
+            setFormData((prev) => ({
+              ...prev,
+              address: result.address,
+              lat: result.lat.toString(),
+              lng: result.lng.toString(),
+              neighborhood: result.neighborhood || "Otro",
+              addressText: result.addressText || result.address,
+              locationPrecision: result.locationPrecision,
+              userProvidedNeighborhood: result.userProvidedNeighborhood || "",
+              userProvidedReference: result.userProvidedReference || "",
+            }))
+          }
+        />
 
-            <div>
-              <Label>Delivery (opcional)</Label>
-              <div className="space-y-4">
-                <label className="flex items-center gap-2 cursor-pointer">
+        {/* Seguridad */}
+        <div className="space-y-1.5">
+          <Label>Nivel de seguridad <span className="text-primary">*</span></Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                setFormData((p) => ({
+                  ...p,
+                  tags: p.tags.includes("100_gf")
+                    ? p.tags
+                    : [...p.tags.filter((t) => t !== "opciones_sin_tacc"), "100_gf"],
+                }))
+              }
+              className={cn(
+                "rounded-lg border-2 p-3 text-center transition-all",
+                formData.tags.includes("100_gf")
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-border/80"
+              )}
+            >
+              <div className="text-xl mb-1">✅</div>
+              <div className="text-sm font-semibold">100% sin TACC</div>
+              <div className="text-xs text-muted-foreground">Solo hace sin gluten</div>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setFormData((p) => ({
+                  ...p,
+                  tags: p.tags.includes("opciones_sin_tacc")
+                    ? p.tags
+                    : [...p.tags.filter((t) => t !== "100_gf"), "opciones_sin_tacc"],
+                }))
+              }
+              className={cn(
+                "rounded-lg border-2 p-3 text-center transition-all",
+                formData.tags.includes("opciones_sin_tacc")
+                  ? "border-yellow-500 bg-yellow-500/5"
+                  : "border-border hover:border-border/80"
+              )}
+            >
+              <div className="text-xl mb-1">🟡</div>
+              <div className="text-sm font-semibold">Tiene opciones</div>
+              <div className="text-xs text-muted-foreground">También tiene con TACC</div>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Acordeón Opcionales ── */}
+        <div className="border rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowOptional(!showOptional)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                OPCIONAL
+              </span>
+              Más detalles
+            </span>
+            {showOptional ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+
+          {showOptional && (
+            <div className="px-4 pb-4 pt-2 space-y-4 border-t">
+              {/* Tags */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Características</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PLACE_TAGS.map((tag) => (
+                    <button
+                      key={tag.value}
+                      type="button"
+                      onClick={() => toggleTag(tag.value)}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                        formData.tags.includes(tag.value)
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-border/80"
+                      )}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Horario */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Horario</Label>
+                <Input
+                  placeholder="Ej: Lun-Vie 9-18, Sáb 10-14"
+                  value={formData.openingHours}
+                  onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
+                />
+              </div>
+
+              {/* Instagram */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Instagram</Label>
+                <Input
+                  placeholder="@usuario"
+                  value={formData.contact.instagram}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact: { ...formData.contact, instagram: e.target.value } })
+                  }
+                />
+              </div>
+
+              {/* Teléfono + WhatsApp */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Teléfono</Label>
+                  <Input
+                    value={formData.contact.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contact: { ...formData.contact, phone: e.target.value } })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">WhatsApp</Label>
+                  <Input
+                    placeholder="+54 11 1234-5678"
+                    value={formData.contact.whatsapp}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contact: { ...formData.contact, whatsapp: e.target.value } })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Web */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Sitio web</Label>
+                <Input
+                  type="url"
+                  placeholder="https://..."
+                  value={formData.contact.url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact: { ...formData.contact, url: e.target.value } })
+                  }
+                />
+              </div>
+
+              {/* Delivery */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                     type="checkbox"
+                    className="rounded border-border"
                     checked={formData.delivery.available}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        delivery: { ...formData.delivery, available: e.target.checked },
-                      })
+                      setFormData({ ...formData, delivery: { ...formData.delivery, available: e.target.checked } })
                     }
-                    className="rounded border-border"
                   />
-                  <span className="text-sm">Tiene delivery</span>
+                  Tiene delivery
                 </label>
                 {formData.delivery.available && (
-                  <div className="space-y-3 pl-6 border-l-2 border-border">
-                    <div>
-                      <Label className="text-xs">Rappi</Label>
-                      <Input
-                        value={formData.delivery.rappi}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            delivery: { ...formData.delivery, rappi: e.target.value },
-                          })
-                        }
-                        placeholder="https://www.rappi.com.ar/..."
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">PedidosYa</Label>
-                      <Input
-                        value={formData.delivery.pedidosya}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            delivery: { ...formData.delivery, pedidosya: e.target.value },
-                          })
-                        }
-                        placeholder="https://www.pedidosya.com.ar/..."
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Otro (WhatsApp, sitio propio, etc.)</Label>
-                      <Input
-                        value={formData.delivery.other}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            delivery: { ...formData.delivery, other: e.target.value },
-                          })
-                        }
-                        placeholder="https://..."
-                      />
-                    </div>
+                  <div className="space-y-2 pl-5 border-l-2 border-border">
+                    {[
+                      { key: "rappi", label: "Rappi", placeholder: "https://www.rappi.com.ar/..." },
+                      { key: "pedidosya", label: "PedidosYa", placeholder: "https://www.pedidosya.com.ar/..." },
+                      { key: "other", label: "Otro", placeholder: "https://..." },
+                    ].map(({ key, label, placeholder }) => (
+                      <div key={key} className="space-y-1">
+                        <Label className="text-xs">{label}</Label>
+                        <Input
+                          placeholder={placeholder}
+                          value={formData.delivery[key as keyof typeof formData.delivery] as string}
+                          onChange={(e) =>
+                            setFormData({ ...formData, delivery: { ...formData.delivery, [key]: e.target.value } })
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
+          )}
+        </div>
 
-            <div>
-              <Label>Características (opcional)</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {PLACE_TAGS.map((tag) => (
-                  <Button
-                    key={tag.value}
-                    type="button"
-                    variant={formData.tags.includes(tag.value) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleTag(tag.value)}
-                  >
-                    {tag.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+            {error}
+          </p>
+        )}
 
-            <div>
-              <Label>Instagram</Label>
-              <Input
-                value={formData.contact.instagram}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contact: { ...formData.contact, instagram: e.target.value },
-                  })
-                }
-                placeholder="@usuario"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Teléfono</Label>
-                <Input
-                  value={formData.contact.phone}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contact: { ...formData.contact, phone: e.target.value },
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <Label>WhatsApp</Label>
-                <Input
-                  value={formData.contact.whatsapp}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contact: { ...formData.contact, whatsapp: e.target.value },
-                    })
-                  }
-                  placeholder="Ej: +54 11 1234-5678"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Sitio web</Label>
-              <Input
-                type="url"
-                value={formData.contact.url}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contact: { ...formData.contact, url: e.target.value },
-                  })
-                }
-                placeholder="https://..."
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-                {error}
-              </div>
-            )}
-
-            <Button type="submit" disabled={loading}>
-              {loading ? "Enviando..." : "Enviar sugerencia"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <Button
+          className="w-full"
+          disabled={
+            loading ||
+            !formData.name.trim() ||
+            formData.types.length === 0 ||
+            !formData.address.trim() ||
+            (!formData.tags.includes("100_gf") && !formData.tags.includes("opciones_sin_tacc"))
+          }
+          onClick={handleFullSubmit}
+        >
+          {loading ? "Enviando..." : "🚀 Enviar sugerencia"}
+        </Button>
+      </div>
     </div>
   )
 }
