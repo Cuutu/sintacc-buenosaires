@@ -512,31 +512,20 @@ export default function SugerirPage() {
         {/* Dirección */}
         <div className="space-y-1.5">
           <Label>Dirección <span className="text-primary">*</span></Label>
-          <div className="flex gap-2">
-            <AddressAutocomplete
-              value={formData.address}
-              onChange={(address) => setFormData({ ...formData, address })}
-              onSelect={(result) =>
-                setFormData({
-                  ...formData,
-                  address: result.address,
-                  lat: result.lat.toString(),
-                  lng: result.lng.toString(),
-                  neighborhood: result.neighborhood || "Otro",
-                })
-              }
-              placeholder="Escribí y seleccioná de la lista..."
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setMapPickerOpen(true)}
-              title="Ubicar en el mapa"
-            >
-              <MapPin className="h-4 w-4" />
-            </Button>
-          </div>
+          <AddressAutocomplete
+            value={formData.address}
+            onChange={(address) => setFormData({ ...formData, address })}
+            onSelect={(result) =>
+              setFormData({
+                ...formData,
+                address: result.address,
+                lat: result.lat.toString(),
+                lng: result.lng.toString(),
+                neighborhood: result.neighborhood || "Otro",
+              })
+            }
+            placeholder="Escribí y seleccioná de la lista..."
+          />
           <p className="text-xs text-muted-foreground">
             ¿No encontrás la dirección?{" "}
             <button
@@ -569,7 +558,12 @@ export default function SugerirPage() {
 
         {/* Seguridad */}
         <div className="space-y-1.5">
-          <Label>Nivel de seguridad <span className="text-primary">*</span></Label>
+          <div className="space-y-1">
+            <Label>Nivel de seguridad <span className="text-primary">*</span></Label>
+            <p className="text-xs text-muted-foreground">
+              Si tenés dudas, elegí <span className="font-medium">&quot;Tiene opciones&quot;</span> — es mejor ser conservador.
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -775,6 +769,23 @@ export default function SugerirPage() {
         >
           {loading ? "Enviando..." : "🚀 Enviar sugerencia"}
         </Button>
+
+        {(!formData.name.trim() ||
+          formData.types.length === 0 ||
+          !formData.address.trim() ||
+          (!formData.tags.includes("100_gf") && !formData.tags.includes("opciones_sin_tacc"))) && (
+          <p className="text-xs text-muted-foreground text-center">
+            Falta completar:{" "}
+            {[
+              !formData.name.trim() && "nombre",
+              formData.types.length === 0 && "tipo",
+              !formData.address.trim() && "dirección",
+              !formData.tags.includes("100_gf") && !formData.tags.includes("opciones_sin_tacc") && "nivel de seguridad",
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          </p>
+        )}
       </div>
     </div>
   )
