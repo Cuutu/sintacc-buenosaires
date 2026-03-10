@@ -8,8 +8,8 @@ interface PlaceHeroGalleryProps {
   name: string
   type?: string
   types?: string[]
-  safetyDot?: string
-  safetyLabel?: string
+  safetyDot: string
+  safetyLabel: string
 }
 
 export function PlaceHeroGallery({
@@ -22,65 +22,58 @@ export function PlaceHeroGallery({
 }: PlaceHeroGalleryProps) {
   const primaryType = types?.[0] ?? type ?? "other"
   const typeConfig = TYPES.find((t) => t.value === primaryType)
-
   const hasPhotos = photos && photos.length > 0
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden border border-white/8 bg-white/5">
-      {/* Grid de fotos */}
+    <div className="relative w-full rounded-2xl overflow-hidden border border-white/8 bg-white/5 mb-4">
       {hasPhotos ? (
         <div
-          className={
-            photos.length === 1
-              ? "grid grid-cols-1"
-              : photos.length === 2
-              ? "grid grid-cols-2 gap-0.5"
-              : "grid grid-cols-2 gap-0.5"
-          }
-          style={{ height: 320 }}
+          className="grid gap-0.5"
+          style={{
+            height: 280,
+            gridTemplateColumns: photos.length === 1 ? "1fr" : "1.6fr 1fr",
+            gridTemplateRows: "1fr 1fr",
+          }}
         >
-          {/* Foto principal */}
+          {/* Foto principal — ocupa las 2 filas */}
           <div
-            className={
-              photos.length >= 3
-                ? "relative row-span-2"
-                : "relative"
-            }
+            className="relative overflow-hidden"
+            style={{ gridRow: photos.length >= 2 ? "1 / 3" : "1 / 2" }}
           >
             <Image
               src={photos[0]}
               alt={`${name} - foto 1`}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
+              sizes="(max-width: 1024px) 100vw, 60vw"
               priority
             />
           </div>
-          {/* Fotos secundarias */}
+          {/* Foto 2 */}
           {photos.length >= 2 && (
-            <div className="relative">
+            <div className="relative overflow-hidden">
               <Image
                 src={photos[1]}
                 alt={`${name} - foto 2`}
                 fill
                 className="object-cover"
-                sizes="25vw"
+                sizes="30vw"
               />
             </div>
           )}
+          {/* Foto 3 — con overlay si hay más */}
           {photos.length >= 3 && (
-            <div className="relative">
+            <div className="relative overflow-hidden">
               <Image
                 src={photos[2]}
                 alt={`${name} - foto 3`}
                 fill
                 className="object-cover"
-                sizes="25vw"
+                sizes="30vw"
               />
-              {/* Overlay si hay más fotos */}
               {photos.length > 3 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
+                <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                  <span className="text-white text-xs font-semibold font-mono">
                     +{photos.length - 3} fotos
                   </span>
                 </div>
@@ -89,29 +82,27 @@ export function PlaceHeroGallery({
           )}
         </div>
       ) : (
-        // Placeholder sin fotos
+        /* Placeholder sin fotos */
         <div
-          className="flex items-center justify-center bg-gradient-to-br from-emerald-950/80 via-emerald-900/40 to-slate-900/80"
-          style={{ height: 320 }}
+          className="flex items-center justify-center bg-gradient-to-br from-emerald-950/80 via-emerald-900/30 to-slate-900/80"
+          style={{ height: 280 }}
         >
-          <span className="text-8xl opacity-40" aria-hidden>
+          <span className="text-8xl opacity-30" aria-hidden>
             {typeConfig?.emoji ?? "📍"}
           </span>
         </div>
       )}
 
-      {/* Safety badge flotante sobre la foto */}
-      {safetyLabel && (
-        <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 bg-black/75 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg">
-          <span className="text-sm">{safetyDot}</span>
-          {safetyLabel}
-        </div>
-      )}
+      {/* Safety badge flotante — siempre visible */}
+      <div className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-2 bg-black/78 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg">
+        <span className="text-xs leading-none">{safetyDot}</span>
+        {safetyLabel}
+      </div>
 
       {/* Contador fotos */}
       {hasPhotos && photos.length > 1 && (
-        <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur border border-white/10 rounded-lg px-2.5 py-1 text-[11px] text-muted-foreground">
-          📷 {photos.length} fotos
+        <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white/60 font-mono">
+          📷 {photos.length}
         </div>
       )}
     </div>
