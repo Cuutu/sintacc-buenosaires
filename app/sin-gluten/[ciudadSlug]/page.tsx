@@ -40,11 +40,9 @@ export async function generateMetadata({
     const province = getProvinceBySlug(ciudadSlug)
     if (!province) return { title: "No encontrado" }
     const { total } = await getPlacesByProvince(ciudadSlug)
-    const noIndex = total === 0
     return {
       title: province.metaTitle,
       description: province.metaDescription,
-      robots: noIndex ? { index: false, follow: true } : undefined,
       alternates: { canonical: `${BASE_URL}/sin-gluten/${ciudadSlug}` },
       openGraph: {
         title: `Sin gluten en ${province.name} | Celimap`,
