@@ -3,10 +3,10 @@
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { MapPin, Heart, PlusCircle, Compass, User } from "lucide-react"
+import { MapPin, Heart, PlusCircle, Compass, User, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const MOBILE_NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href: "/mapa", label: "Mapa", icon: MapPin },
   { href: "/favoritos", label: "Guardados", icon: Heart },
   { href: "/sugerir", label: "Sugerir", icon: PlusCircle, isCenter: true },
@@ -20,20 +20,26 @@ const MOBILE_NAV_ITEMS = [
   },
 ]
 
+const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: Shield }
+
 export function BottomNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
   const { data: session } = useSession()
   const listOpen = searchParams.get("list") === "open"
+  const isAdmin = session?.user?.role === "admin"
 
-  const navItems = MOBILE_NAV_ITEMS.map((item) => {
+  // Si es admin: reemplazar el ítem Explorar (índice 3) por Admin
+  const rawItems = isAdmin
+    ? BASE_NAV_ITEMS.map((item, i) => (i === 3 ? ADMIN_ITEM : item))
+    : BASE_NAV_ITEMS
+
+  // Resolver href fallback para Perfil según sesión
+  const navItems = rawItems.map((item) => {
+    const withFallback = item as typeof item & { fallbackHref?: string; fallbackLabel?: string }
     if ("fallbackHref" in item && !session) {
-      return {
-        ...item,
-        href: item.fallbackHref ?? "/login",
-        label: item.fallbackLabel ?? item.label,
-      }
+      return { ...item, href: withFallback.fallbackHref ?? "/login", label: withFallback.fallbackLabel ?? item.label }
     }
     if ("fallbackHref" in item && session) {
       return { ...item, href: "/perfil", label: "Perfil" }
@@ -48,16 +54,17 @@ export function BottomNav() {
       aria-label="Navegación principal"
     >
       <div className="flex items-center justify-around h-16">
-        {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }) => {
+        {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }: any) => {
           const hrefStr = href ?? "/"
           const isExplorarActive = isListToggle && pathname === "/mapa" && listOpen
           const isActive =
             isListToggle
               ? isExplorarActive
               : pathname === hrefStr ||
-                (hrefStr !== "/mapa" && pathname.startsWith(hrefStr)) ||
+                (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
                 (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
 
+          // Ítem Explorar (toggle de lista en mapa) — solo cuando NO es admin
           if (isListToggle) {
             const isOnMap = pathname === "/mapa"
             if (isOnMap) {
@@ -77,52 +84,45 @@ export function BottomNav() {
                   }}
                   className={cn(
                     "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     isExplorarActive
                       ? "text-primary font-medium"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   aria-label={label}
-                  aria-current={isExplorarActive ? "true" : undefined}
                 >
-                  <span className="flex items-center justify-center h-6 w-6 shrink-0">
-                    <Icon className="h-6 w-6" aria-hidden />
-                  </span>
+                  <Icon className="h-6 w-6" aria-hidden />
                   <span className="text-[10px] font-medium mt-0.5">{label}</span>
                 </button>
               )
             }
+            // Fuera del mapa: link normal a /mapa
             return (
               <Link
-                key="explorar"
-                href="/mapa?list=open"
+                key="explorar-link"
+                href="/mapa"
                 className={cn(
                   "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   "text-muted-foreground hover:text-foreground"
                 )}
                 aria-label={label}
               >
-                <span className="flex items-center justify-center h-6 w-6 shrink-0">
-                  <Icon className="h-6 w-6" aria-hidden />
-                </span>
+                <Icon className="h-6 w-6" aria-hidden />
                 <span className="text-[10px] font-medium mt-0.5">{label}</span>
               </Link>
             )
           }
-          if (isCenter && hrefStr === "/sugerir") {
+
+          // Ítem central (Sugerir) con círculo
+          if (isCenter) {
             return (
-              <button
-                key="sugerir"
-                type="button"
-                onClick={() => router.push("/sugerir")}
+              <Link
+                key={hrefStr}
+                href={hrefStr}
                 className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors cursor-pointer",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  "relative -mt-4",
-                  isActive
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors relative -mt-4",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 )}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
@@ -131,9 +131,31 @@ export function BottomNav() {
                   <Icon className="h-6 w-6" aria-hidden />
                 </span>
                 <span className="text-[10px] font-medium mt-0.5">{label}</span>
-              </button>
+              </Link>
             )
           }
+
+          // Ítem Admin — con badge rojo si hay algo pendiente (futuro)
+          if (hrefStr === "/admin") {
+            return (
+              <Link
+                key="/admin"
+                href="/admin"
+                className={cn(
+                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+                aria-label="Panel de administración"
+              >
+                <Icon className="h-6 w-6" aria-hidden />
+                <span className="text-[10px] font-medium mt-0.5">{label}</span>
+              </Link>
+            )
+          }
+
+          // Ítem normal
           return (
             <Link
               key={hrefStr}
@@ -141,23 +163,13 @@ export function BottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isActive
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground",
-                isCenter && "relative -mt-4"
+                isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               aria-current={isActive ? "page" : undefined}
               aria-label={label}
             >
-              <span
-                className={cn(
-                  "flex items-center justify-center rounded-full transition-colors",
-                  isCenter
-                    ? "h-12 w-12 bg-primary text-primary-foreground shadow-lg"
-                    : "h-6 w-6 shrink-0"
-                )}
-              >
-                <Icon className={isCenter ? "h-6 w-6" : "h-6 w-6"} aria-hidden />
+              <span className="flex items-center justify-center h-6 w-6 shrink-0">
+                <Icon className="h-6 w-6" aria-hidden />
               </span>
               <span className="text-[10px] font-medium mt-0.5">{label}</span>
             </Link>

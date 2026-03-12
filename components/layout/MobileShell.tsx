@@ -1,6 +1,6 @@
 "use client"
 
-const MOBILE_ROUTES = ["/mapa", "/favoritos", "/sugerir", "/explorar", "/perfil", "/login"]
+const MOBILE_ROUTES = ["/mapa", "/favoritos", "/sugerir", "/explorar", "/perfil", "/login", "/admin"]
 
 /**
  * MobileShell: wrapper para lógica móvil.
