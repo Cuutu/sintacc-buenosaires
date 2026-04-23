@@ -6,6 +6,7 @@ import { LayoutChrome } from "@/components/layout/LayoutChrome";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Toaster } from "sonner";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -94,6 +95,7 @@ export default function RootLayout({
             <LayoutChrome>{children}</LayoutChrome>
           </MobileShell>
           <Toaster position="top-center" richColors closeButton />
+          <InstallPrompt />
         </Providers>
       </body>
     </html>
