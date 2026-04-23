@@ -6,6 +6,9 @@ const ROOT = process.cwd()
 const PUBLIC_DIR = path.join(ROOT, "public")
 const LOGO_REL = "CelimapLOGO.png"
 const LOGO_PATH = path.join(PUBLIC_DIR, LOGO_REL)
+/** Arte dedicado PWA (full-bleed / maskable ya pensado por diseño) */
+const PWA_ART_REL = "celimappwa.png"
+const PWA_ART_PATH = path.join(PUBLIC_DIR, PWA_ART_REL)
 
 /** Fondo maskable / theme, alineado con manifest */
 const MASK_BG: [number, number, number, number] = [11, 18, 32, 255]
@@ -215,37 +218,51 @@ function makeMaskable512(src: PNG): PNG {
   return out
 }
 
-function ensureSourceLogoPng(): PNG {
-  if (!fs.existsSync(LOGO_PATH)) {
-    const png = new PNG({ width: 512, height: 512 })
-    drawPlaceholderLogo(png)
-    writePng(LOGO_REL, png)
-    return png
-  }
+function readPngFile(absPath: string): PNG | null {
   try {
-    return PNG.sync.read(fs.readFileSync(LOGO_PATH))
+    return PNG.sync.read(fs.readFileSync(absPath))
   } catch {
-    const png = new PNG({ width: 512, height: 512 })
-    drawPlaceholderLogo(png)
-    writePng(LOGO_REL, png)
-    return png
+    return null
   }
+}
+
+/** Asegura logo sitio para OG/JSON-LD; no tocar si ya existe */
+function ensureCelimapLogoPlaceholder(): void {
+  if (fs.existsSync(LOGO_PATH)) return
+  const png = new PNG({ width: 512, height: 512 })
+  drawPlaceholderLogo(png)
+  writePng(LOGO_REL, png)
+}
+
+/**
+ * Fuente iconos PWA: celimappwa.png si existe; si no CelimapLOGO.png; si no placeholder.
+ */
+function loadPwaIconSource(): { png: PNG; sourceLabel: string; isDedicatedPwaArt: boolean } {
+  const fromPwaArt = readPngFile(PWA_ART_PATH)
+  if (fromPwaArt) return { png: fromPwaArt, sourceLabel: PWA_ART_REL, isDedicatedPwaArt: true }
+
+  ensureCelimapLogoPlaceholder()
+  const fromLogo = readPngFile(LOGO_PATH)
+  if (fromLogo) return { png: fromLogo, sourceLabel: LOGO_REL, isDedicatedPwaArt: false }
+
+  const png = new PNG({ width: 512, height: 512 })
+  drawPlaceholderLogo(png)
+  writePng(LOGO_REL, png)
+  return { png, sourceLabel: `${LOGO_REL} (placeholder)`, isDedicatedPwaArt: false }
 }
 
 ensureDir(PUBLIC_DIR)
 
-const logo = ensureSourceLogoPng()
+const { png: pwaSrc, sourceLabel, isDedicatedPwaArt } = loadPwaIconSource()
 
-// Siempre regenerar iconos desde CelimapLOGO.png (mismo asset que sitio / JSON-LD / mails)
-writePng("icon-192.png", resizeCropCenterSquare(logo, 192, 192))
-writePng("icon-512.png", resizeCropCenterSquare(logo, 512, 512))
-writePng("maskable-512.png", makeMaskable512(logo))
+writePng("icon-192.png", resizeCropCenterSquare(pwaSrc, 192, 192))
+writePng("icon-512.png", resizeCropCenterSquare(pwaSrc, 512, 512))
+// Arte PWA dedicado: ya viene con safe zone / fondo; no encoger en canvas extra
+writePng(
+  "maskable-512.png",
+  isDedicatedPwaArt ? resizeCropCenterSquare(pwaSrc, 512, 512) : makeMaskable512(pwaSrc),
+)
 
 writePngIfMissing("og.png", 1200, 630, drawOg)
 
-console.log(
-  "[pwa] icons from",
-  LOGO_REL,
-  "→",
-  ["icon-192.png", "icon-512.png", "maskable-512.png"].join(", "),
-)
+console.log("[pwa] icons from", sourceLabel, "→", ["icon-192.png", "icon-512.png", "maskable-512.png"].join(", "))
