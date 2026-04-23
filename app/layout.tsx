@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -63,8 +63,21 @@ export const metadata: Metadata = {
     description: "El mapa para celíacos sin restricciones. Lugares sin TACC verificados por la comunidad.",
   },
   robots: { index: true, follow: true },
-  icons: { icon: "/CelimapLOGO.png" },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "default" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
   alternates: { canonical: BASE_URL },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b1220",
 };
 
 export default function RootLayout({
