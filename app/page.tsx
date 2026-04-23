@@ -32,14 +32,14 @@ export default function HomePage() {
       ════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden min-h-[92vh] flex flex-col justify-center">
 
-        {/* Background atmosférico en capas */}
+        {/* Background atmosférico en capas (noise solo acá, no en body) */}
         <div className="absolute inset-0 -z-10 pointer-events-none">
           {/* Blob principal top-right */}
-          <div className="absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-primary/15 blur-[120px]" />
+          <div className="celimap-hero-blob absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-primary/15 blur-[120px]" />
           {/* Blob secundario bottom-left */}
-          <div className="absolute bottom-0 -left-32 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
+          <div className="celimap-hero-blob absolute bottom-0 -left-32 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
           {/* Blob accent centro */}
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-emerald-500/5 blur-[80px]" />
+          <div className="celimap-hero-blob absolute top-1/3 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-emerald-500/5 blur-[80px]" />
           {/* Grid de puntos sutil */}
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -48,6 +48,7 @@ export default function HomePage() {
               backgroundSize: "32px 32px",
             }}
           />
+          <div className="celimap-hero-noise" aria-hidden />
         </div>
 
         <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-20 max-w-5xl">

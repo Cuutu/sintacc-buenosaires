@@ -79,15 +79,32 @@
       radial-gradient(700px circle at 88% 85%, rgba(16, 185, 129, 0.06), transparent 45%),
       #0b0b0c;
   }
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background-image: url("/noise.png");
-    background-repeat: repeat;
-    opacity: 0.035;
-    z-index: 9999;
+}
+
+/* Textura solo en hero (home); evita grain global que Chrome mezcla mal con blur */
+.celimap-hero-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/noise.png");
+  background-repeat: repeat;
+  opacity: 0.022;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .celimap-hero-noise {
+    display: none;
+  }
+  .celimap-hero-blob {
+    filter: none !important;
+  }
+  .map-sidebar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .surface-premium {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
