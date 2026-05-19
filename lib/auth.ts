@@ -48,18 +48,21 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user: providerUser }) {
-      if (token.id) return token
-      if (providerUser?.email) {
-        try {
-          await connectDB()
-          const dbUser = await User.findOne({ email: providerUser.email })
-          if (dbUser) {
-            token.id = dbUser._id.toString()
-            token.role = dbUser.role
-          }
-        } catch (error) {
-          console.error("Error in jwt callback:", error)
+      try {
+        await connectDB()
+        const email = providerUser?.email ?? token.email
+        const dbUser = token.id
+          ? await User.findById(token.id)
+          : email
+            ? await User.findOne({ email })
+            : null
+        if (dbUser) {
+          token.id = dbUser._id.toString()
+          token.role = dbUser.role
+          token.email = dbUser.email
         }
+      } catch (error) {
+        console.error("Error in jwt callback:", error)
       }
       return token
     },

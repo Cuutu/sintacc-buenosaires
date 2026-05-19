@@ -24,7 +24,10 @@ export async function GET(
 
     await connectDB()
 
-    const place = await Place.findById(new mongoose.Types.ObjectId(id)).lean()
+    const place = await Place.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      status: "approved",
+    }).lean()
 
     if (!place) {
       console.error(`[api/places] No se encontró lugar con id: ${id}`)
