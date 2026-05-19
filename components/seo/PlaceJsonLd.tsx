@@ -1,9 +1,10 @@
+import { getBaseUrl } from "@/lib/base-url"
+
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
  * Mejora la visibilidad en resultados locales y rich snippets.
  */
-const BASE_URL =
-  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+const BASE_URL = getBaseUrl()
 
 const TYPE_LABELS: Record<string, string> = {
   restaurant: "Restaurante",

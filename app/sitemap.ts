@@ -4,12 +4,7 @@ import { Place } from "@/models/Place"
 import { List } from "@/models/List"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { getLastPlaceUpdated } from "@/lib/seo/places"
-
-function getBaseUrl(): string {
-  const url = process.env.NEXTAUTH_URL?.trim()
-  if (url) return url.replace(/\/$/, "")
-  return "https://sintacc-map.vercel.app"
-}
+import { getBaseUrl } from "@/lib/base-url"
 
 export const revalidate = 86400 // 24 horas
 

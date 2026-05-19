@@ -15,7 +15,9 @@ import { Pagination } from "@/components/seo/Pagination"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ProvincialPage } from "./ProvincialPage"
 
-const BASE_URL = process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+import { getBaseUrl } from "@/lib/base-url"
+
+const BASE_URL = getBaseUrl()
 
 export const dynamicParams = true
 export const revalidate = 3600

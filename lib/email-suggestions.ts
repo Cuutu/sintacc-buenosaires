@@ -4,6 +4,7 @@
  */
 
 import { Resend } from "resend"
+import { getBaseUrl } from "@/lib/base-url"
 
 function getAdminEmails(): string[] {
   const adminEmails = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()).filter(Boolean)
@@ -11,12 +12,6 @@ function getAdminEmails(): string[] {
   const contactEmail = process.env.CONTACT_EMAIL?.trim()
   if (contactEmail) return [contactEmail]
   return []
-}
-
-function getAppBaseUrl(): string {
-  const url = process.env.NEXTAUTH_URL?.trim()
-  if (url) return url.replace(/\/$/, "")
-  return "https://sintacc-map.vercel.app"
 }
 
 function escapeHtml(s: string): string {
@@ -59,7 +54,7 @@ export function buildSuggestionNewEmailHtml(params: {
   suggestedByEmail: string
 }): string {
   const { placeDraft, suggestedByName, suggestedByEmail } = params
-  const baseUrl = getAppBaseUrl()
+  const baseUrl = getBaseUrl()
   const logoUrl = `${baseUrl}/celimaplogocompleto.png`
   const iconUrl = `${baseUrl}/CelimapLOGO.png`
   const adminUrl = `${baseUrl}/admin`
@@ -110,7 +105,7 @@ export function buildSuggestionApprovedEmailHtml(params: {
   placeId: string
 }): string {
   const { placeName, placeId } = params
-  const baseUrl = getAppBaseUrl()
+  const baseUrl = getBaseUrl()
   const logoUrl = `${baseUrl}/celimaplogocompleto.png`
   const iconUrl = `${baseUrl}/CelimapLOGO.png`
   const placeUrl = `${baseUrl}/lugar/${placeId}`

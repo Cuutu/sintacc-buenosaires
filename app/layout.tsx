@@ -7,14 +7,14 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Toaster } from "sonner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { getBaseUrl } from "@/lib/base-url";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
 });
 
-const BASE_URL =
-  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app";
+const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

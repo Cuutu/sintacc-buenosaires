@@ -2,9 +2,10 @@
  * JSON-LD ItemList con FoodEstablishment para páginas provinciales.
  */
 import type { PlaceSEO } from "@/lib/seo/places"
+import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL =
-  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+  getBaseUrl()
 
 interface ProvincialPageJsonLdProps {
   provinceName: string

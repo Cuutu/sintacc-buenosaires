@@ -5,6 +5,7 @@ import { getCityBySlug } from "@/lib/seo/cities"
 import { getTop10CitySlugs } from "@/lib/seo/cities"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MapPin } from "lucide-react"
+import { getBaseUrl } from "@/lib/base-url"
 
 const CATEGORIES_PREVIEW = [
   { emoji: "🍽️", label: "Restaurantes sin gluten" },
@@ -16,7 +17,7 @@ const CATEGORIES_PREVIEW = [
 ]
 
 const BASE_URL =
-  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://www.celimap.com.ar"
+  getBaseUrl()
 
 interface EmptyCityPageProps {
   citySlug: string

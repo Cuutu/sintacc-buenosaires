@@ -13,7 +13,9 @@ import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
 import { Pagination } from "@/components/seo/Pagination"
 
-const BASE_URL = process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+import { getBaseUrl } from "@/lib/base-url"
+
+const BASE_URL = getBaseUrl()
 
 export const dynamicParams = true
 export const revalidate = 3600

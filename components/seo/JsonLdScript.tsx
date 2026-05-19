@@ -1,10 +1,11 @@
+import { getBaseUrl } from "@/lib/base-url"
+
 /**
  * JSON-LD structured data para SEO.
  * Se inyecta en el layout raíz.
  */
 export function JsonLdScript() {
-  const BASE_URL =
-    process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app";
+  const BASE_URL = getBaseUrl()
 
   const organizationSchema = {
     "@context": "https://schema.org",

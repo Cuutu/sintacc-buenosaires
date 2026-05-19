@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import mongoose from "mongoose"
+import { getBaseUrl } from "@/lib/base-url"
 
 export const dynamicParams = true
 export const dynamic = "force-dynamic"
@@ -24,8 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       return { title: "Lugar no encontrado | Celimap" }
     }
     const p = place as { name: string; neighborhood: string; type: string; photos?: string[] }
-    const BASE_URL =
-      process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+    const BASE_URL = getBaseUrl()
     const ogImage = p.photos?.[0] || `${BASE_URL}/CelimapLOGO.png`
     return {
       title: p.name,

@@ -1,7 +1,8 @@
 import type { City } from "@/lib/seo/cities"
 import type { PlaceSEO } from "@/lib/seo/places"
+import { getBaseUrl } from "@/lib/base-url"
 
-const BASE_URL = process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+const BASE_URL = getBaseUrl()
 
 interface CityPageJsonLdProps {
   city: City

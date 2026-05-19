@@ -1,10 +1,5 @@
 import type { MetadataRoute } from "next"
-
-function getBaseUrl(): string {
-  const url = process.env.NEXTAUTH_URL?.trim()
-  if (url) return url.replace(/\/$/, "")
-  return "https://sintacc-map.vercel.app"
-}
+import { getBaseUrl } from "@/lib/base-url"
 
 export default function robots(): MetadataRoute.Robots {
   const base = getBaseUrl()

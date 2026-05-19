@@ -1,8 +1,9 @@
+import { getBaseUrl } from "@/lib/base-url"
+
 /**
  * JSON-LD para la landing de Argentina: ItemList con ciudades.
  */
-const BASE_URL =
-  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://sintacc-map.vercel.app"
+const BASE_URL = getBaseUrl()
 
 interface City {
   slug: string

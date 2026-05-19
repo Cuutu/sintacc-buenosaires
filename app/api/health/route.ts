@@ -31,7 +31,6 @@ export async function GET() {
   return NextResponse.json(
     {
       status: healthy ? "ok" : "degraded",
-      checks,
       timestamp: new Date().toISOString(),
     },
     { status: healthy ? 200 : 503 }

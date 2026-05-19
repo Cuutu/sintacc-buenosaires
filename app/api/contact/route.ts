@@ -8,6 +8,7 @@ import mongoose from "mongoose"
 import { z } from "zod"
 import { Resend } from "resend"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { getBaseUrl } from "@/lib/base-url"
 
 const contactSchema = z.object({
   subject: z.string().min(1, "El asunto es requerido").max(200),
@@ -21,12 +22,6 @@ function getContactEmail(): string | null {
   return adminEmails?.[0] ?? null
 }
 
-function getAppBaseUrl(): string {
-  const url = process.env.NEXTAUTH_URL?.trim()
-  if (url) return url.replace(/\/$/, "")
-  return "https://sintacc-map.vercel.app"
-}
-
 function buildContactEmailHtml({
   subject,
   name,
@@ -38,7 +33,7 @@ function buildContactEmailHtml({
   email: string
   message: string
 }): string {
-  const baseUrl = getAppBaseUrl()
+  const baseUrl = getBaseUrl()
   const logoUrl = `${baseUrl}/celimaplogocompleto.png`
   const iconUrl = `${baseUrl}/CelimapLOGO.png`
   return `
