@@ -1,14 +1,51 @@
+/**
+ * @jest-environment node
+ */
 import { GET } from "@/app/api/places/route"
 import { NextRequest } from "next/server"
-import { connectDB } from "@/lib/mongodb"
-import { Place } from "@/models/Place"
 
+jest.mock("next/cache", () => ({
+  unstable_cache: (loader: () => Promise<unknown>) => () => loader(),
+  revalidateTag: jest.fn(),
+}))
 jest.mock("@/lib/mongodb")
+jest.mock("@/lib/api-cache", () => ({
+  getOrSetApiCache: (_key: string, _ttl: number, loader: () => Promise<unknown>) =>
+    loader(),
+  invalidateApiCache: jest.fn(),
+}))
 jest.mock("@/models/Place")
+jest.mock("@/models/Review")
+jest.mock("@/models/ContaminationReport")
 
 describe("GET /api/places", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    require("@/models/Review").Review.aggregate = jest.fn().mockResolvedValue([])
+    require("@/models/ContaminationReport").ContaminationReport.aggregate = jest
+      .fn()
+      .mockResolvedValue([])
+  })
+
+  it("clamps limit to 100", async () => {
+    let capturedLimit = 0
+    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockImplementation((n: number) => {
+            capturedLimit = n
+            return { lean: jest.fn().mockResolvedValue([]) }
+          }),
+        }),
+      }),
+    })
+    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(0)
+
+    const request = new NextRequest("http://localhost:3000/api/places?limit=500")
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(capturedLimit).toBe(100)
   })
 
   it("should return places with filters", async () => {

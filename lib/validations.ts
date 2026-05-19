@@ -104,7 +104,14 @@ export const publicPlacesQuerySchema = z.object({
   tags: z.array(z.string().min(1)).optional(),
   safetyLevel: z.enum(safetyLevelValues).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.preprocess(
+    (value) => {
+      const n = Number(value)
+      if (!Number.isFinite(n)) return 20
+      return Math.min(100, Math.max(1, Math.trunc(n)))
+    },
+    z.number().int().min(1).max(100)
+  ).default(20),
 })
 
 export type PublicPlacesQuery = z.infer<typeof publicPlacesQuerySchema>

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npx tsc --noEmit
+
+      - run: npm test
+        env:
+          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+          MONGODB_URI: mongodb://localhost:27017/test
+          NEXTAUTH_SECRET: test-secret
+          NEXTAUTH_URL: http://localhost:3000
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test

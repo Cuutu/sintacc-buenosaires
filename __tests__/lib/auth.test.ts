@@ -1,35 +1,46 @@
 /**
- * Tests para auth callbacks. Verifican que el flujo JWT evita hits a DB en session
- * cuando el token ya tiene id y role.
+ * Tests para auth callbacks. Verifican refresh de rol desde DB en cada jwt.
+ * @jest-environment node
  */
-import { authOptions } from "@/lib/auth"
-
-jest.mock("@/lib/mongodb")
+jest.mock("@/lib/mongodb", () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue(undefined),
+}))
 jest.mock("@/models/User")
+
+import { authOptions } from "@/lib/auth"
 
 describe("auth callbacks", () => {
   const mockUserFindOne = jest.fn()
+  const mockUserFindById = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
     require("@/models/User").User.findOne = mockUserFindOne
+    require("@/models/User").User.findById = mockUserFindById
   })
 
   describe("jwt callback", () => {
-    it("returns token as-is when id already present (no DB hit)", async () => {
+    it("re-fetches role from DB when token already has id", async () => {
+      mockUserFindById.mockResolvedValue({
+        _id: { toString: () => "user123" },
+        role: "user",
+        email: "test@test.com",
+      })
       const token = { id: "user123", role: "admin", email: "test@test.com" }
       const result = await (authOptions.callbacks as any).jwt({
         token,
         user: undefined,
       })
-      expect(result).toEqual(token)
-      expect(mockUserFindOne).not.toHaveBeenCalled()
+      expect(mockUserFindById).toHaveBeenCalledWith("user123")
+      expect(result.role).toBe("user")
     })
 
-    it("fetches user and adds id/role when providerUser present and no token.id", async () => {
+    it("fetches user and adds id/role when providerUser present", async () => {
       mockUserFindOne.mockResolvedValue({
         _id: { toString: () => "user456" },
         role: "user",
+        email: "new@test.com",
       })
       const token = {}
       const providerUser = { email: "new@test.com", name: "New User" }
