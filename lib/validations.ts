@@ -79,6 +79,51 @@ export const quickSuggestionSchema = z.object({
   name: z.string().max(200).trim().optional(),
 })
 
+const placeTypeValues = [
+  "restaurant",
+  "cafe",
+  "bakery",
+  "store",
+  "icecream",
+  "bar",
+  "other",
+] as const
+
+const safetyLevelValues = [
+  "dedicated_gf",
+  "gf_options",
+  "cross_contamination_risk",
+  "unknown",
+] as const
+
+export const publicPlacesQuerySchema = z.object({
+  search: z.string().optional(),
+  type: z.enum(placeTypeValues).optional(),
+  neighborhood: z.string().optional(),
+  citySlugs: z.array(z.string().min(1)).optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  safetyLevel: z.enum(safetyLevelValues).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+})
+
+export type PublicPlacesQuery = z.infer<typeof publicPlacesQuerySchema>
+
+export function parsePublicPlacesSearchParams(
+  searchParams: URLSearchParams
+): PublicPlacesQuery {
+  return publicPlacesQuerySchema.parse({
+    search: searchParams.get("search") ?? undefined,
+    type: searchParams.get("type") ?? undefined,
+    neighborhood: searchParams.get("neighborhood") ?? undefined,
+    citySlugs: searchParams.get("citySlugs")?.split(",").filter(Boolean),
+    tags: searchParams.get("tags")?.split(",").filter(Boolean),
+    safetyLevel: searchParams.get("safetyLevel") ?? undefined,
+    page: searchParams.get("page") ?? "1",
+    limit: searchParams.get("limit") ?? "20",
+  })
+}
+
 export function isQuickSuggestion(body: unknown): body is z.infer<typeof quickSuggestionSchema> {
   return typeof body === "object" && body !== null && "sourceLink" in body && "safetyLevel" in body
 }

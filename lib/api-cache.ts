@@ -1,20 +1,18 @@
-type CacheEntry<T> = {
-  value: T
-  expiresAt: number
+import { unstable_cache, revalidateTag } from "next/cache"
+
+const TAG_BY_PREFIX: Record<string, string> = {
+  "public:places:": "public:places",
+  "admin:places:": "admin:places",
+  "admin:counts": "admin:counts",
 }
 
-type ApiCacheStore = Map<string, CacheEntry<unknown>>
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __celimapApiCache: ApiCacheStore | undefined
-}
-
-function getStore(): ApiCacheStore {
-  if (!global.__celimapApiCache) {
-    global.__celimapApiCache = new Map<string, CacheEntry<unknown>>()
+function resolveTag(cacheKey: string): string {
+  for (const [prefix, tag] of Object.entries(TAG_BY_PREFIX)) {
+    if (cacheKey.startsWith(prefix) || cacheKey === prefix.replace(/:$/, "")) {
+      return tag
+    }
   }
-  return global.__celimapApiCache
+  return cacheKey
 }
 
 export async function getOrSetApiCache<T>(
@@ -22,25 +20,17 @@ export async function getOrSetApiCache<T>(
   ttlMs: number,
   loader: () => Promise<T>
 ): Promise<T> {
-  const now = Date.now()
-  const store = getStore()
-  const cached = store.get(key)
-
-  if (cached && cached.expiresAt > now) {
-    return cached.value as T
-  }
-
-  const value = await loader()
-  store.set(key, { value, expiresAt: now + ttlMs })
-  return value
+  const revalidate = Math.max(1, Math.ceil(ttlMs / 1000))
+  const tag = resolveTag(key)
+  return unstable_cache(loader, [key], { revalidate, tags: [tag] })()
 }
 
 export function invalidateApiCache(prefixes: string[]) {
-  if (!prefixes.length) return
-  const store = getStore()
-  for (const key of store.keys()) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      store.delete(key)
-    }
+  const tags = new Set<string>()
+  for (const prefix of prefixes) {
+    tags.add(TAG_BY_PREFIX[prefix] ?? resolveTag(prefix))
+  }
+  for (const tag of tags) {
+    revalidateTag(tag)
   }
 }

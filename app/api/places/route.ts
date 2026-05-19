@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
-import { getCityBySlug } from "@/lib/seo/cities"
-import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
-import { placeSchema } from "@/lib/validations"
+import { placeSchema, parsePublicPlacesSearchParams } from "@/lib/validations"
+import { buildPublicPlacesMongoQuery } from "@/lib/places-public-query"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
@@ -16,66 +15,24 @@ const PUBLIC_PLACES_CACHE_TTL_MS = 60 * 1000
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
-    
-    const searchParams = request.nextUrl.searchParams
-    const search = searchParams.get("search")
-    const type = searchParams.get("type")
-    const neighborhood = searchParams.get("neighborhood")
-    const citySlugs = searchParams.get("citySlugs")?.split(",").filter(Boolean)
-    const tags = searchParams.get("tags")?.split(",").filter(Boolean)
-    const safetyLevel = searchParams.get("safetyLevel")
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
-    const skip = (page - 1) * limit
-    
-    const query: any = { status: "approved" }
-    
-    // Búsqueda por nombre, dirección o barrio (cada palabra debe coincidir en algún campo)
-    if (search && search.trim()) {
-      const words = search.trim().split(/\s+/).filter(Boolean)
-      const regexes = words.map((w) => ({
-        $or: [
-          { name: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-          { address: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-          { neighborhood: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-        ],
-      }))
-      query.$and = regexes
-    }
-    
-    if (type) {
-      query.type = type
-    }
-    
-    if (citySlugs && citySlugs.length > 0) {
-      const allNeighborhoods: string[] = []
-      for (const slug of citySlugs) {
-        const province = getProvinceBySlug(slug)
-        if (province) {
-          for (const cs of province.citySlugs) {
-            const city = getCityBySlug(cs)
-            if (city) allNeighborhoods.push(...city.neighborhoods)
-          }
-        } else {
-          const city = getCityBySlug(slug)
-          if (city) allNeighborhoods.push(...city.neighborhoods)
-        }
-      }
-      if (allNeighborhoods.length > 0) {
-        query.neighborhood = { $in: [...new Set(allNeighborhoods)] }
-      }
-    } else if (neighborhood) {
-      query.neighborhood = neighborhood
-    }
-    
-    if (tags && tags.length > 0) {
-      query.tags = { $in: tags }
-    }
 
-    if (safetyLevel) {
-      query.safetyLevel = safetyLevel
+    const searchParams = request.nextUrl.searchParams
+    let parsed
+    try {
+      parsed = parsePublicPlacesSearchParams(searchParams)
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "name" in error && error.name === "ZodError") {
+        return NextResponse.json(
+          { error: "Parámetros de búsqueda inválidos" },
+          { status: 400 }
+        )
+      }
+      throw error
     }
-    
+    const { page, limit } = parsed
+    const skip = (page - 1) * limit
+    const query = buildPublicPlacesMongoQuery(parsed)
+
     const cacheKey = `public:places:${searchParams.toString()}`
     const data = await getOrSetApiCache(cacheKey, PUBLIC_PLACES_CACHE_TTL_MS, async () => {
       const places = await Place.find(query)
