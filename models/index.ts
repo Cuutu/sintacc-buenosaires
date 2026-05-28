@@ -11,6 +11,7 @@ export { List, type IList } from "./List"
 export { ListLike, type IListLike } from "./ListLike"
 export { Venture, type IVenture } from "./Venture"
 export { VentureSuggestion, type IVentureSuggestion } from "./VentureSuggestion"
+export { VentureReview, type IVentureReview } from "./VentureReview"
 
 // Fase 2 models (scaffolded)
 import mongoose from "mongoose"

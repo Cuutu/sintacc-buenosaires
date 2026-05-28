@@ -9,6 +9,7 @@ import { AdminSuggestionsSection } from "@/components/admin/AdminSuggestionsSect
 import { AdminVentureSuggestionsSection } from "@/components/admin/AdminVentureSuggestionsSection"
 import { AdminVenturesSection } from "@/components/admin/AdminVenturesSection"
 import { AdminReviewsSection } from "@/components/admin/AdminReviewsSection"
+import { AdminVentureReviewsSection } from "@/components/admin/AdminVentureReviewsSection"
 import { AdminPlacesSection } from "@/components/admin/AdminPlacesSection"
 import { AdminContactsSection } from "@/components/admin/AdminContactsSection"
 import type {
@@ -20,6 +21,7 @@ import type {
   SuggestionItem,
   VentureSuggestionItem,
   VentureItem,
+  VentureReviewItem,
 } from "@/components/admin/types"
 
 type AdminDashboardProps = {
@@ -32,6 +34,10 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [ventureSuggestions, setVentureSuggestions] = useState<VentureSuggestionItem[]>([])
   const [ventures, setVentures] = useState<VentureItem[]>([])
   const [reviews, setReviews] = useState<ReviewItem[]>([])
+  const [ventureReviews, setVentureReviews] = useState<VentureReviewItem[]>([])
+  const [ventureReviewsLoading, setVentureReviewsLoading] = useState(false)
+  const [ventureReviewSearch, setVentureReviewSearch] = useState("")
+  const [ventureReviewFilter, setVentureReviewFilter] = useState("")
   const [places, setPlaces] = useState<PlaceItem[]>([])
   const [contacts, setContacts] = useState<ContactItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -274,6 +280,45 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
     }
   }
 
+  const fetchVentureReviews = async (status?: string) => {
+    setVentureReviewsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      const filter = status ?? ventureReviewFilter
+      if (filter) params.set("status", filter)
+      if (ventureReviewSearch.trim()) params.set("search", ventureReviewSearch.trim())
+      const res = await fetch(`/api/admin/venture-reviews?${params}`)
+      const data = await res.json()
+      setVentureReviews(data.reviews || [])
+    } catch (error) {
+      console.error("Error fetching venture reviews:", error)
+    } finally {
+      setVentureReviewsLoading(false)
+    }
+  }
+
+  const handleVentureReviewAction = async (
+    id: string,
+    action: "hide" | "unhide" | "pin" | "unpin"
+  ) => {
+    try {
+      const res = await fetch(`/api/admin/venture-reviews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || "Listo")
+        fetchVentureReviews()
+      } else {
+        toast.error(data.error || "Error")
+      }
+    } catch {
+      toast.error("Error al actualizar reseña")
+    }
+  }
+
   const handleReviewAction = async (id: string, action: "hide" | "unhide" | "pin" | "unpin") => {
     try {
       const res = await fetch(`/api/admin/reviews/${id}`, {
@@ -485,11 +530,23 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           {
             key: "reviews",
             icon: "⭐",
-            label: "Reseñas",
-            desc: "Moderá, destacá u ocultá comentarios",
+            label: "Reseñas lugares",
+            desc: "Mapa y locales",
             badge: null,
             urgent: false,
             onClick: () => { setActiveSection("reviews"); fetchReviews() },
+          },
+          {
+            key: "ventureReviews",
+            icon: "💬",
+            label: "Reseñas emprend.",
+            desc: "Opiniones de marcas",
+            badge: ventureReviews.length || null,
+            urgent: false,
+            onClick: () => {
+              setActiveSection("ventureReviews")
+              fetchVentureReviews()
+            },
           },
           {
             key: "places",
@@ -592,6 +649,19 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           setReviewFilter={setReviewFilter}
           fetchReviews={fetchReviews}
           handleReviewAction={handleReviewAction}
+        />
+      )}
+
+      {activeSection === "ventureReviews" && (
+        <AdminVentureReviewsSection
+          reviews={ventureReviews}
+          loading={ventureReviewsLoading}
+          search={ventureReviewSearch}
+          setSearch={setVentureReviewSearch}
+          filter={ventureReviewFilter}
+          setFilter={setVentureReviewFilter}
+          fetchReviews={fetchVentureReviews}
+          handleAction={handleVentureReviewAction}
         />
       )}
 

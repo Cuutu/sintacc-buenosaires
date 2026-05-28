@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { logApiError } from "@/lib/logger"
+import { getSingleVentureReviewStats } from "@/lib/venture-review-stats"
 import mongoose from "mongoose"
 
 export async function GET(
@@ -25,7 +26,11 @@ export async function GET(
       return NextResponse.json({ error: "Emprendimiento no encontrado" }, { status: 404 })
     }
 
-    return NextResponse.json({ venture })
+    const stats = await getSingleVentureReviewStats(
+      new mongoose.Types.ObjectId(id)
+    )
+
+    return NextResponse.json({ venture: { ...venture, stats } })
   } catch (error) {
     logApiError("/api/ventures/[id]", error, { request })
     return NextResponse.json({ error: "Error al obtener emprendimiento" }, { status: 500 })

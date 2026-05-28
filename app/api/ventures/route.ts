@@ -5,6 +5,8 @@ import { parseVenturesSearchParams } from "@/lib/validations"
 import { buildVentureSearchFilter } from "@/lib/venture-search"
 import { logApiError } from "@/lib/logger"
 import { getOrSetApiCache } from "@/lib/api-cache"
+import { getVentureReviewStatsMap } from "@/lib/venture-review-stats"
+import mongoose from "mongoose"
 
 const CACHE_TTL_MS = 60 * 1000
 
@@ -41,7 +43,16 @@ export async function GET(request: NextRequest) {
         .limit(limit)
         .lean()
       const total = await Venture.countDocuments(query)
-      return { ventures, total, page, pages: Math.ceil(total / limit) }
+      const ids = ventures.map((v) => v._id as mongoose.Types.ObjectId)
+      const statsMap = await getVentureReviewStatsMap(ids)
+      const venturesWithStats = ventures.map((v) => ({
+        ...v,
+        stats: statsMap.get(v._id.toString()) ?? {
+          avgRating: 0,
+          totalReviews: 0,
+        },
+      }))
+      return { ventures: venturesWithStats, total, page, pages: Math.ceil(total / limit) }
     })
 
     return NextResponse.json(data)

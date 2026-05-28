@@ -18,6 +18,8 @@ import {
   getCategorySubtitle,
 } from "@/lib/venture-contact"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
+import { VentureReviewsSection } from "@/components/ventures/VentureReviewsSection"
+import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
   ArrowLeft,
   Instagram,
@@ -27,11 +29,15 @@ import {
   AlertCircle,
   Share2,
   ExternalLink,
+  Star,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-export type VentureProfileData = IVenture & { _id: string }
+export type VentureProfileData = IVenture & {
+  _id: string
+  stats?: VentureReviewStats
+}
 
 type SectionProps = {
   title: string
@@ -159,6 +165,27 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
                 <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
                 <span>{subtitle}</span>
               </p>
+              {(venture.stats?.totalReviews ?? 0) > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i <= Math.round(venture.stats!.avgRating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-muted-foreground/25"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm font-semibold">{venture.stats!.avgRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({venture.stats!.totalReviews}{" "}
+                    {venture.stats!.totalReviews === 1 ? "reseña" : "reseñas"})
+                  </span>
+                </div>
+              )}
             </div>
 
             <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
@@ -267,6 +294,8 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
           </ProfileSection>
         </div>
       </article>
+
+      <VentureReviewsSection ventureId={venture._id} initialStats={venture.stats} />
     </div>
   )
 }

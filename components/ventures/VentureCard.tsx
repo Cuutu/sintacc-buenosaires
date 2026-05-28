@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Instagram, MessageCircle, ArrowRight } from "lucide-react"
+import { MapPin, Instagram, MessageCircle, ArrowRight, Star } from "lucide-react"
+import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { Badge } from "@/components/ui/badge"
 import type { IVenture } from "@/models/Venture"
 import {
@@ -13,7 +14,7 @@ import {
 import { parseVentureLinks } from "@/lib/venture-contact"
 import { cn } from "@/lib/utils"
 
-type VentureWithId = IVenture & { _id: string }
+type VentureWithId = IVenture & { _id: string; stats?: VentureReviewStats }
 
 interface VentureCardProps {
   venture: VentureWithId
@@ -70,10 +71,22 @@ export function VentureCard({ venture }: VentureCardProps) {
           <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
             {venture.name}
           </h3>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-            <span className="line-clamp-1">{venture.zone}</span>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+          <span className="line-clamp-1">{venture.zone}</span>
+        </div>
+
+        {(venture.stats?.totalReviews ?? 0) > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 text-sm">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
+            <span className="font-semibold text-foreground">
+              {venture.stats!.avgRating.toFixed(1)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              ({venture.stats!.totalReviews})
+            </span>
           </div>
+        )}
 
           {venture.modalities?.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">

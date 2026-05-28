@@ -196,6 +196,12 @@ export const venturesPublicQuerySchema = z.object({
 
 export type VenturesPublicQuery = z.infer<typeof venturesPublicQuerySchema>
 
+export const ventureReviewSchema = z.object({
+  ventureId: z.string().min(1),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().min(1).max(800).trim(),
+})
+
 export function parseVenturesSearchParams(
   searchParams: URLSearchParams
 ): VenturesPublicQuery {

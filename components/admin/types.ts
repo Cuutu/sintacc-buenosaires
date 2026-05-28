@@ -89,10 +89,22 @@ export type AdminCounts = {
   placesTotal: number
 }
 
+export type VentureReviewItem = {
+  _id: string
+  rating: number
+  comment: string
+  status: "visible" | "hidden"
+  pinned?: boolean
+  createdAt: string
+  userId?: { name?: string; email?: string }
+  ventureId?: { _id?: string; name?: string; zone?: string; category?: string }
+}
+
 export type AdminSection =
   | "suggestions"
   | "ventureSuggestions"
   | "ventures"
   | "reviews"
+  | "ventureReviews"
   | "places"
   | "contacts"
