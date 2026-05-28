@@ -1,3 +1,6 @@
+/** URL canónica si no hay env (build local, sitemap, metadata) */
+const CANONICAL_FALLBACK = "https://www.celimap.com.ar"
+
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/$/, "")
 }
@@ -22,7 +25,5 @@ export function getBaseUrl(): string {
     return "http://localhost:3000"
   }
 
-  throw new Error(
-    "NEXT_PUBLIC_BASE_URL is not defined (set it in Vercel env or use VERCEL_URL)"
-  )
+  return stripTrailingSlash(CANONICAL_FALLBACK)
 }
