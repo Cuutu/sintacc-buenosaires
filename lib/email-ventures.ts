@@ -92,10 +92,10 @@ export function buildVentureSuggestionNewEmailHtml(params: {
 
 export function buildVentureApprovedEmailHtml(params: {
   ventureName: string
-  ventureId: string
+  ventureSlug: string
 }): string {
   const baseUrl = getBaseUrl()
-  const url = `${baseUrl}/emprendimientos/${params.ventureId}`
+  const url = `${baseUrl}/emprendimientos/${params.ventureSlug}`
   return `
 <!DOCTYPE html>
 <html>
@@ -147,7 +147,7 @@ export async function sendVentureSuggestionNewEmail(params: {
 export async function sendVentureApprovedEmail(params: {
   userEmail: string
   ventureName: string
-  ventureId: string
+  ventureSlug: string
 }): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY
   if (!params.userEmail || !resendKey) return false

@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { requireAdmin } from "@/lib/middleware"
 import { ventureSchema } from "@/lib/validations"
+import { withGeneratedVentureSlug } from "@/lib/venture-save"
 import { logApiError } from "@/lib/logger"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { ZodError } from "zod"
@@ -56,7 +57,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const parsed = ventureSchema.parse({ ...body, source: "manual", status: body.status ?? "approved" })
-    const venture = new Venture(parsed)
+    const withSlug = await withGeneratedVentureSlug(parsed)
+    const venture = new Venture(withSlug)
     await venture.save()
     invalidateApiCache(["public:ventures:", "admin:ventures:", "admin:counts"])
 

@@ -7,6 +7,7 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { generateUniqueVentureSlug } from "@/lib/venture-slug"
 
 export async function PATCH(
   request: NextRequest,
@@ -25,9 +26,25 @@ export async function PATCH(
     const body = await request.json()
     const parsed = ventureSchema.partial().parse(body)
 
+    const existing = await Venture.findById(params.id)
+    if (!existing) {
+      return NextResponse.json({ error: "No encontrado" }, { status: 404 })
+    }
+
+    const update: Record<string, unknown> = { ...parsed }
+    if ((parsed.name || parsed.zone) && !parsed.slug) {
+      const name = (parsed.name as string) ?? existing.name
+      const zone = (parsed.zone as string) ?? existing.zone
+      update.slug = await generateUniqueVentureSlug(
+        name,
+        zone,
+        existing._id as mongoose.Types.ObjectId
+      )
+    }
+
     const venture = await Venture.findByIdAndUpdate(
       params.id,
-      { $set: parsed },
+      { $set: update },
       { new: true, runValidators: true }
     ).lean()
 

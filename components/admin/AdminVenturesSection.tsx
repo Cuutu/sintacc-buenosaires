@@ -89,7 +89,11 @@ export function AdminVenturesSection({
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" asChild>
-                  <a href={`/emprendimientos/${v._id}`} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={`/emprendimientos/${(v as { slug?: string }).slug ?? v._id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Ver
                   </a>
                 </Button>

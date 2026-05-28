@@ -1,11 +1,8 @@
-"use client"
-
-import { useCallback, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import type { IVenture } from "@/models/Venture"
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import {
   getCategoryLabel,
   getModalityLabel,
@@ -13,39 +10,40 @@ import {
 } from "@/lib/venture-constants"
 import {
   parseVentureLinks,
-  getVentureDescription,
   buildWhereToBuyCopy,
   getCategorySubtitle,
 } from "@/lib/venture-contact"
-import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
-import { VentureReviewsSection } from "@/components/ventures/VentureReviewsSection"
-import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
-  ArrowLeft,
+  getVentureSeoDescription,
+  getCategoryLandingPath,
+  getZoneLandingPath,
+  VENTURE_ZONE_LANDINGS,
+} from "@/lib/venture-seo"
+import { getBaseUrl } from "@/lib/base-url"
+import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
+import { VentureShareButton } from "@/components/ventures/VentureShareButton"
+import { VentureCard } from "@/components/ventures/VentureCard"
+import type { VenturePublic } from "@/lib/ventures-server"
+import {
   Instagram,
   MessageCircle,
   MapPin,
   ShieldCheck,
   AlertCircle,
-  Share2,
   ExternalLink,
   Star,
 } from "lucide-react"
-import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-export type VentureProfileData = IVenture & {
-  _id: string
-  stats?: VentureReviewStats
-}
-
-type SectionProps = {
+function ProfileSection({
+  title,
+  children,
+  className,
+}: {
   title: string
   children: React.ReactNode
   className?: string
-}
-
-function ProfileSection({ title, children, className }: SectionProps) {
+}) {
   return (
     <section className={cn("space-y-3", className)}>
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -56,8 +54,22 @@ function ProfileSection({ title, children, className }: SectionProps) {
   )
 }
 
-export function VentureProfileView({ venture }: { venture: VentureProfileData }) {
-  const [sharing, setSharing] = useState(false)
+function resolveZoneHref(zone: string): string | undefined {
+  const z = zone.trim().toLowerCase()
+  for (const landing of VENTURE_ZONE_LANDINGS) {
+    if (landing.zonePatterns.some((re) => re.test(z))) {
+      return getZoneLandingPath(landing.slug)
+    }
+  }
+  return undefined
+}
+
+type VentureProfileContentProps = {
+  venture: VenturePublic
+  related?: VenturePublic[]
+}
+
+export function VentureProfileContent({ venture, related = [] }: VentureProfileContentProps) {
   const photo = venture.photos?.[0]
   const categoryLabel = getCategoryLabel(venture.category)
   const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(venture.safetyLevel)
@@ -65,7 +77,12 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
     contact: venture.contact,
     purchaseChannels: venture.purchaseChannels,
   })
-  const description = getVentureDescription(venture.description, venture.category)
+  const description = getVentureSeoDescription(
+    venture.name,
+    venture.category,
+    venture.zone,
+    venture.description
+  )
   const whereToBuyLines = buildWhereToBuyCopy({
     links,
     modalities: venture.modalities,
@@ -74,38 +91,20 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
   const subtitle = getCategorySubtitle(venture.category, venture.zone)
   const isVerified =
     venture.safetyLevel === "fully_gf" || venture.safetyLevel === "gf_options"
-
-  const handleShare = useCallback(async () => {
-    if (sharing) return
-    setSharing(true)
-    const url = typeof window !== "undefined" ? window.location.href : ""
-    const title = `${venture.name} · Celimap`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url })
-      } else {
-        await navigator.clipboard.writeText(url)
-        toast.success("Link copiado")
-      }
-    } catch {
-      /* usuario canceló */
-    } finally {
-      setSharing(false)
-    }
-  }, [sharing, venture.name])
+  const shareUrl = `${getBaseUrl()}/emprendimientos/${venture.slug}`
+  const categoryHref = getCategoryLandingPath(venture.category)
+  const zoneHref = resolveZoneHref(venture.zone)
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Link
-        href="/emprendimientos"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Emprendimientos
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Emprendimientos", href: "/emprendimientos" },
+          { label: venture.name },
+        ]}
+      />
 
-      <article className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.03]">
-        {/* Hero */}
+      <article className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.03] mt-6">
         <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden">
           {photo ? (
             <Image
@@ -140,11 +139,12 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
         </div>
 
         <div className="p-6 md:p-8 space-y-8">
-          {/* Header */}
           <header className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="border-primary/30 text-primary">
-                {categoryLabel}
+                <Link href={categoryHref} className="hover:underline">
+                  {categoryLabel}
+                </Link>
               </Badge>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 border border-white/10">
                 <span aria-hidden>{safetyDot}</span>
@@ -163,7 +163,13 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
               </h1>
               <p className="flex items-center gap-2 text-muted-foreground mt-2 text-sm md:text-base">
                 <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
-                <span>{subtitle}</span>
+                {zoneHref ? (
+                  <Link href={zoneHref} className="hover:text-foreground hover:underline">
+                    {subtitle}
+                  </Link>
+                ) : (
+                  <span>{subtitle}</span>
+                )}
               </p>
               {(venture.stats?.totalReviews ?? 0) > 0 && (
                 <div className="flex items-center gap-2 mt-2">
@@ -179,7 +185,9 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
                       />
                     ))}
                   </div>
-                  <span className="text-sm font-semibold">{venture.stats!.avgRating.toFixed(1)}</span>
+                  <span className="text-sm font-semibold">
+                    {venture.stats!.avgRating.toFixed(1)}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     ({venture.stats!.totalReviews}{" "}
                     {venture.stats!.totalReviews === 1 ? "reseña" : "reseñas"})
@@ -218,16 +226,7 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
                   </a>
                 </Button>
               )}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full sm:w-auto gap-2 min-h-[44px]"
-                onClick={handleShare}
-                disabled={sharing}
-              >
-                <Share2 className="h-4 w-4" />
-                Compartir
-              </Button>
+              <VentureShareButton ventureName={venture.name} shareUrl={shareUrl} />
             </div>
           </header>
 
@@ -268,8 +267,7 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
               <p className="flex items-center gap-2">
                 <span aria-hidden>{safetyDot}</span>
                 <span>
-                  <strong className="text-foreground">Nivel de seguridad:</strong>{" "}
-                  {safetyLabel}
+                  <strong className="text-foreground">Nivel de seguridad:</strong> {safetyLabel}
                 </span>
               </p>
               {venture.certifiedProducts ? (
@@ -295,7 +293,16 @@ export function VentureProfileView({ venture }: { venture: VentureProfileData })
         </div>
       </article>
 
-      <VentureReviewsSection ventureId={venture._id} initialStats={venture.stats} />
+      {related.length > 0 && (
+        <section className="mt-12 space-y-4">
+          <h2 className="text-lg font-bold">Emprendimientos relacionados</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {related.map((v) => (
+              <VentureCard key={v._id} venture={v} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

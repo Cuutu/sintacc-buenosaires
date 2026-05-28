@@ -9,6 +9,7 @@ import { VentureCard } from "@/components/ventures/VentureCard"
 import { VenturesExplainer } from "@/components/ventures/VenturesExplainer"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
 import { VENTURE_CATEGORIES } from "@/lib/venture-constants"
+import { getCategoryLandingPath } from "@/lib/venture-seo"
 import { matchesVentureSearch } from "@/lib/venture-search"
 import { fetchApi } from "@/lib/fetchApi"
 import type { IVenture } from "@/models/Venture"
@@ -73,11 +74,11 @@ export default function EmprendimientosPageContent() {
   }, [searchInput, router, searchParams])
 
   const setCategory = (id: string | null) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (id) params.set("category", id)
-    else params.delete("category")
-    const q = params.toString()
-    router.replace(q ? `/emprendimientos?${q}` : "/emprendimientos", { scroll: false })
+    if (id) {
+      router.push(getCategoryLandingPath(id))
+      return
+    }
+    router.replace("/emprendimientos", { scroll: false })
   }
 
   const scrollToExplore = () => {

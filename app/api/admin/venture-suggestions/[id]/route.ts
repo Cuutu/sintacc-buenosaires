@@ -10,6 +10,7 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { withGeneratedVentureSlug } from "@/lib/venture-save"
 
 function buildVentureFromDraft(draft: Record<string, unknown>) {
   const parsed = ventureSchema.parse({
@@ -60,7 +61,8 @@ export async function PATCH(
         : currentDraft
 
       const ventureData = buildVentureFromDraft(draft)
-      const venture = new Venture(ventureData)
+      const ventureDataWithSlug = await withGeneratedVentureSlug(ventureData)
+      const venture = new Venture(ventureDataWithSlug)
       await venture.save()
       invalidateApiCache(["public:ventures:", "admin:ventures:", "admin:counts"])
 
@@ -72,7 +74,7 @@ export async function PATCH(
         sendVentureApprovedEmail({
           userEmail: user.email,
           ventureName: ventureData.name,
-          ventureId: venture._id.toString(),
+          ventureSlug: ventureDataWithSlug.slug,
         }).catch(() => {})
       }
 

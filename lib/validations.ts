@@ -155,6 +155,7 @@ const ventureSafetyEnum = z.enum(ventureSafetyLevelIds as unknown as [string, ..
 
 export const ventureSchema = z.object({
   name: z.string().min(1).max(200).trim(),
+  slug: z.string().min(2).max(120).optional(),
   category: ventureCategoryEnum,
   zone: z.string().min(1).max(150).trim(),
   modalities: z.array(ventureModalityEnum).default([]),

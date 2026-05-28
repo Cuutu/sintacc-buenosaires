@@ -9,28 +9,44 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params?.id
+  const idOrSlug = params?.id
   try {
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
+    if (!idOrSlug?.trim()) {
+      return NextResponse.json({ error: "Parámetro inválido" }, { status: 400 })
     }
 
     await connectDB()
 
-    const venture = await Venture.findOne({
-      _id: new mongoose.Types.ObjectId(id),
-      status: "approved",
-    }).lean()
+    let venture = null
+    let ventureOid: mongoose.Types.ObjectId | null = null
 
-    if (!venture) {
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+      ventureOid = new mongoose.Types.ObjectId(idOrSlug)
+      venture = await Venture.findOne({
+        _id: ventureOid,
+        status: "approved",
+      }).lean()
+    } else {
+      venture = await Venture.findOne({
+        slug: idOrSlug,
+        status: "approved",
+      }).lean()
+      if (venture) ventureOid = venture._id as mongoose.Types.ObjectId
+    }
+
+    if (!venture || !ventureOid) {
       return NextResponse.json({ error: "Emprendimiento no encontrado" }, { status: 404 })
     }
 
-    const stats = await getSingleVentureReviewStats(
-      new mongoose.Types.ObjectId(id)
-    )
+    const stats = await getSingleVentureReviewStats(ventureOid)
 
-    return NextResponse.json({ venture: { ...venture, stats } })
+    return NextResponse.json({
+      venture: {
+        ...venture,
+        slug: venture.slug ?? venture._id.toString(),
+        stats,
+      },
+    })
   } catch (error) {
     logApiError("/api/ventures/[id]", error, { request })
     return NextResponse.json({ error: "Error al obtener emprendimiento" }, { status: 500 })

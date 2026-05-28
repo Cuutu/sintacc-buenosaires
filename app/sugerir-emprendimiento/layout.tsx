@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Sugerir emprendimiento sin gluten",
   description:
     "¿Conocés una marca o proyecto sin gluten? Sugerilo para que la comunidad celíaca lo descubra.",
+  robots: { index: false, follow: true },
 }
 
 export default function SugerirEmprendimientoLayout({

@@ -6,17 +6,17 @@ const CARDS = [
   {
     icon: ChefHat,
     title: "Viandas sin gluten",
-    href: "/emprendimientos?category=viandas",
+    href: "/emprendimientos/viandas-sin-gluten",
   },
   {
     icon: Cake,
     title: "Pastelería y tortas",
-    href: "/emprendimientos?category=pasteleria",
+    href: "/emprendimientos/pasteleria-sin-gluten",
   },
   {
     icon: Wheat,
     title: "Panificados y productos",
-    href: "/emprendimientos?category=panificados",
+    href: "/emprendimientos/panificados-sin-gluten",
   },
 ] as const
 

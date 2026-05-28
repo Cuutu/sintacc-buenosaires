@@ -5,7 +5,6 @@ import Image from "next/image"
 import { MapPin, Instagram, MessageCircle, ArrowRight, Star } from "lucide-react"
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { Badge } from "@/components/ui/badge"
-import type { IVenture } from "@/models/Venture"
 import {
   getCategoryLabel,
   getModalityLabel,
@@ -14,14 +13,26 @@ import {
 import { parseVentureLinks } from "@/lib/venture-contact"
 import { cn } from "@/lib/utils"
 
-type VentureWithId = IVenture & { _id: string; stats?: VentureReviewStats }
+export type VentureCardData = {
+  _id: string
+  slug?: string
+  name: string
+  category: string
+  zone: string
+  modalities?: string[]
+  safetyLevel?: string
+  photos?: string[]
+  contact?: { instagram?: string; whatsapp?: string }
+  purchaseChannels?: string
+  stats?: VentureReviewStats
+}
 
 interface VentureCardProps {
-  venture: VentureWithId
+  venture: VentureCardData
 }
 
 export function VentureCard({ venture }: VentureCardProps) {
-  const href = `/emprendimientos/${venture._id}`
+  const href = `/emprendimientos/${venture.slug ?? venture._id}`
   const photo = venture.photos?.[0]
   const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(venture.safetyLevel)
   const { instagram: igUrl, whatsapp: waUrl } = parseVentureLinks({
@@ -88,9 +99,9 @@ export function VentureCard({ venture }: VentureCardProps) {
           </div>
         )}
 
-          {venture.modalities?.length > 0 && (
+          {(venture.modalities?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {venture.modalities.map((m) => (
+              {venture.modalities!.map((m) => (
                 <span
                   key={m}
                   className="text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-muted-foreground"

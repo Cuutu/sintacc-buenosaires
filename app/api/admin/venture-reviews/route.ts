@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const [reviews, total] = await Promise.all([
       VentureReview.find(query)
         .populate("userId", "name image email")
-        .populate("ventureId", "name category zone")
+        .populate("ventureId", "name category zone slug")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

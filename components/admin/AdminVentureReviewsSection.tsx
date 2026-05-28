@@ -80,15 +80,20 @@ export function AdminVentureReviewsSection({
       ) : (
         <div className="divide-y divide-border">
           {reviews.map((review) => {
-            const venture = review.ventureId as { _id?: string; name?: string } | undefined
+            const venture = review.ventureId as {
+              _id?: string
+              name?: string
+              slug?: string
+            } | undefined
             const ventureId = venture?._id?.toString?.() ?? null
+            const venturePath = venture?.slug ?? ventureId
             return (
               <div key={review._id} className="p-4">
                 <div className="flex justify-between gap-3 mb-2">
                   <div className="min-w-0">
-                    {ventureId ? (
+                    {venturePath ? (
                       <Link
-                        href={`/emprendimientos/${ventureId}`}
+                        href={`/emprendimientos/${venturePath}`}
                         target="_blank"
                         className="text-sm font-bold text-primary hover:underline"
                       >

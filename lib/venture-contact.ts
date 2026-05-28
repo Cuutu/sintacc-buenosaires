@@ -1,5 +1,6 @@
 import type { VentureCategoryId } from "@/lib/venture-constants"
 import { getCategoryLabel } from "@/lib/venture-constants"
+import { getVentureSeoDescription } from "@/lib/venture-seo"
 
 const URL_REGEX = /https?:\/\/[^\s<>"']+/gi
 
@@ -107,8 +108,11 @@ const DESCRIPTION_FALLBACKS: Partial<Record<VentureCategoryId, string>> = {
 
 export function getVentureDescription(
   description: string | undefined,
-  category: string
+  category: string,
+  name?: string,
+  zone?: string
 ): string {
+  if (name) return getVentureSeoDescription(name, category, zone ?? "", description)
   if (description?.trim()) return description.trim()
   return (
     DESCRIPTION_FALLBACKS[category as VentureCategoryId] ??

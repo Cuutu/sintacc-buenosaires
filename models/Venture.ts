@@ -7,6 +7,7 @@ import {
 
 export interface IVenture extends Document {
   name: string
+  slug?: string
   category: (typeof ventureCategoryIds)[number]
   zone: string
   modalities: (typeof ventureModalityIds)[number][]
@@ -28,6 +29,7 @@ export interface IVenture extends Document {
 const VentureSchema = new Schema<IVenture>(
   {
     name: { type: String, required: true, trim: true },
+    slug: { type: String, trim: true, unique: true, sparse: true, index: true },
     category: {
       type: String,
       enum: ventureCategoryIds,
