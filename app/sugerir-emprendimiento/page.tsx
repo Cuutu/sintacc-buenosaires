@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,15 +13,19 @@ import {
   VENTURE_CATEGORIES,
   VENTURE_MODALITIES,
   VENTURE_SAFETY_LEVELS,
+  ventureCategoryIds,
 } from "@/lib/venture-constants"
 import type { VentureModalityId, VentureSafetyLevelId } from "@/lib/venture-constants"
 import type { VentureCategoryId } from "@/lib/venture-constants"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, CheckCircle2, AlertCircle, Info } from "lucide-react"
 
+const VALID_CATEGORY_IDS = new Set<string>(ventureCategoryIds)
+
 export default function SugerirEmprendimientoPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -38,6 +42,13 @@ export default function SugerirEmprendimientoPage() {
   const [purchaseChannels, setPurchaseChannels] = useState("")
   const [suggesterComment, setSuggesterComment] = useState("")
   const [photos, setPhotos] = useState<string[]>([])
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("category")
+    if (fromUrl && VALID_CATEGORY_IDS.has(fromUrl as VentureCategoryId)) {
+      setCategory(fromUrl as VentureCategoryId)
+    }
+  }, [searchParams])
 
   const toggleModality = (id: VentureModalityId) => {
     setModalities((prev) =>

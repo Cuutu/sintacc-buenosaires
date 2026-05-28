@@ -11,24 +11,10 @@ import {
   getModalityLabel,
   getSafetyBadge,
 } from "@/lib/venture-constants"
+import { parseVentureLinks } from "@/lib/venture-contact"
 import { cn } from "@/lib/utils"
 
 type VentureWithId = IVenture & { _id: string }
-
-function normalizeInstagramUrl(handle?: string): string | null {
-  if (!handle?.trim()) return null
-  const v = handle.trim()
-  if (v.startsWith("http")) return v
-  const user = v.replace(/^@/, "")
-  return `https://instagram.com/${user}`
-}
-
-function normalizeWhatsAppUrl(num?: string): string | null {
-  if (!num?.trim()) return null
-  const digits = num.replace(/\D/g, "")
-  if (!digits) return null
-  return `https://wa.me/${digits}`
-}
 
 interface VentureCardProps {
   venture: VentureWithId
@@ -37,8 +23,10 @@ interface VentureCardProps {
 export function VentureCard({ venture }: VentureCardProps) {
   const photo = venture.photos?.[0]
   const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(venture.safetyLevel)
-  const igUrl = normalizeInstagramUrl(venture.contact?.instagram)
-  const waUrl = normalizeWhatsAppUrl(venture.contact?.whatsapp)
+  const { instagram: igUrl, whatsapp: waUrl } = parseVentureLinks({
+    contact: venture.contact,
+    purchaseChannels: venture.purchaseChannels,
+  })
 
   return (
     <article

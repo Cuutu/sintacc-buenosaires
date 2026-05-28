@@ -4,11 +4,15 @@ import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { VentureCard } from "@/components/ventures/VentureCard"
+import { VenturesExplainer } from "@/components/ventures/VenturesExplainer"
+import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
 import { VENTURE_CATEGORIES } from "@/lib/venture-constants"
+import { matchesVentureSearch } from "@/lib/venture-search"
 import { fetchApi } from "@/lib/fetchApi"
 import type { IVenture } from "@/models/Venture"
-import { ArrowLeft, ArrowDown, Plus } from "lucide-react"
+import { ArrowLeft, ArrowDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type VentureItem = IVenture & { _id: string }
@@ -17,29 +21,56 @@ export default function EmprendimientosPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
+  const searchParam = searchParams.get("search") ?? ""
 
   const [ventures, setVentures] = useState<VentureItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchInput, setSearchInput] = useState(searchParam)
 
-  const fetchVentures = useCallback(async (category: string | null) => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ limit: "50" })
-      if (category) params.set("category", category)
-      const data = await fetchApi<{ ventures: VentureItem[] }>(
-        `/api/ventures?${params}`
-      )
-      setVentures(data.ventures ?? [])
-    } catch {
-      setVentures([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const fetchVentures = useCallback(
+    async (category: string | null, search: string) => {
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({ limit: "50" })
+        if (category) params.set("category", category)
+        if (search.trim().length >= 2) params.set("search", search.trim())
+        const data = await fetchApi<{ ventures: VentureItem[] }>(
+          `/api/ventures?${params}`
+        )
+        setVentures(data.ventures ?? [])
+      } catch {
+        setVentures([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
 
   useEffect(() => {
-    fetchVentures(categoryParam)
-  }, [categoryParam, fetchVentures])
+    fetchVentures(categoryParam, searchParam)
+  }, [categoryParam, searchParam, fetchVentures])
+
+  useEffect(() => {
+    setSearchInput(searchParam)
+  }, [searchParam])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const trimmed = searchInput.trim()
+      const params = new URLSearchParams(searchParams.toString())
+      if (trimmed.length >= 2) params.set("search", trimmed)
+      else params.delete("search")
+      const q = params.toString()
+      const next = q ? `/emprendimientos?${q}` : "/emprendimientos"
+      const current = searchParams.toString()
+      const currentPath = current ? `/emprendimientos?${current}` : "/emprendimientos"
+      if (next !== currentPath) {
+        router.replace(next, { scroll: false })
+      }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchInput, router, searchParams])
 
   const setCategory = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -49,9 +80,16 @@ export default function EmprendimientosPageContent() {
     router.replace(q ? `/emprendimientos?${q}` : "/emprendimientos", { scroll: false })
   }
 
-  const scrollToList = () => {
-    document.getElementById("listado")?.scrollIntoView({ behavior: "smooth" })
+  const scrollToExplore = () => {
+    document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" })
   }
+
+  const displayedVentures = ventures.filter((v) =>
+    matchesVentureSearch(v, searchParam)
+  )
+
+  const showEmpty = !loading && displayedVentures.length === 0
+  const hasActiveSearch = searchParam.trim().length >= 2
 
   return (
     <div className="min-h-screen">
@@ -64,85 +102,116 @@ export default function EmprendimientosPageContent() {
           Volver al inicio
         </Link>
 
-        <section className="relative rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden px-6 py-12 md:py-16 text-center mb-12">
+        {/* 1. Hero */}
+        <section className="relative rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden px-6 py-12 md:py-16 text-center mb-12 md:mb-14">
           <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/20 blur-[80px] pointer-events-none" />
           <h1 className="relative text-3xl md:text-4xl font-extrabold mb-4 tracking-tight">
             Descubrí emprendimientos sin gluten
           </h1>
           <p className="relative text-muted-foreground max-w-2xl mx-auto text-sm md:text-base leading-relaxed mb-8">
-            Marcas, cocineros y proyectos aptos para celíacos recomendados por la comunidad.
-            Encontrá productos caseros, viandas, panificados, tortas, premezclas y más.
+            Marcas, cocineros y proyectos que venden productos aptos para celíacos: viandas,
+            pastelería, panificados, congelados, premezclas y más.
           </p>
           <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="gap-2 min-h-[48px]" onClick={scrollToList}>
-              Ver emprendimientos
+            <Button size="lg" className="gap-2 min-h-[48px] shadow-lg shadow-primary/20" onClick={scrollToExplore}>
+              Explorar emprendimientos
               <ArrowDown className="h-4 w-4" />
             </Button>
-            <Button asChild size="lg" variant="outline" className="min-h-[48px] gap-2">
-              <Link href="/sugerir-emprendimiento">
-                <Plus className="h-4 w-4" />
-                Sugerir emprendimiento
-              </Link>
+            <Button asChild size="lg" variant="outline" className="min-h-[48px]">
+              <Link href="/sugerir-emprendimiento">Sugerir uno</Link>
             </Button>
           </div>
         </section>
 
-        <div className="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory mb-8">
-          <button
-            type="button"
-            onClick={() => setCategory(null)}
+        {/* 2. Explicativa */}
+        <VenturesExplainer />
+
+        {/* 3–5. Buscador, filtros, listado */}
+        <section id="explorar" className="scroll-mt-24">
+          <div className="mb-6">
+            <label htmlFor="venture-search" className="sr-only">
+              Buscar emprendimientos
+            </label>
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                id="venture-search"
+                type="search"
+                placeholder="Buscar tortas, viandas, panificados, CABA..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-11 h-12 bg-card/50 border-border/50 focus:border-primary/50 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Filtros: wrap desktop, scroll mobile */}
+          <div
             className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium shrink-0 snap-center transition-colors",
-              !categoryParam
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted border border-white/10"
+              "flex gap-2 mb-8",
+              "max-md:overflow-x-auto max-md:flex-nowrap max-md:pb-2 max-md:-mx-4 max-md:px-4 max-md:scrollbar-hide max-md:snap-x",
+              "md:flex-wrap"
             )}
           >
-            Todos
-          </button>
-          {VENTURE_CATEGORIES.map((cat) => (
             <button
-              key={cat.id}
               type="button"
-              onClick={() => setCategory(cat.id)}
+              onClick={() => setCategory(null)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium shrink-0 snap-center transition-colors",
-                categoryParam === cat.id
+                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                "max-md:shrink-0 max-md:snap-center",
+                !categoryParam
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted/50 text-muted-foreground hover:bg-muted border border-white/10"
               )}
             >
-              {cat.label}
+              Todos
             </button>
-          ))}
-        </div>
+            {VENTURE_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(cat.id)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                  "max-md:shrink-0 max-md:snap-center",
+                  categoryParam === cat.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-white/10"
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
 
-        <section id="listado" className="scroll-mt-24">
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-80 rounded-2xl border border-white/10 bg-white/5 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : ventures.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <p className="text-muted-foreground mb-6">
-                Todavía no hay emprendimientos en esta categoría. ¡Podés ser el primero en sugerir uno!
-              </p>
-              <Button asChild>
-                <Link href="/sugerir-emprendimiento">Sugerir emprendimiento</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ventures.map((v) => (
-                <VentureCard key={v._id} venture={v} />
-              ))}
-            </div>
-          )}
+          <div id="listado">
+            {loading ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-80 rounded-2xl border border-white/10 bg-white/5 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : showEmpty ? (
+              <>
+                {hasActiveSearch && (
+                  <p className="text-center text-sm text-muted-foreground mb-6">
+                    No encontramos resultados para &ldquo;{searchParam}&rdquo;
+                    {categoryParam ? " en esta categoría" : ""}.
+                  </p>
+                )}
+                <VenturesEmptyState hasCategoryFilter={!!categoryParam} />
+              </>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedVentures.map((v) => (
+                  <VentureCard key={v._id} venture={v} />
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       </div>
     </div>

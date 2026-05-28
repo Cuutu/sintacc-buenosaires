@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { parseVenturesSearchParams } from "@/lib/validations"
+import { buildVentureSearchFilter } from "@/lib/venture-search"
 import { logApiError } from "@/lib/logger"
 import { getOrSetApiCache } from "@/lib/api-cache"
 
@@ -27,12 +28,9 @@ export async function GET(request: NextRequest) {
 
     const query: Record<string, unknown> = { status: "approved" }
     if (category) query.category = category
-    if (search && search.trim().length >= 2) {
-      const regex = new RegExp(
-        search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "i"
-      )
-      query.$or = [{ name: regex }, { zone: regex }]
+    const searchFilter = search ? buildVentureSearchFilter(search) : null
+    if (searchFilter) {
+      Object.assign(query, searchFilter)
     }
 
     const cacheKey = `public:ventures:${searchParams.toString()}`
