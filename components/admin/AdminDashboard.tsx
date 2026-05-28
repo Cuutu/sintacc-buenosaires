@@ -6,6 +6,8 @@ import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { AdminHeader } from "@/components/admin/AdminHeader"
 import { AdminSuggestionsSection } from "@/components/admin/AdminSuggestionsSection"
+import { AdminVentureSuggestionsSection } from "@/components/admin/AdminVentureSuggestionsSection"
+import { AdminVenturesSection } from "@/components/admin/AdminVenturesSection"
 import { AdminReviewsSection } from "@/components/admin/AdminReviewsSection"
 import { AdminPlacesSection } from "@/components/admin/AdminPlacesSection"
 import { AdminContactsSection } from "@/components/admin/AdminContactsSection"
@@ -16,6 +18,8 @@ import type {
   PlaceItem,
   ReviewItem,
   SuggestionItem,
+  VentureSuggestionItem,
+  VentureItem,
 } from "@/components/admin/types"
 
 type AdminDashboardProps = {
@@ -25,6 +29,8 @@ type AdminDashboardProps = {
 export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const { status } = useSession()
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
+  const [ventureSuggestions, setVentureSuggestions] = useState<VentureSuggestionItem[]>([])
+  const [ventures, setVentures] = useState<VentureItem[]>([])
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [places, setPlaces] = useState<PlaceItem[]>([])
   const [contacts, setContacts] = useState<ContactItem[]>([])
@@ -35,6 +41,10 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [reviewFilter, setReviewFilter] = useState<string>("")
   const [placeFilter, setPlaceFilter] = useState<string>("")
   const [suggestionSearch, setSuggestionSearch] = useState("")
+  const [ventureSuggestionSearch, setVentureSuggestionSearch] = useState("")
+  const [ventureSearch, setVentureSearch] = useState("")
+  const [ventureSuggestionsLoading, setVentureSuggestionsLoading] = useState(false)
+  const [venturesLoading, setVenturesLoading] = useState(false)
   const [placeSearch, setPlaceSearch] = useState("")
   const [placeTypeFilter, setPlaceTypeFilter] = useState("")
   const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
@@ -48,6 +58,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [reviewSearch, setReviewSearch] = useState("")
   const [contactSearch, setContactSearch] = useState("")
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
+  const [editingVentureSuggestion, setEditingVentureSuggestion] =
+    useState<VentureSuggestionItem | null>(null)
   const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<AdminSection>("suggestions")
 
@@ -91,6 +103,55 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
     const t = setTimeout(fetchSuggestions, 400)
     return () => clearTimeout(t)
   }, [suggestionSearch, fetchSuggestions])
+
+  const fetchVentureSuggestions = useCallback(async () => {
+    setVentureSuggestionsLoading(true)
+    try {
+      const params = new URLSearchParams({ status: "pending" })
+      if (ventureSuggestionSearch.trim()) {
+        params.set("search", ventureSuggestionSearch.trim())
+      }
+      const res = await fetch(`/api/admin/venture-suggestions?${params}`)
+      const data = await res.json()
+      setVentureSuggestions(data.suggestions || [])
+    } catch (error) {
+      console.error("Error fetching venture suggestions:", error)
+    } finally {
+      setVentureSuggestionsLoading(false)
+    }
+  }, [ventureSuggestionSearch])
+
+  useEffect(() => {
+    if (status === "loading") return
+    if (activeSection === "ventureSuggestions") {
+      fetchVentureSuggestions()
+    }
+  }, [status, activeSection, fetchVentureSuggestions])
+
+  const ventureSuggestionSearchMounted = useRef(false)
+  useEffect(() => {
+    if (!ventureSuggestionSearchMounted.current) {
+      ventureSuggestionSearchMounted.current = true
+      return
+    }
+    if (activeSection !== "ventureSuggestions") return
+    const t = setTimeout(fetchVentureSuggestions, 400)
+    return () => clearTimeout(t)
+  }, [ventureSuggestionSearch, activeSection, fetchVentureSuggestions])
+
+  const fetchVentures = useCallback(async () => {
+    setVenturesLoading(true)
+    try {
+      const params = new URLSearchParams({ status: "approved", limit: "100" })
+      const res = await fetch(`/api/admin/ventures?${params}`)
+      const data = await res.json()
+      setVentures(data.ventures || [])
+    } catch (error) {
+      console.error("Error fetching ventures:", error)
+    } finally {
+      setVenturesLoading(false)
+    }
+  }, [])
 
   const fetchReviews = async (status?: string) => {
     setReviewsLoading(true)
@@ -163,6 +224,31 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
       console.error("Error fetching contacts:", error)
     } finally {
       setContactsLoading(false)
+    }
+  }
+
+  const handleVentureSuggestionAction = async (
+    id: string,
+    action: "approve" | "reject"
+  ) => {
+    try {
+      const res = await fetch(`/api/admin/venture-suggestions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(
+          action === "approve" ? "Emprendimiento publicado" : "Sugerencia rechazada"
+        )
+        fetchVentureSuggestions()
+        fetchCounts()
+      } else {
+        toast.error(data.error || "Error")
+      }
+    } catch {
+      toast.error("Error al procesar")
     }
   }
 
@@ -373,6 +459,30 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             onClick: () => setActiveSection("suggestions"),
           },
           {
+            key: "ventureSuggestions",
+            icon: "🧁",
+            label: "Emprend. sugeridos",
+            desc: "Marcas sin local físico",
+            badge: counts?.ventureSuggestionsPending ?? ventureSuggestions.length,
+            urgent: (counts?.ventureSuggestionsPending ?? 0) > 0,
+            onClick: () => {
+              setActiveSection("ventureSuggestions")
+              fetchVentureSuggestions()
+            },
+          },
+          {
+            key: "ventures",
+            icon: "🏪",
+            label: "Emprendimientos",
+            desc: "Publicados en el listado",
+            badge: ventures.length || null,
+            urgent: false,
+            onClick: () => {
+              setActiveSection("ventures")
+              fetchVentures()
+            },
+          },
+          {
             key: "reviews",
             icon: "⭐",
             label: "Reseñas",
@@ -445,6 +555,30 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           setEditingSuggestion={setEditingSuggestion}
           fetchSuggestions={fetchSuggestions}
           getTypeLabel={getTypeLabel}
+        />
+      )}
+
+      {activeSection === "ventureSuggestions" && (
+        <AdminVentureSuggestionsSection
+          counts={counts}
+          suggestions={ventureSuggestions}
+          loading={ventureSuggestionsLoading}
+          search={ventureSuggestionSearch}
+          setSearch={setVentureSuggestionSearch}
+          handleAction={handleVentureSuggestionAction}
+          editing={editingVentureSuggestion}
+          setEditing={setEditingVentureSuggestion}
+          fetchSuggestions={fetchVentureSuggestions}
+        />
+      )}
+
+      {activeSection === "ventures" && (
+        <AdminVenturesSection
+          ventures={ventures}
+          loading={venturesLoading}
+          search={ventureSearch}
+          setSearch={setVentureSearch}
+          fetchVentures={fetchVentures}
         />
       )}
 

@@ -8,6 +8,7 @@ import {
 import { StatsRow } from "@/components/home/StatsRow"
 import { FeaturedSection } from "@/components/featured/FeaturedSection"
 import { FeaturedListsSection } from "@/components/home/FeaturedListsSection"
+import { EmprendimientosSection } from "@/components/home/EmprendimientosSection"
 import { FaqSection } from "@/components/home/FaqSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
@@ -271,6 +272,17 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* ════════════════════════════════════════════════════
+          EMPRENDIMIENTOS
+      ════════════════════════════════════════════════════ */}
+      <ScrollReveal>
+        <section className="border-t border-border/40">
+          <div className="container mx-auto px-4 py-12 md:py-16 max-w-5xl">
+            <EmprendimientosSection />
           </div>
         </section>
       </ScrollReveal>

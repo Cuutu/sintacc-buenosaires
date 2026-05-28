@@ -52,10 +52,47 @@ export type ContactItem = {
   userId?: { name?: string; email?: string }
 }
 
+export type VentureSuggestionItem = {
+  _id: string
+  ventureDraft: {
+    name?: string
+    category?: string
+    zone?: string
+    modalities?: string[]
+    safetyLevel?: string
+    contact?: { instagram?: string; whatsapp?: string }
+    purchaseChannels?: string
+    certifiedProducts?: boolean
+    photos?: string[]
+  }
+  suggesterComment?: string
+  shipsNationwide?: boolean
+  suggestedByUserId?: { name?: string; email?: string }
+}
+
+export type VentureItem = {
+  _id: string
+  name: string
+  category: string
+  zone: string
+  modalities?: string[]
+  safetyLevel?: string
+  status: string
+  contact?: { instagram?: string; whatsapp?: string }
+  photos?: string[]
+}
+
 export type AdminCounts = {
   suggestionsPending: number
+  ventureSuggestionsPending: number
   contactsTotal: number
   placesTotal: number
 }
 
-export type AdminSection = "suggestions" | "reviews" | "places" | "contacts"
+export type AdminSection =
+  | "suggestions"
+  | "ventureSuggestions"
+  | "ventures"
+  | "reviews"
+  | "places"
+  | "contacts"

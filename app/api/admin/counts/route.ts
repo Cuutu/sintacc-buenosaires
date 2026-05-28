@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Suggestion } from "@/models/Suggestion"
+import { VentureSuggestion } from "@/models/VentureSuggestion"
 import { Contact } from "@/models/Contact"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
@@ -18,14 +19,17 @@ export async function GET(request: NextRequest) {
     await connectDB()
 
     const data = await getOrSetApiCache("admin:counts", ADMIN_COUNTS_CACHE_TTL_MS, async () => {
-      const [suggestionsPending, contactsTotal, placesTotal] = await Promise.all([
-        Suggestion.countDocuments({ status: "pending" }),
-        Contact.countDocuments(),
-        Place.countDocuments(),
-      ])
+      const [suggestionsPending, ventureSuggestionsPending, contactsTotal, placesTotal] =
+        await Promise.all([
+          Suggestion.countDocuments({ status: "pending" }),
+          VentureSuggestion.countDocuments({ status: "pending" }),
+          Contact.countDocuments(),
+          Place.countDocuments(),
+        ])
 
       return {
         suggestionsPending,
+        ventureSuggestionsPending,
         contactsTotal,
         placesTotal,
       }

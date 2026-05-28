@@ -25,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/sugerir`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/sin-gluten-argentina`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/listas`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/emprendimientos`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${base}/sugerir-emprendimiento`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.5 },
   ]
 
   const seoPages: MetadataRoute.Sitemap = []

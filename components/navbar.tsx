@@ -32,6 +32,9 @@ export function Navbar() {
             <Link href="/listas" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="min-h-[44px]">Listas</Button>
             </Link>
+            <Link href="/emprendimientos" className="hidden sm:block">
+              <Button variant="ghost" size="sm" className="min-h-[44px]">Emprendimientos</Button>
+            </Link>
             <Link href="/sugerir" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="min-h-[44px]">Sugerir lugar</Button>
             </Link>

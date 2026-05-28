@@ -1,4 +1,9 @@
 import { z } from "zod"
+import {
+  ventureCategoryIds,
+  ventureModalityIds,
+  ventureSafetyLevelIds,
+} from "@/lib/venture-constants"
 
 export const placeSchema = z.object({
   name: z.string().min(1).max(200).trim(),
@@ -142,4 +147,62 @@ export function sanitizeHtml(input: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;")
     .replace(/\//g, "&#x2F;")
+}
+
+const ventureCategoryEnum = z.enum(ventureCategoryIds as unknown as [string, ...string[]])
+const ventureModalityEnum = z.enum(ventureModalityIds as unknown as [string, ...string[]])
+const ventureSafetyEnum = z.enum(ventureSafetyLevelIds as unknown as [string, ...string[]])
+
+export const ventureSchema = z.object({
+  name: z.string().min(1).max(200).trim(),
+  category: ventureCategoryEnum,
+  zone: z.string().min(1).max(150).trim(),
+  modalities: z.array(ventureModalityEnum).default([]),
+  safetyLevel: ventureSafetyEnum.default("to_confirm"),
+  contact: z
+    .object({
+      instagram: z.string().max(500).optional(),
+      whatsapp: z.string().max(50).optional(),
+    })
+    .optional(),
+  certifiedProducts: z.boolean().optional(),
+  purchaseChannels: z.string().max(1000).optional(),
+  description: z.string().max(2000).optional(),
+  photos: z.array(z.string().url()).max(3).default([]),
+  status: z.enum(["approved", "pending"]).optional(),
+  source: z.enum(["suggestion", "manual"]).optional(),
+})
+
+export const ventureSuggestionSchema = ventureSchema.extend({
+  suggesterComment: z.string().max(1500).optional(),
+  shipsNationwide: z.boolean().optional(),
+})
+
+export const ventureDraftUpdateSchema = ventureSchema.partial()
+
+export const venturesPublicQuerySchema = z.object({
+  category: ventureCategoryEnum.optional(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.preprocess(
+    (value) => {
+      const n = Number(value)
+      if (!Number.isFinite(n)) return 20
+      return Math.min(100, Math.max(1, Math.trunc(n)))
+    },
+    z.number().int().min(1).max(100)
+  ).default(20),
+})
+
+export type VenturesPublicQuery = z.infer<typeof venturesPublicQuerySchema>
+
+export function parseVenturesSearchParams(
+  searchParams: URLSearchParams
+): VenturesPublicQuery {
+  return venturesPublicQuerySchema.parse({
+    category: searchParams.get("category") ?? undefined,
+    search: searchParams.get("search") ?? undefined,
+    page: searchParams.get("page") ?? "1",
+    limit: searchParams.get("limit") ?? "20",
+  })
 }

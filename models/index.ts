@@ -9,6 +9,8 @@ export { Favorite, type IFavorite } from "./Favorite"
 export { Contact, type IContact } from "./Contact"
 export { List, type IList } from "./List"
 export { ListLike, type IListLike } from "./ListLike"
+export { Venture, type IVenture } from "./Venture"
+export { VentureSuggestion, type IVentureSuggestion } from "./VentureSuggestion"
 
 // Fase 2 models (scaffolded)
 import mongoose from "mongoose"

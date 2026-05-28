@@ -23,7 +23,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-const ALLOWED_FOLDERS: readonly string[] = ["celimap", "places"]
+const ALLOWED_FOLDERS: readonly string[] = ["celimap", "places", "ventures"]
 
 export async function POST(request: NextRequest) {
   try {
