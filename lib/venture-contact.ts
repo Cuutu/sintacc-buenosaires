@@ -40,15 +40,9 @@ export function stripUrlsFromText(text: string): string {
     .trim()
 }
 
-/** Instagram: handle, URL o @usuario */
-export function normalizeInstagramUrl(value?: string): string | null {
-  if (!value?.trim()) return null
-  const v = value.trim()
-  if (/^https?:\/\//i.test(v)) return v.split(/[?\s]/)[0] ?? v
-  const user = v.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-  if (!user) return null
-  return `https://instagram.com/${user}`
-}
+import { normalizeInstagramUrl } from "@/lib/instagram-url"
+
+export { normalizeInstagramUrl }
 
 /** WhatsApp: teléfono, wa.me o api.whatsapp.com */
 export function normalizeWhatsAppUrl(value?: string): string | null {

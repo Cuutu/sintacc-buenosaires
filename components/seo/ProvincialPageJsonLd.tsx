@@ -3,6 +3,7 @@
  */
 import type { PlaceSEO } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
+import { normalizeInstagramUrl } from "@/lib/instagram-url"
 
 const BASE_URL =
   getBaseUrl()
@@ -16,8 +17,7 @@ interface ProvincialPageJsonLdProps {
 function getSameAs(place: PlaceSEO): string | undefined {
   if (place.contact?.url) return place.contact.url
   if (place.contact?.instagram) {
-    const ig = place.contact.instagram.replace(/^@/, "")
-    return `https://www.instagram.com/${ig}`
+    return normalizeInstagramUrl(place.contact.instagram) ?? undefined
   }
   return undefined
 }

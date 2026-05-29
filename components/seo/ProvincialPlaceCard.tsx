@@ -5,6 +5,7 @@ import { PlaceCard } from "@/components/place-card"
 import { MapPin } from "lucide-react"
 import type { PlaceSEO } from "@/lib/seo/places"
 import type { IPlace } from "@/models/Place"
+import { normalizeInstagramUrl } from "@/lib/instagram-url"
 
 interface ProvincialPlaceCardProps {
   place: PlaceSEO
@@ -45,7 +46,7 @@ export function ProvincialPlaceCard({ place, provinceSlug }: ProvincialPlaceCard
   if (place.stats) (placeForCard as any).stats = place.stats
 
   const instagramUrl = place.contact?.instagram
-    ? `https://www.instagram.com/${place.contact.instagram.replace(/^@/, "")}`
+    ? normalizeInstagramUrl(place.contact.instagram)
     : null
 
   return (

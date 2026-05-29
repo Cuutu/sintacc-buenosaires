@@ -23,6 +23,10 @@ import { fetchApi } from "@/lib/fetchApi"
 import { TYPES } from "@/lib/constants"
 import { features } from "@/lib/features"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
+import {
+  getInstagramDisplayHandle,
+  normalizeInstagramUrl,
+} from "@/lib/instagram-url"
 import { isOpenNow } from "@/lib/opening-hours"
 
 export default function LugarPage() {
@@ -305,19 +309,24 @@ export default function LugarPage() {
               </div>
             )}
             {/* Instagram — solo si existe */}
-            {place!.contact?.instagram && (
+            {place!.contact?.instagram && (() => {
+              const igUrl = normalizeInstagramUrl(place!.contact!.instagram!)
+              const igHandle = getInstagramDisplayHandle(place!.contact!.instagram!)
+              if (!igUrl) return null
+              return (
               <div className="flex items-center gap-2.5 py-2">
                 <Instagram className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <a
-                  href={`https://instagram.com/${place!.contact.instagram.replace("@", "")}`}
+                  href={igUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline"
                 >
-                  @{place!.contact.instagram.replace("@", "")}
+                  @{igHandle}
                 </a>
               </div>
-            )}
+              )
+            })()}
             {/* Web — solo si existe */}
             {place!.contact?.url && (
               <div className="flex items-center gap-2.5 py-2">
@@ -530,14 +539,19 @@ export default function LugarPage() {
 
             {/* Social links mobile (en desktop van en sidebar) */}
             <div className="flex flex-wrap gap-2 mb-5 lg:hidden">
-              {place.contact?.instagram && (
-                <a href={`https://instagram.com/${place.contact.instagram.replace("@","")}`}
+              {place.contact?.instagram && (() => {
+                const igUrl = normalizeInstagramUrl(place.contact.instagram)
+                const igHandle = getInstagramDisplayHandle(place.contact.instagram)
+                if (!igUrl) return null
+                return (
+                <a href={igUrl}
                   target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
                   <Instagram className="h-3.5 w-3.5" />
-                  @{place.contact.instagram.replace("@","")}
+                  @{igHandle}
                 </a>
-              )}
+                )
+              })()}
               {place.contact?.url && (
                 <a href={place.contact.url} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
