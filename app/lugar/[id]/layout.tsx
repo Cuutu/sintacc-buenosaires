@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ogImage = p.photos?.[0] || `${BASE_URL}/CelimapLOGO.png`
     return {
       title: p.name,
-      description: `${p.name} - ${p.neighborhood}. Lugar sin TACC en Argentina. Reseñas y datos de contacto.`,
+      description: `${p.name} - ${p.neighborhood}. Lugar sin TACC en Argentina. Reseñas y datos de contacto.`, 
       openGraph: {
         title: `${p.name} | Celimap`,
         description: `${p.name} en ${p.neighborhood}. Lugar apto para celíacos en Argentina.`,

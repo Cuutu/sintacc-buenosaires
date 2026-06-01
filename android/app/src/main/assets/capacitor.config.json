@@ -1,0 +1,14 @@
+{
+	"appId": "com.celimap.app",
+	"appName": "Celimap",
+	"webDir": "www",
+	"server": {
+		"url": "https://celimap.com.ar",
+		"cleartext": false
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 0
+		}
+	}
+}
