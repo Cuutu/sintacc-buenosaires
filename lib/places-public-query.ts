@@ -4,6 +4,10 @@ import type { PublicPlacesQuery } from "@/lib/validations"
 import { getCityBySlug } from "@/lib/seo/cities"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 
+function makeSearchRegex(value: string): RegExp {
+  return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+}
+
 export function buildPublicPlacesMongoQuery(
   params: PublicPlacesQuery
 ): FilterQuery<IPlace> {
@@ -11,13 +15,19 @@ export function buildPublicPlacesMongoQuery(
 
   if (params.search?.trim()) {
     const words = params.search.trim().split(/\s+/).filter(Boolean)
-    const regexes = words.map((w) => ({
-      $or: [
-        { name: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-        { address: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-        { neighborhood: new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
-      ],
-    }))
+    const regexes = words.map((word) => {
+      const regex = makeSearchRegex(word)
+      return {
+        $or: [
+          { name: regex },
+          { address: regex },
+          { addressText: regex },
+          { neighborhood: regex },
+          { userProvidedNeighborhood: regex },
+          { userProvidedReference: regex },
+        ],
+      }
+    })
     query.$and = regexes
   }
 

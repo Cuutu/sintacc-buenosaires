@@ -109,15 +109,16 @@ function MapaContent() {
   const fetchPlaces = useCallback(async () => {
     if (!debouncedViewport) return
 
+    const search = debouncedSearch.trim()
     setLoading(true)
     try {
       const params = new URLSearchParams()
       params.append("limit", String(MAP_PLACES_LIMIT))
-      if (debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD) {
+      if (!search && debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD) {
         params.append("bbox", formatBbox(expandBounds(debouncedViewport.bounds)))
       }
       if (citySlugsFromUrl) params.append("citySlugs", citySlugsFromUrl)
-      else if (debouncedSearch) params.append("search", debouncedSearch)
+      if (search) params.append("search", search)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
       if (filters.neighborhood && filters.neighborhood !== "all")
         params.append("neighborhood", filters.neighborhood)

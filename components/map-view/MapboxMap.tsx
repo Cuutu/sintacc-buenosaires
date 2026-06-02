@@ -10,7 +10,6 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
 import { CABA_CENTER, CABA_ZOOM } from "./geo"
-import { geocodeAddress } from "@/lib/geocode"
 export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
   restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
   cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
@@ -170,19 +169,18 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
     }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
-    // Cuando la búsqueda cambia, volar a la localidad si Mapbox la encuentra
+    // Cuando la busqueda cambia, centrar el primer lugar encontrado.
     useEffect(() => {
-      if (!searchQuery?.trim()) return
-      geocodeAddress(searchQuery.trim()).then((geo) => {
-        if (geo && map.current) {
-          map.current.flyTo({
-            center: [geo.lng, geo.lat],
-            zoom: 13,
-            duration: reduceMotion ? 0 : 1000,
-          })
-        }
+      if (!searchQuery?.trim() || !places.length || !map.current) return
+      const firstPlace = places[0]
+      if (!firstPlace?.location) return
+
+      map.current.flyTo({
+        center: [firstPlace.location.lng, firstPlace.location.lat],
+        zoom: 15,
+        duration: reduceMotion ? 0 : 1000,
       })
-    }, [searchQuery, reduceMotion])
+    }, [searchQuery, places, reduceMotion])
 
     useEffect(() => {
       const m = map.current
