@@ -80,6 +80,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const markersRef = useRef<mapboxgl.Marker[]>([])
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
+    const lastCenteredSearchRef = useRef<string | null>(null)
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
@@ -169,12 +170,35 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
     }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
-    // Cuando la busqueda cambia, centrar el primer lugar encontrado.
+    // Cuando la busqueda cambia, centrar el primer lugar encontrado una sola vez.
     useEffect(() => {
-      if (!searchQuery?.trim() || !places.length || !map.current) return
+      const normalizedSearch = searchQuery?.trim().toLowerCase()
+      if (!normalizedSearch || !places.length || !map.current) {
+        if (!normalizedSearch) lastCenteredSearchRef.current = null
+        return
+      }
+      if (lastCenteredSearchRef.current === normalizedSearch) return
+
       const firstPlace = places[0]
       if (!firstPlace?.location) return
 
+      const searchableText = [
+        firstPlace.name,
+        firstPlace.address,
+        firstPlace.addressText,
+        firstPlace.neighborhood,
+        (firstPlace as any).userProvidedNeighborhood,
+        (firstPlace as any).userProvidedReference,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+      const matchesSearch = normalizedSearch
+        .split(/\s+/)
+        .every((word) => searchableText.includes(word))
+      if (!matchesSearch) return
+
+      lastCenteredSearchRef.current = normalizedSearch
       map.current.flyTo({
         center: [firstPlace.location.lng, firstPlace.location.lat],
         zoom: 15,

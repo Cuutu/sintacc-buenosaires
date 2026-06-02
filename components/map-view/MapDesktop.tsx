@@ -69,6 +69,7 @@ export function MapDesktop({
 
   // Lugares visibles en bounds
   const visiblePlaces = React.useMemo(() => {
+    if (searchQuery?.trim()) return places
     if (!bounds) return places
     const inBounds = filterPlacesInBounds(places, bounds)
     if (!selectedPlaceId) return inBounds
@@ -77,7 +78,7 @@ export function MapDesktop({
       return [selected, ...inBounds]
     }
     return inBounds
-  }, [places, bounds, selectedPlaceId])
+  }, [places, bounds, selectedPlaceId, searchQuery])
 
   // Sort aplicado
   const sortedPlaces = React.useMemo(() => {
@@ -150,7 +151,7 @@ export function MapDesktop({
         <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{sortedPlaces.length}</span>
-            {" "}lugar{sortedPlaces.length !== 1 ? "es" : ""} en el área
+            {" "}lugar{sortedPlaces.length !== 1 ? "es" : ""}{searchQuery?.trim() ? "" : " en el área"}
           </p>
           {hasActiveFilters && (
             <button

@@ -52,6 +52,7 @@ export function MapMobile({
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
 
   const visiblePlaces = React.useMemo(() => {
+    if (searchQuery?.trim()) return places
     if (!bounds) return places
     const inBounds = filterPlacesInBounds(places, bounds)
     if (!selectedPlaceId) return inBounds
@@ -60,7 +61,7 @@ export function MapMobile({
       return [selected, ...inBounds]
     }
     return inBounds
-  }, [places, bounds, selectedPlaceId])
+  }, [places, bounds, selectedPlaceId, searchQuery])
 
   const goToNearMe = () => {
     if (!navigator.geolocation) {
