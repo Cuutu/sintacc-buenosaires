@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MapboxMap, type MapboxMapRef } from "./MapboxMap"
+import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
@@ -28,7 +28,7 @@ interface MapMobileProps {
   listOpen?: boolean
   /** Callback cuando el usuario cierra el sheet manualmente */
   onSheetCollapse?: () => void
-  onMapMoveEnd?: (zoom: number) => void
+  onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
 }
 
 export function MapMobile({

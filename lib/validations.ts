@@ -101,6 +101,22 @@ const safetyLevelValues = [
   "unknown",
 ] as const
 
+const bboxSchema = z.object({
+  west: z.number().min(-180).max(180),
+  south: z.number().min(-90).max(90),
+  east: z.number().min(-180).max(180),
+  north: z.number().min(-90).max(90),
+})
+
+function parseBbox(value: unknown): z.infer<typeof bboxSchema> | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined
+  const parts = value.split(",").map((part) => Number(part.trim()))
+  if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part))) return undefined
+  const [west, south, east, north] = parts
+  if (south > north) return undefined
+  return { west, south, east, north }
+}
+
 export const publicPlacesQuerySchema = z.object({
   search: z.string().optional(),
   type: z.enum(placeTypeValues).optional(),
@@ -108,14 +124,15 @@ export const publicPlacesQuerySchema = z.object({
   citySlugs: z.array(z.string().min(1)).optional(),
   tags: z.array(z.string().min(1)).optional(),
   safetyLevel: z.enum(safetyLevelValues).optional(),
+  bbox: z.preprocess(parseBbox, bboxSchema.optional()),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.preprocess(
     (value) => {
       const n = Number(value)
       if (!Number.isFinite(n)) return 20
-      return Math.min(100, Math.max(1, Math.trunc(n)))
+      return Math.min(5000, Math.max(1, Math.trunc(n)))
     },
-    z.number().int().min(1).max(100)
+    z.number().int().min(1).max(5000)
   ).default(20),
 })
 
@@ -131,6 +148,7 @@ export function parsePublicPlacesSearchParams(
     citySlugs: searchParams.get("citySlugs")?.split(",").filter(Boolean),
     tags: searchParams.get("tags")?.split(",").filter(Boolean),
     safetyLevel: searchParams.get("safetyLevel") ?? undefined,
+    bbox: searchParams.get("bbox") ?? undefined,
     page: searchParams.get("page") ?? "1",
     limit: searchParams.get("limit") ?? "20",
   })

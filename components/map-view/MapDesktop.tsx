@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import mapboxgl from "mapbox-gl"
-import { MapboxMap, type MapboxMapRef } from "./MapboxMap"
+import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
 import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
@@ -22,7 +22,7 @@ interface MapDesktopProps {
   onPlaceSelect: (place: IPlace) => void
   initialCenter?: [number, number]
   initialZoom?: number
-  onMapMoveEnd?: (zoom: number) => void
+  onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
 }
 
 export function MapDesktop({

@@ -3,11 +3,43 @@
 import { useEffect, useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
+import type { MapViewportBounds } from "@/components/map-view/MapboxMap"
 import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { toast } from "sonner"
 
 const SEARCH_DEBOUNCE_MS = 300
+const VIEWPORT_DEBOUNCE_MS = 250
+const CHUNK_ZOOM_THRESHOLD = 7
+const MAP_PLACES_LIMIT = 5000
+const BBOX_PADDING_RATIO = 0.2
+
+interface MapViewport {
+  zoom: number
+  bounds: MapViewportBounds
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function expandBounds(bounds: MapViewportBounds): MapViewportBounds {
+  const lngPadding = Math.abs(bounds.east - bounds.west) * BBOX_PADDING_RATIO
+  const latPadding = Math.abs(bounds.north - bounds.south) * BBOX_PADDING_RATIO
+
+  return {
+    west: clamp(bounds.west - lngPadding, -180, 180),
+    south: clamp(bounds.south - latPadding, -90, 90),
+    east: clamp(bounds.east + lngPadding, -180, 180),
+    north: clamp(bounds.north + latPadding, -90, 90),
+  }
+}
+
+function formatBbox(bounds: MapViewportBounds): string {
+  return [bounds.west, bounds.south, bounds.east, bounds.north]
+    .map((value) => value.toFixed(6))
+    .join(",")
+}
 
 function MapaContent() {
   const searchParams = useSearchParams()
@@ -15,6 +47,7 @@ function MapaContent() {
   const pathname = usePathname()
   const placeIdFromUrl = searchParams.get("place")
   const listOpen = searchParams.get("list") === "open"
+  const citySlugsFromUrl = searchParams.get("citySlugs")
   const latParam = searchParams.get("lat")
   const lngParam = searchParams.get("lng")
   const zoomParam = searchParams.get("zoom")
@@ -31,6 +64,8 @@ function MapaContent() {
       : undefined
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewport, setViewport] = useState<MapViewport | null>(null)
+  const [debouncedViewport, setDebouncedViewport] = useState<MapViewport | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
   const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
@@ -55,6 +90,11 @@ function MapaContent() {
     return () => clearTimeout(t)
   }, [filters.search])
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedViewport(viewport), VIEWPORT_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [viewport])
+
   // Actualizar la URL cuando cambia el search (para que refresh/back mantenga la búsqueda)
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
@@ -67,11 +107,15 @@ function MapaContent() {
   }, [debouncedSearch, pathname, router, searchParams])
 
   const fetchPlaces = useCallback(async () => {
+    if (!debouncedViewport) return
+
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      params.append("limit", "999") // El mapa debe mostrar todos los lugares
-      const citySlugsFromUrl = searchParams.get("citySlugs")
+      params.append("limit", String(MAP_PLACES_LIMIT))
+      if (debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD) {
+        params.append("bbox", formatBbox(expandBounds(debouncedViewport.bounds)))
+      }
       if (citySlugsFromUrl) params.append("citySlugs", citySlugsFromUrl)
       else if (debouncedSearch) params.append("search", debouncedSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
@@ -90,7 +134,15 @@ function MapaContent() {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, filters.type, filters.neighborhood, filters.tags, filters.safetyLevel, searchParams])
+  }, [
+    citySlugsFromUrl,
+    debouncedSearch,
+    debouncedViewport,
+    filters.type,
+    filters.neighborhood,
+    filters.tags,
+    filters.safetyLevel,
+  ])
 
   useEffect(() => {
     fetchPlaces()
@@ -103,15 +155,15 @@ function MapaContent() {
 
   /** Al hacer zoom out (nivel < 8), quitar filtro de ciudad para mostrar todo el país */
   const handleMapMoveEnd = useCallback(
-    (zoom: number) => {
-      const citySlugsFromUrl = searchParams.get("citySlugs")
+    (zoom: number, bounds: MapViewportBounds) => {
+      setViewport({ zoom, bounds })
       if (!citySlugsFromUrl || zoom >= 8) return
       const params = new URLSearchParams(searchParams.toString())
       params.delete("citySlugs")
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [pathname, router, searchParams]
+    [citySlugsFromUrl, pathname, router, searchParams]
   )
 
   const handleSheetCollapse = useCallback(() => {

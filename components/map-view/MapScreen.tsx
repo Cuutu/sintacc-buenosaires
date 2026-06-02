@@ -4,6 +4,7 @@ import { MapMobile } from "./MapMobile"
 import { MapDesktop } from "./MapDesktop"
 import { useIsMobile } from "./useMediaQuery"
 import type { MapFilters } from "./MapTopBar"
+import type { MapViewportBounds } from "./MapboxMap"
 import type { IPlace } from "@/models/Place"
 
 interface MapScreenProps {
@@ -25,8 +26,8 @@ interface MapScreenProps {
   listOpen?: boolean
   /** Callback cuando el usuario cierra el sheet manualmente */
   onSheetCollapse?: () => void
-  /** Llamado al hacer zoom/pan con el nivel de zoom actual */
-  onMapMoveEnd?: (zoom: number) => void
+  /** Llamado al hacer zoom/pan con el nivel de zoom actual y bounds visibles */
+  onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
 }
 
 export function MapScreen({

@@ -28,13 +28,20 @@ export interface MapboxMapRef {
   triggerGeolocate: () => void
 }
 
+export interface MapViewportBounds {
+  west: number
+  south: number
+  east: number
+  north: number
+}
+
 interface MapboxMapProps {
   places: IPlace[]
   selectedPlaceId?: string
   onPlaceSelect?: (place: IPlace) => void
   onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
-  /** Llamado al terminar move/zoom con el nivel de zoom actual */
-  onMoveEnd?: (zoom: number) => void
+  /** Llamado al terminar move/zoom con el nivel de zoom actual y bounds visibles */
+  onMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
   searchQuery?: string
   /** Centro inicial [lng, lat]. Si no se pasa, usa CABA */
   initialCenter?: [number, number]
@@ -182,8 +189,14 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       if (!m) return
       const onLoadOrMoveEnd = () => {
         const b = m.getBounds()
-        if (b) onBoundsChangeRef.current?.(b)
-        onMoveEndRef.current?.(m.getZoom())
+        if (!b) return
+        onBoundsChangeRef.current?.(b)
+        onMoveEndRef.current?.(m.getZoom(), {
+          west: b.getWest(),
+          south: b.getSouth(),
+          east: b.getEast(),
+          north: b.getNorth(),
+        })
       }
       m.on("load", onLoadOrMoveEnd)
       m.on("moveend", onLoadOrMoveEnd)

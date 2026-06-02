@@ -54,5 +54,19 @@ export function buildPublicPlacesMongoQuery(
     query.safetyLevel = params.safetyLevel
   }
 
+  if (params.bbox) {
+    const lngCondition =
+      params.bbox.west <= params.bbox.east
+        ? { $gte: params.bbox.west, $lte: params.bbox.east }
+        : { $or: [{ "location.lng": { $gte: params.bbox.west } }, { "location.lng": { $lte: params.bbox.east } }] }
+
+    query["location.lat"] = { $gte: params.bbox.south, $lte: params.bbox.north }
+    if ("$or" in lngCondition) {
+      query.$and = [...(query.$and ?? []), { $or: lngCondition.$or }]
+    } else {
+      query["location.lng"] = lngCondition
+    }
+  }
+
   return query
 }
