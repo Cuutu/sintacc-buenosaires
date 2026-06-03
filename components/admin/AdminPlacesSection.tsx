@@ -8,6 +8,7 @@ import { TYPES } from "@/lib/constants"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
 import type { PlaceItem } from "@/components/admin/types"
+import { getPlacePath } from "@/lib/place-url"
 
 export type AdminPlacesSectionProps = {
   places: PlaceItem[]
@@ -299,7 +300,7 @@ const {
                     onClick={() => setEditingPlaceId(place._id)}>
                     ✏️ Editar
                   </Button>
-                  <Link href={`/lugar/${place._id}`} target="_blank">
+                  <Link href={getPlacePath(place)} target="_blank">
                     <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
                       👁 Ver
                     </Button>

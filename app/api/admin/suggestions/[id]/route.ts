@@ -10,6 +10,7 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 
 function buildPlaceFromDraft(draft: Record<string, unknown>) {
   const placeData: Record<string, unknown> = {
@@ -79,6 +80,7 @@ export async function PATCH(
 
       const placeData = buildPlaceFromDraft(draft)
       const place = new Place({ ...placeData, source: "suggestion" })
+      place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
       await place.save()
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
 
@@ -91,7 +93,7 @@ export async function PATCH(
         sendSuggestionApprovedEmail({
           userEmail: user.email,
           placeName: (placeData.name as string) || "Lugar",
-          placeId: place._id.toString(),
+          placeId: place.slug || place._id.toString(),
         }).catch(() => {})
       }
 
@@ -160,6 +162,7 @@ export async function POST(
 
     const placeData = buildPlaceFromDraft(draft)
     const place = new Place({ ...placeData, source: "suggestion" })
+    place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
     await place.save()
     invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
 
@@ -172,7 +175,7 @@ export async function POST(
       sendSuggestionApprovedEmail({
         userEmail: user.email,
         placeName: (placeData.name as string) || "Lugar",
-        placeId: place._id.toString(),
+        placeId: place.slug || place._id.toString(),
       }).catch(() => {})
     }
 

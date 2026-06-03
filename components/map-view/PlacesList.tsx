@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { PlaceMiniCard } from "./PlaceMiniCard"
 import type { IPlace } from "@/models/Place"
+import { getPlacePath } from "@/lib/place-url"
 
 interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
@@ -17,8 +19,20 @@ export function PlacesList({
   loading = false,
   onPlaceSelect,
 }: PlacesListProps) {
+  const router = useRouter()
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
+
+  const handlePlaceClick = React.useCallback(
+    (place: IPlace) => {
+      if (selectedPlaceId === place._id.toString()) {
+        router.push(getPlacePath(place))
+        return
+      }
+      onPlaceSelect?.(place)
+    },
+    [onPlaceSelect, router, selectedPlaceId]
+  )
 
   React.useEffect(() => {
     if (!selectedPlaceId || !selectedRef.current || !listRef.current) return
@@ -56,7 +70,7 @@ export function PlacesList({
           <PlaceMiniCard
             place={place}
             selected={selectedPlaceId === place._id.toString()}
-            onSelect={onPlaceSelect ? () => onPlaceSelect(place) : undefined}
+            onSelect={() => handlePlaceClick(place)}
           />
         </div>
       ))}

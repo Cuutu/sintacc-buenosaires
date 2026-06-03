@@ -28,6 +28,7 @@ export type ReviewItem = {
 
 export type PlaceItem = {
   _id: string
+  slug?: string
   name: string
   type: string
   address: string
