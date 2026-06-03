@@ -5,6 +5,7 @@ import { List } from "@/models/List"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { getLastPlaceUpdated } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
+import { getPlacePath } from "@/lib/place-url"
 import {
   VENTURE_CATEGORY_LANDINGS,
   VENTURE_ZONE_LANDINGS,
@@ -87,10 +88,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const places = await Place.find(
       { status: "approved" },
-      { _id: 1, updatedAt: 1 }
+      { _id: 1, slug: 1, updatedAt: 1 }
     ).lean()
-    placeUrls = places.map((p: { _id: unknown; updatedAt?: Date }) => ({
-      url: `${base}/lugar/${p._id}`,
+    placeUrls = places.map((p: { _id: { toString(): string }; slug?: string; updatedAt?: Date }) => ({
+      url: `${base}${getPlacePath(p)}`,
       lastModified: p.updatedAt ? new Date(p.updatedAt) : lastModDate,
       changeFrequency: "weekly" as const,
       priority: 0.8,

@@ -7,6 +7,7 @@ export interface IPlace extends Document {
   types?: string[]
   address: string
   neighborhood: string
+  slug?: string
   location: {
     lat: number
     lng: number
@@ -68,6 +69,14 @@ const PlaceSchema = new Schema<IPlace>(
     neighborhood: {
       type: String,
       required: true,
+      index: true,
+    },
+    slug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true,
       index: true,
     },
     location: {
@@ -137,6 +146,7 @@ PlaceSchema.index({ status: 1, type: 1 })
 PlaceSchema.index({ status: 1, type: 1, createdAt: -1 })
 PlaceSchema.index({ neighborhood: 1, type: 1 })
 PlaceSchema.index({ status: 1, neighborhood: 1, createdAt: -1 })
+PlaceSchema.index({ status: 1, slug: 1 })
 PlaceSchema.index({ status: 1, safetyLevel: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })
 PlaceSchema.index({ "contact.instagram": 1, status: 1 })

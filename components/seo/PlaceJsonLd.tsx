@@ -1,4 +1,5 @@
 import { getBaseUrl } from "@/lib/base-url"
+import { getPlacePath } from "@/lib/place-url"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -19,6 +20,7 @@ const TYPE_LABELS: Record<string, string> = {
 interface PlaceJsonLdProps {
   place: {
     _id: string
+    slug?: string | null
     name: string
     type: string
     neighborhood: string
@@ -32,7 +34,7 @@ interface PlaceJsonLdProps {
 }
 
 export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
-  const placeUrl = `${BASE_URL}/lugar/${place._id}`
+  const placeUrl = `${BASE_URL}${getPlacePath(place)}`
   const imageUrl = place.photos?.[0] ? place.photos[0] : `${BASE_URL}/CelimapLOGO.png`
   const typeLabel = TYPE_LABELS[place.type] || "Local"
 

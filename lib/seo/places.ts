@@ -14,6 +14,7 @@ const PER_PAGE = 24
 
 export type PlaceSEO = {
   _id: string
+  slug?: string | null
   name: string
   type: string
   types?: string[]
@@ -290,6 +291,7 @@ export async function getLastPlaceUpdated(): Promise<Date | null> {
 function normalizePlace(p: any): PlaceSEO {
   return {
     _id: p._id?.toString?.() ?? String(p._id),
+    slug: p.slug,
     name: p.name,
     type: p.type,
     types: p.types,

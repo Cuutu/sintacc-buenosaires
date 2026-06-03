@@ -28,10 +28,16 @@ import {
   normalizeInstagramUrl,
 } from "@/lib/instagram-url"
 import { isOpenNow } from "@/lib/opening-hours"
+import { getPlacePath } from "@/lib/place-url"
+
+function isObjectId(value: string): boolean {
+  return /^[a-f\d]{24}$/i.test(value)
+}
 
 export default function LugarPage() {
   const params = useParams()
   const router = useRouter()
+  const routePlaceParam = params.id as string | undefined
   const { data: session } = useSession()
   const [place, setPlace] = useState<IPlace & { stats?: any } | null>(null)
   const [reviews, setReviews] = useState<IReview[]>([])
@@ -51,11 +57,18 @@ export default function LugarPage() {
   const [reviewsExpanded, setReviewsExpanded] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const INITIAL_REVIEWS = 4
+  const placeId = place?._id.toString()
 
   // ── EFFECTS ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (params.id) { fetchPlace(); fetchReviews(); fetchContaminationReports() }
-  }, [params.id])
+    if (routePlaceParam) fetchPlace()
+  }, [routePlaceParam])
+
+  useEffect(() => {
+    if (!placeId) return
+    fetchReviews()
+    fetchContaminationReports()
+  }, [placeId])
 
   useEffect(() => {
     const hasLocation = place?.location?.lat != null && place?.location?.lng != null
@@ -66,9 +79,13 @@ export default function LugarPage() {
 
   // ── FETCHERS (idénticos al archivo actual) ───────────────────────────────────
   const fetchPlace = async () => {
+    if (!routePlaceParam) return
     try {
-      const data = await fetchApi<IPlace & { stats?: unknown }>(`/api/places/${params.id}`)
+      const data = await fetchApi<IPlace & { stats?: unknown }>(`/api/places/${routePlaceParam}`)
       setPlace(data)
+      if (data.slug && isObjectId(routePlaceParam)) {
+        router.replace(getPlacePath(data))
+      }
     } catch (error: any) {
       setPlace(null)
       if (error?.status !== 404) toast.error(error?.message || "Error al cargar el lugar")
@@ -78,12 +95,13 @@ export default function LugarPage() {
   }
 
   const fetchReviews = async (page = 1, append = false) => {
+    if (!placeId) return
     try {
       if (append) setLoadingMoreReviews(true)
       const data = await fetchApi<{
         reviews: IReview[]
         pagination: { page: number; pages: number; total: number }
-      }>(`/api/reviews?placeId=${params.id}&page=${page}&limit=20`)
+      }>(`/api/reviews?placeId=${placeId}&page=${page}&limit=20`)
       const newReviews = data.reviews || []
       setReviews((prev) => (append ? [...prev, ...newReviews] : newReviews))
       setReviewsPagination(data.pagination
@@ -97,10 +115,11 @@ export default function LugarPage() {
   }
 
   const fetchContaminationReports = async () => {
+    if (!placeId) return
     try {
       const data = await fetchApi<{
         reports: Array<{ _id: string; comment: string; createdAt: string; userId?: { name?: string } }>
-      }>(`/api/contamination-reports?placeId=${params.id}`)
+      }>(`/api/contamination-reports?placeId=${placeId}`)
       setContaminationReports(data.reports || [])
     } catch { /* silencioso */ }
   }
@@ -122,7 +141,7 @@ export default function LugarPage() {
         )
         places = listData.places || []
       }
-      setNearbyPlaces(places.filter((p: any) => p._id?.toString() !== params.id).slice(0, 6))
+      setNearbyPlaces(places.filter((p: any) => p._id?.toString() !== placeId).slice(0, 6))
     } catch {
       setNearbyPlaces([])
     } finally {
@@ -375,7 +394,7 @@ export default function LugarPage() {
                 return (
                   <Link
                     key={p._id.toString()}
-                    href={`/lugar/${p._id}`}
+                    href={getPlacePath(p)}
                     className="flex items-center gap-2.5 p-2 rounded-lg border border-border/50 hover:border-border bg-white/[0.02] hover:bg-white/[0.04] transition-all"
                   >
                     <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 overflow-hidden">
@@ -406,7 +425,7 @@ export default function LugarPage() {
         {/* Reportar contaminación — siempre al final */}
         <div className="pt-1 border-t border-border/40">
           <ContaminationReportForm
-            placeId={params.id as string}
+            placeId={placeId!}
             onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
             trigger={
               <button type="button" className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-red-400 transition-colors">
@@ -654,7 +673,7 @@ export default function LugarPage() {
                     ← Volver
                   </Button>
                   <ReviewForm
-                    placeId={params.id as string}
+                    placeId={placeId!}
                     onSuccess={() => { fetchReviews(); setShowReviewForm(false) }}
                   />
                 </div>

@@ -8,6 +8,7 @@ import { placeSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
 ) {
   const id = params?.id
   try {
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    if (!id) {
       return NextResponse.json(
         { error: "ID inválido" },
         { status: 400 }
@@ -24,8 +25,12 @@ export async function GET(
 
     await connectDB()
 
+    const placeQuery = mongoose.Types.ObjectId.isValid(id)
+      ? { _id: new mongoose.Types.ObjectId(id) }
+      : { slug: id }
+
     const place = await Place.findOne({
-      _id: new mongoose.Types.ObjectId(id),
+      ...placeQuery,
       status: "approved",
     }).lean()
 
@@ -37,7 +42,7 @@ export async function GET(
       )
     }
 
-    const placeObjectId = new mongoose.Types.ObjectId(id)
+    const placeObjectId = place._id
 
     const [reviewStats, contaminationReportsCount] = await Promise.all([
       Review.aggregate([
@@ -101,10 +106,31 @@ export async function PATCH(
 
     const body = await request.json()
     const validated = placeSchema.partial().parse(body)
+    const existing = await Place.findById(params.id)
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Lugar no encontrado" },
+        { status: 404 }
+      )
+    }
+
+    const nextName = validated.name ?? existing.name
+    const nextNeighborhood = validated.neighborhood ?? existing.neighborhood
+    const shouldRegenerateSlug =
+      !existing.slug ||
+      validated.name !== undefined ||
+      validated.neighborhood !== undefined
 
     const place = await Place.findByIdAndUpdate(
       params.id,
-      { ...validated, updatedAt: new Date() },
+      {
+        ...validated,
+        slug: shouldRegenerateSlug
+          ? await generateUniquePlaceSlug(nextName, nextNeighborhood, existing._id)
+          : existing.slug,
+        updatedAt: new Date(),
+      },
       { new: true }
     )
 

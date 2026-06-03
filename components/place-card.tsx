@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { isOpenNow } from "@/lib/opening-hours"
+import { getPlacePath } from "@/lib/place-url"
 
 interface PlaceCardProps {
   place: IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
@@ -114,5 +115,5 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
     )
   }
 
-  return <Link href={`/lugar/${place._id}`}>{cardContent}</Link>
+  return <Link href={getPlacePath(place)}>{cardContent}</Link>
 }

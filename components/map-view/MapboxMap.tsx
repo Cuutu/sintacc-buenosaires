@@ -10,6 +10,7 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
 import { CABA_CENTER, CABA_ZOOM } from "./geo"
+import { getPlacePath } from "@/lib/place-url"
 export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
   restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
   cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
@@ -305,6 +306,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             }
             const icon = typeIcons[(place.types?.[0] ?? place.type) as string] ?? "📍"
 
+            const detailPath = getPlacePath(place)
             const html = `
     <div style="
       background:#13161f;border:1.5px solid #2e3448;border-radius:12px;
@@ -319,7 +321,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         </div>
       </div>
       ${safetyHtml ? `<div style="margin-bottom:10px">${safetyHtml}</div>` : ""}
-      <a href="/lugar/${place._id}"
+      <a href="${detailPath}"
         style="display:block;width:100%;padding:7px;background:#4ade80;color:#000;
           border:none;border-radius:7px;font-size:12px;font-weight:700;
           text-align:center;text-decoration:none;cursor:pointer"

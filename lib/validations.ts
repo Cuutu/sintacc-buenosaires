@@ -11,6 +11,7 @@ export const placeSchema = z.object({
   types: z.array(z.enum(["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"])).min(1).optional(),
   address: z.string().min(1).max(500).trim(),
   neighborhood: z.string().min(1).max(100).trim(),
+  slug: z.string().min(1).max(120).trim().optional(),
   location: z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),

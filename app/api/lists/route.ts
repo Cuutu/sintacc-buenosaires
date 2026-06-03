@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         createdBy: new mongoose.Types.ObjectId(session.user.id),
       })
         .sort({ updatedAt: -1 })
-        .populate("placeIds", "name neighborhood photos type")
+        .populate("placeIds", "name neighborhood photos type slug")
         .populate("createdBy", "name image")
         .lean()
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       .populate("createdBy", "name image")
       .populate({
         path: "placeIds",
-        select: "name neighborhood photos type",
+        select: "name neighborhood photos type slug",
         options: { limit: 4 },
       })
       .lean()
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     })
 
     await list.save()
-    await list.populate("placeIds", "name neighborhood photos type")
+    await list.populate("placeIds", "name neighborhood photos type slug")
     await list.populate("createdBy", "name image")
 
     return NextResponse.json(list, { status: 201 })

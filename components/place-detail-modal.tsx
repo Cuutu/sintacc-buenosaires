@@ -18,6 +18,7 @@ import { TYPES } from "@/lib/constants"
 import { fetchApi } from "@/lib/fetchApi"
 import { TagBadge } from "@/components/TagBadge"
 import { isOpenNow } from "@/lib/opening-hours"
+import { getPlacePath } from "@/lib/place-url"
 
 interface PlaceDetailModalProps {
   placeId: string | null
@@ -151,7 +152,7 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
 
               <div className="flex gap-2 pt-2">
                 <Button asChild className="flex-1">
-                  <Link href={`/lugar/${place._id}`}>Ver detalle completo</Link>
+                  <Link href={getPlacePath(place)}>Ver detalle completo</Link>
                 </Button>
                 <Button
                   variant="outline"

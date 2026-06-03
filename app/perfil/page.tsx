@@ -11,6 +11,7 @@ import { User, LogOut, Heart, MapPin, ChevronRight } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
 import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
+import { getPlacePath } from "@/lib/place-url"
 
 export default function PerfilPage() {
   const { data: session, status } = useSession()
@@ -127,7 +128,7 @@ export default function PerfilPage() {
           ) : (
             <div className="space-y-3">
               {savedPlaces.slice(0, 5).map((place) => (
-                <Link key={place._id.toString()} href={`/lugar/${place._id}`}>
+                <Link key={place._id.toString()} href={getPlacePath(place)}>
                   <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors">
                     <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
                       {TYPES.find((t) => t.value === place.type)?.emoji || "📍"}

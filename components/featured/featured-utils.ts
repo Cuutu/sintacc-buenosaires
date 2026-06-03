@@ -1,5 +1,6 @@
 export type PlaceWithStats = {
   _id: { toString(): string }
+  slug?: string | null
   name: string
   type: string
   neighborhood: string

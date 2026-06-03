@@ -1,6 +1,7 @@
 import type { City } from "@/lib/seo/cities"
 import type { PlaceSEO } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
+import { getPlacePath } from "@/lib/place-url"
 
 const BASE_URL = getBaseUrl()
 
@@ -49,7 +50,7 @@ export function CityPageJsonLd({ city, categorySlug, places, faqs }: CityPageJso
         "@type": "LocalBusiness",
         name: p.name,
         address: p.address ? { "@type": "PostalAddress", streetAddress: p.address } : undefined,
-        url: `${BASE_URL}/lugar/${p._id}`,
+        url: `${BASE_URL}${getPlacePath(p)}`,
       },
     })),
   }

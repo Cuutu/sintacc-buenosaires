@@ -13,6 +13,7 @@
     "check-env": "tsx scripts/check-env.ts",
     "check-indexes": "tsx scripts/check-indexes.ts",
     "benchmark:api": "tsx scripts/benchmark-api.ts",
+    "backfill:place-slugs": "tsx scripts/backfill-place-slugs.ts",
     "generate-noise": "node scripts/generate-noise.js",
     "test": "jest",
     "test:watch": "jest --watch"

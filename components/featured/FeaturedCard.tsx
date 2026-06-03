@@ -7,6 +7,7 @@ import type { PlaceWithStats } from "./featured-utils"
 import { getSafetyBadge, getDisplayTags } from "./featured-utils"
 import { TagBadge } from "@/components/TagBadge"
 import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
+import { getPlacePath } from "@/lib/place-url"
 
 interface FeaturedCardProps {
   place: PlaceWithStats
@@ -20,7 +21,7 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
 
   return (
     <Link
-      href={`/lugar/${place._id}`}
+      href={getPlacePath(place)}
       className="group block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
     >
       {/* Image */}

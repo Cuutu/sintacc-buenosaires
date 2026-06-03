@@ -16,7 +16,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const { id } = await params
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return { title: "Lugar no encontrado | Celimap" }
+      await connectDB()
+      const place = await Place.findOne({ slug: id, status: "approved" }).lean()
+      if (!place) return { title: "Lugar no encontrado | Celimap" }
+      const p = place as { name: string; neighborhood: string; type: string; photos?: string[] }
+      const BASE_URL = getBaseUrl()
+      const ogImage = p.photos?.[0] || `${BASE_URL}/CelimapLOGO.png`
+      return {
+        title: p.name,
+        description: `${p.name} - ${p.neighborhood}. Lugar sin TACC en Argentina. ReseÃ±as y datos de contacto.`,
+        openGraph: {
+          title: `${p.name} | Celimap`,
+          description: `${p.name} en ${p.neighborhood}. Lugar apto para celÃ­acos en Argentina.`,
+          images: [{ url: ogImage, width: 1200, height: 630, alt: p.name }],
+        },
+      }
     }
     await connectDB()
     const place = await Place.findById(new mongoose.Types.ObjectId(id)).lean()

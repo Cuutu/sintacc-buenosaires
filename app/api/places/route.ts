@@ -9,6 +9,7 @@ import { buildPublicPlacesMongoQuery } from "@/lib/places-public-query"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
+import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 
 const PUBLIC_PLACES_CACHE_TTL_MS = 60 * 1000
 
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
     
     const place = new Place({
       ...validated,
+      slug: await generateUniquePlaceSlug(validated.name, validated.neighborhood),
       status: "approved",
     })
     

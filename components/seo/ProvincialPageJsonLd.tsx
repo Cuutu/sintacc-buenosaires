@@ -4,6 +4,7 @@
 import type { PlaceSEO } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
 import { normalizeInstagramUrl } from "@/lib/instagram-url"
+import { getPlacePath } from "@/lib/place-url"
 
 const BASE_URL =
   getBaseUrl()
@@ -50,7 +51,7 @@ export function ProvincialPageJsonLd({
               }
             : undefined,
           sameAs: sameAs || undefined,
-          url: `${BASE_URL}/lugar/${p._id}`,
+          url: `${BASE_URL}${getPlacePath(p)}`,
         },
       }
     }),

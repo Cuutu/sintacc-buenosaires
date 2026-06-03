@@ -95,7 +95,7 @@ export async function PATCH(
     }
 
     await list.save()
-    await list.populate("placeIds", "name neighborhood photos type")
+    await list.populate("placeIds", "name neighborhood photos type slug")
     await list.populate("createdBy", "name image")
 
     return NextResponse.json(list)
