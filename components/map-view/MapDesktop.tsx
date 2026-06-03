@@ -169,6 +169,7 @@ export function MapDesktop({
             places={sortedPlaces}
             selectedPlaceId={selectedPlaceId}
             loading={loading}
+            onPlaceSelect={onPlaceSelect}
           />
         </div>
       </div>

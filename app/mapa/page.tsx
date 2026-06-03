@@ -91,6 +91,10 @@ function MapaContent() {
   }, [filters.search])
 
   useEffect(() => {
+    if (!placeIdFromUrl) setSelectedPlaceId(null)
+  }, [debouncedSearch, placeIdFromUrl])
+
+  useEffect(() => {
     const t = setTimeout(() => setDebouncedViewport(viewport), VIEWPORT_DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [viewport])

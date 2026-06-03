@@ -159,6 +159,7 @@ export function MapMobile({
               places={visiblePlaces}
               selectedPlaceId={selectedPlaceId}
               loading={loading}
+              onPlaceSelect={handlePlaceSelect}
             />
           </div>
         </MapBottomSheet>

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import Image from "next/image"
 import { Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -11,6 +10,7 @@ import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
 interface PlaceMiniCardProps {
   place: IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
   selected?: boolean
+  onSelect?: () => void
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -23,7 +23,7 @@ const TYPE_ICONS: Record<string, string> = {
   other: "📍",
 }
 
-export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
+export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps) {
   const primaryType = place.types?.[0] ?? place.type
   const typeIcon = TYPE_ICONS[primaryType] || "📍"
   const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
@@ -86,8 +86,8 @@ export function PlaceMiniCard({ place, selected }: PlaceMiniCardProps) {
   )
 
   return (
-    <Link href={`/lugar/${place._id}`} className="block">
+    <button type="button" onClick={onSelect} className="block w-full text-left">
       {content}
-    </Link>
+    </button>
   )
 }

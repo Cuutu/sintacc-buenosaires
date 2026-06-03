@@ -170,7 +170,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
     }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
-    // Cuando la busqueda cambia, centrar el primer lugar encontrado una sola vez.
+    // Cuando la busqueda cambia, encuadrar los lugares encontrados una sola vez.
     useEffect(() => {
       const normalizedSearch = searchQuery?.trim().toLowerCase()
       if (!normalizedSearch || !places.length || !map.current) {
@@ -199,6 +199,24 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       if (!matchesSearch) return
 
       lastCenteredSearchRef.current = normalizedSearch
+      const validPlaces = places.filter(
+        (place) =>
+          Number.isFinite(place.location?.lng) &&
+          Number.isFinite(place.location?.lat)
+      )
+      if (validPlaces.length > 1) {
+        const bounds = new mapboxgl.LngLatBounds()
+        validPlaces.forEach((place) => {
+          bounds.extend([place.location.lng, place.location.lat])
+        })
+        map.current.fitBounds(bounds, {
+          padding: 80,
+          maxZoom: 14,
+          duration: reduceMotion ? 0 : 1000,
+        })
+        return
+      }
+
       map.current.flyTo({
         center: [firstPlace.location.lng, firstPlace.location.lat],
         zoom: 15,

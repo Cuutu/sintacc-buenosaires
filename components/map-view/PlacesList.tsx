@@ -8,12 +8,14 @@ interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
   selectedPlaceId: string | null
   loading?: boolean
+  onPlaceSelect?: (place: IPlace) => void
 }
 
 export function PlacesList({
   places,
   selectedPlaceId,
   loading = false,
+  onPlaceSelect,
 }: PlacesListProps) {
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
@@ -54,6 +56,7 @@ export function PlacesList({
           <PlaceMiniCard
             place={place}
             selected={selectedPlaceId === place._id.toString()}
+            onSelect={onPlaceSelect ? () => onPlaceSelect(place) : undefined}
           />
         </div>
       ))}
