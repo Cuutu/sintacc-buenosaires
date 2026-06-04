@@ -36,6 +36,9 @@ export function extractLocality(
 }
 
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+  const googleResult = await geocodeAddressWithGoogle(address)
+  if (googleResult) return googleResult
+
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
   if (!token || !address.trim()) return null
 
@@ -67,6 +70,21 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
       lng,
       neighborhood,
     }
+  } catch {
+    return null
+  }
+}
+
+async function geocodeAddressWithGoogle(address: string): Promise<GeocodeResult | null> {
+  if (typeof window === "undefined" || !address.trim()) return null
+
+  try {
+    const params = new URLSearchParams({ address: address.trim() })
+    const res = await fetch(`/api/google-places/geocode?${params}`)
+    if (!res.ok) return null
+
+    const data: { result?: GeocodeResult | null } = await res.json()
+    return data.result ?? null
   } catch {
     return null
   }

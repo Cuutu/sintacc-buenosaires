@@ -2,7 +2,7 @@
 
 /**
  * Modal "Marcá la ubicación en el mapa"
- * - Buscar dirección con autocomplete (Mapbox Forward Geocoding)
+ * - Buscar dirección con autocomplete (Google Places + fallback Mapbox)
  * - Click en mapa → pin + reverse geocode → "Dirección detectada"
  * - Si reverse falla: campos Barrio + Referencia
  * - No muestra lat/lng al usuario
@@ -24,6 +24,31 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NEIGHBORHOODS } from "@/lib/constants"
 
+interface GooglePrediction {
+  placeId: string
+  text: string
+  mainText?: string
+  secondaryText?: string
+}
+
+interface GooglePlace {
+  placeId: string
+  name?: string
+  address: string
+  lat: number
+  lng: number
+  neighborhood?: string
+}
+
+interface SearchSuggestion {
+  id: string
+  provider: "google" | "mapbox"
+  label: string
+  secondaryLabel?: string
+  googlePlaceId?: string
+  mapboxResult?: ForwardGeocodeResult
+}
+
 export interface MapPickerResult {
   lat: number
   lng: number
@@ -43,6 +68,10 @@ type Props = {
 
 const DEBOUNCE_MS = 350
 
+function createSessionToken(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
+}
+
 export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
@@ -50,11 +79,12 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   const abortRef = useRef<AbortController | null>(null)
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchSuggestions, setSearchSuggestions] = useState<ForwardGeocodeResult[]>([])
+  const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const searchWrapperRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const googleSessionTokenRef = useRef(createSessionToken())
 
   const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null)
   const [addressText, setAddressText] = useState("")
@@ -117,11 +147,21 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       try {
         if (abortRef.current) abortRef.current.abort()
         abortRef.current = new AbortController()
+        const googleSuggestions = await fetchGoogleSuggestions(
+          searchQuery,
+          googleSessionTokenRef.current
+        )
+        if (googleSuggestions.length > 0) {
+          setSearchSuggestions(googleSuggestions)
+          setShowSearchDropdown(true)
+          return
+        }
+
         const results = await forwardGeocode(searchQuery, {
           limit: 5,
           signal: abortRef.current.signal,
         })
-        setSearchSuggestions(results)
+        setSearchSuggestions(results.map(mapMapboxResultToSuggestion))
         setShowSearchDropdown(true)
       } catch {
         setSearchSuggestions([])
@@ -204,24 +244,54 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     }
   }, [open, mounted, runReverseGeocode])
 
-  const handleSearchSelect = (item: ForwardGeocodeResult) => {
-    setSearchQuery(item.place_name)
-    setShowSearchDropdown(false)
-    setPicked({ lat: item.lat, lng: item.lng })
+  const handleSearchSelect = async (item: SearchSuggestion) => {
+    if (item.provider === "google" && item.googlePlaceId) {
+      setSearchLoading(true)
+      try {
+        const place = await fetchGooglePlaceDetails(
+          item.googlePlaceId,
+          googleSessionTokenRef.current
+        )
+        if (place) {
+          setSearchQuery(place.address)
+          setShowSearchDropdown(false)
+          setPicked({ lat: place.lat, lng: place.lng })
+          placeMarker(place.lat, place.lng)
+          setAddressText(place.address)
+          setNeighborhood(place.neighborhood)
+          setNeedsUserInput(false)
+          googleSessionTokenRef.current = createSessionToken()
+          return
+        }
+      } finally {
+        setSearchLoading(false)
+      }
+    }
 
+    const result = item.mapboxResult
+    if (!result) return
+
+    setSearchQuery(result.place_name)
+    setShowSearchDropdown(false)
+    setPicked({ lat: result.lat, lng: result.lng })
+    placeMarker(result.lat, result.lng)
+
+    setAddressText(result.address)
+    setNeighborhood(result.neighborhood)
+    setNeedsUserInput(false)
+  }
+
+  const placeMarker = (lat: number, lng: number) => {
     if (markerRef.current) markerRef.current.remove()
     if (map.current) {
-      map.current.flyTo({ center: [item.lng, item.lat], zoom: 16 })
+      map.current.flyTo({ center: [lng, lat], zoom: 16 })
       const el = document.createElement("div")
       el.innerHTML = `<div style="width:32px;height:32px;background:#10b981;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><span style="font-size:16px">📍</span></div>`
       markerRef.current = new mapboxgl.Marker({ element: el })
-        .setLngLat([item.lng, item.lat])
+        .setLngLat([lng, lat])
         .addTo(map.current)
     }
 
-    setAddressText(item.address)
-    setNeighborhood(item.neighborhood)
-    setNeedsUserInput(false)
   }
 
   const handleConfirm = () => {
@@ -304,16 +374,28 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
               <ul className="absolute z-50 w-full mt-1 py-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                 {searchSuggestions.map((item) => (
                   <li
-                    key={item.place_name + item.lat + item.lng}
+                    key={item.id}
                     className="px-3 py-2 cursor-pointer text-sm hover:bg-accent"
                     onClick={() => handleSearchSelect(item)}
                   >
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                      <span className="line-clamp-2">{item.place_name}</span>
+                      <span className="min-w-0">
+                        <span className="line-clamp-1">{item.label}</span>
+                        {item.secondaryLabel && (
+                          <span className="line-clamp-1 text-xs text-muted-foreground">
+                            {item.secondaryLabel}
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </li>
                 ))}
+                {searchSuggestions.some((item) => item.provider === "google") && (
+                  <li className="px-3 py-1.5 text-[10px] text-muted-foreground border-t">
+                    Datos de Google Maps
+                  </li>
+                )}
               </ul>
             )}
           </div>
@@ -426,4 +508,41 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
   )
 
   return createPortal(modalContent, document.body)
+}
+
+async function fetchGoogleSuggestions(
+  input: string,
+  sessionToken: string
+): Promise<SearchSuggestion[]> {
+  const params = new URLSearchParams({ input, sessionToken })
+  const res = await fetch(`/api/google-places/autocomplete?${params}`)
+  if (!res.ok) return []
+  const data: { predictions?: GooglePrediction[] } = await res.json()
+  return (data.predictions ?? []).map((prediction) => ({
+    id: `google:${prediction.placeId}`,
+    provider: "google",
+    label: prediction.mainText || prediction.text,
+    secondaryLabel: prediction.secondaryText,
+    googlePlaceId: prediction.placeId,
+  }))
+}
+
+async function fetchGooglePlaceDetails(
+  placeId: string,
+  sessionToken: string
+): Promise<GooglePlace | null> {
+  const params = new URLSearchParams({ placeId, sessionToken })
+  const res = await fetch(`/api/google-places/details?${params}`)
+  if (!res.ok) return null
+  const data: { place?: GooglePlace | null } = await res.json()
+  return data.place ?? null
+}
+
+function mapMapboxResultToSuggestion(result: ForwardGeocodeResult): SearchSuggestion {
+  return {
+    id: `mapbox:${result.place_name}:${result.lat}:${result.lng}`,
+    provider: "mapbox",
+    label: result.place_name,
+    mapboxResult: result,
+  }
 }
