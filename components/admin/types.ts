@@ -13,6 +13,17 @@ export type SuggestionItem = {
     tags?: string[]
   }
   suggestedByUserId?: { name?: string }
+  duplicateCandidates?: Array<{
+    id: string
+    kind: "place" | "suggestion"
+    name: string
+    address?: string
+    neighborhood?: string
+    score: number
+    reasons: string[]
+    distanceMeters?: number
+    status?: string
+  }>
 }
 
 export type ReviewItem = {

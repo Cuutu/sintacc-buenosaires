@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { AlertTriangle, Search } from "lucide-react"
 import { TYPES } from "@/lib/constants"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import type { AdminCounts, SuggestionItem } from "@/components/admin/types"
@@ -104,6 +104,39 @@ const {
                     Sugerido por {suggestion.suggestedByUserId.name}
                   </p>
                 )}
+                {suggestion.duplicateCandidates?.length ? (
+                  <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                      <div className="min-w-0 space-y-1.5">
+                        <p className="font-semibold text-amber-200">
+                          Posible duplicado
+                        </p>
+                        <div className="space-y-1">
+                          {suggestion.duplicateCandidates.map((candidate) => (
+                            <div key={`${candidate.kind}-${candidate.id}`} className="text-amber-100/90">
+                              <span className="font-medium">{candidate.name}</span>
+                              <span className="text-amber-100/60">
+                                {" "}({candidate.kind === "place" ? "ya publicado" : "otra sugerencia pendiente"})
+                              </span>
+                              {candidate.neighborhood && (
+                                <span className="text-amber-100/60"> - {candidate.neighborhood}</span>
+                              )}
+                              {candidate.distanceMeters != null && (
+                                <span className="text-amber-100/60">
+                                  {" "}- {formatDistance(candidate.distanceMeters)}
+                                </span>
+                              )}
+                              <div className="text-[11px] text-amber-100/60">
+                                Coincidencias: {candidate.reasons.join(", ")} - score {candidate.score}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
@@ -148,4 +181,9 @@ const {
   </div>
 
   )
+}
+
+function formatDistance(distanceMeters: number): string {
+  if (distanceMeters < 1000) return `${distanceMeters} m`
+  return `${(distanceMeters / 1000).toFixed(1)} km`
 }
