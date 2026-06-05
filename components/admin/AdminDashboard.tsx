@@ -235,13 +235,14 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
 
   const handleVentureSuggestionAction = async (
     id: string,
-    action: "approve" | "reject"
+    action: "approve" | "reject",
+    rejectionReason?: string
   ) => {
     try {
       const res = await fetch(`/api/admin/venture-suggestions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, rejectionReason }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -258,12 +259,16 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
     }
   }
 
-  const handleSuggestionAction = async (id: string, action: "approve" | "reject") => {
+  const handleSuggestionAction = async (
+    id: string,
+    action: "approve" | "reject",
+    rejectionReason?: string
+  ) => {
     try {
       const res = await fetch(`/api/admin/suggestions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, rejectionReason }),
       })
 
       const data = await res.json()

@@ -146,6 +146,52 @@ export function buildSuggestionApprovedEmailHtml(params: {
 </html>`.trim()
 }
 
+export function buildSuggestionRejectedEmailHtml(params: {
+  placeName: string
+  rejectionReason: string
+}): string {
+  const { placeName, rejectionReason } = params
+  const baseUrl = getBaseUrl()
+  const logoUrl = `${baseUrl}/celimaplogocompleto.png`
+  const iconUrl = `${baseUrl}/CelimapLOGO.png`
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tu sugerencia fue revisada - Celimap</title></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#0f0f12;color:#e4e4e7;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0f0f12;min-height:100vh;">
+    <tr><td align="center" style="padding:40px 20px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+          <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#f59e0b;font-weight:600;">Sugerencia revisada</p>
+        </td></tr>
+        <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr><td style="padding:28px;">
+              <h1 style="margin:0;font-size:22px;font-weight:600;color:#fafafa;">Tu sugerencia no fue publicada</h1>
+              <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#d4d4d8;">
+                Revisamos <strong>${escapeHtml(placeName)}</strong> y por ahora no la vamos a publicar en Celimap.
+              </p>
+              <div style="margin-top:18px;padding:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:12px;">
+                <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;font-weight:600;">Motivo</p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#fef3c7;">${escapeHtml(rejectionReason)}</p>
+              </div>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
+          <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
+          <p style="margin:0;font-size:12px;color:#52525b;">Celimap &middot; Lugares sin gluten en todo el mundo</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim()
+}
+
 export async function sendSuggestionNewEmail(params: {
   placeDraft: Record<string, unknown>
   suggestedByName: string
@@ -200,6 +246,34 @@ export async function sendSuggestionApprovedEmail(params: {
     return true
   } catch (err) {
     console.error("[email-suggestions] Error enviando email sugerencia aprobada:", err)
+    return false
+  }
+}
+
+export async function sendSuggestionRejectedEmail(params: {
+  userEmail: string
+  placeName: string
+  rejectionReason: string
+}): Promise<boolean> {
+  const resendKey = process.env.RESEND_API_KEY
+  if (!params.userEmail || !resendKey) return false
+
+  const resend = new Resend(resendKey)
+  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
+
+  try {
+    await resend.emails.send({
+      from: `Celimap <${fromDomain}>`,
+      to: params.userEmail,
+      subject: `[Celimap] Revisamos tu sugerencia "${params.placeName}"`,
+      html: buildSuggestionRejectedEmailHtml({
+        placeName: params.placeName,
+        rejectionReason: params.rejectionReason,
+      }),
+    })
+    return true
+  } catch (err) {
+    console.error("[email-suggestions] Error enviando email sugerencia rechazada:", err)
     return false
   }
 }

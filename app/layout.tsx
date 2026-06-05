@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { LayoutChrome } from "@/components/layout/LayoutChrome";
@@ -97,6 +98,7 @@ export default function RootLayout({
           <Toaster position="top-center" richColors closeButton />
           <InstallPrompt />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

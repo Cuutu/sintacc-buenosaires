@@ -116,6 +116,38 @@ export function buildVentureApprovedEmailHtml(params: {
 </html>`.trim()
 }
 
+export function buildVentureRejectedEmailHtml(params: {
+  ventureName: string
+  rejectionReason: string
+}): string {
+  const baseUrl = getBaseUrl()
+  const logoUrl = `${baseUrl}/celimaplogocompleto.png`
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:sans-serif;background:#0f0f12;color:#e4e4e7;">
+  <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
+    <table style="max-width:560px;">
+      <tr><td style="text-align:center;padding-bottom:24px;">
+        <img src="${logoUrl}" alt="Celimap" width="160" height="42" />
+        <p style="font-size:11px;color:#f59e0b;font-weight:600;">SUGERENCIA REVISADA</p>
+      </td></tr>
+      <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;">
+        <h1 style="margin:0;font-size:22px;color:#fafafa;">Tu emprendimiento no fue publicado</h1>
+        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> fue revisado y por ahora no lo vamos a publicar en Celimap.</p>
+        <div style="margin-top:18px;padding:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:12px;">
+          <p style="margin:0 0 8px;font-size:12px;color:#fbbf24;font-weight:600;">MOTIVO</p>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#fef3c7;">${escapeHtml(params.rejectionReason)}</p>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>`.trim()
+}
+
 export async function sendVentureSuggestionNewEmail(params: {
   ventureDraft: Record<string, unknown>
   suggestedByName: string
@@ -165,6 +197,31 @@ export async function sendVentureApprovedEmail(params: {
     return true
   } catch (err) {
     console.error("[email-ventures] Error email aprobado:", err)
+    return false
+  }
+}
+
+export async function sendVentureRejectedEmail(params: {
+  userEmail: string
+  ventureName: string
+  rejectionReason: string
+}): Promise<boolean> {
+  const resendKey = process.env.RESEND_API_KEY
+  if (!params.userEmail || !resendKey) return false
+
+  const resend = new Resend(resendKey)
+  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
+
+  try {
+    await resend.emails.send({
+      from: `Celimap <${fromDomain}>`,
+      to: params.userEmail,
+      subject: `[Celimap] Revisamos tu emprendimiento "${params.ventureName}"`,
+      html: buildVentureRejectedEmailHtml(params),
+    })
+    return true
+  } catch (err) {
+    console.error("[email-ventures] Error email rechazado:", err)
     return false
   }
 }

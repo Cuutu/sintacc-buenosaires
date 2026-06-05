@@ -4,7 +4,7 @@ import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
 import { User } from "@/models/User"
 import { requireAdmin } from "@/lib/middleware"
-import { sendSuggestionApprovedEmail } from "@/lib/email-suggestions"
+import { sendSuggestionApprovedEmail, sendSuggestionRejectedEmail } from "@/lib/email-suggestions"
 import { placeSchema, placeDraftUpdateSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
@@ -22,6 +22,10 @@ function buildPlaceFromDraft(draft: Record<string, unknown>) {
   }
   const parsed = placeSchema.parse(placeData)
   return { ...parsed, status: "approved" as const }
+}
+
+function getRejectionReason(value: unknown): string {
+  return typeof value === "string" ? value.trim() : ""
 }
 
 export async function PATCH(
@@ -42,7 +46,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { action, placeDraft: incomingDraft } = body
+    const { action, placeDraft: incomingDraft, rejectionReason } = body
 
     const suggestion = await Suggestion.findById(params.id)
     if (!suggestion) {
@@ -103,9 +107,33 @@ export async function PATCH(
         suggestion,
       })
     } else {
+      const reason = getRejectionReason(rejectionReason)
+      if (!reason) {
+        return NextResponse.json(
+          { error: "Escribi un motivo para rechazar la sugerencia" },
+          { status: 400 }
+        )
+      }
+
       suggestion.status = "rejected"
+      suggestion.rejectionReason = reason
+      suggestion.rejectedAt = new Date()
+      if (session.user.id && mongoose.Types.ObjectId.isValid(session.user.id)) {
+        suggestion.rejectedByUserId = new mongoose.Types.ObjectId(session.user.id)
+      }
       await suggestion.save()
       invalidateApiCache(["admin:counts"])
+
+      const user = await User.findById(suggestion.suggestedByUserId).select("email").lean()
+      if (user?.email) {
+        const draft = (suggestion.placeDraft as Record<string, unknown>) || {}
+        sendSuggestionRejectedEmail({
+          userEmail: user.email,
+          placeName: (draft.name as string) || "Lugar sugerido",
+          rejectionReason: reason,
+        }).catch(() => {})
+      }
+
       return NextResponse.json({
         message: "Sugerencia rechazada",
         suggestion,

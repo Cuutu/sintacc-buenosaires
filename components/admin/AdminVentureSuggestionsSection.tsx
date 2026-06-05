@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
+import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { VentureSuggestionEditModal } from "@/components/admin/VentureSuggestionEditModal"
 import { getCategoryLabel, getSafetyBadge } from "@/lib/venture-constants"
 import type { AdminCounts, VentureSuggestionItem } from "@/components/admin/types"
@@ -13,7 +15,7 @@ export type AdminVentureSuggestionsSectionProps = {
   loading: boolean
   search: string
   setSearch: (v: string) => void
-  handleAction: (id: string, action: "approve" | "reject") => void
+  handleAction: (id: string, action: "approve" | "reject", rejectionReason?: string) => Promise<void> | void
   editing: VentureSuggestionItem | null
   setEditing: (s: VentureSuggestionItem | null) => void
   fetchSuggestions: () => void
@@ -31,6 +33,7 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
     setEditing,
     fetchSuggestions,
   } = props
+  const [rejectingSuggestion, setRejectingSuggestion] = useState<VentureSuggestionItem | null>(null)
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
@@ -99,7 +102,7 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleAction(s._id, "reject")}
+                      onClick={() => setRejectingSuggestion(s)}
                     >
                       Rechazar
                     </Button>
@@ -123,6 +126,20 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
           onApproved={fetchSuggestions}
         />
       )}
+      <RejectionReasonDialog
+        open={!!rejectingSuggestion}
+        title="Rechazar emprendimiento"
+        description="Este mensaje se va a enviar por email a la persona que sugirio el emprendimiento."
+        itemName={rejectingSuggestion?.ventureDraft.name}
+        onOpenChange={(open) => {
+          if (!open) setRejectingSuggestion(null)
+        }}
+        onConfirm={async (reason) => {
+          if (!rejectingSuggestion) return
+          await handleAction(rejectingSuggestion._id, "reject", reason)
+          setRejectingSuggestion(null)
+        }}
+      />
     </div>
   )
 }

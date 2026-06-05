@@ -5,7 +5,7 @@ import { Venture } from "@/models/Venture"
 import { User } from "@/models/User"
 import { requireAdmin } from "@/lib/middleware"
 import { ventureDraftUpdateSchema, ventureSchema } from "@/lib/validations"
-import { sendVentureApprovedEmail } from "@/lib/email-ventures"
+import { sendVentureApprovedEmail, sendVentureRejectedEmail } from "@/lib/email-ventures"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
@@ -18,6 +18,10 @@ function buildVentureFromDraft(draft: Record<string, unknown>) {
     photos: (draft.photos as string[])?.length ? draft.photos : [],
   })
   return { ...parsed, status: "approved" as const, source: "suggestion" as const }
+}
+
+function getRejectionReason(value: unknown): string {
+  return typeof value === "string" ? value.trim() : ""
 }
 
 export async function PATCH(
@@ -35,7 +39,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { action, ventureDraft: incomingDraft } = body
+    const { action, ventureDraft: incomingDraft, rejectionReason } = body
 
     const suggestion = await VentureSuggestion.findById(params.id)
     if (!suggestion) {
@@ -85,9 +89,33 @@ export async function PATCH(
       })
     }
 
+    const reason = getRejectionReason(rejectionReason)
+    if (!reason) {
+      return NextResponse.json(
+        { error: "Escribi un motivo para rechazar la sugerencia" },
+        { status: 400 }
+      )
+    }
+
     suggestion.status = "rejected"
+    suggestion.rejectionReason = reason
+    suggestion.rejectedAt = new Date()
+    if (session.user.id && mongoose.Types.ObjectId.isValid(session.user.id)) {
+      suggestion.rejectedByUserId = new mongoose.Types.ObjectId(session.user.id)
+    }
     await suggestion.save()
     invalidateApiCache(["admin:counts"])
+
+    const user = await User.findById(suggestion.suggestedByUserId).select("email").lean()
+    if (user?.email) {
+      const draft = (suggestion.ventureDraft as Record<string, unknown>) || {}
+      sendVentureRejectedEmail({
+        userEmail: user.email,
+        ventureName: (draft.name as string) || "Emprendimiento sugerido",
+        rejectionReason: reason,
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ message: "Sugerencia rechazada", suggestion })
   } catch (error) {
     if (error instanceof ZodError) {

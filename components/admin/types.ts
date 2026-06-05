@@ -13,6 +13,8 @@ export type SuggestionItem = {
     tags?: string[]
   }
   suggestedByUserId?: { name?: string }
+  rejectionReason?: string
+  rejectedAt?: string
   duplicateCandidates?: Array<{
     id: string
     kind: "place" | "suggestion"
@@ -80,6 +82,8 @@ export type VentureSuggestionItem = {
   suggesterComment?: string
   shipsNationwide?: boolean
   suggestedByUserId?: { name?: string; email?: string }
+  rejectionReason?: string
+  rejectedAt?: string
 }
 
 export type VentureItem = {

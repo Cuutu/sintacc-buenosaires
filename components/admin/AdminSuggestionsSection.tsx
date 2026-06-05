@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertTriangle, Search } from "lucide-react"
 import { TYPES } from "@/lib/constants"
+import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import type { AdminCounts, SuggestionItem } from "@/components/admin/types"
 
@@ -13,7 +15,7 @@ export type AdminSuggestionsSectionProps = {
   loading: boolean
   suggestionSearch: string
   setSuggestionSearch: (v: string) => void
-  handleSuggestionAction: (id: string, action: "approve" | "reject") => void
+  handleSuggestionAction: (id: string, action: "approve" | "reject", rejectionReason?: string) => Promise<void> | void
   editingSuggestion: SuggestionItem | null
   setEditingSuggestion: (s: SuggestionItem | null) => void
   fetchSuggestions: () => void
@@ -33,6 +35,7 @@ const {
   fetchSuggestions,
   getTypeLabel,
 } = props
+const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | null>(null)
   return (
   <div className="rounded-xl border border-border overflow-hidden">
     <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
@@ -157,7 +160,7 @@ const {
                     size="sm"
                     variant="ghost"
                     className="h-8 gap-1.5 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleSuggestionAction(suggestion._id, "reject")}
+                    onClick={() => setRejectingSuggestion(suggestion)}
                   >
                     ❌ Rechazar
                   </Button>
@@ -178,6 +181,20 @@ const {
         onApproved={fetchSuggestions}
       />
     )}
+    <RejectionReasonDialog
+      open={!!rejectingSuggestion}
+      title="Rechazar sugerencia"
+      description="Este mensaje se va a enviar por email a la persona que sugirio el lugar."
+      itemName={rejectingSuggestion?.placeDraft.name}
+      onOpenChange={(open) => {
+        if (!open) setRejectingSuggestion(null)
+      }}
+      onConfirm={async (reason) => {
+        if (!rejectingSuggestion) return
+        await handleSuggestionAction(rejectingSuggestion._id, "reject", reason)
+        setRejectingSuggestion(null)
+      }}
+    />
   </div>
 
   )

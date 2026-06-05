@@ -5,6 +5,9 @@ export interface ISuggestion extends Document {
   placeDraft: Partial<IPlace>
   suggestedByUserId: mongoose.Types.ObjectId
   status: "pending" | "approved" | "rejected"
+  rejectionReason?: string
+  rejectedAt?: Date
+  rejectedByUserId?: mongoose.Types.ObjectId
   createdAt: Date
   updatedAt: Date
 }
@@ -26,6 +29,12 @@ const SuggestionSchema = new Schema<ISuggestion>(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
       index: true,
+    },
+    rejectionReason: String,
+    rejectedAt: Date,
+    rejectedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {
