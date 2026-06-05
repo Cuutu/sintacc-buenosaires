@@ -40,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/explorar`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/sugerir`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/sin-gluten-argentina`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/que-es-celimap`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.75 },
     { url: `${base}/listas`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/emprendimientos`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.8 },
   ]
