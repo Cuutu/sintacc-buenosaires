@@ -12,6 +12,9 @@ import { EmprendimientosSection } from "@/components/home/EmprendimientosSection
 import { FaqSection } from "@/components/home/FaqSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
+import { getBaseUrl } from "@/lib/base-url"
+
+const BASE_URL = getBaseUrl()
 
 export const metadata = {
   title: "Mapa para celíacos | Lugares sin gluten en Argentina y el mundo",
@@ -21,7 +24,9 @@ export const metadata = {
     title: "Mapa para celíacos | Lugares sin gluten en Argentina",
     description:
       "Encontrá restaurantes, cafés y panaderías sin TACC. Donde comer sin gluten en Buenos Aires, Córdoba y más. Verificados por la comunidad celíaca.",
+    url: BASE_URL,
   },
+  alternates: { canonical: BASE_URL },
 }
 
 export default function HomePage() {

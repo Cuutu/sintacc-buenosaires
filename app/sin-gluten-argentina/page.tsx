@@ -3,6 +3,9 @@ import { Metadata } from "next"
 import { getArgentinaLandingTitle, getArgentinaLandingDescription } from "@/lib/seo/templates"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { ArgentinaLandingJsonLd } from "@/components/seo/ArgentinaLandingJsonLd"
+import { getBaseUrl } from "@/lib/base-url"
+
+const BASE_URL = getBaseUrl()
 
 export const revalidate = 3600
 
@@ -16,6 +19,13 @@ export const metadata: Metadata = {
     "mapa celíacos Argentina",
     "sin TACC Buenos Aires",
   ],
+  alternates: { canonical: `${BASE_URL}/sin-gluten-argentina` },
+  openGraph: {
+    title: getArgentinaLandingTitle(),
+    description: getArgentinaLandingDescription(),
+    url: `${BASE_URL}/sin-gluten-argentina`,
+    type: "website",
+  },
 }
 
 export default function SinGlutenArgentinaPage() {

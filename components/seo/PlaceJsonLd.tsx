@@ -17,6 +17,16 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Local",
 }
 
+const SCHEMA_TYPES: Record<string, string> = {
+  restaurant: "Restaurant",
+  cafe: "CafeOrCoffeeShop",
+  bakery: "Bakery",
+  store: "Store",
+  icecream: "IceCreamShop",
+  bar: "BarOrPub",
+  other: "LocalBusiness",
+}
+
 interface PlaceJsonLdProps {
   place: {
     _id: string
@@ -27,7 +37,7 @@ interface PlaceJsonLdProps {
     address?: string
     location?: { lat: number; lng: number }
     photos?: string[]
-    contact?: { url?: string; phone?: string }
+    contact?: { url?: string; phone?: string; instagram?: string }
     openingHours?: string
     stats?: { avgRating?: number; totalReviews?: number }
   }
@@ -37,10 +47,12 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   const placeUrl = `${BASE_URL}${getPlacePath(place)}`
   const imageUrl = place.photos?.[0] ? place.photos[0] : `${BASE_URL}/CelimapLOGO.png`
   const typeLabel = TYPE_LABELS[place.type] || "Local"
+  const schemaType = SCHEMA_TYPES[place.type] || "LocalBusiness"
+  const sameAs = [place.contact?.url, normalizeInstagramUrl(place.contact?.instagram)].filter(Boolean)
 
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": schemaType,
     name: place.name,
     description: `${place.name} - ${typeLabel} sin gluten en ${place.neighborhood}. Lugar apto para celíacos en Argentina.`,
     url: placeUrl,
@@ -68,7 +80,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     servesCuisine: "Comida sin gluten",
     priceRange: "$$",
     telephone: place.contact?.phone || undefined,
-    ...(place.contact?.url ? { sameAs: [place.contact.url] } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   }
 
   if (place.stats?.totalReviews && place.stats.totalReviews > 0 && place.stats.avgRating != null) {
@@ -90,4 +102,13 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
     />
   )
+}
+
+function normalizeInstagramUrl(value?: string): string | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  if (trimmed.includes("instagram.com")) return trimmed
+  const username = trimmed.replace(/^@/, "")
+  return username ? `https://www.instagram.com/${username}` : undefined
 }

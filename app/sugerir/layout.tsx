@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { getBaseUrl } from "@/lib/base-url";
+
+const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   title: "Sugerir un lugar",
@@ -10,6 +13,7 @@ export const metadata: Metadata = {
     "comunidad celíaca",
     "agregar lugar apto celíacos",
   ],
+  alternates: { canonical: `${BASE_URL}/sugerir` },
 };
 
 export default function SugerirLayout({

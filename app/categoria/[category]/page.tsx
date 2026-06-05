@@ -24,15 +24,24 @@ export async function generateMetadata({
   if (!isValidCategorySlug(category)) return { title: "No encontrado" }
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { total } = await getPlacesByCategory(category, page)
+  const { total, pages } = await getPlacesByCategory(category, page)
 
   const canonical = page === 1 ? `${BASE_URL}/${category}-sin-gluten` : `${BASE_URL}/${category}-sin-gluten?page=${page}`
 
   return {
     title: getCategoryTitle(null, category),
     description: getCategoryDescription(null, category, total),
+    ...(total === 0 || (pages > 0 && page > pages)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: {
       canonical,
+    },
+    openGraph: {
+      title: getCategoryTitle(null, category),
+      description: getCategoryDescription(null, category, total),
+      url: page === 1 ? `${BASE_URL}/${category}-sin-gluten` : canonical,
+      type: "website",
     },
   }
 }

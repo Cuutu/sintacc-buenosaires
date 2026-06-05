@@ -8,6 +8,9 @@ import { getTopRankingTitle, getTopRankingDescription } from "@/lib/seo/template
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { PlaceCard } from "@/components/place-card"
 import type { PlaceSEO } from "@/lib/seo/places"
+import { getBaseUrl } from "@/lib/base-url"
+
+const BASE_URL = getBaseUrl()
 
 export const dynamicParams = true
 export const dynamic = "force-dynamic"
@@ -21,10 +24,20 @@ export async function generateMetadata({
   const { ciudadSlug } = await params
   const city = getCityBySlug(ciudadSlug)
   if (!city) return { title: "No encontrado" }
+  const topPlaces = await getTopPlaces(ciudadSlug, 1)
+  const canonical = `${BASE_URL}/top-sin-gluten-${ciudadSlug}`
 
   return {
     title: getTopRankingTitle(city),
     description: getTopRankingDescription(city),
+    ...(topPlaces.length === 0 ? { robots: { index: false, follow: true } } : {}),
+    alternates: { canonical },
+    openGraph: {
+      title: getTopRankingTitle(city),
+      description: getTopRankingDescription(city),
+      url: canonical,
+      type: "website",
+    },
   }
 }
 

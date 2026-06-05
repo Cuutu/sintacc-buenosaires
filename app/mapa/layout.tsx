@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { getBaseUrl } from "@/lib/base-url";
+
+const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   title: "Mapa para celíacos - Lugares sin TACC",
@@ -10,6 +13,14 @@ export const metadata: Metadata = {
     "mapa sin TACC",
     "lugares aptos celíacos",
   ],
+  alternates: { canonical: `${BASE_URL}/mapa` },
+  openGraph: {
+    title: "Mapa para celÃ­acos - Lugares sin TACC",
+    description:
+      "Mapa interactivo para celÃ­acos: restaurantes, cafÃ©s y panaderÃ­as sin gluten en Buenos Aires, CÃ³rdoba y todo el mundo.",
+    url: `${BASE_URL}/mapa`,
+    type: "website",
+  },
 };
 
 export default function MapaLayout({

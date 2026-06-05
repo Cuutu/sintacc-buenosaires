@@ -1,34 +1,50 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
 import mongoose from "mongoose"
+import { getBaseUrl } from "@/lib/base-url"
 
-type Props = {
+interface ListaLayoutProps {
   params: Promise<{ id: string }>
   children: React.ReactNode
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: ListaLayoutProps): Promise<Metadata> {
   try {
     const { id } = await params
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return { title: "Lista | Celimap" }
+      return { title: "Lista | Celimap", robots: { index: false } }
     }
+
     await connectDB()
-    const list = await List.findById(id).select("name").lean()
-    if (!list) return { title: "Lista | Celimap" }
-    const name = (list as { name?: string }).name
+    const list = await List.findById(id).select("name description isPublic").lean()
+    if (!list || !list.isPublic) {
+      return { title: "Lista | Celimap", robots: { index: false } }
+    }
+
+    const baseUrl = getBaseUrl()
+    const canonical = `${baseUrl}/listas/${id}`
+    const title = `${list.name} | Celimap`
+    const description =
+      list.description ||
+      `Lista de lugares sin gluten: ${list.name}. Restaurantes, cafes y panaderias aptas para celiacos.`
+
     return {
-      title: name ? `${name} | Celimap` : "Lista | Celimap",
-      description: name
-        ? `Lista de lugares sin gluten: ${name}. Lugares aptos celíacos en Argentina.`
-        : "Lista de lugares sin gluten en Celimap.",
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: {
+        title,
+        description,
+        url: canonical,
+        type: "website",
+      },
     }
   } catch {
-    return { title: "Lista | Celimap" }
+    return { title: "Lista | Celimap", robots: { index: false } }
   }
 }
 
-export default function ListaLayout({ children }: Props) {
+export default function ListaLayout({ children }: ListaLayoutProps) {
   return children
 }

@@ -75,7 +75,6 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
-  alternates: { canonical: BASE_URL },
 };
 
 export const viewport: Viewport = {

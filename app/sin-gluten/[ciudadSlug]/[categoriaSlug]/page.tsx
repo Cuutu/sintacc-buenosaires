@@ -53,8 +53,17 @@ export async function generateMetadata({
   return {
     title: getCategoryTitle(city, categoriaSlug),
     description: getCategoryDescription(city, categoriaSlug, total),
+    ...(total === 0 || (pages > 0 && page > pages)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: {
       canonical,
+    },
+    openGraph: {
+      title: getCategoryTitle(city, categoriaSlug),
+      description: getCategoryDescription(city, categoriaSlug, total),
+      url: baseCanonical,
+      type: "website",
     },
   }
 }

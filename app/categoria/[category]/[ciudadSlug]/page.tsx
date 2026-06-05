@@ -44,16 +44,25 @@ export async function generateMetadata({
   if (!city || !isValidCategorySlug(category)) return { title: "No encontrado" }
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { total } = await getPlacesByCategoryAndCity(category, ciudadSlug, page)
+  const { total, pages } = await getPlacesByCategoryAndCity(category, ciudadSlug, page)
 
-  const baseCanonical = `${BASE_URL}/${category}-sin-gluten/${ciudadSlug}`
+  const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}/${category}`
   const canonical = page === 1 ? baseCanonical : `${baseCanonical}?page=${page}`
 
   return {
     title: getCategoryTitle(city, category),
     description: getCategoryDescription(city, category, total),
+    ...(total === 0 || (pages > 0 && page > pages)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: {
       canonical,
+    },
+    openGraph: {
+      title: getCategoryTitle(city, category),
+      description: getCategoryDescription(city, category, total),
+      url: baseCanonical,
+      type: "website",
     },
   }
 }
@@ -109,8 +118,8 @@ export default async function CategoryCityPage({
       <Breadcrumbs
         items={[
           { label: "Sin gluten Argentina", href: "/sin-gluten-argentina" },
-          { label: `${catName} sin gluten`, href: `/${category}-sin-gluten` },
-          { label: city.name },
+          { label: city.name, href: `/sin-gluten/${ciudadSlug}` },
+          { label: `${catName} sin gluten` },
         ]}
       />
       <CityPageJsonLd
@@ -128,7 +137,7 @@ export default async function CategoryCityPage({
         cityName={city.name}
         currentCategory={category}
         topNeighborhoods={topNeighborhoods}
-        basePath={`/${category}-sin-gluten`}
+        basePath="/sin-gluten"
       />
       <SEOTextBlock
         content={getSEOTextBlock(city, category)}
@@ -138,7 +147,7 @@ export default async function CategoryCityPage({
         <Pagination
           currentPage={page}
           totalPages={pages}
-          basePath={`/${category}-sin-gluten/${ciudadSlug}`}
+          basePath={`/sin-gluten/${ciudadSlug}/${category}`}
         />
       )}
     </div>

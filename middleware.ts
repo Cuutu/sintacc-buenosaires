@@ -26,8 +26,8 @@ export async function middleware(request: NextRequest) {
   if (categoryCityMatch) {
     const [, category, ciudadSlug] = categoryCityMatch
     const url = request.nextUrl.clone()
-    url.pathname = `/categoria/${category}/${ciudadSlug}`
-    return NextResponse.rewrite(url)
+    url.pathname = `/sin-gluten/${ciudadSlug}/${category}`
+    return NextResponse.redirect(url, 301)
   }
 
   const categoryMatch = pathname.match(CATEGORY_PATTERN)

@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { List } from "@/models/List"
-import { CITIES, CATEGORIES } from "@/lib/seo/cities"
+import { CITIES, CATEGORIES, CATEGORY_SLUG_TO_TYPE } from "@/lib/seo/cities"
+import { PROVINCES } from "@/lib/seo/provinces"
 import { getLastPlaceUpdated } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
@@ -13,6 +14,15 @@ import {
 import { getAllApprovedVentureSlugs, countApprovedVentures } from "@/lib/ventures-server"
 
 export const revalidate = 86400 // 24 horas
+
+interface SitemapPlace {
+  _id: { toString(): string }
+  slug?: string
+  type?: string
+  types?: string[]
+  neighborhood?: string
+  updatedAt?: Date
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getBaseUrl()
@@ -34,50 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/emprendimientos`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.8 },
   ]
 
-  const seoPages: MetadataRoute.Sitemap = []
-
-  for (const city of CITIES) {
-    seoPages.push({
-      url: `${base}/sin-gluten/${city.slug}`,
-      lastModified: lastModDate,
-      changeFrequency: "weekly" as const,
-      priority: 0.85,
-    })
-    for (const cat of CATEGORIES) {
-      seoPages.push({
-        url: `${base}/sin-gluten/${city.slug}/${cat.slug}`,
-        lastModified: lastModDate,
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-      })
-    }
-  }
-
-  for (const cat of CATEGORIES) {
-    seoPages.push({
-      url: `${base}/${cat.slug}-sin-gluten`,
-      lastModified: lastModDate,
-      changeFrequency: "weekly" as const,
-      priority: 0.85,
-    })
-    for (const city of CITIES) {
-      seoPages.push({
-        url: `${base}/${cat.slug}-sin-gluten/${city.slug}`,
-        lastModified: lastModDate,
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-      })
-    }
-  }
-
-  for (const city of CITIES) {
-    seoPages.push({
-      url: `${base}/top-sin-gluten-${city.slug}`,
-      lastModified: lastModDate,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })
-  }
+  let seoPages = buildSeoPages(base, lastModDate)
 
   let placeUrls: MetadataRoute.Sitemap = []
   let listUrls: MetadataRoute.Sitemap = []
@@ -88,9 +55,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const places = await Place.find(
       { status: "approved" },
-      { _id: 1, slug: 1, updatedAt: 1 }
+      { _id: 1, slug: 1, type: 1, types: 1, neighborhood: 1, updatedAt: 1 }
     ).lean()
-    placeUrls = places.map((p: { _id: { toString(): string }; slug?: string; updatedAt?: Date }) => ({
+    seoPages = buildSeoPages(base, lastModDate, places as SitemapPlace[])
+    placeUrls = (places as SitemapPlace[]).map((p) => ({
       url: `${base}${getPlacePath(p)}`,
       lastModified: p.updatedAt ? new Date(p.updatedAt) : lastModDate,
       changeFrequency: "weekly" as const,
@@ -146,4 +114,89 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   return [...staticPages, ...seoPages, ...placeUrls, ...listUrls, ...ventureUrls]
+}
+
+function buildSeoPages(
+  base: string,
+  lastModDate: Date,
+  places?: SitemapPlace[]
+): MetadataRoute.Sitemap {
+  const pages: MetadataRoute.Sitemap = []
+  const shouldIncludeAll = !places
+
+  for (const province of PROVINCES) {
+    if (
+      shouldIncludeAll ||
+      Boolean(places?.some((place) => province.citySlugs.some((citySlug) => isPlaceInCity(place, citySlug))))
+    ) {
+      pages.push({
+        url: `${base}/sin-gluten/${province.slug}`,
+        lastModified: lastModDate,
+        changeFrequency: "weekly",
+        priority: 0.84,
+      })
+    }
+  }
+
+  for (const city of CITIES) {
+    const cityPlaces = shouldIncludeAll
+      ? []
+      : places.filter((place) => isPlaceInCity(place, city.slug))
+    const hasCityPlaces = shouldIncludeAll || cityPlaces.length > 0
+
+    if (hasCityPlaces) {
+      pages.push({
+        url: `${base}/sin-gluten/${city.slug}`,
+        lastModified: lastModDate,
+        changeFrequency: "weekly",
+        priority: 0.85,
+      })
+      pages.push({
+        url: `${base}/top-sin-gluten-${city.slug}`,
+        lastModified: lastModDate,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      })
+    }
+
+    for (const cat of CATEGORIES) {
+      const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
+      const hasCategoryPlaces =
+        shouldIncludeAll || cityPlaces.some((place) => placeHasType(place, type))
+      if (hasCategoryPlaces) {
+        pages.push({
+          url: `${base}/sin-gluten/${city.slug}/${cat.slug}`,
+          lastModified: lastModDate,
+          changeFrequency: "weekly",
+          priority: 0.8,
+        })
+      }
+    }
+  }
+
+  for (const cat of CATEGORIES) {
+    const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
+    const hasCategoryPlaces =
+      shouldIncludeAll || Boolean(places?.some((place) => placeHasType(place, type)))
+    if (hasCategoryPlaces) {
+      pages.push({
+        url: `${base}/${cat.slug}-sin-gluten`,
+        lastModified: lastModDate,
+        changeFrequency: "weekly",
+        priority: 0.85,
+      })
+    }
+  }
+
+  return pages
+}
+
+function isPlaceInCity(place: SitemapPlace, citySlug: string): boolean {
+  const city = CITIES.find((item) => item.slug === citySlug)
+  return Boolean(place.neighborhood && city?.neighborhoods.includes(place.neighborhood))
+}
+
+function placeHasType(place: SitemapPlace, type: string | undefined): boolean {
+  if (!type) return false
+  return place.type === type || Boolean(place.types?.includes(type))
 }

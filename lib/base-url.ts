@@ -11,9 +11,8 @@ export function getBaseUrl(): string {
     return stripTrailingSlash(explicit)
   }
 
-  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
-  if (production) {
-    return stripTrailingSlash(`https://${production}`)
+  if (process.env.NODE_ENV === "production") {
+    return stripTrailingSlash(CANONICAL_FALLBACK)
   }
 
   const vercel = process.env.VERCEL_URL?.trim()
@@ -21,9 +20,5 @@ export function getBaseUrl(): string {
     return stripTrailingSlash(`https://${vercel}`)
   }
 
-  if (process.env.NODE_ENV === "development") {
-    return "http://localhost:3000"
-  }
-
-  return stripTrailingSlash(CANONICAL_FALLBACK)
+  return "http://localhost:3000"
 }

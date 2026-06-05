@@ -45,6 +45,7 @@ export async function generateMetadata({
     return {
       title: province.metaTitle,
       description: province.metaDescription,
+      ...(total === 0 ? { robots: { index: false, follow: true } } : {}),
       alternates: { canonical: `${BASE_URL}/sin-gluten/${ciudadSlug}` },
       openGraph: {
         title: `Sin gluten en ${province.name} | Celimap`,
@@ -78,6 +79,9 @@ export async function generateMetadata({
       total === 0
         ? `Mapa colaborativo de restaurantes, panaderías y dietéticas sin gluten en ${city.name}. Reseñas de la comunidad celíaca. Agregá lugares y ayudá a otros celíacos.`
         : getCityDescription(city, total),
+    ...(total === 0 || (pages > 0 && page > pages)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: {
       canonical,
     },
