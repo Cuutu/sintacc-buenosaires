@@ -43,6 +43,15 @@ function formatBbox(bounds: MapViewportBounds): string {
     .join(",")
 }
 
+function boundsContain(outer: MapViewportBounds, inner: MapViewportBounds): boolean {
+  return (
+    outer.west <= inner.west &&
+    outer.south <= inner.south &&
+    outer.east >= inner.east &&
+    outer.north >= inner.north
+  )
+}
+
 function MapaContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -81,6 +90,10 @@ function MapaContent() {
   )
   const lastSyncedUrlSearchRef = useRef(searchParams.get("search") || "")
   const fetchRequestSeqRef = useRef(0)
+  const lastFetchedViewportRef = useRef<{
+    bounds: MapViewportBounds | null
+    filterKey: string
+  } | null>(null)
 
   // Sincronizar URL ?search= con el estado cuando cambia la URL
   useEffect(() => {
@@ -127,23 +140,50 @@ function MapaContent() {
   const fetchPlaces = useCallback(async () => {
     if (!debouncedViewport) return
 
-    const requestSeq = fetchRequestSeqRef.current + 1
-    fetchRequestSeqRef.current = requestSeq
     const search = debouncedSearch.trim()
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
-    const effectiveSearch = searchNeighborhood ?? search
+    const freeTextSearch = searchNeighborhood ? "" : search
+    const effectiveNeighborhood = searchNeighborhood ?? filters.neighborhood ?? ""
+    const filterKey = JSON.stringify({
+      citySlugs: searchNeighborhood ? "" : citySlugsFromUrl ?? "",
+      search: freeTextSearch,
+      type: filters.type ?? "",
+      neighborhood: effectiveNeighborhood,
+      tags: [...(filters.tags ?? [])].sort(),
+      safetyLevel: filters.safetyLevel ?? "",
+    })
+    const shouldUseBbox = !searchNeighborhood && !freeTextSearch && debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD
+    const expandedViewportBounds = shouldUseBbox
+      ? expandBounds(debouncedViewport.bounds)
+      : null
+    const lastFetch = lastFetchedViewportRef.current
+
+    if (lastFetch?.filterKey === filterKey) {
+      if (searchNeighborhood || freeTextSearch) return
+      if (!expandedViewportBounds && lastFetch.bounds === null) return
+      if (
+        expandedViewportBounds &&
+        lastFetch.bounds &&
+        boundsContain(lastFetch.bounds, debouncedViewport.bounds)
+      ) {
+        return
+      }
+    }
+
+    const requestSeq = fetchRequestSeqRef.current + 1
+    fetchRequestSeqRef.current = requestSeq
     setLoading(true)
     try {
       const params = new URLSearchParams()
       params.append("limit", String(MAP_PLACES_LIMIT))
-      if (!search && debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD) {
-        params.append("bbox", formatBbox(expandBounds(debouncedViewport.bounds)))
+      if (expandedViewportBounds) {
+        params.append("bbox", formatBbox(expandedViewportBounds))
       }
       if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
-      if (effectiveSearch) params.append("search", effectiveSearch)
+      if (freeTextSearch) params.append("search", freeTextSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
-      if (!searchNeighborhood && filters.neighborhood && filters.neighborhood !== "all")
-        params.append("neighborhood", filters.neighborhood)
+      if (effectiveNeighborhood && effectiveNeighborhood !== "all")
+        params.append("neighborhood", effectiveNeighborhood)
       if (filters.tags?.length) params.append("tags", filters.tags.join(","))
       if (filters.safetyLevel) params.append("safetyLevel", filters.safetyLevel)
 
@@ -151,6 +191,10 @@ function MapaContent() {
         `/api/places?${params.toString()}`
       )
       if (requestSeq !== fetchRequestSeqRef.current) return
+      lastFetchedViewportRef.current = {
+        bounds: expandedViewportBounds,
+        filterKey,
+      }
       setPlaces(data.places || [])
     } catch (error: any) {
       if (requestSeq !== fetchRequestSeqRef.current) return

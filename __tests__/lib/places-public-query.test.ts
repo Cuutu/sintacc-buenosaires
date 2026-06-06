@@ -24,4 +24,22 @@ describe("buildPublicPlacesMongoQuery", () => {
     ])
     expect(query.neighborhood).toEqual(expect.objectContaining({ $in: expect.any(Array) }))
   })
+
+  it("matches neighborhood aliases when filtering by neighborhood", () => {
+    const query = buildPublicPlacesMongoQuery({
+      neighborhood: "Recoleta",
+      page: 1,
+      limit: 20,
+    })
+
+    expect(query.status).toBe("approved")
+    expect(query.$and).toEqual([
+      {
+        $or: [
+          { neighborhood: { $in: expect.arrayContaining(["Recoleta", "Barrio Norte", "La Isla"]) } },
+          { userProvidedNeighborhood: { $in: expect.arrayContaining(["Recoleta", "Barrio Norte", "La Isla"]) } },
+        ],
+      },
+    ])
+  })
 })

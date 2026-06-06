@@ -3,9 +3,14 @@ import type { IPlace } from "@/models/Place"
 import type { PublicPlacesQuery } from "@/lib/validations"
 import { getCityBySlug } from "@/lib/seo/cities"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
+import { getNeighborhoodSearchValues } from "@/lib/map-search"
 
 function makeSearchRegex(value: string): RegExp {
   return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+}
+
+function appendAnd(query: FilterQuery<IPlace>, condition: FilterQuery<IPlace>): void {
+  query.$and = [...(query.$and ?? []), condition]
 }
 
 export function buildPublicPlacesMongoQuery(
@@ -53,7 +58,15 @@ export function buildPublicPlacesMongoQuery(
       query.neighborhood = { $in: [...new Set(allNeighborhoods)] }
     }
   } else if (params.neighborhood) {
-    query.neighborhood = params.neighborhood
+    const neighborhoodValues = getNeighborhoodSearchValues(params.neighborhood)
+    if (neighborhoodValues.length > 0) {
+      appendAnd(query, {
+        $or: [
+          { neighborhood: { $in: neighborhoodValues } },
+          { userProvidedNeighborhood: { $in: neighborhoodValues } },
+        ],
+      })
+    }
   }
 
   if (params.tags && params.tags.length > 0) {
@@ -72,7 +85,7 @@ export function buildPublicPlacesMongoQuery(
 
     query["location.lat"] = { $gte: params.bbox.south, $lte: params.bbox.north }
     if ("$or" in lngCondition) {
-      query.$and = [...(query.$and ?? []), { $or: lngCondition.$or }]
+      appendAnd(query, { $or: lngCondition.$or })
     } else {
       query["location.lng"] = lngCondition
     }

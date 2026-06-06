@@ -5,12 +5,17 @@
  * (uBlock, Brave, etc.) verás `ERR_BLOCKED_BY_CLIENT` en consola. El mapa funciona igual.
  * Mapbox no ofrece opción para desactivar esto en la versión GL JS.
  */
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from "react"
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
 import { CABA_CENTER, CABA_ZOOM } from "./geo"
 import { getPlacePath } from "@/lib/place-url"
+import {
+  findKnownNeighborhoodSearch,
+  getNeighborhoodSearchValues,
+  normalizeSearchValue,
+} from "@/lib/map-search"
 export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
   restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
   cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
@@ -33,6 +38,14 @@ export interface MapViewportBounds {
   south: number
   east: number
   north: number
+}
+
+interface MarkerEntry {
+  marker: mapboxgl.Marker
+  element: HTMLDivElement
+  inner: HTMLDivElement
+  icon: HTMLSpanElement
+  place: IPlace
 }
 
 interface MapboxMapProps {
@@ -78,11 +91,15 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
   ) => {
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
-    const markersRef = useRef<mapboxgl.Marker[]>([])
+    const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
+    const selectedPlaceIdRef = useRef(selectedPlaceId)
+    selectedPlaceIdRef.current = selectedPlaceId
+    const onPlaceSelectRef = useRef(onPlaceSelect)
+    onPlaceSelectRef.current = onPlaceSelect
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
@@ -107,6 +124,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const setCenter = useCallback((lng: number, lat: number) => {
       if (!map.current) return
       map.current.setCenter([lng, lat])
+    }, [])
+
+    const applyMarkerSelection = useCallback((entry: MarkerEntry, isSelected: boolean) => {
+      entry.element.style.width = `${isSelected ? 44 : 36}px`
+      entry.element.style.height = `${isSelected ? 44 : 36}px`
+      entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid white`
+      entry.icon.style.fontSize = `${isSelected ? 20 : 16}px`
     }, [])
 
     useImperativeHandle(ref, () => ({ flyTo, setCenter, triggerGeolocate }), [flyTo, setCenter, triggerGeolocate])
@@ -174,7 +198,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     // Cuando la busqueda cambia, encuadrar los lugares encontrados una sola vez.
     useEffect(() => {
-      const normalizedSearch = searchQuery?.trim().toLowerCase()
+      const normalizedSearch = normalizeSearchValue(searchQuery ?? "")
       if (!normalizedSearch || !places.length || !map.current) {
         if (!normalizedSearch) lastCenteredSearchRef.current = null
         return
@@ -194,10 +218,14 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       ]
         .filter(Boolean)
         .join(" ")
-        .toLowerCase()
-      const matchesSearch = normalizedSearch
-        .split(/\s+/)
-        .every((word) => searchableText.includes(word))
+      const normalizedSearchableText = normalizeSearchValue(searchableText)
+      const searchNeighborhood = findKnownNeighborhoodSearch(searchQuery ?? "")
+      const neighborhoodSearchValues = searchNeighborhood
+        ? getNeighborhoodSearchValues(searchNeighborhood).map(normalizeSearchValue)
+        : []
+      const matchesSearch = neighborhoodSearchValues.length > 0
+        ? neighborhoodSearchValues.some((value) => normalizedSearchableText.includes(value))
+        : normalizedSearch.split(/\s+/).every((word) => normalizedSearchableText.includes(word))
       if (!matchesSearch) return
 
       lastCenteredSearchRef.current = normalizedSearch
@@ -246,35 +274,48 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         m.off("load", onLoadOrMoveEnd)
         m.off("moveend", onLoadOrMoveEnd)
       }
-    }, [onBoundsChange, onMoveEnd])
+    }, [])
 
     useEffect(() => {
-      if (!map.current) return
+      const m = map.current
+      if (!m) return
 
-      markersRef.current.forEach((m) => m.remove())
-      markersRef.current = []
+      const nextPlaceIds = new Set<string>()
 
       places.forEach((place) => {
+        const placeId = place._id.toString()
+        const lng = place.location?.lng
+        const lat = place.location?.lat
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+
+        nextPlaceIds.add(placeId)
         const config = TYPE_MARKERS[place.type] || TYPE_MARKERS.other
-        const isSelected = selectedPlaceId === place._id.toString()
+        const existingEntry = markerEntriesRef.current.get(placeId)
+
+        if (existingEntry) {
+          existingEntry.place = place
+          existingEntry.marker.setLngLat([lng, lat])
+          existingEntry.inner.style.background = config.bg
+          existingEntry.icon.textContent = config.emoji
+          applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === placeId)
+          return
+        }
 
         const el = document.createElement("div")
         el.className = "mapboxgl-marker"
         el.style.cssText = `
-          width: ${isSelected ? 44 : 36}px;
-          height: ${isSelected ? 44 : 36}px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
         `
+
         const inner = document.createElement("div")
         inner.style.cssText = `
           width: 100%;
           height: 100%;
           border-radius: 50%;
           background: ${config.bg};
-          border: ${isSelected ? "3px" : "2px"} solid white;
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
           display: flex;
           align-items: center;
@@ -282,32 +323,34 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           transition: transform 0.2s ease;
           transform-origin: center center;
         `
-        inner.innerHTML = `<span style="font-size: ${isSelected ? 20 : 16}px; line-height: 1;">${config.emoji}</span>`
 
+        const icon = document.createElement("span")
+        icon.style.lineHeight = "1"
+        icon.textContent = config.emoji
+
+        inner.appendChild(icon)
         el.appendChild(inner)
 
         el.addEventListener("click", (e) => {
           e.stopPropagation()
-          onPlaceSelect?.(place)
-          // Popup preview con mini info
+          const currentPlace = markerEntriesRef.current.get(placeId)?.place ?? place
+          onPlaceSelectRef.current?.(currentPlace)
+
           if (sharedPopupRef.current && map.current) {
             const safetyMap: Record<string, string> = {
-              dedicated_gf: '<span style="color:#4ade80;font-size:10px;font-weight:700;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:4px">✅ 100% SIN TACC</span>',
-              gf_options: '<span style="color:#fbbf24;font-size:10px;font-weight:700;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:2px 8px;border-radius:4px">🟡 TIENE OPCIONES</span>',
+              dedicated_gf: '<span style="color:#4ade80;font-size:10px;font-weight:700;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:4px">OK 100% SIN TACC</span>',
+              gf_options: '<span style="color:#fbbf24;font-size:10px;font-weight:700;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:2px 8px;border-radius:4px">OPCIONES SIN TACC</span>',
             }
-            const tags = (place.tags ?? []) as string[]
-            const level = (place as any).safetyLevel
+            const tags = (currentPlace.tags ?? []) as string[]
+            const level = (currentPlace as any).safetyLevel
               ?? (tags.includes("100_gf") || tags.includes("certificado_sin_tacc") ? "dedicated_gf"
                 : tags.includes("opciones_sin_tacc") ? "gf_options" : null)
 
             const safetyHtml = level ? (safetyMap[level] ?? "") : ""
-            const typeIcons: Record<string, string> = {
-              restaurant: "🍕", cafe: "☕", bakery: "🥐",
-              store: "🛒", icecream: "🍦", bar: "🍺", other: "📍",
-            }
-            const icon = typeIcons[(place.types?.[0] ?? place.type) as string] ?? "📍"
+            const popupType = (currentPlace.types?.[0] ?? currentPlace.type) as string
+            const popupIcon = (TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other).emoji
 
-            const detailPath = getPlacePath(place)
+            const detailPath = getPlacePath(currentPlace)
             const html = `
     <div style="
       background:#13161f;border:1.5px solid #2e3448;border-radius:12px;
@@ -315,10 +358,10 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       font-family:system-ui,sans-serif;
     ">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:18px">${icon}</span>
+        <span style="font-size:18px">${popupIcon}</span>
         <div>
-          <div style="font-size:13px;font-weight:600;color:#e8eaf2;line-height:1.2">${place.name}</div>
-          <div style="font-size:11px;color:#8890aa;margin-top:1px">${place.neighborhood ?? ""}</div>
+          <div style="font-size:13px;font-weight:600;color:#e8eaf2;line-height:1.2">${currentPlace.name}</div>
+          <div style="font-size:11px;color:#8890aa;margin-top:1px">${currentPlace.neighborhood ?? ""}</div>
         </div>
       </div>
       ${safetyHtml ? `<div style="margin-bottom:10px">${safetyHtml}</div>` : ""}
@@ -327,13 +370,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           border:none;border-radius:7px;font-size:12px;font-weight:700;
           text-align:center;text-decoration:none;cursor:pointer"
         onclick="event.stopPropagation()"
-      >Ver detalle →</a>
+      >Ver detalle -></a>
     </div>
   `
             sharedPopupRef.current
               .setLngLat([
-                (place.location as any).lng ?? (place.location as any).coordinates?.[0],
-                (place.location as any).lat ?? (place.location as any).coordinates?.[1],
+                (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0],
+                (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1],
               ])
               .setHTML(html)
               .addTo(map.current)
@@ -341,16 +384,34 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         })
 
         const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([place.location.lng, place.location.lat])
-          .addTo(map.current!)
+          .setLngLat([lng, lat])
+          .addTo(m)
 
-        markersRef.current.push(marker)
+        const entry: MarkerEntry = { marker, element: el, inner, icon, place }
+        markerEntriesRef.current.set(placeId, entry)
+        applyMarkerSelection(entry, selectedPlaceIdRef.current === placeId)
       })
 
+      markerEntriesRef.current.forEach((entry, placeId) => {
+        if (nextPlaceIds.has(placeId)) return
+        entry.marker.remove()
+        markerEntriesRef.current.delete(placeId)
+      })
+    }, [places, applyMarkerSelection])
+
+    useEffect(() => {
+      markerEntriesRef.current.forEach((entry, placeId) => {
+        applyMarkerSelection(entry, placeId === selectedPlaceId)
+      })
+    }, [selectedPlaceId, applyMarkerSelection])
+
+    useEffect(() => {
+      const markerEntries = markerEntriesRef.current
       return () => {
-        markersRef.current.forEach((m) => m.remove())
+        markerEntries.forEach((entry) => entry.marker.remove())
+        markerEntries.clear()
       }
-    }, [places, selectedPlaceId, onPlaceSelect])
+    }, [])
 
     useEffect(() => {
       if (!map.current || !selectedPlaceId) {
