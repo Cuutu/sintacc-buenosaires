@@ -26,6 +26,54 @@ export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: st
   other: { emoji: "📍", bg: "#3b82f6", label: "Lugar" },
 }
 
+const POPUP_ICON_PATHS: Record<string, string> = {
+  restaurant: '<path d="M3 2v7c0 1.7 1.3 3 3 3s3-1.3 3-3V2"/><path d="M6 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/>',
+  cafe: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8h1a4 4 0 1 1 0 8h-1"/><path d="M5 8h11v7a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z"/>',
+  bakery: '<path d="M12 20a8 8 0 0 0 8-8c0-2.6-1.3-5-3.4-6.4"/><path d="M12 20a8 8 0 0 1-8-8c0-2.6 1.3-5 3.4-6.4"/><path d="M12 20c2.2 0 4-3.6 4-8s-1.8-8-4-8-4 3.6-4 8 1.8 8 4 8Z"/><path d="M4.3 10h15.4"/>',
+  store: '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4A2 2 0 0 0 7.1 20h9.8a2 2 0 0 0 2-1.6l1.6-7.4"/><path d="M5 11 9 4"/>',
+  icecream: '<path d="M7 11a5 5 0 0 1 10 0"/><path d="M8 11h8l-4 10Z"/><path d="M12 3v2"/>',
+  bar: '<path d="M8 22h8"/><path d="M12 16v6"/><path d="M7 2h10l-1 9a4 4 0 0 1-8 0Z"/><path d="M7 8h10"/>',
+  other: '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+function getPopupIcon(type: string): string {
+  const path = POPUP_ICON_PATHS[type] ?? POPUP_ICON_PATHS.other
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block">${path}</svg>`
+}
+
+function getPopupSafety(level?: string | null) {
+  if (level === "dedicated_gf") {
+    return {
+      label: "100% sin TACC",
+      accent: "#10d98a",
+      badgeBg: "rgba(16,217,138,0.13)",
+      badgeBorder: "rgba(16,217,138,0.36)",
+      badgeText: "#38f0a3",
+    }
+  }
+
+  if (level === "gf_options") {
+    return {
+      label: "Opciones sin TACC",
+      accent: "#f6b33d",
+      badgeBg: "rgba(246,179,61,0.13)",
+      badgeBorder: "rgba(246,179,61,0.34)",
+      badgeText: "#ffd078",
+    }
+  }
+
+  return null
+}
+
 export interface MapboxMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void
   setCenter: (lng: number, lat: number) => void
@@ -503,30 +551,49 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           onPlaceSelectRef.current?.(currentPlace)
 
           if (sharedPopupRef.current && map.current) {
-            const safetyMap: Record<string, string> = {
-              dedicated_gf: '<span style="color:#4ade80;font-size:10px;font-weight:700;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:4px">OK 100% SIN TACC</span>',
-              gf_options: '<span style="color:#fbbf24;font-size:10px;font-weight:700;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:2px 8px;border-radius:4px">OPCIONES SIN TACC</span>',
-            }
             const tags = (currentPlace.tags ?? []) as string[]
             const level = (currentPlace as any).safetyLevel
               ?? (tags.includes("100_gf") || tags.includes("certificado_sin_tacc") ? "dedicated_gf"
                 : tags.includes("opciones_sin_tacc") ? "gf_options" : null)
 
-            const safetyHtml = level ? (safetyMap[level] ?? "") : ""
             const popupType = (currentPlace.types?.[0] ?? currentPlace.type) as string
-            const popupIcon = (TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other).emoji
-            const detailPath = getPlacePath(currentPlace)
+            const markerConfig = TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other
+            const safety = getPopupSafety(level)
+            const accent = safety?.accent ?? markerConfig.bg
+            const typeLabel = escapeHtml(markerConfig.label)
+            const name = escapeHtml(currentPlace.name)
+            const neighborhood = escapeHtml(currentPlace.neighborhood)
+            const detailPath = escapeHtml(getPlacePath(currentPlace))
+            const safetyHtml = safety
+              ? `<span style="display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:4px 9px;font-size:10.5px;font-weight:750;line-height:1;letter-spacing:.01em;white-space:nowrap">
+                  <span style="width:6px;height:6px;border-radius:999px;background:${safety.accent};box-shadow:0 0 10px ${safety.accent}88;flex:0 0 auto"></span>
+                  ${safety.label}
+                </span>`
+              : ""
             const html = `
-    <div style="background:#13161f;border:1.5px solid #2e3448;border-radius:12px;padding:12px;width:200px;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-family:system-ui,sans-serif;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:18px">${popupIcon}</span>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#e8eaf2;line-height:1.2">${currentPlace.name}</div>
-          <div style="font-size:11px;color:#8890aa;margin-top:1px">${currentPlace.neighborhood ?? ""}</div>
+    <div style="position:relative;width:218px;overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(13,17,23,.96),rgba(5,8,10,.95));box-shadow:0 18px 42px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.04) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff">
+      <div style="position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,${accent},transparent);opacity:.8"></div>
+      <div style="padding:12px 12px 11px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:38px;height:38px;flex:0 0 auto;border-radius:13px;border:1px solid ${accent}55;background:linear-gradient(180deg,${accent}22,rgba(255,255,255,.035));box-shadow:0 10px 22px rgba(0,0,0,.28),0 0 18px ${accent}28;color:${accent};display:flex;align-items:center;justify-content:center">
+            ${getPopupIcon(popupType)}
+          </div>
+          <div style="min-width:0;flex:1;padding-top:1px">
+            <div title="${name}" style="max-width:148px;color:#f7f8fb;font-size:13px;font-weight:800;line-height:1.18;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
+            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;color:#9da6b6;font-size:11px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <span style="width:4px;height:4px;border-radius:999px;background:${accent};opacity:.85;flex:0 0 auto"></span>
+              <span style="overflow:hidden;text-overflow:ellipsis">${neighborhood || typeLabel}</span>
+            </div>
+          </div>
         </div>
+
+        ${safetyHtml ? `<div style="margin-top:10px">${safetyHtml}</div>` : ""}
+
+        <a href="${detailPath}" style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:36px;border-radius:10px;background:linear-gradient(135deg,#16db84,#42ec8f);color:#02120b;border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 22px rgba(16,217,138,.22);font-size:12px;font-weight:850;text-align:center;text-decoration:none;cursor:pointer;touch-action:manipulation" onclick="event.stopPropagation()">
+          <span>Ver lugar</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
       </div>
-      ${safetyHtml ? `<div style="margin-bottom:10px">${safetyHtml}</div>` : ""}
-      <a href="${detailPath}" style="display:block;width:100%;padding:7px;background:#4ade80;color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer" onclick="event.stopPropagation()">Ver detalle -></a>
     </div>
   `
             sharedPopupRef.current

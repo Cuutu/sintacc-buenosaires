@@ -123,8 +123,21 @@
   padding: 0 !important;
   box-shadow: none !important;
 }
-.celimap-popup .mapboxgl-popup-tip {
-  border-top-color: #1a1a1f !important;
+.celimap-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+.celimap-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+.celimap-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+  border-top-color: rgba(5, 8, 10, 0.96) !important;
+}
+.celimap-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+.celimap-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+.celimap-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+  border-bottom-color: rgba(13, 17, 23, 0.96) !important;
+}
+.celimap-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: rgba(8, 11, 14, 0.96) !important;
+}
+.celimap-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: rgba(8, 11, 14, 0.96) !important;
 }
 
 /* Hide scrollbar for horizontal carousel */
