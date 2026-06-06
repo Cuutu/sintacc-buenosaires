@@ -226,25 +226,22 @@ export function MapTopBar({
     )
   }
 
-  // ── OVERLAY (mobile) — sin cambios respecto al original ───────────────────
+  // ── OVERLAY (mobile) ───────────────────
   const MOBILE_CHIPS = [
     { id: "100_gf", label: "100% sin TACC" },
     { id: "opciones_sin_tacc", label: "Opciones sin TACC" },
-    { id: "cocina_separada", label: "Cocina separada" },
-    { id: "certificado_sin_tacc", label: "Certificado" },
-    { id: "delivery", label: "Delivery" },
   ]
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 pt-[env(safe-area-inset-top)] md:top-6 md:left-6 md:right-auto md:max-w-md md:rounded-2xl md:border md:border-white/10 md:px-5 md:pt-5 md:pb-4 md:shadow-xl md:shadow-black/30 md:border-white/20 md:pt-5 px-4 pt-3 pb-2 bg-black/40 backdrop-blur-md">
-      <div className="flex gap-2 mb-3 md:mb-4">
+    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/15 bg-[#080c0f]/68 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
+      <div className="flex gap-2 mb-2.5">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/52" />
           <Input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-12 h-12 min-h-[44px] text-base rounded-xl border-white/10 bg-black/40 backdrop-blur md:bg-white/5 md:border-white/20"
+            className="h-11 min-h-[44px] rounded-[1.25rem] border-white/10 bg-black/28 pl-11 text-base text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur focus-visible:ring-primary/70"
           />
         </div>
       </div>
@@ -256,7 +253,7 @@ export function MapTopBar({
         onMouseMove={handleChipsMouseMove}
         onMouseUp={handleChipsMouseUp}
         onMouseLeave={handleChipsMouseLeave}
-        className="flex overflow-x-auto gap-2 scrollbar-hide snap-x snap-mandatory pb-1 -mx-1 md:gap-3 select-none cursor-grab active:cursor-grabbing"
+        className="scrollbar-hide -mx-1 flex cursor-grab select-none snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5 active:cursor-grabbing"
       >
         {MOBILE_CHIPS.map((chip) => (
           <button
@@ -264,10 +261,10 @@ export function MapTopBar({
             type="button"
             onClick={(e) => handleChipClick(e, chip.id)}
             className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium min-h-[44px] shrink-0 snap-center transition-colors",
+              "min-h-[38px] shrink-0 snap-center rounded-full border px-3.5 py-2 text-sm font-semibold transition-all active:scale-95",
               filters.tags.includes(chip.id)
-                ? "bg-primary text-primary-foreground"
-                : "bg-white/10 border border-white/10 hover:bg-white/15"
+                ? "border-primary/55 bg-primary/18 text-primary shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+                : "border-white/12 bg-white/9 text-white/86 hover:bg-white/14 hover:text-white"
             )}
           >
             {chip.label}

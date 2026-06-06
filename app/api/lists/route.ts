@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { List } from "@/models/List"
+import "@/models/Place"
+import "@/models/User"
 import { requireAuth } from "@/lib/middleware"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"

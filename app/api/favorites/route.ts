@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Favorite } from "@/models/Favorite"
+import "@/models/Place"
 import { requireAuth } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import { features } from "@/lib/features"

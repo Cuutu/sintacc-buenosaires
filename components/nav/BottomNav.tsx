@@ -25,13 +25,14 @@ const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: Shield }
 const iconButtonClass =
   "relative flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 
-const inactiveIconClass = "text-white/76 hover:bg-white/8 hover:text-white"
-const activeIconClass = "bg-white/14 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+const inactiveIconClass = "text-white/78 hover:bg-white/10 hover:text-white"
+const activeIconClass =
+  "bg-primary/16 text-primary ring-1 ring-primary/45 shadow-[0_0_24px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.14)]"
 
 function ActiveDot({ className }: { className?: string }) {
   return (
     <span
-      className={cn("absolute h-1.5 w-1.5 rounded-full bg-primary", className)}
+      className={cn("absolute h-1.5 w-5 rounded-full bg-primary shadow-[0_0_12px_rgba(16,185,129,0.8)]", className)}
       aria-hidden
     />
   )
@@ -68,10 +69,11 @@ export function BottomNav() {
     }
     return item
   })
+  const hasMapListToggle = navItems.some((item) => "isListToggle" in item && item.isListToggle)
 
   return (
     <nav
-      className="fixed left-3 right-3 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/10 bg-[#080c0f]/85 shadow-[0_18px_60px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl"
+      className="fixed left-3 right-3 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/15 bg-[#080c0f]/68 shadow-[0_18px_60px_rgba(0,0,0,0.48),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl"
       style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       role="navigation"
       aria-label="Navegacion principal"
@@ -79,10 +81,12 @@ export function BottomNav() {
       <div className="flex h-16 items-center justify-around gap-1 px-3">
         {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }: any) => {
           const hrefStr = href ?? "/"
-          const isExplorarActive = isListToggle && pathname === "/mapa" && listOpen
+          const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Home" && !hasMapListToggle
+          const isExplorarActive = isListToggle && pathname === "/mapa"
           const isActive = isListToggle
             ? isExplorarActive
-            : (hrefStr === "/" ? pathname === "/" : pathname === hrefStr) ||
+            : isMapHomeAction ||
+              (hrefStr === "/" ? pathname === "/" : pathname === hrefStr) ||
               (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
               (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
 
@@ -106,7 +110,8 @@ export function BottomNav() {
                     iconButtonClass,
                     isExplorarActive ? activeIconClass : inactiveIconClass
                   )}
-                  aria-label={label}
+                  aria-current={isExplorarActive ? "page" : undefined}
+                  aria-label={listOpen ? "Cerrar lista del mapa" : "Abrir lista del mapa"}
                   title={label}
                 >
                   <Icon className="h-7 w-7 stroke-[2.25]" aria-hidden />
@@ -133,7 +138,12 @@ export function BottomNav() {
               <Link
                 key={hrefStr}
                 href={hrefStr}
-                className="relative flex h-14 w-[76px] items-center justify-center rounded-[1.75rem] bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className={cn(
+                  "relative flex h-14 w-[76px] items-center justify-center rounded-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isActive
+                    ? "bg-primary/18 text-primary ring-1 ring-primary/40 shadow-[0_0_26px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]"
+                    : "bg-white/14 text-white hover:bg-white/20"
+                )}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
                 title={label}
