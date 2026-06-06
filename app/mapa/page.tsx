@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useRef, useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
 import type { MapViewportBounds } from "@/components/map-view/MapboxMap"
 import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
+import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
 
-const SEARCH_DEBOUNCE_MS = 300
+const SEARCH_DEBOUNCE_MS = 650
+const MIN_SEARCH_LENGTH = 2
 const VIEWPORT_DEBOUNCE_MS = 250
 const CHUNK_ZOOM_THRESHOLD = 7
 const MAP_PLACES_LIMIT = 5000
@@ -77,16 +79,27 @@ function MapaContent() {
   const [debouncedSearch, setDebouncedSearch] = useState(
     () => searchParams.get("search") || ""
   )
+  const lastSyncedUrlSearchRef = useRef(searchParams.get("search") || "")
+  const fetchRequestSeqRef = useRef(0)
 
   // Sincronizar URL ?search= con el estado cuando cambia la URL
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
+    if (urlSearch === lastSyncedUrlSearchRef.current) return
+    lastSyncedUrlSearchRef.current = urlSearch
     setFilters((f) => (f.search !== urlSearch ? { ...f, search: urlSearch } : f))
     setDebouncedSearch((prev) => (prev !== urlSearch ? urlSearch : prev))
   }, [searchParams])
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(filters.search), SEARCH_DEBOUNCE_MS)
+    const t = setTimeout(() => {
+      const trimmedSearch = filters.search.trim()
+      setDebouncedSearch(
+        trimmedSearch.length === 0 || trimmedSearch.length >= MIN_SEARCH_LENGTH
+          ? filters.search
+          : ""
+      )
+    }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [filters.search])
 
@@ -107,13 +120,17 @@ function MapaContent() {
     if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
     else params.delete("search")
     const qs = params.toString()
+    lastSyncedUrlSearchRef.current = debouncedSearch.trim()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [debouncedSearch, pathname, router, searchParams])
 
   const fetchPlaces = useCallback(async () => {
     if (!debouncedViewport) return
 
+    const requestSeq = fetchRequestSeqRef.current + 1
+    fetchRequestSeqRef.current = requestSeq
     const search = debouncedSearch.trim()
+    const searchNeighborhood = findKnownNeighborhoodSearch(search)
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -121,10 +138,11 @@ function MapaContent() {
       if (!search && debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD) {
         params.append("bbox", formatBbox(expandBounds(debouncedViewport.bounds)))
       }
-      if (citySlugsFromUrl) params.append("citySlugs", citySlugsFromUrl)
-      if (search) params.append("search", search)
+      if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
+      if (searchNeighborhood) params.append("neighborhood", searchNeighborhood)
+      else if (search) params.append("search", search)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
-      if (filters.neighborhood && filters.neighborhood !== "all")
+      if (!searchNeighborhood && filters.neighborhood && filters.neighborhood !== "all")
         params.append("neighborhood", filters.neighborhood)
       if (filters.tags?.length) params.append("tags", filters.tags.join(","))
       if (filters.safetyLevel) params.append("safetyLevel", filters.safetyLevel)
@@ -132,12 +150,14 @@ function MapaContent() {
       const data = await fetchApi<{ places: IPlace[] }>(
         `/api/places?${params.toString()}`
       )
+      if (requestSeq !== fetchRequestSeqRef.current) return
       setPlaces(data.places || [])
     } catch (error: any) {
+      if (requestSeq !== fetchRequestSeqRef.current) return
       toast.error(error?.message || "Error al cargar lugares")
       setPlaces([])
     } finally {
-      setLoading(false)
+      if (requestSeq === fetchRequestSeqRef.current) setLoading(false)
     }
   }, [
     citySlugsFromUrl,
