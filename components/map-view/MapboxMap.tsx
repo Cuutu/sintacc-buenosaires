@@ -580,10 +580,10 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const photoUrl = currentPlace.photos?.[0] ? escapeHtml(currentPlace.photos[0]) : ""
             const detailPath = escapeHtml(getPlacePath(currentPlace))
             const photoHtml = photoUrl
-              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:82px;height:82px;display:block;object-fit:cover;border-radius:16px;background:#eef0f2">`
-              : `<div style="width:82px;height:82px;border-radius:16px;background:linear-gradient(145deg,#f6f7f4,#e9eee9);display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid #e5e7e2">${getPopupIcon(popupType)}</div>`
+              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:78px;height:78px;display:block;object-fit:cover;border-radius:18px;background:#eef0f2;border:2px solid rgba(255,255,255,.92);box-shadow:0 12px 24px rgba(0,0,0,.24)">`
+              : `<div style="width:78px;height:78px;border-radius:18px;background:linear-gradient(145deg,#eafff5,#c9f8df);display:flex;align-items:center;justify-content:center;color:#07895b;border:2px solid rgba(255,255,255,.9);box-shadow:0 12px 24px rgba(0,0,0,.18)">${getPopupIcon(popupType)}</div>`
             const photoBadgeHtml = photoUrl
-              ? `<div style="position:absolute;left:7px;top:7px;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 4px 12px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;color:${accent}">
+              ? `<div style="position:absolute;left:7px;top:7px;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.95);box-shadow:0 4px 12px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;color:${accent}">
                   ${getPopupIcon(popupType)}
                 </div>`
               : ""
@@ -600,31 +600,38 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
                 </span>`
               : ""
             const html = `
-    <a href="${detailPath}" style="display:block;width:292px;overflow:hidden;border-radius:20px;background:#fbfbf8;color:#111;text-decoration:none;border:1px solid rgba(15,15,15,.08);box-shadow:0 18px 42px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.8) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer" onclick="event.stopPropagation()">
-      <div style="display:flex;gap:12px;padding:10px">
-        <div style="position:relative;flex:0 0 auto">
-          ${photoHtml}
-          ${photoBadgeHtml}
+    <a href="${detailPath}" style="display:block;width:300px;overflow:hidden;border-radius:22px;background:#f8fff9;color:#102018;text-decoration:none;border:1px solid rgba(16,185,129,.28);box-shadow:0 20px 46px rgba(0,0,0,.30),0 0 0 1px rgba(255,255,255,.7) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer" onclick="event.stopPropagation()">
+      <div style="position:relative;background:linear-gradient(135deg,#063b2d 0%,#09b977 62%,#67e8a5 100%);padding:12px 12px 15px;color:white">
+        <div style="position:absolute;right:-26px;top:-30px;width:94px;height:94px;border-radius:999px;background:rgba(255,255,255,.14)"></div>
+        <div style="position:absolute;right:42px;bottom:-22px;width:58px;height:58px;border-radius:999px;background:rgba(255,255,255,.10)"></div>
+        <div style="position:relative;display:flex;gap:12px;align-items:flex-start">
+          <div style="position:relative;flex:0 0 auto">
+            ${photoHtml}
+            ${photoBadgeHtml}
+          </div>
+          <div style="min-width:0;flex:1;padding-top:2px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <div title="${name}" style="min-width:0;color:#fff;font-size:15px;font-weight:860;line-height:1.14;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 1px rgba(0,0,0,.14)">${name}</div>
+              ${ratingHtml ? `<span style="border-radius:999px;background:rgba(255,255,255,.92);padding:4px 7px">${ratingHtml}</span>` : ""}
+            </div>
+            <div style="margin-top:7px;display:inline-flex;max-width:100%;align-items:center;gap:6px;border-radius:999px;background:rgba(2,32,22,.24);border:1px solid rgba(255,255,255,.24);padding:5px 8px;color:#ecfff6;font-size:11.5px;font-weight:650;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <span style="width:5px;height:5px;border-radius:999px;background:#c8ffe4;flex:0 0 auto"></span>
+              <span style="overflow:hidden;text-overflow:ellipsis">${typeLabel}${neighborhood ? ` · ${neighborhood}` : ""}</span>
+            </div>
+          </div>
         </div>
-        <div style="min-width:0;flex:1;padding:3px 3px 2px 0">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-            <div title="${name}" style="min-width:0;color:#111;font-size:14px;font-weight:820;line-height:1.16;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-            ${ratingHtml}
-          </div>
-          <div style="margin-top:5px;color:#6f746f;font-size:12px;font-weight:520;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-            ${typeLabel}${neighborhood ? ` en ${neighborhood}` : ""}
-          </div>
-          <div style="margin-top:9px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+      </div>
+      <div style="padding:10px 12px 12px;background:linear-gradient(180deg,#fbfffc,#f4fff8)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="min-width:0;display:flex;flex-wrap:wrap;gap:6px">
             ${safetyHtml}
           </div>
-          <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#151515">
-            <span style="font-size:11px;color:#747974;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safety?.description ?? "Ver info del lugar"}</span>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:780;white-space:nowrap">
-              Ver
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-            </span>
+          <div style="display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#10c987;color:white;padding:7px 10px;font-size:11.5px;font-weight:820;white-space:nowrap;box-shadow:0 8px 18px rgba(16,201,135,.25)">
+            Ver lugar
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
           </div>
         </div>
+        <div style="margin-top:8px;color:#56645c;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safety?.description ?? "Información del lugar"}</div>
       </div>
     </a>
   `
