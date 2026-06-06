@@ -222,6 +222,8 @@ export function MapTopBar({
                   key={option.value}
                   type="button"
                   onClick={() => onSortChange(option.value)}
+                  aria-pressed={sort === option.value}
+                  title={`Ordenar por ${option.label}`}
                   className={cn(
                     "rounded-full px-3 py-1.5 text-xs transition",
                     sort === option.value

@@ -12,6 +12,15 @@ import { getPlacePath } from "@/lib/place-url"
 import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
 import type { IPlace } from "@/models/Place"
 
+type PlaceWithStats = IPlace & {
+  stats?: {
+    avgRating?: number
+    totalReviews?: number
+    contaminationReportsCount?: number
+  }
+  createdAt?: Date | string
+}
+
 interface MapDesktopProps {
   places: IPlace[]
   loading: boolean
@@ -34,6 +43,44 @@ const TYPE_LABELS: Record<string, string> = {
   icecream: "Heladería",
   bar: "Bar",
   other: "Otro",
+}
+
+const SORT_DESCRIPTIONS: Record<SortOption, string> = {
+  default: "Orden original del mapa",
+  rating: "Mejor rating primero",
+  newest: "Más nuevos primero",
+}
+
+function getPlaceTimestamp(place: PlaceWithStats): number {
+  const createdAt = place.createdAt ? new Date(place.createdAt).getTime() : 0
+  if (Number.isFinite(createdAt) && createdAt > 0) return createdAt
+
+  const id = place._id?.toString()
+  if (id && /^[a-f\d]{24}$/i.test(id)) {
+    return parseInt(id.slice(0, 8), 16) * 1000
+  }
+
+  return 0
+}
+
+function getRating(place: PlaceWithStats): number {
+  return place.stats?.avgRating ?? 0
+}
+
+function getReviewCount(place: PlaceWithStats): number {
+  return place.stats?.totalReviews ?? 0
+}
+
+function getSafetyRank(place: IPlace): number {
+  const level = inferSafetyLevel(place)
+  if (level === "dedicated_gf") return 3
+  if (level === "gf_options") return 2
+  if (level === "unknown") return 1
+  return 0
+}
+
+function compareName(a: IPlace, b: IPlace): number {
+  return a.name.localeCompare(b.name, "es", { sensitivity: "base" })
 }
 
 export function MapDesktop({
@@ -95,22 +142,48 @@ export function MapDesktop({
   }, [places, bounds, selectedPlaceId, searchQuery])
 
   const sortedPlaces = React.useMemo(() => {
+    const list = [...visiblePlaces] as PlaceWithStats[]
+
     if (sort === "rating") {
-      return [...visiblePlaces].sort((a, b) => {
-        const ra = (a as any).stats?.avgRating ?? 0
-        const rb = (b as any).stats?.avgRating ?? 0
-        return rb - ra
+      return list.sort((a, b) => {
+        const reviewDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
+        if (reviewDelta !== 0) return reviewDelta
+
+        const ratingDelta = getRating(b) - getRating(a)
+        if (ratingDelta !== 0) return ratingDelta
+
+        const countDelta = getReviewCount(b) - getReviewCount(a)
+        if (countDelta !== 0) return countDelta
+
+        const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
+        if (safetyDelta !== 0) return safetyDelta
+
+        return compareName(a, b)
       })
     }
+
     if (sort === "newest") {
-      return [...visiblePlaces].sort((a, b) => {
-        const da = new Date((a as any).createdAt ?? 0).getTime()
-        const db = new Date((b as any).createdAt ?? 0).getTime()
-        return db - da
+      return list.sort((a, b) => {
+        const dateDelta = getPlaceTimestamp(b) - getPlaceTimestamp(a)
+        if (dateDelta !== 0) return dateDelta
+        return compareName(a, b)
       })
     }
-    return visiblePlaces
-  }, [visiblePlaces, sort])
+
+    if (searchQuery?.trim()) {
+      return list.sort((a, b) => {
+        const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
+        if (safetyDelta !== 0) return safetyDelta
+
+        const reviewPresenceDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
+        if (reviewPresenceDelta !== 0) return reviewPresenceDelta
+
+        return compareName(a, b)
+      })
+    }
+
+    return list
+  }, [searchQuery, visiblePlaces, sort])
 
   const selectedSafety = selectedPlace
     ? getSafetyBadge(inferSafetyLevel(selectedPlace) as any)
@@ -198,6 +271,7 @@ export function MapDesktop({
           <p className="text-sm text-white/62">
             <span className="font-semibold text-white">{sortedPlaces.length}</span>
             {" "}lugar{sortedPlaces.length !== 1 ? "es" : ""}{searchQuery?.trim() ? "" : " en el área"}
+            <span className="ml-2 text-xs text-white/36">· {SORT_DESCRIPTIONS[sort]}</span>
           </p>
           {hasActiveFilters && (
             <button
