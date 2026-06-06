@@ -131,7 +131,7 @@ export function MapMobile({
         onSearchChange={onSearchChange}
       />
 
-      <div className="absolute inset-0 pt-[calc(108px+env(safe-area-inset-top))]">
+      <div className="absolute inset-0">
         <MapboxMap
           ref={mapRef}
           places={places}

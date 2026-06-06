@@ -233,15 +233,15 @@ export function MapTopBar({
   ]
 
   return (
-    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/15 bg-[#080c0f]/68 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
+    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
       <div className="flex gap-2 mb-2.5">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/52" />
+          <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" />
           <Input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-11 min-h-[44px] rounded-[1.25rem] border-white/10 bg-black/28 pl-11 text-base text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur focus-visible:ring-primary/70"
+            className="h-11 min-h-[44px] rounded-[1.25rem] border-white/10 bg-[#080c0f]/72 pl-11 text-base text-white caret-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur placeholder:text-white/40 focus-visible:ring-primary/70"
           />
         </div>
       </div>
@@ -263,8 +263,8 @@ export function MapTopBar({
             className={cn(
               "min-h-[38px] shrink-0 snap-center rounded-full border px-3.5 py-2 text-sm font-semibold transition-all active:scale-95",
               filters.tags.includes(chip.id)
-                ? "border-primary/55 bg-primary/18 text-primary shadow-[0_0_18px_rgba(16,185,129,0.22)]"
-                : "border-white/12 bg-white/9 text-white/86 hover:bg-white/14 hover:text-white"
+                ? "border-primary/50 bg-primary/[0.18] text-primary shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+                : "border-white/10 bg-white/[0.08] text-white/85 hover:bg-white/[0.14] hover:text-white"
             )}
           >
             {chip.label}
