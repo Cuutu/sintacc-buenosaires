@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { MapPin, Heart, PlusCircle, Compass, User, Shield } from "lucide-react"
+import { MapPin, Heart, PlusCircle, Compass, User, Shield, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const BASE_NAV_ITEMS = [
@@ -22,6 +22,21 @@ const BASE_NAV_ITEMS = [
 
 const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: Shield }
 
+const iconButtonClass =
+  "relative flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+
+const inactiveIconClass = "text-white/76 hover:bg-white/8 hover:text-white"
+const activeIconClass = "bg-white/14 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+
+function ActiveDot({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn("absolute h-1.5 w-1.5 rounded-full bg-primary", className)}
+      aria-hidden
+    />
+  )
+}
+
 export function BottomNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -29,17 +44,24 @@ export function BottomNav() {
   const { data: session } = useSession()
   const listOpen = searchParams.get("list") === "open"
   const isAdmin = session?.user?.role === "admin"
+  const isOnMap = pathname === "/mapa"
 
-  // Si es admin: reemplazar el ítem Explorar (índice 3) por Admin
   const rawItems = isAdmin
     ? BASE_NAV_ITEMS.map((item, i) => (i === 3 ? ADMIN_ITEM : item))
     : BASE_NAV_ITEMS
 
-  // Resolver href fallback para Perfil según sesión
-  const navItems = rawItems.map((item) => {
+  const navItems = rawItems.map((item, index) => {
+    if (index === 0 && isOnMap) {
+      return { ...item, href: "/", label: "Home", icon: Home }
+    }
+
     const withFallback = item as typeof item & { fallbackHref?: string; fallbackLabel?: string }
     if ("fallbackHref" in item && !session) {
-      return { ...item, href: withFallback.fallbackHref ?? "/login", label: withFallback.fallbackLabel ?? item.label }
+      return {
+        ...item,
+        href: withFallback.fallbackHref ?? "/login",
+        label: withFallback.fallbackLabel ?? item.label,
+      }
     }
     if ("fallbackHref" in item && session) {
       return { ...item, href: "/perfil", label: "Perfil" }
@@ -49,24 +71,22 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
+      className="fixed left-3 right-3 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/10 bg-[#080c0f]/85 shadow-[0_18px_60px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl"
+      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       role="navigation"
-      aria-label="Navegación principal"
+      aria-label="Navegacion principal"
     >
-      <div className="flex items-center justify-around h-16">
+      <div className="flex h-16 items-center justify-around gap-1 px-3">
         {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }: any) => {
           const hrefStr = href ?? "/"
           const isExplorarActive = isListToggle && pathname === "/mapa" && listOpen
-          const isActive =
-            isListToggle
-              ? isExplorarActive
-              : pathname === hrefStr ||
-                (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
-                (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
+          const isActive = isListToggle
+            ? isExplorarActive
+            : (hrefStr === "/" ? pathname === "/" : pathname === hrefStr) ||
+              (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
+              (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
 
-          // Ítem Explorar (toggle de lista en mapa) — solo cuando NO es admin
           if (isListToggle) {
-            const isOnMap = pathname === "/mapa"
             if (isOnMap) {
               return (
                 <button
@@ -83,95 +103,74 @@ export function BottomNav() {
                     router.replace(qs ? `/mapa?${qs}` : "/mapa", { scroll: false })
                   }}
                   className={cn(
-                    "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    isExplorarActive
-                      ? "text-primary font-medium"
-                      : "text-muted-foreground hover:text-foreground"
+                    iconButtonClass,
+                    isExplorarActive ? activeIconClass : inactiveIconClass
                   )}
                   aria-label={label}
+                  title={label}
                 >
-                  <Icon className="h-6 w-6" aria-hidden />
-                  <span className="text-[10px] font-medium mt-0.5">{label}</span>
+                  <Icon className="h-7 w-7 stroke-[2.25]" aria-hidden />
+                  {isExplorarActive && <ActiveDot className="bottom-1.5" />}
                 </button>
               )
             }
-            // Fuera del mapa: link normal a /mapa
+
             return (
               <Link
                 key="explorar-link"
                 href="/mapa"
-                className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  "text-muted-foreground hover:text-foreground"
-                )}
+                className={cn(iconButtonClass, inactiveIconClass)}
                 aria-label={label}
+                title={label}
               >
-                <Icon className="h-6 w-6" aria-hidden />
-                <span className="text-[10px] font-medium mt-0.5">{label}</span>
+                <Icon className="h-7 w-7 stroke-[2.25]" aria-hidden />
               </Link>
             )
           }
 
-          // Ítem central (Sugerir) con círculo
           if (isCenter) {
             return (
               <Link
                 key={hrefStr}
                 href={hrefStr}
-                className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors relative -mt-4",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                )}
+                className="relative flex h-14 w-[76px] items-center justify-center rounded-[1.75rem] bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
+                title={label}
               >
-                <span className="flex items-center justify-center h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg">
-                  <Icon className="h-6 w-6" aria-hidden />
-                </span>
-                <span className="text-[10px] font-medium mt-0.5">{label}</span>
+                <Icon className="h-8 w-8 stroke-[2.25]" aria-hidden />
+                {isActive && <ActiveDot className="right-4 top-1/2 -translate-y-1/2" />}
               </Link>
             )
           }
 
-          // Ítem Admin — con badge rojo si hay algo pendiente (futuro)
           if (hrefStr === "/admin") {
             return (
               <Link
                 key="/admin"
                 href="/admin"
-                className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
-                )}
+                className={cn(iconButtonClass, isActive ? activeIconClass : inactiveIconClass)}
                 aria-current={isActive ? "page" : undefined}
-                aria-label="Panel de administración"
+                aria-label="Panel de administracion"
+                title={label}
               >
-                <Icon className="h-6 w-6" aria-hidden />
-                <span className="text-[10px] font-medium mt-0.5">{label}</span>
+                <Icon className="h-7 w-7 stroke-[2.25]" aria-hidden />
+                {isActive && <ActiveDot className="bottom-1.5" />}
               </Link>
             )
           }
 
-          // Ítem normal
           return (
             <Link
               key={hrefStr}
               href={hrefStr}
-              className={cn(
-                "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 rounded-lg transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
-              )}
+              className={cn(iconButtonClass, isActive ? activeIconClass : inactiveIconClass)}
               aria-current={isActive ? "page" : undefined}
               aria-label={label}
+              title={label}
             >
-              <span className="flex items-center justify-center h-6 w-6 shrink-0">
-                <Icon className="h-6 w-6" aria-hidden />
-              </span>
-              <span className="text-[10px] font-medium mt-0.5">{label}</span>
+              <Icon className="h-7 w-7 stroke-[2.25]" aria-hidden />
+              {isActive && <ActiveDot className="bottom-1.5" />}
             </Link>
           )
         })}

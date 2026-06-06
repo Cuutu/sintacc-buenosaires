@@ -82,6 +82,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
+    const lastFocusedPlaceIdRef = useRef<string | null>(null)
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
@@ -352,9 +353,15 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [places, selectedPlaceId, onPlaceSelect])
 
     useEffect(() => {
-      if (!map.current || !selectedPlaceId) return
+      if (!map.current || !selectedPlaceId) {
+        lastFocusedPlaceIdRef.current = null
+        return
+      }
+      if (lastFocusedPlaceIdRef.current === selectedPlaceId) return
+
       const place = places.find((p) => p._id.toString() === selectedPlaceId)
       if (place) {
+        lastFocusedPlaceIdRef.current = selectedPlaceId
         map.current.flyTo({
           center: [place.location.lng, place.location.lat],
           zoom: 15,

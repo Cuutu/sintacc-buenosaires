@@ -49,6 +49,7 @@ export function MapMobile({
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
+  const lastFocusedPlaceIdRef = React.useRef<string | null>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
 
   const visiblePlaces = React.useMemo(() => {
@@ -109,9 +110,15 @@ export function MapMobile({
 
   // Centrar mapa en lugar cuando placeIdToFocus está en la lista
   React.useEffect(() => {
-    if (!placeIdToFocus || !mapRef.current) return
+    if (!placeIdToFocus || !mapRef.current) {
+      lastFocusedPlaceIdRef.current = null
+      return
+    }
+    if (lastFocusedPlaceIdRef.current === placeIdToFocus) return
+
     const place = places.find((p) => p._id.toString() === placeIdToFocus)
     if (place?.location) {
+      lastFocusedPlaceIdRef.current = placeIdToFocus
       mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
     }
   }, [placeIdToFocus, places])
