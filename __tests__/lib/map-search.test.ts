@@ -16,6 +16,11 @@ describe("findKnownNeighborhoodSearch", () => {
     expect(findKnownNeighborhoodSearch("Cordoba")).toBe("Córdoba")
   })
 
+  it("matches San Nicolas with or without accent", () => {
+    expect(findKnownNeighborhoodSearch("San Nicolas")).toBe("San Nicolás")
+    expect(findKnownNeighborhoodSearch("San Nicolás")).toBe("San Nicolás")
+  })
+
   it("maps known neighborhood aliases to their canonical neighborhood", () => {
     expect(findKnownNeighborhoodSearch("Barrio Norte")).toBe("Recoleta")
     expect(getNeighborhoodSearchValues("Recoleta")).toEqual(

@@ -51,6 +51,7 @@ export function MapMobile({
   const mapRef = React.useRef<MapboxMapRef>(null)
   const lastFocusedPlaceIdRef = React.useRef<string | null>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
+  const [locating, setLocating] = React.useState(false)
 
   const visiblePlaces = React.useMemo(() => {
     if (searchQuery?.trim()) return places
@@ -64,7 +65,7 @@ export function MapMobile({
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
 
-  const goToNearMe = () => {
+  const triggerMapboxGeolocate = () => {
     if (!navigator.geolocation) {
       toast.error("Tu navegador no soporta geolocalización")
       return
@@ -74,12 +75,65 @@ export function MapMobile({
     setTimeout(() => toast.dismiss("location"), 5000)
   }
 
+  const goToNearMe = () => {
+    if (locating) return
+
+    if (!window.isSecureContext) {
+      toast.error("La ubicación solo funciona en sitios seguros (HTTPS).")
+      return
+    }
+
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no soporta geolocalización")
+      return
+    }
+
+    setLocating(true)
+    toast.loading("Obteniendo tu ubicación...", { id: "location" })
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        mapRef.current?.showUserLocation(longitude, latitude)
+        mapRef.current?.flyTo(longitude, latitude, 16)
+        toast.success("Ubicación encontrada", { id: "location" })
+        setLocating(false)
+      },
+      (error) => {
+        toast.dismiss("location")
+        setLocating(false)
+
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error(
+            "No se pudo acceder a tu ubicación. Activá el permiso de ubicación para este sitio en la configuración del navegador.",
+            { action: { label: "Reintentar", onClick: goToNearMe } }
+          )
+          return
+        }
+
+        if (error.code === error.TIMEOUT) {
+          toast.error("La ubicación tardó demasiado. Revisá el GPS/señal e intentá de nuevo.", {
+            action: { label: "Reintentar", onClick: goToNearMe },
+          })
+          return
+        }
+
+        toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", {
+          action: { label: "Reintentar", onClick: goToNearMe },
+        })
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000,
+      }
+    )
+  }
+
   const handleGeolocateError = React.useCallback((error: GeolocationPositionError) => {
     toast.dismiss("location")
     const retry = () => {
       toast.loading("Obteniendo tu ubicación...", { id: "location" })
-      mapRef.current?.triggerGeolocate()
-      setTimeout(() => toast.dismiss("location"), 5000)
+      triggerMapboxGeolocate()
     }
     if (error.code === 1) {
       toast.error(
@@ -152,6 +206,7 @@ export function MapMobile({
 
       <FabButtons
         onNearMe={goToNearMe}
+        locating={locating}
         bottomOffset={listOpen ? "calc(18vh + 1rem)" : "calc(5rem + 1rem + env(safe-area-inset-bottom))"}
       />
 

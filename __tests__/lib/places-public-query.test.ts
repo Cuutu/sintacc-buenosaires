@@ -33,13 +33,25 @@ describe("buildPublicPlacesMongoQuery", () => {
     })
 
     expect(query.status).toBe("approved")
-    expect(query.$and).toEqual([
-      {
-        $or: [
-          { neighborhood: { $in: expect.arrayContaining(["Recoleta", "Barrio Norte", "La Isla"]) } },
-          { userProvidedNeighborhood: { $in: expect.arrayContaining(["Recoleta", "Barrio Norte", "La Isla"]) } },
-        ],
-      },
-    ])
+    const neighborhoodMatchers = (query.$and?.[0] as any).$or[0].neighborhood.$in as RegExp[]
+
+    expect(neighborhoodMatchers).toEqual(
+      expect.arrayContaining([expect.any(RegExp), expect.any(RegExp), expect.any(RegExp)])
+    )
+    expect(neighborhoodMatchers.some((regex) => regex.test("Recoleta"))).toBe(true)
+    expect(neighborhoodMatchers.some((regex) => regex.test("Barrio Norte"))).toBe(true)
+    expect(neighborhoodMatchers.some((regex) => regex.test("La Isla"))).toBe(true)
+  })
+
+  it("matches neighborhoods with or without accents", () => {
+    const query = buildPublicPlacesMongoQuery({
+      neighborhood: "San Nicolas",
+      page: 1,
+      limit: 20,
+    })
+    const neighborhoodMatchers = (query.$and?.[0] as any).$or[0].neighborhood.$in as RegExp[]
+
+    expect(neighborhoodMatchers.some((regex) => regex.test("San Nicolas"))).toBe(true)
+    expect(neighborhoodMatchers.some((regex) => regex.test("San Nicolás"))).toBe(true)
   })
 })

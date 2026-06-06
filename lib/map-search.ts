@@ -11,6 +11,7 @@ export function normalizeSearchValue(value: string): string {
 
 const NEIGHBORHOOD_SEARCH_ALIASES: Record<string, string[]> = {
   Recoleta: ["Barrio Norte", "La Isla"],
+  "San Nicolás": ["San Nicolas"],
 }
 
 const KNOWN_NEIGHBORHOODS = Array.from(

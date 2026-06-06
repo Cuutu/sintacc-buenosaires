@@ -31,6 +31,7 @@ export interface MapboxMapRef {
   setCenter: (lng: number, lat: number) => void
   /** Solicita permisos de ubicación y muestra al usuario en el mapa (punto azul) */
   triggerGeolocate: () => void
+  showUserLocation: (lng: number, lat: number) => void
 }
 
 export interface MapViewportBounds {
@@ -92,6 +93,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
     const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
+    const userLocationMarkerRef = useRef<mapboxgl.Marker | null>(null)
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
@@ -126,6 +128,43 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       map.current.setCenter([lng, lat])
     }, [])
 
+    const showUserLocation = useCallback((lng: number, lat: number) => {
+      if (!map.current) return
+
+      if (!userLocationMarkerRef.current) {
+        const el = document.createElement("div")
+        el.setAttribute("aria-label", "Tu ubicación")
+        el.style.cssText = `
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: rgba(0, 194, 255, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.85);
+          box-shadow: 0 0 0 4px rgba(0, 194, 255, 0.14), 0 8px 18px rgba(0, 0, 0, 0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `
+
+        const dot = document.createElement("div")
+        dot.style.cssText = `
+          width: 11px;
+          height: 11px;
+          border-radius: 9999px;
+          background: #00c2ff;
+          border: 2px solid white;
+        `
+
+        el.appendChild(dot)
+        userLocationMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: "center" })
+          .setLngLat([lng, lat])
+          .addTo(map.current)
+        return
+      }
+
+      userLocationMarkerRef.current.setLngLat([lng, lat])
+    }, [])
+
     const applyMarkerSelection = useCallback((entry: MarkerEntry, isSelected: boolean) => {
       entry.element.style.width = `${isSelected ? 44 : 36}px`
       entry.element.style.height = `${isSelected ? 44 : 36}px`
@@ -133,7 +172,11 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       entry.icon.style.fontSize = `${isSelected ? 20 : 16}px`
     }, [])
 
-    useImperativeHandle(ref, () => ({ flyTo, setCenter, triggerGeolocate }), [flyTo, setCenter, triggerGeolocate])
+    useImperativeHandle(
+      ref,
+      () => ({ flyTo, setCenter, triggerGeolocate, showUserLocation }),
+      [flyTo, setCenter, triggerGeolocate, showUserLocation]
+    )
 
     useEffect(() => {
       if (!mapContainer.current) return
@@ -410,6 +453,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       return () => {
         markerEntries.forEach((entry) => entry.marker.remove())
         markerEntries.clear()
+        userLocationMarkerRef.current?.remove()
+        userLocationMarkerRef.current = null
       }
     }, [])
 

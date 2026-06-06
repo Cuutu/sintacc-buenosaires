@@ -2,11 +2,28 @@
   "name": "Celimap",
   "short_name": "Celimap",
   "description": "Mapa para celíacos. Lugares sin TACC.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
   "lang": "es-AR",
+  "categories": ["food", "health", "navigation", "travel"],
+  "shortcuts": [
+    {
+      "name": "Abrir mapa",
+      "short_name": "Mapa",
+      "url": "/mapa",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Sugerir lugar",
+      "short_name": "Sugerir",
+      "url": "/sugerir",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -26,4 +43,3 @@
     }
   ]
 }
-

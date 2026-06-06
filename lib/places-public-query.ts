@@ -9,6 +9,39 @@ function makeSearchRegex(value: string): RegExp {
   return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
 }
 
+function makeExactDiacriticInsensitiveRegex(value: string): RegExp {
+  const pattern = value
+    .trim()
+    .split("")
+    .map((char) => {
+      if (/\s/.test(char)) return "\\s+"
+      const normalizedChar = char
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+
+      switch (normalizedChar) {
+        case "a":
+          return "[aáàäâãAÁÀÄÂÃ]"
+        case "e":
+          return "[eéèëêEÉÈËÊ]"
+        case "i":
+          return "[iíìïîIÍÌÏÎ]"
+        case "o":
+          return "[oóòöôõOÓÒÖÔÕ]"
+        case "u":
+          return "[uúùüûUÚÙÜÛ]"
+        case "n":
+          return "[nñNÑ]"
+        default:
+          return char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      }
+    })
+    .join("")
+
+  return new RegExp(`^${pattern}$`, "i")
+}
+
 function appendAnd(query: FilterQuery<IPlace>, condition: FilterQuery<IPlace>): void {
   query.$and = [...(query.$and ?? []), condition]
 }
@@ -60,10 +93,11 @@ export function buildPublicPlacesMongoQuery(
   } else if (params.neighborhood) {
     const neighborhoodValues = getNeighborhoodSearchValues(params.neighborhood)
     if (neighborhoodValues.length > 0) {
+      const neighborhoodMatchers = neighborhoodValues.map(makeExactDiacriticInsensitiveRegex)
       appendAnd(query, {
         $or: [
-          { neighborhood: { $in: neighborhoodValues } },
-          { userProvidedNeighborhood: { $in: neighborhoodValues } },
+          { neighborhood: { $in: neighborhoodMatchers } },
+          { userProvidedNeighborhood: { $in: neighborhoodMatchers } },
         ],
       })
     }
