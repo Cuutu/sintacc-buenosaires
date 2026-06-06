@@ -41,11 +41,11 @@ export function PlacesList({
 
   if (loading) {
     return (
-      <div ref={listRef} className="px-4 pb-4 space-y-3">
+      <div ref={listRef} className="space-y-2.5 px-5 pb-5">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="h-20 rounded-xl bg-white/5 animate-pulse"
+            className="h-[86px] animate-pulse rounded-2xl bg-white/5"
           />
         ))}
       </div>
@@ -54,14 +54,14 @@ export function PlacesList({
 
   if (places.length === 0) {
     return (
-      <div className="px-4 py-12 text-center text-muted-foreground">
+      <div className="px-5 py-12 text-center text-muted-foreground">
         No se encontraron lugares
       </div>
     )
   }
 
   return (
-    <div ref={listRef} className="px-4 pb-4 space-y-3">
+    <div ref={listRef} className="space-y-2.5 px-5 pb-5">
       {places.map((place) => (
         <div
           key={place._id.toString()}

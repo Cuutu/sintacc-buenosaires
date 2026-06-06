@@ -1,16 +1,26 @@
 "use client"
 
 import * as React from "react"
-import { Search } from "lucide-react"
+import { Search, ShieldCheck, SlidersHorizontal } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
 
 const TAG_CHIPS = [
-  { id: "cocina_separada", label: "🍳 Cocina separada" },
-  { id: "certificado_sin_tacc", label: "🛡 Certificado" },
-  { id: "delivery", label: "🚗 Delivery" },
+  { id: "cocina_separada", label: "Cocina separada" },
+  { id: "certificado_sin_tacc", label: "Certificado" },
+  { id: "delivery", label: "Delivery" },
 ] as const
+
+const TYPE_LABELS: Record<string, string> = {
+  restaurant: "Restaurante",
+  cafe: "Café",
+  bakery: "Panadería",
+  store: "Tienda",
+  icecream: "Heladería",
+  bar: "Bar",
+  other: "Otro",
+}
 
 export interface MapFilters {
   search: string
@@ -30,7 +40,6 @@ interface MapTopBarProps {
   placeholder?: string
   sort?: SortOption
   onSortChange?: (sort: SortOption) => void
-  /** overlay = sobre el mapa (mobile), sidebar = en el panel derecho (desktop) */
   variant?: "overlay" | "sidebar"
 }
 
@@ -49,12 +58,11 @@ export function MapTopBar({
   const didDragRef = React.useRef(false)
   const startXRef = React.useRef(0)
   const scrollLeftRef = React.useRef(0)
-
   const isSidebar = variant === "sidebar"
 
   const toggleTag = (tagId: string) => {
     const tags = filters.tags.includes(tagId)
-      ? filters.tags.filter((t) => t !== tagId)
+      ? filters.tags.filter((tag) => tag !== tagId)
       : [...filters.tags, tagId]
     onFiltersChange({ ...filters, tags })
   }
@@ -73,7 +81,6 @@ export function MapTopBar({
     })
   }
 
-  // Drag-to-scroll para chips (solo overlay/mobile)
   const handleChipsMouseDown = (e: React.MouseEvent) => {
     if (!chipsRef.current) return
     isDraggingRef.current = true
@@ -81,6 +88,7 @@ export function MapTopBar({
     startXRef.current = e.pageX
     scrollLeftRef.current = chipsRef.current.scrollLeft
   }
+
   const handleChipsMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingRef.current || !chipsRef.current) return
     const dx = Math.abs(e.pageX - startXRef.current)
@@ -90,66 +98,73 @@ export function MapTopBar({
       chipsRef.current.scrollLeft = scrollLeftRef.current - (e.pageX - startXRef.current) * 1.2
     }
   }
-  const handleChipsMouseUp = () => { isDraggingRef.current = false }
-  const handleChipsMouseLeave = () => { isDraggingRef.current = false }
+
+  const handleChipsMouseUp = () => {
+    isDraggingRef.current = false
+  }
+
   const handleChipClick = (e: React.MouseEvent, tagId: string) => {
-    if (didDragRef.current) { e.preventDefault(); return }
+    if (didDragRef.current) {
+      e.preventDefault()
+      return
+    }
     toggleTag(tagId)
   }
 
-  // ── SIDEBAR (desktop) ─────────────────────────────────────────────────────
   if (isSidebar) {
     return (
-      <div className="border-b border-white/10 px-5 pt-4 pb-4 shrink-0 space-y-4">
-        {/* Search */}
+      <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-4">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/38" />
           <Input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 h-10 rounded-xl border-white/10 bg-black/40 backdrop-blur text-sm"
+            className="h-11 rounded-2xl border-white/10 bg-white/[0.035] pl-10 text-sm text-white placeholder:text-white/34 focus-visible:ring-primary/60"
           />
         </div>
 
-        {/* Safety pills */}
-        <div>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-            Nivel de seguridad
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => toggleSafety("dedicated_gf")}
-              className={cn(
-                "py-2 px-3 rounded-xl border text-xs font-semibold transition-all text-center",
-                filters.safetyLevel === "dedicated_gf"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20"
-              )}
-            >
-              ✅ 100% sin TACC
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleSafety("gf_options")}
-              className={cn(
-                "py-2 px-3 rounded-xl border text-xs font-semibold transition-all text-center",
-                filters.safetyLevel === "gf_options"
-                  ? "border-amber-500 bg-amber-500/10 text-amber-400"
-                  : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20"
-              )}
-            >
-              🟡 Tiene opciones
-            </button>
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {[
+            { value: "dedicated_gf", label: "100% sin TACC", tone: "primary" },
+            { value: "gf_options", label: "Tiene opciones", tone: "amber" },
+          ].map((item) => {
+            const active = filters.safetyLevel === item.value
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => toggleSafety(item.value)}
+                className={cn(
+                  "flex h-10 items-center justify-center gap-2 rounded-2xl border px-3 text-xs font-semibold transition",
+                  active && item.tone === "primary" && "border-primary/55 bg-primary/15 text-primary shadow-[0_0_18px_rgba(16,185,129,0.16)]",
+                  active && item.tone === "amber" && "border-amber-400/45 bg-amber-400/12 text-amber-300",
+                  !active && "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
+                )}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {item.label}
+              </button>
+            )
+          })}
         </div>
 
-        {/* Tipo */}
-        <div>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-            Tipo de lugar
-          </p>
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+              Tipo de lugar
+            </p>
+            {onFiltersOpen && (
+              <button
+                type="button"
+                onClick={onFiltersOpen}
+                className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/52"
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+                Más
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {TYPES.map((type) => (
               <button
@@ -157,21 +172,20 @@ export function MapTopBar({
                 type="button"
                 onClick={() => toggleType(type.value)}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                   filters.type === type.value
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20"
+                    ? "border-primary/55 bg-primary/15 text-primary"
+                    : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
                 )}
               >
-                {type.emoji} {type.label}
+                {TYPE_LABELS[type.value] ?? type.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tags extra */}
-        <div>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+        <div className="mt-4">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
             Características
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -181,10 +195,10 @@ export function MapTopBar({
                 type="button"
                 onClick={() => toggleTag(chip.id)}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                   filters.tags.includes(chip.id)
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20"
+                    ? "border-primary/55 bg-primary/15 text-primary"
+                    : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
                 )}
               >
                 {chip.label}
@@ -193,30 +207,29 @@ export function MapTopBar({
           </div>
         </div>
 
-        {/* Sort */}
         {onSortChange && (
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Ordenar por
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+              Ordenar
             </p>
-            <div className="flex gap-1">
+            <div className="flex rounded-full border border-white/10 bg-white/[0.035] p-1">
               {([
                 { value: "default", label: "Relevancia" },
-                { value: "rating", label: "★ Rating" },
+                { value: "rating", label: "Rating" },
                 { value: "newest", label: "Nuevo" },
-              ] as { value: SortOption; label: string }[]).map((opt) => (
+              ] as { value: SortOption; label: string }[]).map((option) => (
                 <button
-                  key={opt.value}
+                  key={option.value}
                   type="button"
-                  onClick={() => onSortChange(opt.value)}
+                  onClick={() => onSortChange(option.value)}
                   className={cn(
-                    "px-2.5 py-1 rounded-lg text-xs border transition-all",
-                    sort === opt.value
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
-                      : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20"
+                    "rounded-full px-3 py-1.5 text-xs transition",
+                    sort === option.value
+                      ? "bg-primary text-primary-foreground font-semibold"
+                      : "text-white/52 hover:text-white/78"
                   )}
                 >
-                  {opt.label}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -226,16 +239,15 @@ export function MapTopBar({
     )
   }
 
-  // ── OVERLAY (mobile) ───────────────────
-  const MOBILE_CHIPS = [
+  const mobileChips = [
     { id: "100_gf", label: "100% sin TACC" },
     { id: "opciones_sin_tacc", label: "Opciones sin TACC" },
   ]
 
   return (
     <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
-      <div className="flex gap-2 mb-2.5">
-        <div className="relative flex-1 min-w-0">
+      <div className="mb-2.5 flex gap-2">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" />
           <input
             placeholder={placeholder}
@@ -251,6 +263,7 @@ export function MapTopBar({
           />
         </div>
       </div>
+
       <div
         ref={chipsRef}
         role="region"
@@ -258,10 +271,10 @@ export function MapTopBar({
         onMouseDown={handleChipsMouseDown}
         onMouseMove={handleChipsMouseMove}
         onMouseUp={handleChipsMouseUp}
-        onMouseLeave={handleChipsMouseLeave}
+        onMouseLeave={handleChipsMouseUp}
         className="scrollbar-hide -mx-1 flex cursor-grab select-none snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5 active:cursor-grabbing"
       >
-        {MOBILE_CHIPS.map((chip) => (
+        {mobileChips.map((chip) => (
           <button
             key={chip.id}
             type="button"

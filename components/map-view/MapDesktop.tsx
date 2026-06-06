@@ -2,14 +2,15 @@
 
 import * as React from "react"
 import mapboxgl from "mapbox-gl"
+import { ArrowUpRight, MapPin, Sparkles, X } from "lucide-react"
 import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
 import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { filterPlacesInBounds } from "./geo"
-import { cn } from "@/lib/utils"
+import { getPlacePath } from "@/lib/place-url"
+import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
 import type { IPlace } from "@/models/Place"
-import { X } from "lucide-react"
 
 interface MapDesktopProps {
   places: IPlace[]
@@ -23,6 +24,16 @@ interface MapDesktopProps {
   initialCenter?: [number, number]
   initialZoom?: number
   onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  restaurant: "Restaurante",
+  cafe: "Café",
+  bakery: "Panadería",
+  store: "Tienda",
+  icecream: "Heladería",
+  bar: "Bar",
+  other: "Otro",
 }
 
 export function MapDesktop({
@@ -43,44 +54,46 @@ export function MapDesktop({
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [sort, setSort] = React.useState<SortOption>("default")
 
-  // Filtros activos para el badge flotante
+  const selectedPlace = React.useMemo(
+    () => places.find((place) => place._id.toString() === selectedPlaceId) ?? null,
+    [places, selectedPlaceId]
+  )
+
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
-    if (filters.safetyLevel === "dedicated_gf") parts.push("✅ 100% sin TACC")
-    if (filters.safetyLevel === "gf_options") parts.push("🟡 Tiene opciones")
-    if (filters.type) {
-      const TYPES_MAP: Record<string, string> = {
-        restaurant: "🍕 Restaurante", cafe: "☕ Café", bakery: "🥐 Panadería",
-        store: "🛒 Tienda", icecream: "🍦 Heladería", bar: "🍺 Bar", other: "📍 Otro",
-      }
-      parts.push(TYPES_MAP[filters.type] ?? filters.type)
-    }
-    if (filters.tags.includes("certificado_sin_tacc")) parts.push("🛡 Certificado")
-    if (filters.tags.includes("cocina_separada")) parts.push("🍳 Cocina sep.")
-    if (filters.tags.includes("delivery")) parts.push("🚗 Delivery")
+    if (filters.safetyLevel === "dedicated_gf") parts.push("100% sin TACC")
+    if (filters.safetyLevel === "gf_options") parts.push("Tiene opciones")
+    if (filters.type) parts.push(TYPE_LABELS[filters.type] ?? filters.type)
+    if (filters.tags.includes("certificado_sin_tacc")) parts.push("Certificado")
+    if (filters.tags.includes("cocina_separada")) parts.push("Cocina separada")
+    if (filters.tags.includes("delivery")) parts.push("Delivery")
     return parts
   }, [filters])
 
   const hasActiveFilters = activeFilters.length > 0
 
   const clearAllFilters = () => {
-    onFiltersChange({ search: filters.search, tags: [], type: undefined, neighborhood: undefined, safetyLevel: undefined })
+    onFiltersChange({
+      search: filters.search,
+      tags: [],
+      type: undefined,
+      neighborhood: undefined,
+      safetyLevel: undefined,
+    })
   }
 
-  // Lugares visibles en bounds
   const visiblePlaces = React.useMemo(() => {
     if (searchQuery?.trim()) return places
     if (!bounds) return places
     const inBounds = filterPlacesInBounds(places, bounds)
     if (!selectedPlaceId) return inBounds
-    const selected = places.find((p) => p._id.toString() === selectedPlaceId)
-    if (selected && !inBounds.some((p) => p._id.toString() === selectedPlaceId)) {
+    const selected = places.find((place) => place._id.toString() === selectedPlaceId)
+    if (selected && !inBounds.some((place) => place._id.toString() === selectedPlaceId)) {
       return [selected, ...inBounds]
     }
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
 
-  // Sort aplicado
   const sortedPlaces = React.useMemo(() => {
     if (sort === "rating") {
       return [...visiblePlaces].sort((a, b) => {
@@ -99,10 +112,13 @@ export function MapDesktop({
     return visiblePlaces
   }, [visiblePlaces, sort])
 
+  const selectedSafety = selectedPlace
+    ? getSafetyBadge(inferSafetyLevel(selectedPlace) as any)
+    : null
+
   return (
-    <div className="grid grid-cols-12 h-full w-full">
-      {/* Mapa */}
-      <div className="col-span-7 relative">
+    <div className="grid h-full w-full grid-cols-12 bg-[#050807]">
+      <div className="relative col-span-7 overflow-hidden">
         <MapboxMap
           ref={mapRef}
           places={places}
@@ -113,22 +129,22 @@ export function MapDesktop({
           searchQuery={searchQuery}
           initialCenter={initialCenter}
           initialZoom={initialZoom}
-          darkStyle={false}
+          darkStyle
           reduceMotion={reduceMotion}
+          clusterMarkers
         />
 
-        {/* Badge filtros activos flotante sobre el mapa */}
         {hasActiveFilters && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-            <div className="flex items-center gap-2 bg-black/70 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 shadow-lg text-xs font-medium text-white whitespace-nowrap max-w-[420px] overflow-hidden">
-              <span className="shrink-0 text-primary">●</span>
+          <div className="pointer-events-auto absolute left-1/2 top-4 z-10 -translate-x-1/2">
+            <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-white/15 bg-[#080c0f]/78 px-3 py-2 text-xs font-medium text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_14px_rgba(16,185,129,0.75)]" />
               <span className="truncate">
                 {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
               </span>
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="shrink-0 ml-1 hover:text-white/60 transition-colors"
+                className="ml-1 shrink-0 text-white/62 transition hover:text-white"
                 title="Limpiar filtros"
               >
                 <X className="h-3.5 w-3.5" />
@@ -138,8 +154,7 @@ export function MapDesktop({
         )}
       </div>
 
-      {/* Panel lateral */}
-      <div className="col-span-5 border-l border-white/10 bg-black/40 backdrop-blur-xl overflow-y-auto flex flex-col">
+      <aside className="col-span-5 flex min-w-0 flex-col overflow-y-auto border-l border-white/10 bg-[#070909]/96 shadow-[inset_1px_0_0_rgba(255,255,255,0.04)] backdrop-blur-xl">
         <MapTopBar
           variant="sidebar"
           filters={filters}
@@ -148,23 +163,55 @@ export function MapDesktop({
           sort={sort}
           onSortChange={setSort}
         />
-        <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{sortedPlaces.length}</span>
+
+        {selectedPlace && (
+          <section className="mx-5 mt-4 rounded-2xl border border-primary/25 bg-primary/[0.08] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.26)]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                  <Sparkles className="h-3 w-3" />
+                  Seleccionado
+                </div>
+                <h2 className="truncate text-base font-bold text-white">{selectedPlace.name}</h2>
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-white/62">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {selectedPlace.neighborhood}
+                </p>
+              </div>
+              <a
+                href={getPlacePath(selectedPlace)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
+                aria-label="Ver detalle"
+              >
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </div>
+            {selectedSafety && (
+              <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${selectedSafety.className}`}>
+                {selectedSafety.label}
+              </div>
+            )}
+          </section>
+        )}
+
+        <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-4">
+          <p className="text-sm text-white/62">
+            <span className="font-semibold text-white">{sortedPlaces.length}</span>
             {" "}lugar{sortedPlaces.length !== 1 ? "es" : ""}{searchQuery?.trim() ? "" : " en el área"}
           </p>
           {hasActiveFilters && (
             <button
               type="button"
               onClick={clearAllFilters}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-white/52 transition hover:text-white"
             >
               <X className="h-3 w-3" />
               Limpiar
             </button>
           )}
         </div>
-        <div className="flex-1 pt-2">
+
+        <div className="flex-1 pt-1">
           <PlacesList
             places={sortedPlaces}
             selectedPlaceId={selectedPlaceId}
@@ -172,7 +219,7 @@ export function MapDesktop({
             onPlaceSelect={onPlaceSelect}
           />
         </div>
-      </div>
+      </aside>
     </div>
   )
 }

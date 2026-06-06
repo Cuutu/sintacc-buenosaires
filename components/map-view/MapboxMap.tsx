@@ -5,7 +5,7 @@
  * (uBlock, Brave, etc.) verás `ERR_BLOCKED_BY_CLIENT` en consola. El mapa funciona igual.
  * Mapbox no ofrece opción para desactivar esto en la versión GL JS.
  */
-import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from "react"
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useMemo, useState } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
@@ -46,8 +46,24 @@ interface MarkerEntry {
   element: HTMLDivElement
   inner: HTMLDivElement
   icon: HTMLSpanElement
-  place: IPlace
+  item: MapMarkerItem
 }
+
+type MapMarkerItem =
+  | {
+      id: string
+      kind: "place"
+      place: IPlace
+      lng: number
+      lat: number
+    }
+  | {
+      id: string
+      kind: "cluster"
+      places: IPlace[]
+      lng: number
+      lat: number
+    }
 
 interface MapboxMapProps {
   places: IPlace[]
@@ -69,6 +85,7 @@ interface MapboxMapProps {
   onGeolocateError?: (error: GeolocationPositionError) => void
   /** Callback cuando se obtiene la ubicación correctamente */
   onGeolocateSuccess?: () => void
+  clusterMarkers?: boolean
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -87,6 +104,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       enableGeolocate = false,
       onGeolocateError,
       onGeolocateSuccess,
+      clusterMarkers = false,
     },
     ref
   ) => {
@@ -106,6 +124,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
     onMoveEndRef.current = onMoveEnd
+    const [markerLayoutVersion, setMarkerLayoutVersion] = useState(0)
 
     const triggerGeolocate = useCallback(() => {
       geolocateControlRef.current?.trigger()
@@ -171,6 +190,84 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid white`
       entry.icon.style.fontSize = `${isSelected ? 20 : 16}px`
     }, [])
+
+    const markerItems = useMemo<MapMarkerItem[]>(() => {
+      void markerLayoutVersion
+      const m = map.current
+      const validPlaces = places
+        .map((place) => ({
+          place,
+          lng: place.location?.lng,
+          lat: place.location?.lat,
+          id: place._id.toString(),
+        }))
+        .filter((item): item is { place: IPlace; lng: number; lat: number; id: string } =>
+          Number.isFinite(item.lng) && Number.isFinite(item.lat)
+        )
+
+      if (!clusterMarkers || !m || m.getZoom() >= 15) {
+        return validPlaces.map(({ place, lng, lat, id }) => ({
+          id,
+          kind: "place",
+          place,
+          lng,
+          lat,
+        }))
+      }
+
+      const zoom = m.getZoom()
+      const radius = zoom < 11 ? 58 : zoom < 13 ? 48 : 38
+      const clusters: Array<{
+        places: IPlace[]
+        x: number
+        y: number
+        lng: number
+        lat: number
+      }> = []
+
+      validPlaces.forEach(({ place, lng, lat }) => {
+        const point = m.project([lng, lat])
+        const cluster = clusters.find((candidate) => {
+          const dx = candidate.x - point.x
+          const dy = candidate.y - point.y
+          return Math.sqrt(dx * dx + dy * dy) <= radius
+        })
+
+        if (!cluster) {
+          clusters.push({ places: [place], x: point.x, y: point.y, lng, lat })
+          return
+        }
+
+        const nextCount = cluster.places.length + 1
+        cluster.x = (cluster.x * cluster.places.length + point.x) / nextCount
+        cluster.y = (cluster.y * cluster.places.length + point.y) / nextCount
+        cluster.lng = (cluster.lng * cluster.places.length + lng) / nextCount
+        cluster.lat = (cluster.lat * cluster.places.length + lat) / nextCount
+        cluster.places.push(place)
+      })
+
+      return clusters.map((cluster) => {
+        if (cluster.places.length === 1) {
+          const place = cluster.places[0]
+          return {
+            id: place._id.toString(),
+            kind: "place",
+            place,
+            lng: cluster.lng,
+            lat: cluster.lat,
+          }
+        }
+
+        const ids = cluster.places.map((place) => place._id.toString()).sort()
+        return {
+          id: `cluster:${ids.join(":")}`,
+          kind: "cluster",
+          places: cluster.places,
+          lng: cluster.lng,
+          lat: cluster.lat,
+        }
+      })
+    }, [clusterMarkers, markerLayoutVersion, places])
 
     useImperativeHandle(
       ref,
@@ -301,6 +398,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const m = map.current
       if (!m) return
       const onLoadOrMoveEnd = () => {
+        setMarkerLayoutVersion((version) => version + 1)
         const b = m.getBounds()
         if (!b) return
         onBoundsChangeRef.current?.(b)
@@ -323,24 +421,30 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const m = map.current
       if (!m) return
 
-      const nextPlaceIds = new Set<string>()
+      const nextMarkerIds = new Set<string>()
 
-      places.forEach((place) => {
-        const placeId = place._id.toString()
-        const lng = place.location?.lng
-        const lat = place.location?.lat
-        if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
-
-        nextPlaceIds.add(placeId)
-        const config = TYPE_MARKERS[place.type] || TYPE_MARKERS.other
-        const existingEntry = markerEntriesRef.current.get(placeId)
+      markerItems.forEach((item) => {
+        nextMarkerIds.add(item.id)
+        const isCluster = item.kind === "cluster"
+        const config = isCluster
+          ? TYPE_MARKERS.other
+          : TYPE_MARKERS[item.place.type] || TYPE_MARKERS.other
+        const existingEntry = markerEntriesRef.current.get(item.id)
 
         if (existingEntry) {
-          existingEntry.place = place
-          existingEntry.marker.setLngLat([lng, lat])
-          existingEntry.inner.style.background = config.bg
-          existingEntry.icon.textContent = config.emoji
-          applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === placeId)
+          existingEntry.item = item
+          existingEntry.marker.setLngLat([item.lng, item.lat])
+          if (isCluster) {
+            existingEntry.inner.style.background = "linear-gradient(135deg, #06120f, #0f2f27)"
+            existingEntry.inner.style.border = "2px solid rgba(16,185,129,0.85)"
+            existingEntry.inner.style.boxShadow = "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)"
+            existingEntry.icon.textContent = String(item.places.length)
+            existingEntry.icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
+          } else {
+            existingEntry.inner.style.background = config.bg
+            existingEntry.icon.textContent = config.emoji
+            applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === item.id)
+          }
           return
         }
 
@@ -358,25 +462,44 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          background: ${config.bg};
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          background: ${isCluster ? "linear-gradient(135deg, #06120f, #0f2f27)" : config.bg};
+          box-shadow: ${isCluster ? "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)" : "0 2px 8px rgba(0,0,0,0.25)"};
           display: flex;
           align-items: center;
           justify-content: center;
           transition: transform 0.2s ease;
           transform-origin: center center;
+          color: white;
+          font-weight: 800;
         `
 
         const icon = document.createElement("span")
         icon.style.lineHeight = "1"
-        icon.textContent = config.emoji
+        icon.textContent = isCluster ? String(item.places.length) : config.emoji
 
         inner.appendChild(icon)
         el.appendChild(inner)
 
         el.addEventListener("click", (e) => {
           e.stopPropagation()
-          const currentPlace = markerEntriesRef.current.get(placeId)?.place ?? place
+          const currentItem = markerEntriesRef.current.get(item.id)?.item ?? item
+
+          if (currentItem.kind === "cluster") {
+            const bounds = new mapboxgl.LngLatBounds()
+            currentItem.places.forEach((place) => {
+              if (Number.isFinite(place.location?.lng) && Number.isFinite(place.location?.lat)) {
+                bounds.extend([place.location.lng, place.location.lat])
+              }
+            })
+            m.fitBounds(bounds, {
+              padding: 96,
+              maxZoom: Math.max(14, m.getZoom() + 2),
+              duration: reduceMotion ? 0 : 700,
+            })
+            return
+          }
+
+          const currentPlace = currentItem.place
           onPlaceSelectRef.current?.(currentPlace)
 
           if (sharedPopupRef.current && map.current) {
@@ -392,14 +515,9 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const safetyHtml = level ? (safetyMap[level] ?? "") : ""
             const popupType = (currentPlace.types?.[0] ?? currentPlace.type) as string
             const popupIcon = (TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other).emoji
-
             const detailPath = getPlacePath(currentPlace)
             const html = `
-    <div style="
-      background:#13161f;border:1.5px solid #2e3448;border-radius:12px;
-      padding:12px;width:200px;box-shadow:0 8px 24px rgba(0,0,0,0.5);
-      font-family:system-ui,sans-serif;
-    ">
+    <div style="background:#13161f;border:1.5px solid #2e3448;border-radius:12px;padding:12px;width:200px;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-family:system-ui,sans-serif;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span style="font-size:18px">${popupIcon}</span>
         <div>
@@ -408,12 +526,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         </div>
       </div>
       ${safetyHtml ? `<div style="margin-bottom:10px">${safetyHtml}</div>` : ""}
-      <a href="${detailPath}"
-        style="display:block;width:100%;padding:7px;background:#4ade80;color:#000;
-          border:none;border-radius:7px;font-size:12px;font-weight:700;
-          text-align:center;text-decoration:none;cursor:pointer"
-        onclick="event.stopPropagation()"
-      >Ver detalle -></a>
+      <a href="${detailPath}" style="display:block;width:100%;padding:7px;background:#4ade80;color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer" onclick="event.stopPropagation()">Ver detalle -></a>
     </div>
   `
             sharedPopupRef.current
@@ -427,23 +540,31 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         })
 
         const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([lng, lat])
+          .setLngLat([item.lng, item.lat])
           .addTo(m)
 
-        const entry: MarkerEntry = { marker, element: el, inner, icon, place }
-        markerEntriesRef.current.set(placeId, entry)
-        applyMarkerSelection(entry, selectedPlaceIdRef.current === placeId)
+        const entry: MarkerEntry = { marker, element: el, inner, icon, item }
+        markerEntriesRef.current.set(item.id, entry)
+        if (isCluster) {
+          el.style.width = "42px"
+          el.style.height = "42px"
+          inner.style.border = "2px solid rgba(16,185,129,0.85)"
+          icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
+        } else {
+          applyMarkerSelection(entry, selectedPlaceIdRef.current === item.id)
+        }
       })
 
-      markerEntriesRef.current.forEach((entry, placeId) => {
-        if (nextPlaceIds.has(placeId)) return
+      markerEntriesRef.current.forEach((entry, markerId) => {
+        if (nextMarkerIds.has(markerId)) return
         entry.marker.remove()
-        markerEntriesRef.current.delete(placeId)
+        markerEntriesRef.current.delete(markerId)
       })
-    }, [places, applyMarkerSelection])
+    }, [applyMarkerSelection, markerItems, reduceMotion])
 
     useEffect(() => {
       markerEntriesRef.current.forEach((entry, placeId) => {
+        if (entry.item.kind !== "place") return
         applyMarkerSelection(entry, placeId === selectedPlaceId)
       })
     }, [selectedPlaceId, applyMarkerSelection])
