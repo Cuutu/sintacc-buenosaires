@@ -237,11 +237,17 @@ export function MapTopBar({
       <div className="flex gap-2 mb-2.5">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" />
-          <Input
+          <input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-11 min-h-[44px] rounded-[1.25rem] border-white/10 bg-[#080c0f]/72 pl-11 text-base text-white caret-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur placeholder:text-white/40 focus-visible:ring-primary/70"
+            className="flex h-11 min-h-[44px] w-full rounded-[1.25rem] border border-white/10 pl-11 pr-4 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary/70"
+            style={{
+              backgroundColor: "rgba(8, 12, 15, 0.78)",
+              color: "#f4fff9",
+              WebkitTextFillColor: "#f4fff9",
+              caretColor: "#10b981",
+            }}
           />
         </div>
       </div>
