@@ -131,6 +131,7 @@ function MapaContent() {
     fetchRequestSeqRef.current = requestSeq
     const search = debouncedSearch.trim()
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
+    const effectiveSearch = searchNeighborhood ?? search
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -139,8 +140,7 @@ function MapaContent() {
         params.append("bbox", formatBbox(expandBounds(debouncedViewport.bounds)))
       }
       if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
-      if (searchNeighborhood) params.append("neighborhood", searchNeighborhood)
-      else if (search) params.append("search", search)
+      if (effectiveSearch) params.append("search", effectiveSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
       if (!searchNeighborhood && filters.neighborhood && filters.neighborhood !== "all")
         params.append("neighborhood", filters.neighborhood)
