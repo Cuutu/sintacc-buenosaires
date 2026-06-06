@@ -56,9 +56,9 @@ function getPopupSafety(level?: string | null) {
       label: "100% sin TACC",
       description: "Local dedicado",
       accent: "#10d98a",
-      badgeBg: "#e8fbf2",
-      badgeBorder: "#bbf2d8",
-      badgeText: "#08784f",
+      badgeBg: "rgba(16,217,138,0.13)",
+      badgeBorder: "rgba(16,217,138,0.34)",
+      badgeText: "#91f5c4",
     }
   }
 
@@ -67,9 +67,9 @@ function getPopupSafety(level?: string | null) {
       label: "Opciones sin TACC",
       description: "Consultá al pedir",
       accent: "#f6b33d",
-      badgeBg: "#fff5df",
-      badgeBorder: "#f6ddb0",
-      badgeText: "#875414",
+      badgeBg: "rgba(246,179,61,0.14)",
+      badgeBorder: "rgba(246,179,61,0.34)",
+      badgeText: "#ffd891",
     }
   }
 
@@ -361,6 +361,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           className: "celimap-popup",
           closeButton: false,
           closeOnClick: true,
+          maxWidth: "none",
         })
       }
 
@@ -576,69 +577,90 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const typeLabel = escapeHtml(markerConfig.label)
             const name = escapeHtml(currentPlace.name)
             const neighborhood = escapeHtml(currentPlace.neighborhood)
+            const locationLabel = escapeHtml([currentPlace.neighborhood, "CABA"].filter(Boolean).join(", "))
+            const addressLabel = escapeHtml(currentPlace.addressText || currentPlace.address || currentPlace.neighborhood)
             const ratingLabel = getPopupRating(currentPlace)
+            const lng = (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0]
+            const lat = (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1]
+            const directionsUrl = escapeHtml(
+              Number.isFinite(lng) && Number.isFinite(lat)
+                ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentPlace.name)}`
+            )
             const photoUrl = currentPlace.photos?.[0] ? escapeHtml(currentPlace.photos[0]) : ""
             const detailPath = escapeHtml(getPlacePath(currentPlace))
             const photoHtml = photoUrl
-              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:78px;height:78px;display:block;object-fit:cover;border-radius:18px;background:#eef0f2;border:2px solid rgba(255,255,255,.92);box-shadow:0 12px 24px rgba(0,0,0,.24)">`
-              : `<div style="width:78px;height:78px;border-radius:18px;background:linear-gradient(145deg,#eafff5,#c9f8df);display:flex;align-items:center;justify-content:center;color:#07895b;border:2px solid rgba(255,255,255,.9);box-shadow:0 12px 24px rgba(0,0,0,.18)">${getPopupIcon(popupType)}</div>`
-            const photoBadgeHtml = photoUrl
-              ? `<div style="position:absolute;left:7px;top:7px;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.95);box-shadow:0 4px 12px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;color:${accent}">
-                  ${getPopupIcon(popupType)}
-                </div>`
-              : ""
+              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:112px;height:112px;display:block;object-fit:cover;border-radius:18px;background:#10151b;box-shadow:0 18px 32px rgba(0,0,0,.35)">`
+              : `<div style="width:112px;height:112px;border-radius:18px;background:radial-gradient(circle at 35% 25%,${accent}42,rgba(255,255,255,.08) 58%,rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 32px rgba(0,0,0,.28)">${getPopupIcon(popupType)}</div>`
             const safetyHtml = safety
-              ? `<span style="display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:5px 8px;font-size:10.5px;font-weight:760;line-height:1;white-space:nowrap">
-                  <span style="width:6px;height:6px;border-radius:999px;background:${safety.accent};flex:0 0 auto"></span>
+              ? `<span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:8px 12px;font-size:13px;font-weight:760;line-height:1;white-space:nowrap">
+                  <span style="width:8px;height:8px;border-radius:999px;background:${safety.accent};box-shadow:0 0 14px ${safety.accent}99;flex:0 0 auto"></span>
                   ${safety.label}
                 </span>`
               : ""
             const ratingHtml = ratingLabel
-              ? `<span style="display:inline-flex;align-items:center;gap:4px;color:#151515;font-size:11.5px;font-weight:760;white-space:nowrap">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="#111" style="width:12px;height:12px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
+              ? `<span style="display:inline-flex;align-items:center;gap:7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:8px 12px;font-size:13px;font-weight:720;white-space:nowrap">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
                   ${escapeHtml(ratingLabel)}
                 </span>`
               : ""
             const html = `
-    <a href="${detailPath}" style="display:block;width:300px;overflow:hidden;border-radius:22px;background:#f8fff9;color:#102018;text-decoration:none;border:1px solid rgba(16,185,129,.28);box-shadow:0 20px 46px rgba(0,0,0,.30),0 0 0 1px rgba(255,255,255,.7) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer" onclick="event.stopPropagation()">
-      <div style="position:relative;background:linear-gradient(135deg,#063b2d 0%,#09b977 62%,#67e8a5 100%);padding:12px 12px 15px;color:white">
-        <div style="position:absolute;right:-26px;top:-30px;width:94px;height:94px;border-radius:999px;background:rgba(255,255,255,.14)"></div>
-        <div style="position:absolute;right:42px;bottom:-22px;width:58px;height:58px;border-radius:999px;background:rgba(255,255,255,.10)"></div>
-        <div style="position:relative;display:flex;gap:12px;align-items:flex-start">
-          <div style="position:relative;flex:0 0 auto">
+    <div style="width:min(420px,calc(100vw - 32px));overflow:hidden;border-radius:24px;background:linear-gradient(145deg,rgba(17,22,29,.97),rgba(7,11,15,.96));color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 60px rgba(0,0,0,.50),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+      <div style="position:relative;padding:18px">
+        <div style="position:absolute;right:-60px;top:-70px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle,${accent}36,rgba(255,255,255,0) 66%);pointer-events:none"></div>
+        <div style="position:absolute;left:-54px;bottom:18px;width:120px;height:120px;border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.09),rgba(255,255,255,0) 70%);pointer-events:none"></div>
+        <div style="position:relative;display:grid;grid-template-columns:112px 1fr;gap:16px;align-items:start">
+          <div style="position:relative">
             ${photoHtml}
-            ${photoBadgeHtml}
           </div>
-          <div style="min-width:0;flex:1;padding-top:2px">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-              <div title="${name}" style="min-width:0;color:#fff;font-size:15px;font-weight:860;line-height:1.14;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 1px rgba(0,0,0,.14)">${name}</div>
-              ${ratingHtml ? `<span style="border-radius:999px;background:rgba(255,255,255,.92);padding:4px 7px">${ratingHtml}</span>` : ""}
+          <div style="min-width:0;padding-top:4px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div title="${name}" style="min-width:0;color:#fff;font-size:25px;font-weight:860;line-height:1.05;letter-spacing:0;text-shadow:0 1px 2px rgba(0,0,0,.25);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
+              <div aria-hidden="true" style="width:34px;height:34px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#d7dde8">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px;display:block"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+              </div>
             </div>
-            <div style="margin-top:7px;display:inline-flex;max-width:100%;align-items:center;gap:6px;border-radius:999px;background:rgba(2,32,22,.24);border:1px solid rgba(255,255,255,.24);padding:5px 8px;color:#ecfff6;font-size:11.5px;font-weight:650;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <span style="width:5px;height:5px;border-radius:999px;background:#c8ffe4;flex:0 0 auto"></span>
-              <span style="overflow:hidden;text-overflow:ellipsis">${typeLabel}${neighborhood ? ` · ${neighborhood}` : ""}</span>
+            <div style="margin-top:13px;display:flex;align-items:center;gap:9px;color:#aeb7c5;font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;display:block;flex:0 0 auto"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style="overflow:hidden;text-overflow:ellipsis">${locationLabel || addressLabel}</span>
             </div>
           </div>
         </div>
-      </div>
-      <div style="padding:10px 12px 12px;background:linear-gradient(180deg,#fbfffc,#f4fff8)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div style="min-width:0;display:flex;flex-wrap:wrap;gap:6px">
-            ${safetyHtml}
-          </div>
-          <div style="display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#10c987;color:white;padding:7px 10px;font-size:11.5px;font-weight:820;white-space:nowrap;box-shadow:0 8px 18px rgba(16,201,135,.25)">
+
+        <div style="position:relative;margin-top:18px;height:1px;background:rgba(255,255,255,.10)"></div>
+
+        <div style="position:relative;margin-top:18px;color:#b7bfcc;font-size:15px;line-height:1.45">
+          ${addressLabel ? `Ubicado en ${addressLabel}.` : `${typeLabel}${neighborhood ? ` en ${neighborhood}` : ""}.`}
+        </div>
+
+        <div style="position:relative;margin-top:18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+          ${safetyHtml}
+          <span style="display:inline-flex;align-items:center;gap:7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:8px 12px;font-size:13px;font-weight:720;white-space:nowrap">
+            ${getPopupIcon(popupType)}
+            ${typeLabel}
+          </span>
+          ${ratingHtml}
+        </div>
+
+        <div style="position:relative;margin-top:20px;height:1px;background:rgba(255,255,255,.10)"></div>
+
+        <div style="position:relative;margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <a href="${detailPath}" style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border-radius:15px;background:linear-gradient(135deg,#25d976,#50ee92);color:#06130d;text-decoration:none;font-size:15px;font-weight:860;box-shadow:0 14px 28px rgba(16,217,138,.24)" onclick="event.stopPropagation()">
             Ver lugar
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-          </div>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+          <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border-radius:15px;background:rgba(255,255,255,.03);border:1px solid ${accent};color:${accent};text-decoration:none;font-size:15px;font-weight:800" onclick="event.stopPropagation()">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            Cómo llegar
+          </a>
         </div>
-        <div style="margin-top:8px;color:#56645c;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safety?.description ?? "Información del lugar"}</div>
       </div>
-    </a>
+    </div>
   `
             sharedPopupRef.current
               .setLngLat([
-                (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0],
-                (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1],
+                lng,
+                lat,
               ])
               .setHTML(html)
               .addTo(map.current)
