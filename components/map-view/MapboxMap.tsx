@@ -54,24 +54,37 @@ function getPopupSafety(level?: string | null) {
   if (level === "dedicated_gf") {
     return {
       label: "100% sin TACC",
+      description: "Local dedicado",
       accent: "#10d98a",
-      badgeBg: "rgba(16,217,138,0.13)",
-      badgeBorder: "rgba(16,217,138,0.36)",
-      badgeText: "#38f0a3",
+      badgeBg: "rgba(16,217,138,0.10)",
+      badgeBorder: "rgba(16,217,138,0.28)",
+      badgeText: "#8ff6c7",
     }
   }
 
   if (level === "gf_options") {
     return {
       label: "Opciones sin TACC",
+      description: "Consultá al pedir",
       accent: "#f6b33d",
-      badgeBg: "rgba(246,179,61,0.13)",
-      badgeBorder: "rgba(246,179,61,0.34)",
-      badgeText: "#ffd078",
+      badgeBg: "rgba(246,179,61,0.11)",
+      badgeBorder: "rgba(246,179,61,0.28)",
+      badgeText: "#ffe0a2",
     }
   }
 
   return null
+}
+
+function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }): string {
+  const totalReviews = place.stats?.totalReviews ?? 0
+  const avgRating = place.stats?.avgRating ?? 0
+
+  if (totalReviews > 0) {
+    return `${avgRating.toFixed(1)} · ${totalReviews} reseña${totalReviews === 1 ? "" : "s"}`
+  }
+
+  return "Sin reseñas todavía"
 }
 
 export interface MapboxMapRef {
@@ -563,33 +576,43 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const typeLabel = escapeHtml(markerConfig.label)
             const name = escapeHtml(currentPlace.name)
             const neighborhood = escapeHtml(currentPlace.neighborhood)
+            const ratingLabel = escapeHtml(getPopupRating(currentPlace))
             const detailPath = escapeHtml(getPlacePath(currentPlace))
             const safetyHtml = safety
-              ? `<span style="display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:4px 9px;font-size:10.5px;font-weight:750;line-height:1;letter-spacing:.01em;white-space:nowrap">
-                  <span style="width:6px;height:6px;border-radius:999px;background:${safety.accent};box-shadow:0 0 10px ${safety.accent}88;flex:0 0 auto"></span>
-                  ${safety.label}
-                </span>`
+              ? `<div style="display:flex;align-items:center;gap:8px;border-radius:13px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};padding:8px 9px">
+                  <span style="width:8px;height:8px;border-radius:999px;background:${safety.accent};box-shadow:0 0 12px ${safety.accent}66;flex:0 0 auto"></span>
+                  <div style="min-width:0">
+                    <div style="color:${safety.badgeText};font-size:11.5px;font-weight:780;line-height:1.05">${safety.label}</div>
+                    <div style="margin-top:2px;color:rgba(245,247,250,.54);font-size:10px;line-height:1.05">${safety.description}</div>
+                  </div>
+                </div>`
               : ""
             const html = `
-    <div style="position:relative;width:218px;overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(13,17,23,.96),rgba(5,8,10,.95));box-shadow:0 18px 42px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.04) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff">
-      <div style="position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,${accent},transparent);opacity:.8"></div>
-      <div style="padding:12px 12px 11px">
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="width:38px;height:38px;flex:0 0 auto;border-radius:13px;border:1px solid ${accent}55;background:linear-gradient(180deg,${accent}22,rgba(255,255,255,.035));box-shadow:0 10px 22px rgba(0,0,0,.28),0 0 18px ${accent}28;color:${accent};display:flex;align-items:center;justify-content:center">
+    <div style="position:relative;width:246px;overflow:hidden;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(18,22,27,.97),rgba(8,11,13,.96));box-shadow:0 18px 44px rgba(0,0,0,.44),0 0 0 1px rgba(255,255,255,.035) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff">
+      <div style="position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.04),${accent}aa,rgba(255,255,255,.04));opacity:.75"></div>
+      <div style="padding:13px 13px 12px">
+        <div style="display:flex;align-items:flex-start;gap:11px">
+          <div style="width:42px;height:42px;flex:0 0 auto;border-radius:15px;border:1px solid ${accent}3f;background:radial-gradient(circle at 35% 25%,${accent}24,rgba(255,255,255,.045) 62%,rgba(255,255,255,.025));box-shadow:0 10px 24px rgba(0,0,0,.26);color:${accent};display:flex;align-items:center;justify-content:center">
             ${getPopupIcon(popupType)}
           </div>
           <div style="min-width:0;flex:1;padding-top:1px">
-            <div title="${name}" style="max-width:148px;color:#f7f8fb;font-size:13px;font-weight:800;line-height:1.18;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;color:#9da6b6;font-size:11px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <span style="width:4px;height:4px;border-radius:999px;background:${accent};opacity:.85;flex:0 0 auto"></span>
-              <span style="overflow:hidden;text-overflow:ellipsis">${neighborhood || typeLabel}</span>
+            <div title="${name}" style="max-width:176px;color:#f8fafc;font-size:14px;font-weight:820;line-height:1.17;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
+            <div style="margin-top:5px;display:flex;align-items:center;gap:6px;color:#aab2bf;font-size:11.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <span style="color:${accent};font-weight:760">${typeLabel}</span>
+              ${neighborhood ? `<span style="width:3px;height:3px;border-radius:999px;background:rgba(255,255,255,.32);flex:0 0 auto"></span><span style="overflow:hidden;text-overflow:ellipsis">${neighborhood}</span>` : ""}
             </div>
           </div>
         </div>
 
-        ${safetyHtml ? `<div style="margin-top:10px">${safetyHtml}</div>` : ""}
+        <div style="margin-top:11px;display:grid;grid-template-columns:1fr;gap:8px">
+          ${safetyHtml}
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);padding:8px 9px;color:#d7dde5">
+            <span style="font-size:10.5px;color:rgba(245,247,250,.52);font-weight:680">Comunidad</span>
+            <span style="font-size:11.5px;font-weight:760;text-align:right;white-space:nowrap">${ratingLabel}</span>
+          </div>
+        </div>
 
-        <a href="${detailPath}" style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:36px;border-radius:10px;background:linear-gradient(135deg,#16db84,#42ec8f);color:#02120b;border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 22px rgba(16,217,138,.22);font-size:12px;font-weight:850;text-align:center;text-decoration:none;cursor:pointer;touch-action:manipulation" onclick="event.stopPropagation()">
+        <a href="${detailPath}" style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:38px;border-radius:12px;background:#f7faf9;color:#07110d;border:1px solid rgba(255,255,255,.72);box-shadow:0 10px 24px rgba(0,0,0,.22);font-size:12.5px;font-weight:850;text-align:center;text-decoration:none;cursor:pointer;touch-action:manipulation" onclick="event.stopPropagation()">
           <span>Ver lugar</span>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
         </a>
