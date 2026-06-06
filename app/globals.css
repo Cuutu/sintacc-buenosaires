@@ -126,18 +126,18 @@
 .celimap-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
-  border-top-color: rgba(5, 8, 10, 0.96) !important;
+  border-top-color: #fbfbf8 !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
-  border-bottom-color: rgba(13, 17, 23, 0.96) !important;
+  border-bottom-color: #fbfbf8 !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: rgba(8, 11, 14, 0.96) !important;
+  border-right-color: #fbfbf8 !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: rgba(8, 11, 14, 0.96) !important;
+  border-left-color: #fbfbf8 !important;
 }
 
 /* Hide scrollbar for horizontal carousel */

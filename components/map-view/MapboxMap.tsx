@@ -56,9 +56,9 @@ function getPopupSafety(level?: string | null) {
       label: "100% sin TACC",
       description: "Local dedicado",
       accent: "#10d98a",
-      badgeBg: "rgba(16,217,138,0.10)",
-      badgeBorder: "rgba(16,217,138,0.28)",
-      badgeText: "#8ff6c7",
+      badgeBg: "#e8fbf2",
+      badgeBorder: "#bbf2d8",
+      badgeText: "#08784f",
     }
   }
 
@@ -67,16 +67,16 @@ function getPopupSafety(level?: string | null) {
       label: "Opciones sin TACC",
       description: "Consultá al pedir",
       accent: "#f6b33d",
-      badgeBg: "rgba(246,179,61,0.11)",
-      badgeBorder: "rgba(246,179,61,0.28)",
-      badgeText: "#ffe0a2",
+      badgeBg: "#fff5df",
+      badgeBorder: "#f6ddb0",
+      badgeText: "#875414",
     }
   }
 
   return null
 }
 
-function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }): string {
+function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }): string | null {
   const totalReviews = place.stats?.totalReviews ?? 0
   const avgRating = place.stats?.avgRating ?? 0
 
@@ -84,7 +84,7 @@ function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalRev
     return `${avgRating.toFixed(1)} · ${totalReviews} reseña${totalReviews === 1 ? "" : "s"}`
   }
 
-  return "Sin reseñas todavía"
+  return null
 }
 
 export interface MapboxMapRef {
@@ -576,48 +576,57 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const typeLabel = escapeHtml(markerConfig.label)
             const name = escapeHtml(currentPlace.name)
             const neighborhood = escapeHtml(currentPlace.neighborhood)
-            const ratingLabel = escapeHtml(getPopupRating(currentPlace))
+            const ratingLabel = getPopupRating(currentPlace)
+            const photoUrl = currentPlace.photos?.[0] ? escapeHtml(currentPlace.photos[0]) : ""
             const detailPath = escapeHtml(getPlacePath(currentPlace))
-            const safetyHtml = safety
-              ? `<div style="display:flex;align-items:center;gap:8px;border-radius:13px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};padding:8px 9px">
-                  <span style="width:8px;height:8px;border-radius:999px;background:${safety.accent};box-shadow:0 0 12px ${safety.accent}66;flex:0 0 auto"></span>
-                  <div style="min-width:0">
-                    <div style="color:${safety.badgeText};font-size:11.5px;font-weight:780;line-height:1.05">${safety.label}</div>
-                    <div style="margin-top:2px;color:rgba(245,247,250,.54);font-size:10px;line-height:1.05">${safety.description}</div>
-                  </div>
+            const photoHtml = photoUrl
+              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:82px;height:82px;display:block;object-fit:cover;border-radius:16px;background:#eef0f2">`
+              : `<div style="width:82px;height:82px;border-radius:16px;background:linear-gradient(145deg,#f6f7f4,#e9eee9);display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid #e5e7e2">${getPopupIcon(popupType)}</div>`
+            const photoBadgeHtml = photoUrl
+              ? `<div style="position:absolute;left:7px;top:7px;width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 4px 12px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;color:${accent}">
+                  ${getPopupIcon(popupType)}
                 </div>`
               : ""
+            const safetyHtml = safety
+              ? `<span style="display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:5px 8px;font-size:10.5px;font-weight:760;line-height:1;white-space:nowrap">
+                  <span style="width:6px;height:6px;border-radius:999px;background:${safety.accent};flex:0 0 auto"></span>
+                  ${safety.label}
+                </span>`
+              : ""
+            const ratingHtml = ratingLabel
+              ? `<span style="display:inline-flex;align-items:center;gap:4px;color:#151515;font-size:11.5px;font-weight:760;white-space:nowrap">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="#111" style="width:12px;height:12px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
+                  ${escapeHtml(ratingLabel)}
+                </span>`
+              : ""
             const html = `
-    <div style="position:relative;width:246px;overflow:hidden;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(18,22,27,.97),rgba(8,11,13,.96));box-shadow:0 18px 44px rgba(0,0,0,.44),0 0 0 1px rgba(255,255,255,.035) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff">
-      <div style="position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.04),${accent}aa,rgba(255,255,255,.04));opacity:.75"></div>
-      <div style="padding:13px 13px 12px">
-        <div style="display:flex;align-items:flex-start;gap:11px">
-          <div style="width:42px;height:42px;flex:0 0 auto;border-radius:15px;border:1px solid ${accent}3f;background:radial-gradient(circle at 35% 25%,${accent}24,rgba(255,255,255,.045) 62%,rgba(255,255,255,.025));box-shadow:0 10px 24px rgba(0,0,0,.26);color:${accent};display:flex;align-items:center;justify-content:center">
-            ${getPopupIcon(popupType)}
+    <a href="${detailPath}" style="display:block;width:292px;overflow:hidden;border-radius:20px;background:#fbfbf8;color:#111;text-decoration:none;border:1px solid rgba(15,15,15,.08);box-shadow:0 18px 42px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.8) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer" onclick="event.stopPropagation()">
+      <div style="display:flex;gap:12px;padding:10px">
+        <div style="position:relative;flex:0 0 auto">
+          ${photoHtml}
+          ${photoBadgeHtml}
+        </div>
+        <div style="min-width:0;flex:1;padding:3px 3px 2px 0">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+            <div title="${name}" style="min-width:0;color:#111;font-size:14px;font-weight:820;line-height:1.16;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
+            ${ratingHtml}
           </div>
-          <div style="min-width:0;flex:1;padding-top:1px">
-            <div title="${name}" style="max-width:176px;color:#f8fafc;font-size:14px;font-weight:820;line-height:1.17;letter-spacing:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-            <div style="margin-top:5px;display:flex;align-items:center;gap:6px;color:#aab2bf;font-size:11.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <span style="color:${accent};font-weight:760">${typeLabel}</span>
-              ${neighborhood ? `<span style="width:3px;height:3px;border-radius:999px;background:rgba(255,255,255,.32);flex:0 0 auto"></span><span style="overflow:hidden;text-overflow:ellipsis">${neighborhood}</span>` : ""}
-            </div>
+          <div style="margin-top:5px;color:#6f746f;font-size:12px;font-weight:520;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${typeLabel}${neighborhood ? ` en ${neighborhood}` : ""}
+          </div>
+          <div style="margin-top:9px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+            ${safetyHtml}
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#151515">
+            <span style="font-size:11px;color:#747974;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safety?.description ?? "Ver info del lugar"}</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:780;white-space:nowrap">
+              Ver
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </span>
           </div>
         </div>
-
-        <div style="margin-top:11px;display:grid;grid-template-columns:1fr;gap:8px">
-          ${safetyHtml}
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);padding:8px 9px;color:#d7dde5">
-            <span style="font-size:10.5px;color:rgba(245,247,250,.52);font-weight:680">Comunidad</span>
-            <span style="font-size:11.5px;font-weight:760;text-align:right;white-space:nowrap">${ratingLabel}</span>
-          </div>
-        </div>
-
-        <a href="${detailPath}" style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:38px;border-radius:12px;background:#f7faf9;color:#07110d;border:1px solid rgba(255,255,255,.72);box-shadow:0 10px 24px rgba(0,0,0,.22);font-size:12.5px;font-weight:850;text-align:center;text-decoration:none;cursor:pointer;touch-action:manipulation" onclick="event.stopPropagation()">
-          <span>Ver lugar</span>
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-        </a>
       </div>
-    </div>
+    </a>
   `
             sharedPopupRef.current
               .setLngLat([
