@@ -13,6 +13,7 @@ const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
 const VIEWPORT_DEBOUNCE_MS = 250
 const CHUNK_ZOOM_THRESHOLD = 7
+const CLEAR_NEIGHBORHOOD_SEARCH_ZOOM = 12
 const MAP_PLACES_LIMIT = 5000
 const BBOX_PADDING_RATIO = 0.2
 
@@ -226,13 +227,34 @@ function MapaContent() {
   const handleMapMoveEnd = useCallback(
     (zoom: number, bounds: MapViewportBounds) => {
       setViewport({ zoom, bounds })
-      if (!citySlugsFromUrl || zoom >= 8) return
       const params = new URLSearchParams(searchParams.toString())
-      params.delete("citySlugs")
+      let shouldReplaceUrl = false
+
+      const activeSearch = filters.search.trim() || debouncedSearch.trim()
+      if (
+        zoom < CLEAR_NEIGHBORHOOD_SEARCH_ZOOM &&
+        activeSearch &&
+        findKnownNeighborhoodSearch(activeSearch)
+      ) {
+        setFilters((current) => (
+          current.search ? { ...current, search: "" } : current
+        ))
+        setDebouncedSearch("")
+        lastSyncedUrlSearchRef.current = ""
+        params.delete("search")
+        shouldReplaceUrl = true
+      }
+
+      if (citySlugsFromUrl && zoom < 8) {
+        params.delete("citySlugs")
+        shouldReplaceUrl = true
+      }
+
+      if (!shouldReplaceUrl) return
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [citySlugsFromUrl, pathname, router, searchParams]
+    [citySlugsFromUrl, debouncedSearch, filters.search, pathname, router, searchParams]
   )
 
   const handleSheetCollapse = useCallback(() => {

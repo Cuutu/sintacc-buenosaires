@@ -201,6 +201,7 @@ export function MapMobile({
           enableGeolocate
           onGeolocateError={handleGeolocateError}
           onGeolocateSuccess={handleGeolocateSuccess}
+          clusterMarkers
         />
       </div>
 

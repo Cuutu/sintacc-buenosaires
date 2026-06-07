@@ -590,62 +590,62 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             const photoUrl = currentPlace.photos?.[0] ? escapeHtml(currentPlace.photos[0]) : ""
             const detailPath = escapeHtml(getPlacePath(currentPlace))
             const photoHtml = photoUrl
-              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:88px;height:88px;display:block;object-fit:cover;border-radius:16px;background:#10151b;box-shadow:0 14px 26px rgba(0,0,0,.34)">`
-              : `<div style="width:88px;height:88px;border-radius:16px;background:radial-gradient(circle at 35% 25%,${accent}42,rgba(255,255,255,.08) 58%,rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid rgba(255,255,255,.10);box-shadow:0 14px 26px rgba(0,0,0,.26)">${getPopupIcon(popupType)}</div>`
+              ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:76px;height:76px;display:block;object-fit:cover;border-radius:15px;background:#10151b;box-shadow:0 12px 22px rgba(0,0,0,.32)">`
+              : `<div style="width:76px;height:76px;border-radius:15px;background:radial-gradient(circle at 35% 25%,${accent}42,rgba(255,255,255,.08) 58%,rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid rgba(255,255,255,.10);box-shadow:0 12px 22px rgba(0,0,0,.24)">${getPopupIcon(popupType)}</div>`
             const safetyHtml = safety
-              ? `<span style="display:inline-flex;align-items:center;gap:6px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:6px 10px;font-size:12px;font-weight:760;line-height:1;white-space:nowrap">
+              ? `<span style="display:inline-flex;align-items:center;gap:6px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:5px 9px;font-size:11.5px;font-weight:760;line-height:1;white-space:nowrap">
                   <span style="width:7px;height:7px;border-radius:999px;background:${safety.accent};box-shadow:0 0 12px ${safety.accent}99;flex:0 0 auto"></span>
                   ${safety.label}
                 </span>`
               : ""
             const ratingHtml = ratingLabel
-              ? `<span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:6px 10px;font-size:12px;font-weight:720;white-space:nowrap">
+              ? `<span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:5px 9px;font-size:11.5px;font-weight:720;white-space:nowrap">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
                   ${escapeHtml(ratingLabel)}
                 </span>`
               : ""
             const html = `
-    <div style="width:min(340px,calc(100vw - 32px));overflow:hidden;border-radius:20px;background:linear-gradient(145deg,rgba(17,22,29,.97),rgba(7,11,15,.96));color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 20px 48px rgba(0,0,0,.44),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-      <div style="position:relative;padding:12px">
-        <div style="position:absolute;right:-62px;top:-76px;width:152px;height:152px;border-radius:999px;background:radial-gradient(circle,${accent}30,rgba(255,255,255,0) 66%);pointer-events:none"></div>
-        <div style="position:relative;display:grid;grid-template-columns:88px 1fr;gap:13px;align-items:start">
+    <div style="width:min(315px,calc(100vw - 36px));overflow:hidden;border-radius:19px;background:linear-gradient(145deg,rgba(17,22,29,.97),rgba(7,11,15,.96));color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+      <div style="position:relative;padding:11px">
+        <div style="position:absolute;right:-66px;top:-78px;width:142px;height:142px;border-radius:999px;background:radial-gradient(circle,${accent}28,rgba(255,255,255,0) 66%);pointer-events:none"></div>
+        <div style="position:relative;display:grid;grid-template-columns:76px 1fr;gap:11px;align-items:start">
           <div style="position:relative">
             ${photoHtml}
           </div>
           <div style="min-width:0;padding-top:2px">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:9px">
-              <div title="${name}" style="min-width:0;color:#fff;font-size:20px;font-weight:860;line-height:1.08;letter-spacing:0;text-shadow:0 1px 2px rgba(0,0,0,.25);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-              <div aria-hidden="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#d7dde8">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <div title="${name}" style="min-width:0;color:#fff;font-size:18px;font-weight:860;line-height:1.08;letter-spacing:0;text-shadow:0 1px 2px rgba(0,0,0,.25);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
+              <div aria-hidden="true" style="width:28px;height:28px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#d7dde8">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
               </div>
             </div>
-            <div style="margin-top:10px;display:flex;align-items:center;gap:7px;color:#aeb7c5;font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block;flex:0 0 auto"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;color:#aeb7c5;font-size:12.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block;flex:0 0 auto"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <span style="overflow:hidden;text-overflow:ellipsis">${locationLabel || addressLabel}</span>
             </div>
           </div>
         </div>
 
-        <div style="position:relative;margin-top:12px;color:#b7bfcc;font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        <div style="position:relative;margin-top:9px;color:#b7bfcc;font-size:11.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           ${addressLabel || `${typeLabel}${neighborhood ? ` en ${neighborhood}` : ""}`}
         </div>
 
-        <div style="position:relative;margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:7px">
+        <div style="position:relative;margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
           ${safetyHtml}
-          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:6px 9px;font-size:12px;font-weight:720;white-space:nowrap">
+          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:5px 9px;font-size:11.5px;font-weight:720;white-space:nowrap">
             ${getPopupIcon(popupType)}
             ${typeLabel}
           </span>
           ${ratingHtml}
         </div>
 
-        <div style="position:relative;margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:9px">
-          <a href="${detailPath}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border-radius:12px;background:linear-gradient(135deg,#25d976,#50ee92);color:#06130d;text-decoration:none;font-size:13px;font-weight:860;box-shadow:0 10px 20px rgba(16,217,138,.20)" onclick="event.stopPropagation()">
+        <div style="position:relative;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <a href="${detailPath}" style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border-radius:12px;background:linear-gradient(135deg,#25d976,#50ee92);color:#06130d;text-decoration:none;font-size:12.5px;font-weight:860;box-shadow:0 10px 20px rgba(16,217,138,.18)" onclick="event.stopPropagation()">
             Ver lugar
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
           </a>
-          <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid ${accent};color:${accent};text-decoration:none;font-size:13px;font-weight:800" onclick="event.stopPropagation()">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid ${accent};color:${accent};text-decoration:none;font-size:12.5px;font-weight:800" onclick="event.stopPropagation()">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
             Cómo llegar
           </a>
         </div>
