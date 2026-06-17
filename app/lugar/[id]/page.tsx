@@ -260,7 +260,7 @@ export default function LugarPage() {
 
   // ── SIDEBAR CONTENT ──────────────────────────────────────────────────────────
   // Se usa tanto en el aside desktop como en el bloque mobile inferior
-  function SidebarContent() {
+  function SidebarContent({ hideContamination = false }: { hideContamination?: boolean }) {
     return (
       <div className="space-y-5">
         {/* Nombre + safety dot */}
@@ -295,6 +295,14 @@ export default function LugarPage() {
             </Button>
           )}
         </div>
+
+        {!hideContamination && (
+          <ContaminationReportForm
+            placeId={placeId!}
+            onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
+            trigger={<ContaminationReportTrigger variant="sidebar" />}
+          />
+        )}
 
         {/* Info de contacto — cada ítem es condicional */}
         <div>
@@ -425,12 +433,6 @@ export default function LugarPage() {
           </div>
         )}
 
-        {/* Reportar contaminación — siempre al final */}
-        <ContaminationReportForm
-          placeId={placeId!}
-          onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
-          trigger={<ContaminationReportTrigger variant="sidebar" />}
-        />
       </div>
     )
   }
@@ -531,6 +533,14 @@ export default function LugarPage() {
                   Guardar
                 </Button>
               )}
+            </div>
+
+            <div className="mb-4 lg:hidden">
+              <ContaminationReportForm
+                placeId={placeId!}
+                onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
+                trigger={<ContaminationReportTrigger variant="sidebar" />}
+              />
             </div>
 
             {/* Info chips — solo los que tienen datos */}
@@ -761,17 +771,6 @@ export default function LugarPage() {
                 </div>
               ))}
 
-              {/* Reporte contaminación — visible en columna principal (mobile + desktop) */}
-              {!showReviewForm && (
-                <div className="mt-6 lg:hidden">
-                  <ContaminationReportForm
-                    placeId={placeId!}
-                    onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
-                    trigger={<ContaminationReportTrigger variant="inline" />}
-                  />
-                </div>
-              )}
-
               {/* Paginación */}
               {!showReviewForm && hasMoreReviews && !reviewsExpanded && (
                 <div className="flex justify-center pt-2">
@@ -806,7 +805,7 @@ export default function LugarPage() {
 
         {/* Sidebar mobile — debajo del contenido, sin sticky */}
         <div className="lg:hidden mt-8 rounded-2xl border border-white/8 bg-white/[0.025] p-5">
-          <SidebarContent />
+          <SidebarContent hideContamination />
         </div>
 
       </div>
