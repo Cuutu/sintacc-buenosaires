@@ -1,3 +1,6 @@
+/** Nombre público al responder reseñas como equipo Celimap */
+export const ADMIN_REPLY_DISPLAY_NAME = "CELIMAP — Franco Varela"
+
 export const NEIGHBORHOODS = [
   "Palermo",
   "Recoleta",

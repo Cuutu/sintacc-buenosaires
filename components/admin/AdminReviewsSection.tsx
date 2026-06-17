@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
+import { ReviewAdminReply } from "@/components/review-admin-reply"
+import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
 import type { ReviewItem } from "@/components/admin/types"
 
 export type AdminReviewsSectionProps = {
@@ -33,7 +35,7 @@ const {
     <div className="px-4 py-3 border-b border-border bg-card">
       <h2 className="text-sm font-bold">⭐ Reseñas</h2>
       <p className="text-xs text-muted-foreground mt-0.5">
-        Podés ocultar reseñas inapropiadas o destacar las más útiles con 📌
+        Ocultá reseñas inapropiadas, destacá las útiles o respondé como {`CELIMAP`}
       </p>
     </div>
 
@@ -121,7 +123,22 @@ const {
               <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
                 {review.comment}
               </p>
-              <div className="flex flex-wrap gap-2">
+              {review.adminReply && (
+                <div className="mb-3">
+                  <ReviewAdminReply
+                    reply={review.adminReply}
+                    repliedAt={review.adminReplyAt}
+                    repliedBy={review.adminReplyBy}
+                  />
+                </div>
+              )}
+              <ReviewAdminReplyForm
+                reviewId={review._id}
+                existingReply={review.adminReply}
+                onSuccess={() => fetchReviews(reviewFilter || undefined)}
+                compact
+              />
+              <div className="flex flex-wrap gap-2 mt-3">
                 {(review as any).pinned ? (
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                     onClick={() => handleReviewAction(review._id, "unpin")}>

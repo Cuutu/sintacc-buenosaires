@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
+import { sanitizeHtml } from "@/lib/validations"
+import { ADMIN_REPLY_DISPLAY_NAME } from "@/lib/constants"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
@@ -23,26 +25,45 @@ export async function PATCH(
     }
     
     const body = await request.json()
-    const { action } = body // "hide" | "unhide" | "pin" | "unpin"
-    
-    if (!["hide", "unhide", "pin", "unpin"].includes(action)) {
+    const { action } = body
+
+    if (!["hide", "unhide", "pin", "unpin", "reply", "delete_reply"].includes(action)) {
       return NextResponse.json(
-        { error: "Acción inválida. Use 'hide', 'unhide', 'pin' o 'unpin'" },
+        { error: "Acción inválida" },
         { status: 400 }
       )
     }
-    
-    let update: Record<string, unknown>
+
+    let update: Record<string, unknown> | mongoose.UpdateQuery<typeof Review>
     let message: string
-    
-    if (action === "pin" || action === "unpin") {
+
+    if (action === "reply") {
+      const reply = typeof body.reply === "string" ? body.reply.trim() : ""
+      if (reply.length < 1 || reply.length > 800) {
+        return NextResponse.json(
+          { error: "La respuesta debe tener entre 1 y 800 caracteres" },
+          { status: 400 }
+        )
+      }
+      update = {
+        adminReply: sanitizeHtml(reply),
+        adminReplyAt: new Date(),
+        adminReplyBy: ADMIN_REPLY_DISPLAY_NAME,
+      }
+      message = "Respuesta publicada"
+    } else if (action === "delete_reply") {
+      update = {
+        $unset: { adminReply: "", adminReplyAt: "", adminReplyBy: "" },
+      }
+      message = "Respuesta eliminada"
+    } else if (action === "pin" || action === "unpin") {
       update = { pinned: action === "pin" }
       message = action === "pin" ? "Comentario fijado" : "Comentario desfijado"
     } else {
       update = { status: action === "hide" ? "hidden" : "visible" }
       message = action === "hide" ? "Reseña ocultada" : "Reseña mostrada"
     }
-    
+
     const review = await Review.findByIdAndUpdate(
       params.id,
       update,

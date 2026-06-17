@@ -36,6 +36,9 @@ export type ReviewItem = {
   comment: string
   status: "visible" | "hidden"
   pinned?: boolean
+  adminReply?: string
+  adminReplyAt?: string
+  adminReplyBy?: string
   createdAt: string
 }
 

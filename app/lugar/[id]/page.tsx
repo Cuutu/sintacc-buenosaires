@@ -7,6 +7,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ReviewForm } from "@/components/review-form"
 import { ContaminationReportForm } from "@/components/contamination-report-form"
+import { ContaminationReportTrigger } from "@/components/contamination-report-trigger"
+import { ReviewAdminReply } from "@/components/review-admin-reply"
+import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
 import { TagBadge } from "@/components/TagBadge"
 import { FavoriteButton } from "@/components/favorite-button"
 import { StickyActionBarMobile, PlaceHeroGallery } from "@/components/lugar"
@@ -423,18 +426,11 @@ export default function LugarPage() {
         )}
 
         {/* Reportar contaminación — siempre al final */}
-        <div className="pt-1 border-t border-border/40">
-          <ContaminationReportForm
-            placeId={placeId!}
-            onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
-            trigger={
-              <button type="button" className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-red-400 transition-colors">
-                <AlertTriangle className="h-3 w-3 shrink-0" />
-                Reportar contaminación cruzada
-              </button>
-            }
-          />
-        </div>
+        <ContaminationReportForm
+          placeId={placeId!}
+          onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
+          trigger={<ContaminationReportTrigger variant="sidebar" />}
+        />
       </div>
     )
   }
@@ -748,8 +744,33 @@ export default function LugarPage() {
                       </span>
                     )}
                   </div>
+                  {review.adminReply && (
+                    <ReviewAdminReply
+                      reply={review.adminReply}
+                      repliedAt={review.adminReplyAt}
+                      repliedBy={review.adminReplyBy}
+                    />
+                  )}
+                  {session?.user?.role === "admin" && (
+                    <ReviewAdminReplyForm
+                      reviewId={review._id}
+                      existingReply={review.adminReply}
+                      onSuccess={fetchReviews}
+                    />
+                  )}
                 </div>
               ))}
+
+              {/* Reporte contaminación — visible en columna principal (mobile + desktop) */}
+              {!showReviewForm && (
+                <div className="mt-6 lg:hidden">
+                  <ContaminationReportForm
+                    placeId={placeId!}
+                    onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
+                    trigger={<ContaminationReportTrigger variant="inline" />}
+                  />
+                </div>
+              )}
 
               {/* Paginación */}
               {!showReviewForm && hasMoreReviews && !reviewsExpanded && (

@@ -14,6 +14,9 @@ export interface IReview extends Document {
   contaminationIncident?: boolean
   visitDate?: Date
   evidencePhotos?: string[]
+  adminReply?: string
+  adminReplyAt?: Date
+  adminReplyBy?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -74,6 +77,19 @@ const ReviewSchema = new Schema<IReview>(
     evidencePhotos: {
       type: [String],
       default: [],
+    },
+    adminReply: {
+      type: String,
+      maxlength: 800,
+      trim: true,
+    },
+    adminReplyAt: {
+      type: Date,
+    },
+    adminReplyBy: {
+      type: String,
+      maxlength: 120,
+      trim: true,
     },
   },
   {
