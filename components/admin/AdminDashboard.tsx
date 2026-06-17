@@ -12,6 +12,7 @@ import { AdminReviewsSection } from "@/components/admin/AdminReviewsSection"
 import { AdminVentureReviewsSection } from "@/components/admin/AdminVentureReviewsSection"
 import { AdminPlacesSection } from "@/components/admin/AdminPlacesSection"
 import { AdminContactsSection } from "@/components/admin/AdminContactsSection"
+import { AdminSocialSection } from "@/components/admin/AdminSocialSection"
 import type {
   AdminCounts,
   AdminSection,
@@ -571,6 +572,15 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             urgent: (counts?.contactsTotal ?? 0) > 0,
             onClick: () => { setActiveSection("contacts"); fetchContacts(); fetchCounts() },
           },
+          {
+            key: "social",
+            icon: "📱",
+            label: "Redes",
+            desc: "Caption + brief Canva para IG/TikTok",
+            badge: null,
+            urgent: false,
+            onClick: () => setActiveSection("social"),
+          },
         ].map((item) => (
           <button
             key={item.key}
@@ -709,6 +719,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           fetchContacts={fetchContacts}
         />
       )}
+
+      {activeSection === "social" && <AdminSocialSection />}
 
     </div>
   )

@@ -127,3 +127,4 @@ export type AdminSection =
   | "ventureReviews"
   | "places"
   | "contacts"
+  | "social"
