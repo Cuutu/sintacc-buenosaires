@@ -22,12 +22,14 @@ interface ContaminationReportFormProps {
   placeId: string
   onSuccess?: () => void
   trigger?: React.ReactNode
+  showHint?: boolean
 }
 
 export function ContaminationReportForm({
   placeId,
   onSuccess,
   trigger,
+  showHint = false,
 }: ContaminationReportFormProps) {
   const { data: session } = useSession()
   const router = useRouter()
@@ -69,13 +71,20 @@ export function ContaminationReportForm({
     }
   }
 
-  const defaultTrigger = <ContaminationReportTrigger variant="sidebar" />
+  const defaultTrigger = <ContaminationReportTrigger />
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? defaultTrigger}
-      </DialogTrigger>
+      <div className="w-full">
+        <DialogTrigger asChild>
+          {trigger ?? defaultTrigger}
+        </DialogTrigger>
+        {showHint && (
+          <p className="text-[10px] text-muted-foreground/80 text-center mt-1.5 px-1 leading-relaxed">
+            Reacción, plato incorrecto o contaminación
+          </p>
+        )}
+      </div>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-600">

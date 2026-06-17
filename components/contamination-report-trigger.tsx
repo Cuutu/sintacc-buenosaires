@@ -2,46 +2,26 @@
 
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 type ContaminationReportTriggerProps = {
-  variant?: "sidebar" | "inline"
+  className?: string
 }
 
-export function ContaminationReportTrigger({
-  variant = "sidebar",
-}: ContaminationReportTriggerProps) {
-  if (variant === "inline") {
-    return (
-      <Button
-        type="button"
-        className="w-full h-12 gap-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-lg shadow-amber-950/30"
-      >
-        <AlertTriangle className="h-5 w-5 shrink-0" />
-        Reportar contaminación cruzada
-      </Button>
-    )
-  }
-
+export function ContaminationReportTrigger({ className }: ContaminationReportTriggerProps) {
   return (
-    <div className="rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-950/40 to-red-950/20 p-3.5 space-y-3">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-          <AlertTriangle className="h-5 w-5 text-amber-300" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-amber-100">¿Te pasó algo acá?</p>
-          <p className="text-xs text-amber-200/75 mt-1 leading-relaxed">
-            Contaminación cruzada, reacción, plato incorrecto. Tu reporte ayuda a otros celíacos.
-          </p>
-        </div>
-      </div>
-      <Button
-        type="button"
-        className="w-full h-11 gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold"
-      >
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        Reportar contaminación cruzada
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      className={cn(
+        "w-full gap-2 h-auto min-h-[44px] py-2.5 px-3 whitespace-normal text-center leading-snug",
+        "border-amber-500/35 bg-amber-950/20 text-amber-100",
+        "hover:bg-amber-500/15 hover:text-amber-50 hover:border-amber-500/50",
+        className
+      )}
+    >
+      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+      <span>Reportar contaminación cruzada</span>
+    </Button>
   )
 }

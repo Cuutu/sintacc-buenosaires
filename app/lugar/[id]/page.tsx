@@ -294,15 +294,15 @@ export default function LugarPage() {
               Guardar lugar
             </Button>
           )}
+          {!hideContamination && (
+            <ContaminationReportForm
+              placeId={placeId!}
+              onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
+              showHint
+              trigger={<ContaminationReportTrigger />}
+            />
+          )}
         </div>
-
-        {!hideContamination && (
-          <ContaminationReportForm
-            placeId={placeId!}
-            onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
-            trigger={<ContaminationReportTrigger variant="sidebar" />}
-          />
-        )}
 
         {/* Info de contacto — cada ítem es condicional */}
         <div>
@@ -518,28 +518,28 @@ export default function LugarPage() {
             </div>
 
             {/* CTAs — solo en mobile (en desktop están en sidebar) */}
-            <div className="flex flex-wrap gap-2 mb-4 lg:hidden">
-              <Button asChild size="lg" className="min-h-[48px]">
+            <div className="space-y-2 mb-4 lg:hidden">
+              <Button asChild size="lg" className="w-full min-h-[48px]">
                 <Link href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <MapPinned className="h-4 w-4 mr-2" />
                   Cómo llegar
                 </Link>
               </Button>
               {session && features.favorites ? (
-                <FavoriteButton placeId={place._id.toString()} showLabel />
+                <div className="w-full [&>button]:w-full">
+                  <FavoriteButton placeId={place._id.toString()} showLabel />
+                </div>
               ) : (
-                <Button variant="outline" size="lg" className="min-h-[48px]" onClick={() => !session && router.push("/login")}>
+                <Button variant="outline" size="lg" className="w-full min-h-[48px]" onClick={() => !session && router.push("/login")}>
                   <Heart className="h-5 w-5 mr-2" />
                   Guardar
                 </Button>
               )}
-            </div>
-
-            <div className="mb-4 lg:hidden">
               <ContaminationReportForm
                 placeId={placeId!}
                 onSuccess={() => { fetchPlace(); fetchContaminationReports() }}
-                trigger={<ContaminationReportTrigger variant="sidebar" />}
+                showHint
+                trigger={<ContaminationReportTrigger />}
               />
             </div>
 
