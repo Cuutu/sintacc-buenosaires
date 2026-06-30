@@ -21,6 +21,7 @@ const previewSchema = z.object({
   excludeIds: z.array(z.string()).optional(),
   imageFormat: z.enum(["story", "feed"]).optional(),
   includeLogo: z.boolean().optional(),
+  includePhotos: z.boolean().optional(),
 })
 
 export async function POST(request: NextRequest) {

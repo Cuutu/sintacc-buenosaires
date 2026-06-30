@@ -14,6 +14,7 @@ import type {
   SocialPreset,
   SocialPreviewResult,
 } from "@/lib/social/types"
+import { IMAGE_PROMPT_MAX_ITEMS } from "@/lib/social/image-prompt"
 import { Copy, ExternalLink, ImageIcon, Loader2, Sparkles } from "lucide-react"
 
 const PRESETS: Array<{
@@ -68,7 +69,8 @@ export function AdminSocialSection() {
   const [platform, setPlatform] = useState<SocialPlatform>("instagram")
   const [imageFormat, setImageFormat] = useState<SocialImageFormat>("story")
   const [includeLogo, setIncludeLogo] = useState(true)
-  const [limit, setLimit] = useState(10)
+  const [includePhotos, setIncludePhotos] = useState(false)
+  const [limit, setLimit] = useState(5)
   const [days, setDays] = useState(30)
   const [communityOnly, setCommunityOnly] = useState(true)
   const [neighborhood, setNeighborhood] = useState("Palermo")
@@ -163,6 +165,7 @@ export function AdminSocialSection() {
           excludeIds: Array.from(excludedIds),
           imageFormat,
           includeLogo,
+          includePhotos,
         }),
       })
       const data = await res.json()
@@ -192,8 +195,8 @@ export function AdminSocialSection() {
           Redes sociales
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Generá caption + prompt para ChatGPT (creador de imágenes). Adjuntás fotos/logos y
-          pegás el prompt para una historia IG en una sola imagen.
+          Prompt directo estilo A+D para ChatGPT: lista limpia + hero con número. Máx{" "}
+          {IMAGE_PROMPT_MAX_ITEMS} ítems por imagen.
         </p>
       </div>
 
@@ -276,9 +279,14 @@ export function AdminSocialSection() {
               min={1}
               max={15}
               value={limit}
-              onChange={(e) => setLimit(Number(e.target.value) || 10)}
+              onChange={(e) =>
+                setLimit(Math.min(15, Math.max(1, Number(e.target.value) || 5)))
+              }
               className="h-8 w-20 text-sm"
             />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Prompt usa max {IMAGE_PROMPT_MAX_ITEMS}
+            </p>
           </div>
 
           <div>
@@ -300,7 +308,17 @@ export function AdminSocialSection() {
               onChange={(e) => setIncludeLogo(e.target.checked)}
               className="rounded"
             />
-            Incluir logo Celimap en prompt
+            Adjuntar logo Celimap
+          </label>
+
+          <label className="flex items-center gap-2 text-xs text-muted-foreground pb-1">
+            <input
+              type="checkbox"
+              checked={includePhotos}
+              onChange={(e) => setIncludePhotos(e.target.checked)}
+              className="rounded"
+            />
+            Incluir fotos en adjuntos (opcional)
           </label>
 
           {activePreset !== "dedicated_gf" &&
@@ -344,10 +362,10 @@ export function AdminSocialSection() {
           <div>
             <p className="text-xs font-semibold mb-2">
               Ítems incluidos ({includedItems.length}/{items.length})
-              {includedItems.some((i) => i.photoUrl) && (
-                <span className="font-normal text-muted-foreground">
+              {includedItems.length > IMAGE_PROMPT_MAX_ITEMS && (
+                <span className="font-normal text-amber-500/90">
                   {" "}
-                  · las fotos marcadas se usan como referencia en ChatGPT
+                  · solo los primeros {IMAGE_PROMPT_MAX_ITEMS} van al prompt imagen
                 </span>
               )}
             </p>
@@ -441,11 +459,10 @@ export function AdminSocialSection() {
                 Cómo usar con ChatGPT
               </p>
               <ol className="list-decimal list-inside space-y-0.5 pl-0.5">
-                <li>Abrí ChatGPT → Creador de imágenes (DALL·E)</li>
-                <li>Descargá y adjuntá las fotos del listado + logo Celimap</li>
-                <li>Copiá el prompt completo y pegalo</li>
-                <li>Generá → una sola imagen con todo el listado</li>
-                <li>Publicá en historia IG con el caption de abajo</li>
+                <li>Adjuntá logo Celimap (y fotos solo si las activaste)</li>
+                <li>Copiá prompt → ChatGPT creador de imágenes</li>
+                <li>Estilo lista limpia + hero con número grande</li>
+                <li>Publicá historia con el caption</li>
               </ol>
             </div>
 

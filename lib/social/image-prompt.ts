@@ -7,6 +7,9 @@ import type {
 
 export type ImageFormat = "story" | "feed"
 
+/** Máximo de ítems en historia IG (legibilidad). */
+export const IMAGE_PROMPT_MAX_ITEMS = 5
+
 const FORMAT_SPECS: Record<
   ImageFormat,
   { label: string; ratio: string; size: string }
@@ -23,37 +26,71 @@ const FORMAT_SPECS: Record<
   },
 }
 
-function getSubtitle(preset: SocialPreset, items: SocialContentItem[]): string {
-  if (preset === "neighborhood") {
-    return `Sin gluten en ${items[0]?.subtitle ?? "Buenos Aires"}`
+function getHeroTag(preset: SocialPreset): string {
+  switch (preset) {
+    case "latest_ventures":
+      return "NUEVOS EMPRENDIMIENTOS"
+    case "neighborhood":
+      return "SPOTLIGHT BARRIO"
+    case "dedicated_gf":
+      return "100% SIN TACC"
+    default:
+      return "NUEVOS EN EL MAPA"
   }
-  if (preset === "dedicated_gf") return "Opciones 100% sin TACC"
-  if (preset === "latest_ventures") return "Marcas y emprendimientos sin gluten"
-  if (preset === "latest_places") return "Nuevos en el mapa · Buenos Aires"
-  return "Sin gluten en Argentina"
 }
 
-function formatListItem(item: SocialContentItem, index: number, withPhotoRef: boolean): string {
-  const photoNote =
-    withPhotoRef && item.photoUrl
-      ? ` · usar foto adjunta #${index + 1} como miniatura`
-      : ""
-  const parts = [
+function getHeroLine(preset: SocialPreset, count: number, items: SocialContentItem[]): string {
+  const n = String(count)
+  switch (preset) {
+    case "latest_ventures":
+      return `${n} emprendimientos sin gluten nuevos`
+    case "neighborhood":
+      return `${n} lugares sin gluten en ${items[0]?.subtitle ?? "el barrio"}`
+    case "dedicated_gf":
+      return `${n} lugares 100% sin TACC`
+    default:
+      return `${n} lugares sin gluten esta semana`
+  }
+}
+
+function getContextLine(preset: SocialPreset, items: SocialContentItem[]): string {
+  if (preset === "neighborhood" && items[0]?.subtitle) {
+    return `${items[0].subtitle} · Celimap`
+  }
+  if (preset === "latest_ventures") {
+    return "Argentina · marcas sin gluten"
+  }
+  return "Buenos Aires · comunidad celíaca"
+}
+
+function formatSafetyShort(item: SocialContentItem): string {
+  const label = item.safetyLabel.toLowerCase()
+  if (label.includes("100%") || label.includes("100 %")) {
+    return `${item.safetyDot} 100% sin gluten`
+  }
+  if (label.includes("opciones")) {
+    return `${item.safetyDot} opciones sin gluten`
+  }
+  return `${item.safetyDot} a confirmar`
+}
+
+/** Fila tipo A: número + nombre + barrio + badge (sin extras). */
+function formatListBlock(item: SocialContentItem, index: number): string {
+  return [
     `${index + 1}. ${item.name}`,
-    `${item.subtitle} · ${item.typeLabel} ${item.typeEmoji}`,
-    `${item.safetyDot} ${item.safetyLabel}`,
-  ]
-  if (item.ratingLine) parts.push(item.ratingLine)
-  if (item.extraBadge) parts.push(item.extraBadge)
-  if (item.modalitiesLine) parts.push(item.modalitiesLine)
-  return `- ${parts.join(" · ")}${photoNote}`
+    `   ${item.subtitle} · ${item.typeLabel} ${item.typeEmoji}`,
+    `   ${formatSafetyShort(item)}`,
+  ].join("\n")
 }
 
-function buildAttachmentsBlock(items: SocialContentItem[], includeLogo: boolean): string {
+function buildAttachmentsBlock(
+  items: SocialContentItem[],
+  includeLogo: boolean,
+  includePhotos: boolean
+): string {
   const baseUrl = getBaseUrl()
   const lines: string[] = [
-    "═══ IMÁGENES PARA ADJUNTAR EN CHATGPT ═══",
-    "Subí estas imágenes ANTES de pegar el prompt (en el mismo chat):",
+    "Adjuntá en ChatGPT ANTES de pegar el prompt:",
     "",
   ]
 
@@ -63,21 +100,21 @@ function buildAttachmentsBlock(items: SocialContentItem[], includeLogo: boolean)
     lines.push(`${n}. Logo Celimap → ${baseUrl}/CelimapLOGO.png`)
   }
 
-  for (const item of items) {
-    if (!item.photoUrl) continue
-    n++
-    lines.push(`${n}. Foto de "${item.name}" → ${item.photoUrl}`)
+  if (includePhotos) {
+    for (const item of items) {
+      if (!item.photoUrl) continue
+      n++
+      lines.push(`${n}. "${item.name}" → ${item.photoUrl}`)
+    }
   }
 
   if (n === 0) {
-    lines.push("(No hay fotos en la selección. Podés adjuntar solo el logo Celimap.)")
+    lines.push("(Sin adjuntos — solo pegá el prompt)")
+  } else if (!includePhotos) {
+    lines.push("")
+    lines.push("Solo logo. No adjuntes fotos de locales para este estilo.")
   }
 
-  lines.push("")
-  lines.push(
-    "Tip: descargá las fotos desde los links, adjuntalas al chat, y decile a ChatGPT cuál corresponde a cada lugar del listado."
-  )
-  lines.push("═══════════════════════════════════════════")
   return lines.join("\n")
 }
 
@@ -88,64 +125,103 @@ function buildMilestonePrompt(
   includeLogo: boolean
 ): string {
   const spec = FORMAT_SPECS[format]
-  const baseUrl = getBaseUrl()
+  const domain = getBaseUrl().replace(/^https?:\/\//, "")
 
   return [
-    `Generá UNA sola imagen (${spec.label}, ${spec.ratio}, ${spec.size}) para Celimap.`,
+    `${spec.label} ${spec.ratio} ${spec.size}. Una sola imagen.`,
     "",
-    "MARCA:",
-    "- App mapa sin gluten para celíacos en Argentina",
-    "- Fondo oscuro (#0f0f12), acentos verde esmeralda (#10b981)",
-    "- Tipografía moderna, legible en celular, estilo app premium",
-    includeLogo
-      ? "- Usá el logo Celimap adjunto en header o footer"
-      : "- Texto de marca: Celimap (sin inventar logos)",
+    "Estilo A: fondo negro #0a0a0a, verde #10b981, blanco. Minimal, sin cajas ni 3D.",
+    includeLogo ? "Logo Celimap adjunto arriba, chico." : "",
     "",
-    "CONTENIDO:",
-    `Título grande: "${presetTitle}"`,
-    "Subtítulo: La comunidad celíaca crece",
+    `Hero: "${presetTitle}"`,
+    "Subtítulo gris: La comunidad celíaca crece",
     "",
-    "Mostrá estos números como tarjetas o bloques visuales:",
-    `• ${milestone.placesCount.toLocaleString("es-AR")} lugares en el mapa`,
-    `• ${milestone.reviewsCount.toLocaleString("es-AR")} reseñas`,
-    `• ${milestone.venturesCount.toLocaleString("es-AR")} emprendimientos`,
-    `• ${milestone.newPlacesThisMonth} lugares nuevos este mes`,
-    `• ${milestone.newVenturesThisMonth} emprendimientos nuevos este mes`,
+    "4 números grandes, uno debajo del otro:",
+    `· ${milestone.placesCount.toLocaleString("es-AR")} lugares`,
+    `· ${milestone.reviewsCount.toLocaleString("es-AR")} reseñas`,
+    `· ${milestone.venturesCount.toLocaleString("es-AR")} emprendimientos`,
+    `· ${milestone.newPlacesThisMonth} nuevos este mes`,
     "",
-    `Footer: ${baseUrl.replace(/^https?:\/\//, "")} · Mapa para celíacos`,
-    "",
-    "REGLAS:",
-    "- Una sola imagen cohesiva, NO carousel",
-    "- Texto grande y contrastado",
-    "- Sin inventar logos de terceros",
-    "- Diseño limpio, no saturado",
-  ].join("\n")
+    `Footer: ${domain} · Mapa para celíacos`,
+  ]
+    .filter(Boolean)
+    .join("\n")
 }
 
 function buildCtaPrompt(link: string, placesCount: number | undefined, format: ImageFormat): string {
   const spec = FORMAT_SPECS[format]
-  const baseUrl = getBaseUrl()
+  const domain = getBaseUrl().replace(/^https?:\/\//, "")
 
   return [
-    `Generá UNA sola imagen (${spec.label}, ${spec.ratio}, ${spec.size}) para Celimap.`,
+    `${spec.label} ${spec.ratio}. Una sola imagen.`,
     "",
-    "MARCA: fondo oscuro, verde esmeralda #10b981, tipografía clara, estilo app.",
+    "Fondo negro, verde #10b981, minimal.",
     "",
-    'Título: "¿Conocés un lugar sin gluten?"',
+    'Título blanco grande: "¿Conocés un lugar sin gluten?"',
     'Subtítulo: "Sugerilo en Celimap"',
     "",
-    "Bullets visuales:",
-    "• Gratis y en 2 minutos",
-    "• Ayudás a otros celíacos",
+    "3 bullets:",
+    "· Gratis, 2 minutos",
+    "· Ayudás a otros celíacos",
     placesCount
-      ? `• Ya hay ${placesCount.toLocaleString("es-AR")} lugares mapeados`
-      : "• Sumá tu lugar favorito al mapa",
+      ? `· ${placesCount.toLocaleString("es-AR")} lugares ya mapeados`
+      : "· Sumá tu favorito al mapa",
     "",
-    `CTA visible: ${link}`,
-    `Footer: ${baseUrl.replace(/^https?:\/\//, "")}`,
-    "",
-    "Una sola imagen, CTA legible, sin logos inventados.",
+    `CTA verde: ${link}`,
+    `Footer: ${domain}`,
   ].join("\n")
+}
+
+/** Estilo A (lista limpia) + hero D (número grande + tag). */
+function buildListPrompt(input: {
+  preset: SocialPreset
+  items: SocialContentItem[]
+  format: ImageFormat
+  includeLogo: boolean
+  includePhotos: boolean
+}): string {
+  const { preset, format, includeLogo, includePhotos } = input
+  const items = input.items.slice(0, IMAGE_PROMPT_MAX_ITEMS)
+  const spec = FORMAT_SPECS[format]
+  const count = items.length
+  const domain = getBaseUrl().replace(/^https?:\/\//, "")
+  const heroTag = getHeroTag(preset)
+  const heroLine = getHeroLine(preset, count, items)
+  const contextLine = getContextLine(preset, items)
+  const listBlocks = items.map((item, i) => formatListBlock(item, i)).join("\n\n")
+
+  const lines = [
+    `${spec.label} ${spec.ratio} ${spec.size}. UNA sola imagen.`,
+    "",
+    "Estilo: fondo negro #0a0a0a, verde #10b981, blanco. Minimalista editorial.",
+    "Sin cajas/cards, sin gradientes, sin 3D, sin clipart. Sans-serif limpia (tipo Inter).",
+    includeLogo ? "Logo Celimap adjunto arriba centrado, chico." : "",
+    "",
+    `Etiqueta verde chica mayúsculas: "${heroTag}"`,
+    "",
+    "Hero (tipo D):",
+    `- Número "${count}" MUY grande verde a la izquierda`,
+    "- Línea vertical blanca fina",
+    `- Texto blanco bold a la derecha: "${heroLine}"`,
+    "",
+    `Subtítulo gris chico: "${contextLine}"`,
+    "",
+    `Lista (${count} filas, separadas por líneas grises finas, SIN cards):`,
+    "",
+    listBlocks,
+    "",
+    "Cada fila: número verde · nombre blanco bold · línea gris barrio·tipo·emoji · badge 🟢/🟡 con texto corto.",
+    "",
+    `Footer: línea verde fina + "${domain} · Mapa para celíacos"`,
+    "",
+    "NO logos de marcas. NO badges extra (certificado, cocina separada).",
+    includePhotos
+      ? "Usá fotos adjuntas solo como miniatura chica si entran; prioridad legibilidad."
+      : "NO fotos de comida ni locales.",
+    `NO más de ${count} filas.`,
+  ]
+
+  return lines.filter(Boolean).join("\n")
 }
 
 export function buildImagePrompt(input: {
@@ -155,6 +231,7 @@ export function buildImagePrompt(input: {
   link: string
   format?: ImageFormat
   includeLogo?: boolean
+  includePhotos?: boolean
   milestone?: SocialMilestoneData
   placesCount?: number
 }): string {
@@ -165,11 +242,10 @@ export function buildImagePrompt(input: {
     link,
     format = "story",
     includeLogo = true,
+    includePhotos = false,
     milestone,
     placesCount,
   } = input
-  const spec = FORMAT_SPECS[format]
-  const baseUrl = getBaseUrl()
 
   if (preset === "milestone" && milestone) {
     return buildMilestonePrompt(presetTitle, milestone, format, includeLogo)
@@ -180,54 +256,15 @@ export function buildImagePrompt(input: {
   }
 
   if (items.length === 0) {
+    const spec = FORMAT_SPECS[format]
     return [
-      `Generá UNA imagen (${spec.label}, ${spec.ratio}) para Celimap.`,
-      "",
+      `${spec.label}. Una imagen minimal Celimap.`,
       `Título: "${presetTitle}"`,
-      "No hay ítems recientes. Diseño minimal con CTA al mapa.",
-      `Link: ${link}`,
+      "Sin ítems — diseño simple con CTA al mapa.",
     ].join("\n")
   }
 
-  const subtitle = getSubtitle(preset, items)
-  const listLines = items.map((item, i) => formatListItem(item, i, true))
-  const itemsWithPhoto = items.filter((i) => i.photoUrl).length
-
-  return [
-    `Generá UNA sola imagen (${spec.label}, ${spec.ratio}, ${spec.size}) para Celimap — mapa sin gluten para celíacos en Argentina.`,
-    "",
-    "══ ESTILO VISUAL ══",
-    "- Fondo oscuro degradado (#0f0f12 → #1a1a1f)",
-    "- Acentos verde esmeralda (#10b981), bordes sutiles blanco/10%",
-    "- Tipografía sans-serif bold para títulos, regular para listado",
-    "- Cards o filas para cada ítem, espaciado generoso",
-    "- Legible en pantalla de celular (historia IG)",
-    includeLogo
-      ? "- Logo Celimap adjunto: usalo en header o footer (no deformar)"
-      : '- Marca textual "Celimap" en header',
-    "",
-    "══ ESTRUCTURA ══",
-    `HEADER: "${presetTitle}"`,
-    `SUBTÍTULO: "${subtitle}"`,
-    "",
-    "LISTADO (mostrar TODOS en la misma imagen, scroll visual o cards apiladas):",
-    ...listLines,
-    "",
-    "══ FOOTER ══",
-    `${baseUrl.replace(/^https?:\/\//, "")} · Mapa para celíacos`,
-    "",
-    "══ REFERENCIAS DE FOTO ══",
-    itemsWithPhoto > 0
-      ? `Hay ${itemsWithPhoto} foto(s) adjunta(s). Usá cada una como miniatura circular o cuadrada junto al nombre correspondiente del listado. NO inventes logos de locales.`
-      : "No hay fotos adjuntas: usá íconos genéricos (🍽️ 🥐 etc.) según el tipo.",
-    "",
-    "══ REGLAS ══",
-    "- UNA sola imagen final, NO múltiples slides",
-    "- Todos los nombres del listado deben verse",
-    "- Sin texto ilegible ni demasiado chico",
-    "- No inventar marcas ni logos de terceros",
-    "- Diseño profesional tipo app, no clipart",
-  ].join("\n")
+  return buildListPrompt({ preset, items, format, includeLogo, includePhotos })
 }
 
 export function buildFullChatGptPackage(input: {
@@ -237,12 +274,18 @@ export function buildFullChatGptPackage(input: {
   link: string
   format?: ImageFormat
   includeLogo?: boolean
+  includePhotos?: boolean
   milestone?: SocialMilestoneData
   placesCount?: number
 }): { prompt: string; attachments: string; combined: string } {
-  const prompt = buildImagePrompt(input)
-  const attachments = buildAttachmentsBlock(input.items, input.includeLogo ?? true)
-  const combined = `${attachments}\n\n${prompt}`
+  const slicedItems = input.items.slice(0, IMAGE_PROMPT_MAX_ITEMS)
+  const prompt = buildImagePrompt({ ...input, items: slicedItems })
+  const attachments = buildAttachmentsBlock(
+    slicedItems,
+    input.includeLogo ?? true,
+    input.includePhotos ?? false
+  )
+  const combined = attachments ? `${attachments}\n\n${prompt}` : prompt
   return { prompt, attachments, combined }
 }
 

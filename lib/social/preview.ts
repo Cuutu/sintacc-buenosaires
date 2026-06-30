@@ -25,6 +25,7 @@ export async function buildSocialPreview(input: {
   excludeIds?: string[]
   imageFormat?: SocialImageFormat
   includeLogo?: boolean
+  includePhotos?: boolean
 }): Promise<SocialPreviewResult> {
   const queryOptions: SocialQueryOptions = {
     preset: input.preset,
@@ -74,6 +75,7 @@ export async function buildSocialPreview(input: {
       link,
       format: imageFormat,
       includeLogo: input.includeLogo ?? true,
+      includePhotos: input.includePhotos ?? false,
       milestone,
       placesCount,
     })
