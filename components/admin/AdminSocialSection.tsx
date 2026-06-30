@@ -6,17 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { NEIGHBORHOODS } from "@/lib/constants"
-import {
-  buildCelimapUrlsList,
-  buildPhotoUrlsList,
-} from "@/lib/social/canva-brief"
+import { buildCelimapUrlsList, buildPhotoUrlsList } from "@/lib/social/canva-brief"
 import type {
   SocialContentItem,
+  SocialImageFormat,
   SocialPlatform,
   SocialPreset,
   SocialPreviewResult,
 } from "@/lib/social/types"
-import { Copy, ExternalLink, Loader2, Sparkles } from "lucide-react"
+import { Copy, ExternalLink, ImageIcon, Loader2, Sparkles } from "lucide-react"
 
 const PRESETS: Array<{
   id: SocialPreset
@@ -68,6 +66,8 @@ async function copyText(text: string, label: string) {
 
 export function AdminSocialSection() {
   const [platform, setPlatform] = useState<SocialPlatform>("instagram")
+  const [imageFormat, setImageFormat] = useState<SocialImageFormat>("story")
+  const [includeLogo, setIncludeLogo] = useState(true)
   const [limit, setLimit] = useState(10)
   const [days, setDays] = useState(30)
   const [communityOnly, setCommunityOnly] = useState(true)
@@ -77,7 +77,8 @@ export function AdminSocialSection() {
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<SocialPreviewResult | null>(null)
   const [caption, setCaption] = useState("")
-  const [canvaBrief, setCanvaBrief] = useState("")
+  const [imagePrompt, setImagePrompt] = useState("")
+  const [attachmentInstructions, setAttachmentInstructions] = useState("")
   const [loadingItems, setLoadingItems] = useState(false)
   const [generating, setGenerating] = useState(false)
 
@@ -115,9 +116,10 @@ export function AdminSocialSection() {
       setExcludedIds(new Set())
       setPreview(null)
       setCaption("")
-      setCanvaBrief("")
-    } catch (err: any) {
-      toast.error(err.message || "Error al cargar ítems")
+      setImagePrompt("")
+      setAttachmentInstructions("")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al cargar ítems")
     } finally {
       setLoadingItems(false)
     }
@@ -159,6 +161,8 @@ export function AdminSocialSection() {
           neighborhood:
             activePreset === "neighborhood" ? neighborhood.trim() : undefined,
           excludeIds: Array.from(excludedIds),
+          imageFormat,
+          includeLogo,
         }),
       })
       const data = await res.json()
@@ -166,14 +170,19 @@ export function AdminSocialSection() {
 
       setPreview(data)
       setCaption(data.caption || "")
-      setCanvaBrief(data.canvaBrief || "")
+      setImagePrompt(data.imagePrompt || "")
+      setAttachmentInstructions(data.attachmentInstructions || "")
       toast.success("Contenido generado")
-    } catch (err: any) {
-      toast.error(err.message || "Error al generar")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al generar")
     } finally {
       setGenerating(false)
     }
   }
+
+  const combinedPrompt = attachmentInstructions
+    ? `${attachmentInstructions}\n\n${imagePrompt}`
+    : imagePrompt
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
@@ -183,12 +192,12 @@ export function AdminSocialSection() {
           Redes sociales
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Generá caption + brief para Canva. Vos diseñás y publicás a mano.
+          Generá caption + prompt para ChatGPT (creador de imágenes). Adjuntás fotos/logos y
+          pegás el prompt para una historia IG en una sola imagen.
         </p>
       </div>
 
       <div className="p-4 space-y-5">
-        {/* Presets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {PRESETS.map((preset) => (
             <button
@@ -207,7 +216,6 @@ export function AdminSocialSection() {
           ))}
         </div>
 
-        {/* Options */}
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
@@ -228,6 +236,36 @@ export function AdminSocialSection() {
                   {p === "instagram" ? "Instagram" : "TikTok"}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+              Formato imagen
+            </p>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setImageFormat("story")}
+                className={`text-xs px-3 py-1.5 rounded-lg border ${
+                  imageFormat === "story"
+                    ? "border-primary/30 bg-primary/8 text-primary"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                Historia 9:16
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageFormat("feed")}
+                className={`text-xs px-3 py-1.5 rounded-lg border ${
+                  imageFormat === "feed"
+                    ? "border-primary/30 bg-primary/8 text-primary"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                Feed 1:1
+              </button>
             </div>
           </div>
 
@@ -254,6 +292,16 @@ export function AdminSocialSection() {
               className="h-8 w-20 text-sm"
             />
           </div>
+
+          <label className="flex items-center gap-2 text-xs text-muted-foreground pb-1">
+            <input
+              type="checkbox"
+              checked={includeLogo}
+              onChange={(e) => setIncludeLogo(e.target.checked)}
+              className="rounded"
+            />
+            Incluir logo Celimap en prompt
+          </label>
 
           {activePreset !== "dedicated_gf" &&
             activePreset !== "milestone" &&
@@ -292,11 +340,16 @@ export function AdminSocialSection() {
           </Button>
         </div>
 
-        {/* Items list */}
         {items.length > 0 && (
           <div>
             <p className="text-xs font-semibold mb-2">
               Ítems incluidos ({includedItems.length}/{items.length})
+              {includedItems.some((i) => i.photoUrl) && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  · las fotos marcadas se usan como referencia en ChatGPT
+                </span>
+              )}
             </p>
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {items.map((item) => {
@@ -320,6 +373,7 @@ export function AdminSocialSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-border"
+                        title="Descargar / adjuntar en ChatGPT"
                       >
                         <img
                           src={item.photoUrl}
@@ -376,14 +430,82 @@ export function AdminSocialSection() {
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          Generar caption + brief Canva
+          Generar caption + prompt imagen
         </Button>
 
         {preview && (
           <div className="space-y-4 pt-2 border-t border-border">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground space-y-1.5">
+              <p className="font-semibold text-foreground flex items-center gap-1.5">
+                <ImageIcon className="h-3.5 w-3.5 text-primary" />
+                Cómo usar con ChatGPT
+              </p>
+              <ol className="list-decimal list-inside space-y-0.5 pl-0.5">
+                <li>Abrí ChatGPT → Creador de imágenes (DALL·E)</li>
+                <li>Descargá y adjuntá las fotos del listado + logo Celimap</li>
+                <li>Copiá el prompt completo y pegalo</li>
+                <li>Generá → una sola imagen con todo el listado</li>
+                <li>Publicá en historia IG con el caption de abajo</li>
+              </ol>
+            </div>
+
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-xs font-bold">{preview.presetTitle}</p>
+                <p className="text-xs font-bold">Imágenes para adjuntar</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => copyText(attachmentInstructions, "Instrucciones adjuntos")}
+                >
+                  <Copy className="h-3 w-3" />
+                  Copiar
+                </Button>
+              </div>
+              <Textarea
+                value={attachmentInstructions}
+                onChange={(e) => setAttachmentInstructions(e.target.value)}
+                className="min-h-[120px] text-sm font-mono"
+                placeholder="Links de fotos y logo para adjuntar en ChatGPT..."
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-xs font-bold">
+                  Prompt ChatGPT ·{" "}
+                  {imageFormat === "story" ? "Historia IG 9:16" : "Feed 1:1"}
+                </p>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => copyText(imagePrompt, "Prompt imagen")}
+                  >
+                    <Copy className="h-3 w-3" />
+                    Solo prompt
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => copyText(combinedPrompt, "Prompt completo")}
+                  >
+                    <Copy className="h-3 w-3" />
+                    Prompt + adjuntos
+                  </Button>
+                </div>
+              </div>
+              <Textarea
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                className="min-h-[280px] text-sm font-mono"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-xs font-bold">Caption para publicar</p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -398,26 +520,6 @@ export function AdminSocialSection() {
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 className="min-h-[160px] text-sm font-mono"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-xs font-bold">Brief para Canva</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
-                  onClick={() => copyText(canvaBrief, "Brief Canva")}
-                >
-                  <Copy className="h-3 w-3" />
-                  Copiar brief
-                </Button>
-              </div>
-              <Textarea
-                value={canvaBrief}
-                onChange={(e) => setCanvaBrief(e.target.value)}
-                className="min-h-[200px] text-sm font-mono"
               />
             </div>
 

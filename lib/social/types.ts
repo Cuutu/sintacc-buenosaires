@@ -42,12 +42,18 @@ export type SocialQueryOptions = {
   excludeIds?: string[]
 }
 
+export type SocialImageFormat = "story" | "feed"
+
 export type SocialPreviewResult = {
   preset: SocialPreset
   presetTitle: string
   platform: SocialPlatform
   caption: string
+  /** @deprecated Usar imagePrompt */
   canvaBrief: string
+  imagePrompt: string
+  attachmentInstructions: string
+  imageFormat: SocialImageFormat
   link: string
   hashtags: string
   items: SocialContentItem[]

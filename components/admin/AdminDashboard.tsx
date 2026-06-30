@@ -576,7 +576,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             key: "social",
             icon: "📱",
             label: "Redes",
-            desc: "Caption + brief Canva para IG/TikTok",
+            desc: "Caption + prompt ChatGPT para historia IG",
             badge: null,
             urgent: false,
             onClick: () => setActiveSection("social"),

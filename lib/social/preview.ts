@@ -1,5 +1,7 @@
 import { buildCanvaBrief } from "@/lib/social/canva-brief"
+import { buildFullChatGptPackage } from "@/lib/social/image-prompt"
 import { buildCaption } from "@/lib/social/captions"
+import type { SocialImageFormat } from "@/lib/social/types"
 import { buildHashtags } from "@/lib/social/hashtags"
 import {
   fetchMilestoneData,
@@ -21,6 +23,8 @@ export async function buildSocialPreview(input: {
   communityOnly?: boolean
   neighborhood?: string
   excludeIds?: string[]
+  imageFormat?: SocialImageFormat
+  includeLogo?: boolean
 }): Promise<SocialPreviewResult> {
   const queryOptions: SocialQueryOptions = {
     preset: input.preset,
@@ -61,12 +65,28 @@ export async function buildSocialPreview(input: {
     placesCount,
   })
 
+  const imageFormat = input.imageFormat ?? "story"
+  const { prompt: imagePrompt, attachments: attachmentInstructions } =
+    buildFullChatGptPackage({
+      preset: input.preset,
+      presetTitle,
+      items,
+      link,
+      format: imageFormat,
+      includeLogo: input.includeLogo ?? true,
+      milestone,
+      placesCount,
+    })
+
   return {
     preset: input.preset,
     presetTitle,
     platform: input.platform,
     caption,
     canvaBrief,
+    imagePrompt,
+    attachmentInstructions,
+    imageFormat,
     link,
     hashtags,
     items,

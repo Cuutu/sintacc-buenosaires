@@ -19,6 +19,8 @@ const previewSchema = z.object({
   communityOnly: z.boolean().optional(),
   neighborhood: z.string().trim().optional(),
   excludeIds: z.array(z.string()).optional(),
+  imageFormat: z.enum(["story", "feed"]).optional(),
+  includeLogo: z.boolean().optional(),
 })
 
 export async function POST(request: NextRequest) {
