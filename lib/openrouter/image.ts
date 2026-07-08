@@ -46,6 +46,7 @@ export async function generateOpenRouterImage(
 
   if (input.inputReferenceUrls?.length) {
     body.input_references = input.inputReferenceUrls.map((url) => ({
+      type: "image_url",
       image_url: { url },
     }))
   }
