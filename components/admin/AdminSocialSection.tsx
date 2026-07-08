@@ -52,7 +52,7 @@ const PRESETS: Array<{
   {
     id: "cta_suggest",
     label: "CTA sugerir",
-    desc: "Pedir sugerencias de lugares",
+    desc: "Lugares + emprendimientos sin gluten",
   },
 ]
 
@@ -545,11 +545,27 @@ export function AdminSocialSection() {
                 size="sm"
                 variant="outline"
                 className="h-8 text-xs gap-1"
-                onClick={() => copyText(preview.link, "Link del post")}
+                onClick={() =>
+                  copyText(
+                    preview.link,
+                    preview.venturesLink ? "Link sugerir lugar" : "Link del post"
+                  )
+                }
               >
                 <Copy className="h-3 w-3" />
-                Copiar link post
+                {preview.venturesLink ? "Link lugares" : "Copiar link post"}
               </Button>
+              {preview.venturesLink && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1"
+                  onClick={() => copyText(preview.venturesLink!, "Link sugerir emprendimiento")}
+                >
+                  <Copy className="h-3 w-3" />
+                  Link emprendimientos
+                </Button>
+              )}
               {includedItems.length > 0 && (
                 <>
                   <Button

@@ -148,28 +148,62 @@ function buildMilestonePrompt(
     .join("\n")
 }
 
-function buildCtaPrompt(link: string, placesCount: number | undefined, format: ImageFormat): string {
+function buildCtaPrompt(
+  placesLink: string,
+  venturesLink: string,
+  placesCount: number | undefined,
+  venturesCount: number | undefined,
+  format: ImageFormat,
+  includeLogo: boolean
+): string {
   const spec = FORMAT_SPECS[format]
   const domain = getBaseUrl().replace(/^https?:\/\//, "")
+
+  const statsLine = [
+    placesCount ? `${placesCount.toLocaleString("es-AR")} lugares` : null,
+    venturesCount ? `${venturesCount.toLocaleString("es-AR")} emprendimientos` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
 
   return [
     `${spec.label} ${spec.ratio}. Una sola imagen.`,
     "",
-    "Fondo negro, verde #10b981, minimal.",
+    "Estilo A+D: fondo negro #0a0a0a, verde #10b981, blanco. Minimal, sin cards.",
+    includeLogo ? "Logo Celimap adjunto arriba, chico." : "",
     "",
-    'Título blanco grande: "¿Conocés un lugar sin gluten?"',
-    'Subtítulo: "Sugerilo en Celimap"',
+    'Etiqueta verde chica: "SUMÁ A LA COMUNIDAD"',
     "",
-    "3 bullets:",
+    'Título blanco grande: "¿Conocés algo sin gluten?"',
+    'Subtítulo gris: "Lugares y emprendimientos · Celimap"',
+    "",
+    "2 bloques CTA claros (no listado de locales):",
+    "",
+    "Bloque 1 — LUGAR CON LOCAL:",
+    "· ícono 🗺️",
+    "· texto: Restaurante, café, panadería con dirección",
+    "· botón/link verde chico: Sugerir lugar",
+    `· URL visible: ${placesLink}`,
+    "",
+    "Bloque 2 — EMPRENDIMIENTO:",
+    "· ícono 🏪",
+    "· texto: Marca, viandas, pastelería por IG, WA o delivery",
+    "· botón/link verde chico: Sugerir emprendimiento",
+    `· URL visible: ${venturesLink}`,
+    "",
+    "Entre bloques: línea gris fina.",
+    "",
+    "Bullets chicos abajo:",
     "· Gratis, 2 minutos",
     "· Ayudás a otros celíacos",
-    placesCount
-      ? `· ${placesCount.toLocaleString("es-AR")} lugares ya mapeados`
-      : "· Sumá tu favorito al mapa",
+    statsLine ? `· Ya hay ${statsLine}` : "· Sumá al mapa de la comunidad",
     "",
-    `CTA verde: ${link}`,
-    `Footer: ${domain}`,
-  ].join("\n")
+    `Footer: ${domain} · Mapa para celíacos`,
+    "",
+    "NO logos de marcas. NO listado de nombres. Solo los 2 CTAs.",
+  ]
+    .filter(Boolean)
+    .join("\n")
 }
 
 /** Estilo A (lista limpia) + hero D (número grande + tag). */
@@ -234,6 +268,8 @@ export function buildImagePrompt(input: {
   includePhotos?: boolean
   milestone?: SocialMilestoneData
   placesCount?: number
+  venturesCount?: number
+  venturesLink?: string
 }): string {
   const {
     preset,
@@ -245,14 +281,23 @@ export function buildImagePrompt(input: {
     includePhotos = false,
     milestone,
     placesCount,
+    venturesCount,
+    venturesLink,
   } = input
 
   if (preset === "milestone" && milestone) {
     return buildMilestonePrompt(presetTitle, milestone, format, includeLogo)
   }
 
-  if (preset === "cta_suggest") {
-    return buildCtaPrompt(link, placesCount, format)
+  if (preset === "cta_suggest" && venturesLink) {
+    return buildCtaPrompt(
+      link,
+      venturesLink,
+      placesCount,
+      venturesCount,
+      format,
+      includeLogo
+    )
   }
 
   if (items.length === 0) {
@@ -277,6 +322,8 @@ export function buildFullChatGptPackage(input: {
   includePhotos?: boolean
   milestone?: SocialMilestoneData
   placesCount?: number
+  venturesCount?: number
+  venturesLink?: string
 }): { prompt: string; attachments: string; combined: string } {
   const slicedItems = input.items.slice(0, IMAGE_PROMPT_MAX_ITEMS)
   const prompt = buildImagePrompt({ ...input, items: slicedItems })

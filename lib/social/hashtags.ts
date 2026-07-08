@@ -25,7 +25,7 @@ export function buildHashtags(
     tags.push("#100SinGluten", "#GlutenFree")
   }
 
-  if (preset === "latest_ventures") {
+  if (preset === "latest_ventures" || preset === "cta_suggest") {
     tags.push("#EmprendimientosSinGluten")
   }
 

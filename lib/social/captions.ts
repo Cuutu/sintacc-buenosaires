@@ -113,36 +113,51 @@ function buildMilestoneCaption(
 
 function buildCtaCaption(
   platform: SocialPlatform,
-  link: string,
+  placesLink: string,
+  venturesLink: string,
   placesCount: number | undefined,
+  venturesCount: number | undefined,
   hashtags: string
 ): string {
+  const statsParts: string[] = []
+  if (placesCount && placesCount > 0) {
+    statsParts.push(`${placesCount.toLocaleString("es-AR")} lugares`)
+  }
+  if (venturesCount && venturesCount > 0) {
+    statsParts.push(`${venturesCount.toLocaleString("es-AR")} emprendimientos`)
+  }
   const countLine =
-    placesCount && placesCount > 0
-      ? `Ya hay ${placesCount.toLocaleString("es-AR")} lugares mapeados — ayudanos a sumar más.`
-      : "Ayudanos a mapear opciones sin gluten para toda la comunidad."
+    statsParts.length > 0
+      ? `Ya hay ${statsParts.join(" y ")} en Celimap — ayudanos a sumar más.`
+      : "Ayudanos a mapear lugares y emprendimientos sin gluten."
 
   if (platform === "tiktok") {
     return [
-      "¿Conocés un restaurante, café o panadería sin TACC?",
+      "¿Conocés un lugar o una marca sin TACC?",
       "",
-      "Sugerilo en Celimap en 2 minutos 🙌",
+      "🗺️ Local con dirección → sugerilo en Celimap",
+      "🏪 Marca, viandas, pastelería por IG/WA → sugerí el emprendimiento",
+      "",
       countLine,
       "",
-      "Link en bio 👇",
-      link,
+      "Links en bio 👇",
+      `Lugares: ${placesLink}`,
+      `Emprendimientos: ${venturesLink}`,
       "",
-      "#Celimap #SinGluten #Celiacos",
+      "#Celimap #SinGluten #Celiacos #EmprendimientosSinGluten",
     ].join("\n")
   }
 
   return [
-    "¿Conocés un lugar sin gluten que no está en el mapa?",
+    "¿Conocés un lugar o emprendimiento sin gluten?",
     "",
-    "Sugerilo en Celimap — es gratis y ayudás a otros celíacos 🙌",
+    "🗺️ Restaurante, café o panadería con local → sugerilo en el mapa",
+    "🏪 Marca, viandas, pastelería por encargo o delivery → sugerí el emprendimiento",
+    "",
     countLine,
     "",
-    `🔗 ${link}`,
+    `🔗 Lugares: ${placesLink}`,
+    `🔗 Emprendimientos: ${venturesLink}`,
     "",
     hashtags,
   ].join("\n")
@@ -157,15 +172,17 @@ export function buildCaption(input: {
   hashtags: string
   milestone?: SocialMilestoneData
   placesCount?: number
+  venturesCount?: number
+  venturesLink?: string
 }): string {
-  const { preset, platform, presetTitle, items, link, hashtags, milestone, placesCount } = input
+  const { preset, platform, presetTitle, items, link, hashtags, milestone, placesCount, venturesCount, venturesLink } = input
 
   if (preset === "milestone" && milestone) {
     return buildMilestoneCaption(milestone, platform, link, hashtags)
   }
 
-  if (preset === "cta_suggest") {
-    return buildCtaCaption(platform, link, placesCount, hashtags)
+  if (preset === "cta_suggest" && venturesLink) {
+    return buildCtaCaption(platform, link, venturesLink, placesCount, venturesCount, hashtags)
   }
 
   if (items.length === 0) {

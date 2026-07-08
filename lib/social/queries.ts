@@ -166,7 +166,7 @@ export function getPresetTitle(
     case "milestone":
       return "Hito comunidad Celimap"
     case "cta_suggest":
-      return "¿Conocés un lugar sin gluten?"
+      return "¿Conocés un lugar o emprendimiento sin gluten?"
     default:
       return "Contenido Celimap"
   }
@@ -214,7 +214,8 @@ export async function fetchSocialItems(options: SocialQueryOptions): Promise<{
   }
 
   if (preset === "cta_suggest") {
-    return { items: [], presetTitle: getPresetTitle(preset, 0) }
+    const milestone = await fetchMilestoneData()
+    return { items: [], presetTitle: getPresetTitle(preset, 0), milestone }
   }
 
   await connectDB()
@@ -274,6 +275,11 @@ export async function fetchSocialItems(options: SocialQueryOptions): Promise<{
       preset === "neighborhood" ? neighborhood : undefined
     ),
   }
+}
+
+export function getVenturesSuggestLink(baseUrl?: string): string {
+  const base = baseUrl ?? getBaseUrl()
+  return `${base}/sugerir-emprendimiento`
 }
 
 export function getPresetLink(preset: SocialPreset, baseUrl?: string): string {

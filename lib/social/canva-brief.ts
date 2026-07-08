@@ -42,21 +42,38 @@ function buildMilestoneBrief(milestone: SocialMilestoneData, link: string): stri
   ].join("\n")
 }
 
-function buildCtaBrief(link: string, placesCount?: number): string {
+function buildCtaBrief(
+  placesLink: string,
+  venturesLink: string,
+  placesCount?: number,
+  venturesCount?: number
+): string {
   const baseUrl = getBaseUrl()
+  const stats = [
+    placesCount ? `${placesCount.toLocaleString("es-AR")} lugares` : null,
+    venturesCount ? `${venturesCount.toLocaleString("es-AR")} emprendimientos` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+
   return [
     "═══ BRIEF CANVA ═══",
-    "Título sugerido: ¿Conocés un lugar sin gluten?",
-    "Subtítulo: Sugerilo en Celimap",
+    "Título: ¿Conocés un lugar o emprendimiento sin gluten?",
+    "Subtítulo: Sumá a la comunidad Celimap",
     "",
-    "TEXTO SLIDE:",
+    "BLOQUE 1 — Lugar con local (mapa):",
+    "· Restaurante, café, panadería con dirección",
+    `· CTA: ${placesLink}`,
+    "",
+    "BLOQUE 2 — Emprendimiento (sin local en mapa):",
+    "· Marca, viandas, pastelería por IG/WA/delivery",
+    `· CTA: ${venturesLink}`,
+    "",
+    "Bullets:",
     "• Gratis y en 2 minutos",
     "• Ayudás a otros celíacos",
-    placesCount
-      ? `• Ya hay ${placesCount.toLocaleString("es-AR")} lugares mapeados`
-      : "• Sumá tu lugar favorito al mapa",
+    stats ? `• Ya hay ${stats}` : "• Sumá al mapa de la comunidad",
     "",
-    `CTA: ${link}`,
     `Pie sugerido: ${baseUrl.replace(/^https?:\/\//, "")}`,
     "═══════════════════",
   ].join("\n")
@@ -69,16 +86,19 @@ export function buildCanvaBrief(input: {
   link: string
   milestone?: SocialMilestoneData
   placesCount?: number
+  venturesCount?: number
+  venturesLink?: string
 }): string {
-  const { preset, presetTitle, items, link, milestone, placesCount } = input
+  const { preset, presetTitle, items, link, milestone, placesCount, venturesCount, venturesLink } =
+    input
   const baseUrl = getBaseUrl()
 
   if (preset === "milestone" && milestone) {
     return buildMilestoneBrief(milestone, link)
   }
 
-  if (preset === "cta_suggest") {
-    return buildCtaBrief(link, placesCount)
+  if (preset === "cta_suggest" && venturesLink) {
+    return buildCtaBrief(link, venturesLink, placesCount, venturesCount)
   }
 
   if (items.length === 0) {

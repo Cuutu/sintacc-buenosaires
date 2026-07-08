@@ -7,6 +7,7 @@ import {
   fetchMilestoneData,
   fetchSocialItems,
   getPresetLink,
+  getVenturesSuggestLink,
 } from "@/lib/social/queries"
 import type {
   SocialPlatform,
@@ -38,12 +39,16 @@ export async function buildSocialPreview(input: {
 
   const { items, presetTitle, milestone } = await fetchSocialItems(queryOptions)
   const link = getPresetLink(input.preset)
+  const venturesLink =
+    input.preset === "cta_suggest" ? getVenturesSuggestLink() : undefined
   const hashtags = buildHashtags(input.preset, items, input.neighborhood)
 
   let placesCount: number | undefined
+  let venturesCount: number | undefined
   if (input.preset === "cta_suggest") {
     const stats = milestone ?? (await fetchMilestoneData())
     placesCount = stats.placesCount
+    venturesCount = stats.venturesCount
   }
 
   const caption = buildCaption({
@@ -55,6 +60,8 @@ export async function buildSocialPreview(input: {
     hashtags,
     milestone,
     placesCount,
+    venturesCount,
+    venturesLink,
   })
 
   const canvaBrief = buildCanvaBrief({
@@ -64,6 +71,8 @@ export async function buildSocialPreview(input: {
     link,
     milestone,
     placesCount,
+    venturesCount,
+    venturesLink,
   })
 
   const imageFormat = input.imageFormat ?? "story"
@@ -78,6 +87,8 @@ export async function buildSocialPreview(input: {
       includePhotos: input.includePhotos ?? false,
       milestone,
       placesCount,
+      venturesCount,
+      venturesLink,
     })
 
   return {
@@ -90,6 +101,7 @@ export async function buildSocialPreview(input: {
     attachmentInstructions,
     imageFormat,
     link,
+    venturesLink,
     hashtags,
     items,
     milestone,

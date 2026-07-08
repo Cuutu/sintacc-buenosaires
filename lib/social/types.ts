@@ -55,6 +55,7 @@ export type SocialPreviewResult = {
   attachmentInstructions: string
   imageFormat: SocialImageFormat
   link: string
+  venturesLink?: string
   hashtags: string
   items: SocialContentItem[]
   milestone?: SocialMilestoneData
