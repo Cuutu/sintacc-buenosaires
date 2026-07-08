@@ -5,8 +5,8 @@ import { getBaseUrl } from "@/lib/base-url"
 
 const GREEN = "#10b981"
 const BG = "#0a0a0a"
-const MUTED = "#d4d4d8"
-const WHITE = "#ffffff"
+const SUBTLE = "#a1a1aa"
+const WHITE = "#fafafa"
 
 const col = {
   display: "flex" as const,
@@ -27,7 +27,7 @@ export type StoryMilestoneProps = {
   milestone: SocialMilestoneData
 }
 
-function Shell({
+function MilestoneShell({
   format,
   logoUrl,
   children,
@@ -42,8 +42,6 @@ function Shell({
   const isStory = format === "story"
   const width = 1080
   const height = isStory ? 1920 : 1080
-  const padX = isStory ? 72 : 56
-  const padY = isStory ? 96 : 56
 
   return (
     <div
@@ -55,68 +53,49 @@ function Shell({
         fontFamily: "DM Sans",
         color: WHITE,
         alignItems: "center",
+        padding: isStory ? "88px 72px 64px" : "56px 56px 40px",
       }}
     >
+      {logoUrl ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            marginBottom: isStory ? 48 : 28,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt=""
+            width={isStory ? 280 : 200}
+            height={isStory ? 78 : 56}
+            style={{ objectFit: "contain" }}
+          />
+        </div>
+      ) : null}
       <div
         style={{
           ...col,
           flex: 1,
           width: "100%",
-          padding: `${padY}px ${padX}px`,
           alignItems: "center",
-          justifyContent: "flex-start",
+          justifyContent: "center",
         }}
       >
-        {logoUrl ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-              marginBottom: isStory ? 64 : 36,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={logoUrl}
-              alt=""
-              width={isStory ? 300 : 220}
-              height={isStory ? 84 : 62}
-              style={{ objectFit: "contain" }}
-            />
-          </div>
-        ) : null}
-        <div
-          style={{
-            ...col,
-            flex: 1,
-            width: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {children}
-        </div>
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            width: "100%",
-            marginTop: isStory ? 48 : 28,
-          }}
-        >
-          <div
-            style={{
-              ...col,
-              alignItems: "center",
-              fontSize: isStory ? 22 : 18,
-              color: MUTED,
-              textAlign: "center",
-            }}
-          >
-            {footerText ?? domain}
-          </div>
-        </div>
+        {children}
+      </div>
+      <div
+        style={{
+          ...col,
+          alignItems: "center",
+          fontSize: isStory ? 22 : 18,
+          color: SUBTLE,
+          marginTop: isStory ? 32 : 20,
+        }}
+      >
+        {footerText ?? domain}
       </div>
     </div>
   )
@@ -153,9 +132,8 @@ export function buildMilestoneTemplateProps(input: {
 }
 
 /**
- * CTA idéntico a la referencia aprobada:
- * centrado, headline en 3 líneas, 2 caminos + línea verde, proof, dominio.
- * Fondo negro sólido — SIN foto.
+ * CTA — réplica de referencia editorial centrada, fondo negro sólido.
+ * Layout en 3 zonas (hero / caminos / pie) para llenar el story sin huecos.
  */
 export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: StoryCtaProps) {
   const isStory = format === "story"
@@ -167,189 +145,201 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
     .filter(Boolean)
     .join(" · ")
 
+  const width = 1080
+  const height = isStory ? 1920 : 1080
+  const padX = 72
+
   return (
-    <Shell format={format} logoUrl={logoUrl} footerText={domain}>
-      {/* Tag */}
-      <div
-        style={{
-          ...col,
-          alignItems: "center",
-          fontSize: isStory ? 22 : 18,
-          fontWeight: 700,
-          color: GREEN,
-          letterSpacing: "0.14em",
-          marginBottom: isStory ? 40 : 24,
-        }}
-      >
-        SUMÁ AL MAPA
-      </div>
-
-      {/* Headline — 3 líneas exactas como la referencia */}
-      <div
-        style={{
-          ...col,
-          alignItems: "center",
-          marginBottom: isStory ? 28 : 18,
-        }}
-      >
+    <div
+      style={{
+        ...col,
+        width,
+        height,
+        backgroundColor: BG,
+        fontFamily: "DM Sans",
+        color: WHITE,
+        padding: isStory ? `100px ${padX}px 88px` : `56px ${padX}px 48px`,
+      }}
+    >
+      {/* Logo */}
+      {logoUrl ? (
         <div
           style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 72 : 52,
-            fontWeight: 700,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            textAlign: "center",
-            color: WHITE,
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            marginBottom: isStory ? 72 : 40,
           }}
         >
-          ¿Conocés
-        </div>
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 72 : 52,
-            fontWeight: 700,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            textAlign: "center",
-            color: WHITE,
-          }}
-        >
-          algo sin
-        </div>
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 72 : 52,
-            fontWeight: 700,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            textAlign: "center",
-            color: WHITE,
-          }}
-        >
-          gluten?
-        </div>
-      </div>
-
-      {/* Sub */}
-      <div
-        style={{
-          ...col,
-          alignItems: "center",
-          fontSize: isStory ? 28 : 22,
-          fontWeight: 400,
-          color: WHITE,
-          textAlign: "center",
-          marginBottom: isStory ? 72 : 40,
-        }}
-      >
-        Ayudá a otros celíacos en 2 minutos
-      </div>
-
-      {/* Camino 1 */}
-      <div
-        style={{
-          ...col,
-          alignItems: "center",
-          width: "100%",
-          marginBottom: isStory ? 36 : 24,
-        }}
-      >
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 36 : 28,
-            fontWeight: 700,
-            color: WHITE,
-            textAlign: "center",
-            marginBottom: 10,
-          }}
-        >
-          Lugar con local
-        </div>
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 26 : 20,
-            fontWeight: 400,
-            color: MUTED,
-            textAlign: "center",
-          }}
-        >
-          Resto · café · panadería
-        </div>
-      </div>
-
-      {/* Línea verde fina centrada */}
-      <div
-        style={{
-          display: "flex",
-          width: isStory ? 160 : 120,
-          height: 2,
-          backgroundColor: GREEN,
-          marginBottom: isStory ? 36 : 24,
-        }}
-      />
-
-      {/* Camino 2 */}
-      <div
-        style={{
-          ...col,
-          alignItems: "center",
-          width: "100%",
-          marginBottom: isStory ? 64 : 36,
-        }}
-      >
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 36 : 28,
-            fontWeight: 700,
-            color: WHITE,
-            textAlign: "center",
-            marginBottom: 10,
-          }}
-        >
-          Emprendimiento
-        </div>
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 26 : 20,
-            fontWeight: 400,
-            color: MUTED,
-            textAlign: "center",
-          }}
-        >
-          Marca · delivery · IG
-        </div>
-      </div>
-
-      {/* Proof */}
-      {proof ? (
-        <div
-          style={{
-            ...col,
-            alignItems: "center",
-            fontSize: isStory ? 24 : 18,
-            fontWeight: 400,
-            color: MUTED,
-            textAlign: "center",
-          }}
-        >
-          {`${proof} ya en Celimap`}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt=""
+            width={isStory ? 320 : 220}
+            height={isStory ? 90 : 62}
+            style={{ objectFit: "contain" }}
+          />
         </div>
       ) : null}
-    </Shell>
+
+      {/* Cuerpo — ocupa el alto restante, distribuido */}
+      <div
+        style={{
+          ...col,
+          flex: 1,
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Zona hero */}
+        <div style={{ ...col, alignItems: "center", width: "100%" }}>
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 24 : 18,
+              fontWeight: 700,
+              color: GREEN,
+              letterSpacing: "0.2em",
+              marginBottom: isStory ? 44 : 28,
+            }}
+          >
+            SUMÁ AL MAPA
+          </div>
+
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 82 : 56,
+              fontWeight: 700,
+              lineHeight: 1.02,
+              letterSpacing: "-0.025em",
+              textAlign: "center",
+              marginBottom: isStory ? 32 : 20,
+            }}
+          >
+            <div style={{ ...col, alignItems: "center" }}>¿Conocés</div>
+            <div style={{ ...col, alignItems: "center" }}>algo sin</div>
+            <div style={{ ...col, alignItems: "center" }}>gluten?</div>
+          </div>
+
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 30 : 22,
+              fontWeight: 400,
+              color: WHITE,
+              textAlign: "center",
+              lineHeight: 1.35,
+            }}
+          >
+            Ayudá a otros celíacos en 2 minutos
+          </div>
+        </div>
+
+        {/* Zona caminos */}
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            width: "100%",
+            maxWidth: 720,
+          }}
+        >
+          <div style={{ ...col, alignItems: "center", width: "100%", marginBottom: isStory ? 40 : 28 }}>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 40 : 30,
+                fontWeight: 700,
+                marginBottom: 12,
+              }}
+            >
+              Lugar con local
+            </div>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 28 : 22,
+                fontWeight: 400,
+                color: SUBTLE,
+              }}
+            >
+              Resto · café · panadería
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              width: isStory ? 140 : 100,
+              height: 2,
+              backgroundColor: GREEN,
+              marginBottom: isStory ? 40 : 28,
+            }}
+          />
+
+          <div style={{ ...col, alignItems: "center", width: "100%" }}>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 40 : 30,
+                fontWeight: 700,
+                marginBottom: 12,
+              }}
+            >
+              Emprendimiento
+            </div>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 28 : 22,
+                fontWeight: 400,
+                color: SUBTLE,
+              }}
+            >
+              Marca · delivery · IG
+            </div>
+          </div>
+        </div>
+
+        {/* Zona pie — proof + dominio juntos */}
+        <div style={{ ...col, alignItems: "center", width: "100%", gap: isStory ? 20 : 12 }}>
+          {proof ? (
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 26 : 20,
+                fontWeight: 400,
+                color: SUBTLE,
+                textAlign: "center",
+              }}
+            >
+              {`${proof} ya en Celimap`}
+            </div>
+          ) : null}
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 24 : 18,
+              fontWeight: 400,
+              color: SUBTLE,
+            }}
+          >
+            {domain}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -369,7 +359,7 @@ export function StoryMilestoneImage({
   ]
 
   return (
-    <Shell format={format} logoUrl={logoUrl} footerText={`${domain} · Mapa para celíacos`}>
+    <MilestoneShell format={format} logoUrl={logoUrl} footerText={`${domain} · Mapa para celíacos`}>
       <div
         style={{
           ...col,
@@ -417,7 +407,7 @@ export function StoryMilestoneImage({
           ...col,
           alignItems: "center",
           fontSize: 24,
-          color: MUTED,
+          color: SUBTLE,
           textAlign: "center",
           marginBottom: 56,
         }}
@@ -450,19 +440,12 @@ export function StoryMilestoneImage({
             >
               {stat.value}
             </div>
-            <div
-              style={{
-                ...col,
-                alignItems: "center",
-                fontSize: 22,
-                color: MUTED,
-              }}
-            >
+            <div style={{ ...col, alignItems: "center", fontSize: 22, color: SUBTLE }}>
               {stat.label}
             </div>
           </div>
         ))}
       </div>
-    </Shell>
+    </MilestoneShell>
   )
 }
