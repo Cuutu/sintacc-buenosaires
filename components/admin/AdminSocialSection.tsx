@@ -15,7 +15,18 @@ import type {
   SocialPreviewResult,
 } from "@/lib/social/types"
 import { IMAGE_PROMPT_MAX_ITEMS } from "@/lib/social/image-prompt"
-import { Copy, ExternalLink, ImageIcon, Loader2, Sparkles } from "lucide-react"
+import { LIST_PRESETS } from "@/lib/social/preset-engines"
+import { Copy, ExternalLink, ImageIcon, Loader2, Sparkles, ChevronDown, Download } from "lucide-react"
+
+type GeneratedImageResult = {
+  engine: "template" | "openrouter"
+  imageUrl: string
+  cost?: number
+  model?: string
+  caption: string
+  imagePrompt: string
+  presetTitle: string
+}
 
 const PRESETS: Array<{
   id: SocialPreset
@@ -83,8 +94,12 @@ export function AdminSocialSection() {
   const [attachmentInstructions, setAttachmentInstructions] = useState("")
   const [loadingItems, setLoadingItems] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [generatingImage, setGeneratingImage] = useState(false)
+  const [imageResult, setImageResult] = useState<GeneratedImageResult | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const selectedPreset = PRESETS.find((p) => p.id === activePreset)!
+  const usesTemplate = LIST_PRESETS.includes(activePreset)
 
   const loadItems = useCallback(async () => {
     if (activePreset === "milestone" || activePreset === "cta_suggest") {
@@ -117,6 +132,7 @@ export function AdminSocialSection() {
       setItems(data.items || [])
       setExcludedIds(new Set())
       setPreview(null)
+      setImageResult(null)
       setCaption("")
       setImagePrompt("")
       setAttachmentInstructions("")
@@ -139,9 +155,53 @@ export function AdminSocialSection() {
       return next
     })
     setPreview(null)
+    setImageResult(null)
   }
 
   const includedItems = items.filter((item) => !excludedIds.has(item.id))
+
+  const buildPayload = () => ({
+    preset: activePreset,
+    platform,
+    limit,
+    days,
+    communityOnly,
+    neighborhood: activePreset === "neighborhood" ? neighborhood.trim() : undefined,
+    excludeIds: Array.from(excludedIds),
+    imageFormat,
+    includeLogo,
+    includePhotos,
+  })
+
+  const handleGenerateImage = async () => {
+    if (activePreset === "neighborhood" && !neighborhood.trim()) {
+      toast.error("Seleccioná un barrio")
+      return
+    }
+
+    setGeneratingImage(true)
+    setImageResult(null)
+    try {
+      const res = await fetch("/api/admin/social/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al generar imagen")
+
+      setImageResult(data)
+      setCaption(data.caption || "")
+      setImagePrompt(data.imagePrompt || "")
+      toast.success(
+        data.engine === "template" ? "Imagen generada (plantilla)" : "Imagen generada (OpenRouter)"
+      )
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al generar imagen")
+    } finally {
+      setGeneratingImage(false)
+    }
+  }
 
   const handleGenerate = async () => {
     if (activePreset === "neighborhood" && !neighborhood.trim()) {
@@ -154,19 +214,7 @@ export function AdminSocialSection() {
       const res = await fetch("/api/admin/social/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preset: activePreset,
-          platform,
-          limit,
-          days,
-          communityOnly,
-          neighborhood:
-            activePreset === "neighborhood" ? neighborhood.trim() : undefined,
-          excludeIds: Array.from(excludedIds),
-          imageFormat,
-          includeLogo,
-          includePhotos,
-        }),
+        body: JSON.stringify(buildPayload()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al generar")
@@ -195,8 +243,8 @@ export function AdminSocialSection() {
           Redes sociales
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Prompt directo estilo A+D para ChatGPT: lista limpia + hero con número. Máx{" "}
-          {IMAGE_PROMPT_MAX_ITEMS} ítems por imagen.
+          Generá imágenes desde acá: listados con plantilla A+D (texto exacto) o CTA/hitos con
+          OpenRouter. Máx {IMAGE_PROMPT_MAX_ITEMS} ítems por historia.
         </p>
       </div>
 
@@ -438,20 +486,178 @@ export function AdminSocialSection() {
             </p>
           )}
 
-        <Button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="w-full sm:w-auto gap-2"
-        >
-          {generating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          Generar caption + prompt imagen
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            onClick={handleGenerateImage}
+            disabled={generatingImage || generating}
+            className="w-full sm:w-auto gap-2"
+          >
+            {generatingImage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="h-4 w-4" />
+            )}
+            {generatingImage
+              ? usesTemplate
+                ? "Renderizando plantilla…"
+                : "Generando con OpenRouter…"
+              : "Generar imagen"}
+          </Button>
+          <Button
+            onClick={handleGenerate}
+            disabled={generating || generatingImage}
+            variant="outline"
+            className="w-full sm:w-auto gap-2"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Solo caption + prompt
+          </Button>
+          <span className="text-[10px] text-muted-foreground self-center">
+            Motor: {usesTemplate ? "Plantilla" : "OpenRouter"}
+          </span>
+        </div>
 
-        {preview && (
+        {imageResult && (
+          <div className="space-y-3 pt-2 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${
+                  imageResult.engine === "template"
+                    ? "border-primary/30 text-primary bg-primary/10"
+                    : "border-amber-500/30 text-amber-400 bg-amber-500/10"
+                }`}
+              >
+                {imageResult.engine === "template" ? "Plantilla A+D" : "OpenRouter"}
+                {imageResult.cost != null ? ` · $${imageResult.cost.toFixed(2)}` : ""}
+              </span>
+              {imageResult.model && (
+                <span className="text-[10px] text-muted-foreground">{imageResult.model}</span>
+              )}
+            </div>
+            <div className="flex justify-center rounded-xl border border-border bg-black/40 p-4">
+              <a href={imageResult.imageUrl} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageResult.imageUrl}
+                  alt={imageResult.presetTitle}
+                  className="max-h-[480px] w-auto rounded-lg"
+                />
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" asChild>
+                <a href={imageResult.imageUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3 w-3" />
+                  Abrir imagen
+                </a>
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" asChild>
+                <a href={imageResult.imageUrl} download target="_blank" rel="noopener noreferrer">
+                  <Download className="h-3 w-3" />
+                  Descargar
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1"
+                onClick={handleGenerateImage}
+                disabled={generatingImage}
+              >
+                Regenerar
+              </Button>
+            </div>
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-xs font-bold">Caption para publicar</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => copyText(caption, "Caption")}
+                >
+                  <Copy className="h-3 w-3" />
+                  Copiar
+                </Button>
+              </div>
+              <Textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                className="min-h-[120px] text-sm font-mono"
+              />
+            </div>
+          </div>
+        )}
+
+        {(preview || imageResult) && (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+              />
+              Prompt manual (fallback ChatGPT)
+            </button>
+            {showAdvanced && (
+              <div className="space-y-4 pl-1 border-l-2 border-border ml-1">
+                <div className="rounded-lg border border-border/60 bg-card/50 p-3 text-xs text-muted-foreground">
+                  {imageResult
+                    ? "Solo si querés editar en ChatGPT. La imagen de arriba ya se generó desde Celimap."
+                    : "Copiá el prompt y usalo en ChatGPT si preferís generar la imagen afuera."}
+                </div>
+                {attachmentInstructions ? (
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-xs font-bold">Adjuntos</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => copyText(attachmentInstructions, "Adjuntos")}
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copiar
+                      </Button>
+                    </div>
+                    <Textarea
+                      value={attachmentInstructions}
+                      onChange={(e) => setAttachmentInstructions(e.target.value)}
+                      className="min-h-[80px] text-sm font-mono"
+                    />
+                  </div>
+                ) : null}
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-bold">Prompt imagen</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => copyText(combinedPrompt, "Prompt")}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copiar
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    className="min-h-[200px] text-sm font-mono"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {preview && !imageResult && (
           <div className="space-y-4 pt-2 border-t border-border">
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground space-y-1.5">
               <p className="font-semibold text-foreground flex items-center gap-1.5">

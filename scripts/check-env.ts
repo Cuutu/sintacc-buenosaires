@@ -19,6 +19,8 @@ const requiredEnvVars = [
 const optionalEnvVars = [
   "ADMIN_EMAILS",
   "FEATURES",
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_IMAGE_MODEL",
 ]
 
 function checkEnv() {
@@ -48,10 +50,18 @@ function checkEnv() {
   console.log("\n📋 Variables opcionales:")
   optionalEnvVars.forEach((varName) => {
     if (process.env[varName]) {
-      console.log(`✅ ${varName}: ${process.env[varName]}`)
+      const value = process.env[varName] || ""
+      const masked =
+        varName.includes("SECRET") || varName.includes("KEY")
+          ? "*".repeat(Math.min(value.length, 20))
+          : value.substring(0, 50)
+      console.log(`✅ ${varName}: ${masked}`)
     } else {
       console.log(`⚠️  ${varName}: No configurada (opcional)`)
       warnings.push(varName)
+      if (varName === "OPENROUTER_API_KEY") {
+        console.log("   ℹ️  Sin OpenRouter: listados con plantilla OK; CTA/hitos requieren la key.")
+      }
     }
   })
 

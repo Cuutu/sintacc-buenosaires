@@ -26,7 +26,7 @@ const FORMAT_SPECS: Record<
   },
 }
 
-function getHeroTag(preset: SocialPreset): string {
+export function getHeroTag(preset: SocialPreset): string {
   switch (preset) {
     case "latest_ventures":
       return "NUEVOS EMPRENDIMIENTOS"
@@ -39,7 +39,7 @@ function getHeroTag(preset: SocialPreset): string {
   }
 }
 
-function getHeroLine(preset: SocialPreset, count: number, items: SocialContentItem[]): string {
+export function getHeroLine(preset: SocialPreset, count: number, items: SocialContentItem[]): string {
   const n = String(count)
   switch (preset) {
     case "latest_ventures":
@@ -53,7 +53,7 @@ function getHeroLine(preset: SocialPreset, count: number, items: SocialContentIt
   }
 }
 
-function getContextLine(preset: SocialPreset, items: SocialContentItem[]): string {
+export function getContextLine(preset: SocialPreset, items: SocialContentItem[]): string {
   if (preset === "neighborhood" && items[0]?.subtitle) {
     return `${items[0].subtitle} · Celimap`
   }
@@ -63,7 +63,7 @@ function getContextLine(preset: SocialPreset, items: SocialContentItem[]): strin
   return "Buenos Aires · comunidad celíaca"
 }
 
-function formatSafetyShort(item: SocialContentItem): string {
+export function formatSafetyShort(item: SocialContentItem): string {
   const label = item.safetyLabel.toLowerCase()
   if (label.includes("100%") || label.includes("100 %")) {
     return `${item.safetyDot} 100% sin gluten`
