@@ -32,6 +32,12 @@ const nextConfig = {
   env: {
     FEATURES: process.env.FEATURES || 'phase1',
   },
+  // Incluir fuentes Satori en el bundle serverless (generate-image)
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/admin/social/generate-image": ["./assets/fonts/**/*"],
+    },
+  },
 }
 
 module.exports = withPWA(nextConfig)

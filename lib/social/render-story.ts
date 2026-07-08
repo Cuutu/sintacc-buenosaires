@@ -12,13 +12,8 @@ import {
   buildMilestoneTemplateProps,
 } from "@/lib/social/story-campaign"
 
-const FONT_DIR = path.join(
-  process.cwd(),
-  "node_modules",
-  "@fontsource",
-  "dm-sans",
-  "files"
-)
+/** Fuentes en repo (no node_modules) para que Vercel las tracee al serverless. */
+const FONT_DIR = path.join(process.cwd(), "assets", "fonts")
 
 async function loadFonts() {
   const [regular, semibold, bold] = await Promise.all([
