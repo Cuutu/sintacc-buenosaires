@@ -14,6 +14,11 @@ const BG = "#0a0a0a"
 const MUTED = "#a1a1aa"
 const BORDER = "#27272a"
 
+const col = {
+  display: "flex" as const,
+  flexDirection: "column" as const,
+}
+
 export type StoryTemplateProps = {
   preset: SocialPreset
   items: SocialContentItem[]
@@ -52,10 +57,9 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
   return (
     <div
       style={{
+        ...col,
         width,
         height,
-        display: "flex",
-        flexDirection: "column",
         backgroundColor: BG,
         fontFamily: "DM Sans",
         color: "#fafafa",
@@ -63,21 +67,33 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
     >
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
+          ...col,
           flex: 1,
           padding: `${padTop}px ${padX}px 48px`,
         }}
       >
         {logoUrl ? (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 40,
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoUrl} alt="" width={200} height={56} style={{ objectFit: "contain" }} />
+            <img
+              src={logoUrl}
+              alt=""
+              width={200}
+              height={56}
+              style={{ objectFit: "contain" }}
+            />
           </div>
         ) : null}
 
         <div
           style={{
+            ...col,
             fontSize: 22,
             fontWeight: 600,
             color: GREEN,
@@ -88,9 +104,17 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
           {heroTag}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 20, gap: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: 20,
+            gap: 24,
+          }}
+        >
           <div
             style={{
+              ...col,
               fontSize: isStory ? 120 : 96,
               fontWeight: 700,
               color: GREEN,
@@ -99,9 +123,10 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
           >
             {count}
           </div>
-          <div style={{ width: 2, height: 72, backgroundColor: "#fafafa" }} />
+          <div style={{ display: "flex", width: 2, height: 72, backgroundColor: "#fafafa" }} />
           <div
             style={{
+              ...col,
               fontSize: isStory ? 36 : 30,
               fontWeight: 700,
               lineHeight: 1.2,
@@ -112,15 +137,16 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
           </div>
         </div>
 
-        <div style={{ fontSize: 24, color: MUTED, marginBottom: 40 }}>{contextLine}</div>
+        <div style={{ ...col, fontSize: 24, color: MUTED, marginBottom: 40 }}>
+          {contextLine}
+        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ ...col, flex: 1 }}>
           {items.map((item, index) => (
             <div
               key={item.id}
               style={{
-                display: "flex",
-                flexDirection: "column",
+                ...col,
                 paddingTop: index === 0 ? 0 : 28,
                 paddingBottom: 28,
                 borderBottom: index < items.length - 1 ? `1px solid ${BORDER}` : "none",
@@ -129,6 +155,7 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
               <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                 <div
                   style={{
+                    ...col,
                     fontSize: 32,
                     fontWeight: 700,
                     color: GREEN,
@@ -137,12 +164,23 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
                 >
                   {index + 1}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
-                  <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2 }}>{item.name}</div>
-                  <div style={{ fontSize: 22, color: MUTED }}>
-                    {item.subtitle} · {item.typeLabel} {item.typeEmoji}
+                <div style={{ ...col, flex: 1, gap: 8 }}>
+                  <div
+                    style={{
+                      ...col,
+                      fontSize: 32,
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {item.name}
                   </div>
-                  <div style={{ fontSize: 20, color: MUTED }}>{formatSafetyShort(item)}</div>
+                  <div style={{ ...col, fontSize: 22, color: MUTED }}>
+                    {`${item.subtitle} · ${item.typeLabel} ${item.typeEmoji}`}
+                  </div>
+                  <div style={{ ...col, fontSize: 20, color: MUTED }}>
+                    {formatSafetyShort(item)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -152,16 +190,16 @@ export function StoryListImage({ preset, items, format, logoUrl }: StoryTemplate
 
       <div
         style={{
-          borderTop: `2px solid ${GREEN}`,
-          padding: "28px 72px",
           display: "flex",
           justifyContent: "center",
+          borderTop: `2px solid ${GREEN}`,
+          padding: "28px 72px",
           fontSize: 22,
           color: GREEN,
           fontWeight: 600,
         }}
       >
-        {domain} · Mapa para celíacos
+        {`${domain} · Mapa para celíacos`}
       </div>
     </div>
   )

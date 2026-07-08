@@ -8,6 +8,11 @@ const BG = "#0a0a0a"
 const MUTED = "#a1a1aa"
 const BORDER = "#27272a"
 
+const col = {
+  display: "flex" as const,
+  flexDirection: "column" as const,
+}
+
 export type StoryCtaProps = {
   format: ImageFormat
   logoUrl?: string
@@ -41,10 +46,9 @@ function Shell({
   return (
     <div
       style={{
+        ...col,
         width,
         height,
-        display: "flex",
-        flexDirection: "column",
         backgroundColor: BG,
         fontFamily: "DM Sans",
         color: "#fafafa",
@@ -52,32 +56,43 @@ function Shell({
     >
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
+          ...col,
           flex: 1,
           padding: `${padTop}px ${padX}px 48px`,
         }}
       >
         {logoUrl ? (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 40,
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoUrl} alt="" width={200} height={56} style={{ objectFit: "contain" }} />
+            <img
+              src={logoUrl}
+              alt=""
+              width={200}
+              height={56}
+              style={{ objectFit: "contain" }}
+            />
           </div>
         ) : null}
-        {children}
+        <div style={{ ...col, flex: 1 }}>{children}</div>
       </div>
       <div
         style={{
-          borderTop: `2px solid ${GREEN}`,
-          padding: "28px 72px",
           display: "flex",
           justifyContent: "center",
+          borderTop: `2px solid ${GREEN}`,
+          padding: "28px 72px",
           fontSize: 22,
           color: GREEN,
           fontWeight: 600,
         }}
       >
-        {domain} · Mapa para celíacos
+        {`${domain} · Mapa para celíacos`}
       </div>
     </div>
   )
@@ -113,7 +128,6 @@ export function buildMilestoneTemplateProps(input: {
   }
 }
 
-/** CTA sugerir — mismo A+D, sin número inventado, 2 filas tipográficas. */
 export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: StoryCtaProps) {
   const isStory = format === "story"
   const proof = [
@@ -132,6 +146,7 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
     <Shell format={format} logoUrl={logoUrl}>
       <div
         style={{
+          ...col,
           fontSize: 22,
           fontWeight: 600,
           color: GREEN,
@@ -144,6 +159,7 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
 
       <div
         style={{
+          ...col,
           fontSize: isStory ? 56 : 44,
           fontWeight: 700,
           lineHeight: 1.15,
@@ -154,17 +170,23 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
         ¿Conocés algo sin gluten?
       </div>
 
-      <div style={{ fontSize: 24, color: MUTED, marginBottom: 56 }}>
+      <div
+        style={{
+          ...col,
+          fontSize: 24,
+          color: MUTED,
+          marginBottom: 56,
+        }}
+      >
         Ayudá a otros celíacos en 2 minutos
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <div style={{ ...col, flex: 1 }}>
         {rows.map((row, index) => (
           <div
             key={row.title}
             style={{
-              display: "flex",
-              flexDirection: "column",
+              ...col,
               paddingTop: index === 0 ? 0 : 36,
               paddingBottom: 36,
               borderBottom: index < rows.length - 1 ? `1px solid ${BORDER}` : "none",
@@ -173,6 +195,7 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
             <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
               <div
                 style={{
+                  ...col,
                   fontSize: 32,
                   fontWeight: 700,
                   color: GREEN,
@@ -181,9 +204,18 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
               >
                 {index + 1}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
-                <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}>{row.title}</div>
-                <div style={{ fontSize: 24, color: MUTED }}>{row.sub}</div>
+              <div style={{ ...col, flex: 1, gap: 8 }}>
+                <div
+                  style={{
+                    ...col,
+                    fontSize: 36,
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {row.title}
+                </div>
+                <div style={{ ...col, fontSize: 24, color: MUTED }}>{row.sub}</div>
               </div>
             </div>
           </div>
@@ -191,13 +223,12 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
       </div>
 
       {proof ? (
-        <div style={{ fontSize: 22, color: MUTED, marginTop: 24 }}>{proof}</div>
+        <div style={{ ...col, fontSize: 22, color: MUTED, marginTop: 24 }}>{proof}</div>
       ) : null}
     </Shell>
   )
 }
 
-/** Hito — hero D con número real de lugares. */
 export function StoryMilestoneImage({
   format,
   logoUrl,
@@ -216,6 +247,7 @@ export function StoryMilestoneImage({
     <Shell format={format} logoUrl={logoUrl}>
       <div
         style={{
+          ...col,
           fontSize: 22,
           fontWeight: 600,
           color: GREEN,
@@ -226,9 +258,17 @@ export function StoryMilestoneImage({
         LA COMUNIDAD CRECE
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 20, gap: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: 20,
+          gap: 24,
+        }}
+      >
         <div
           style={{
+            ...col,
             fontSize: isStory ? 120 : 96,
             fontWeight: 700,
             color: GREEN,
@@ -237,9 +277,10 @@ export function StoryMilestoneImage({
         >
           {places}
         </div>
-        <div style={{ width: 2, height: 72, backgroundColor: "#fafafa" }} />
+        <div style={{ display: "flex", width: 2, height: 72, backgroundColor: "#fafafa" }} />
         <div
           style={{
+            ...col,
             fontSize: isStory ? 36 : 30,
             fontWeight: 700,
             lineHeight: 1.2,
@@ -250,23 +291,26 @@ export function StoryMilestoneImage({
         </div>
       </div>
 
-      <div style={{ fontSize: 24, color: MUTED, marginBottom: 48 }}>{presetTitle}</div>
+      <div style={{ ...col, fontSize: 24, color: MUTED, marginBottom: 48 }}>
+        {presetTitle}
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <div style={{ ...col, flex: 1 }}>
         {stats.map((stat, index) => (
           <div
             key={stat.label}
             style={{
-              display: "flex",
-              flexDirection: "column",
+              ...col,
               paddingTop: index === 0 ? 0 : 28,
               paddingBottom: 28,
               borderBottom: index < stats.length - 1 ? `1px solid ${BORDER}` : "none",
             }}
           >
             <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
-              <div style={{ fontSize: 40, fontWeight: 700, color: GREEN }}>{stat.value}</div>
-              <div style={{ fontSize: 26, color: MUTED }}>{stat.label}</div>
+              <div style={{ ...col, fontSize: 40, fontWeight: 700, color: GREEN }}>
+                {stat.value}
+              </div>
+              <div style={{ ...col, fontSize: 26, color: MUTED }}>{stat.label}</div>
             </div>
           </div>
         ))}
