@@ -131,33 +131,14 @@ function buildMilestonePrompt(
   const ventures = milestone.venturesCount.toLocaleString("es-AR")
 
   return [
-    `Instagram ${spec.label} ${spec.ratio} ${spec.size}. UNA sola imagen.`,
-    "",
-    "MISMO SISTEMA VISUAL QUE LOS LISTADOS CELIMAP (estilo A+D):",
-    "· Fondo negro sólido #0a0a0a — plano, sin textura, sin foto, sin ilustración",
-    "· Verde #10b981 + blanco + gris #a1a1aa",
-    "· Tipografía sans-serif limpia, minimal editorial",
-    "· Sin cajas, cards, botones, gradientes, 3D, clipart, emojis",
-    includeLogo ? "· Logo Celimap adjunto arriba centrado, chico" : "",
-    "",
-    "COMPOSICIÓN:",
-    '1. Tag verde mayúsculas chico: "LA COMUNIDAD CRECE"',
-    "",
-    "2. Hero tipo D (igual que listados):",
-    `   · Número "${places}" ENORME verde a la izquierda`,
-    "   · Línea vertical blanca fina",
-    '   · Texto blanco bold a la derecha: "lugares en el mapa"',
-    "",
-    `3. Subtítulo gris: "${presetTitle}"`,
-    "",
-    "4. Tres líneas tipográficas debajo (SIN bullets, SIN íconos), separadas por aire:",
-    `   ${reviews} reseñas`,
-    `   ${ventures} emprendimientos`,
-    `   ${milestone.newPlacesThisMonth} nuevos este mes`,
-    "",
-    `5. Footer: línea verde fina + "${domain} · Mapa para celíacos"`,
-    "",
-    "PROHIBIDO: foto de fondo, comida, mesa, manos, texturas, botones UI, URLs.",
+    `Fallback ChatGPT — preferí Generar imagen (plantilla). ${spec.label} ${spec.ratio}.`,
+    "Fondo negro #0a0a0a. Verde #10b981. Blanco. Sin foto. Sin botones.",
+    includeLogo ? "Logo Celimap arriba chico." : "",
+    'Tag: "LA COMUNIDAD CRECE"',
+    `Hero D: número "${places}" verde grande + línea + "lugares en el mapa"`,
+    `Sub: "${presetTitle}"`,
+    `Stats: ${reviews} reseñas · ${ventures} emprendimientos · ${milestone.newPlacesThisMonth} nuevos este mes`,
+    `Footer: ${domain} · Mapa para celíacos`,
   ]
     .filter(Boolean)
     .join("\n")
@@ -173,8 +154,7 @@ function buildCtaPrompt(
 ): string {
   const spec = FORMAT_SPECS[format]
   const domain = getBaseUrl().replace(/^https?:\/\//, "")
-
-  const socialProof = [
+  const proof = [
     placesCount ? `${placesCount.toLocaleString("es-AR")} lugares` : null,
     venturesCount ? `${venturesCount.toLocaleString("es-AR")} marcas` : null,
   ]
@@ -182,42 +162,18 @@ function buildCtaPrompt(
     .join(" · ")
 
   return [
-    `Instagram ${spec.label} ${spec.ratio} ${spec.size}. UNA sola imagen.`,
-    "",
-    "MISMO SISTEMA VISUAL QUE LOS LISTADOS CELIMAP (estilo A+D):",
-    "· Fondo negro sólido #0a0a0a — plano, sin textura, sin foto, sin ilustración de comida",
-    "· Verde #10b981 + blanco + gris #a1a1aa",
-    "· Tipografía sans-serif limpia, minimal editorial",
-    "· Sin cajas, cards, botones, pills, gradientes, 3D, clipart, emojis, íconos flat",
-    includeLogo ? "· Logo Celimap adjunto arriba centrado, chico" : "",
-    "",
-    "COMPOSICIÓN (mucho aire, jerarquía fuerte):",
-    '1. Tag verde mayúsculas chico: "SUMÁ AL MAPA"',
-    "",
-    "2. Hero tipo D:",
-    '   · Número "?" o "2" ENORME verde a la izquierda (dos caminos)',
-    "   · Línea vertical blanca fina",
-    '   · Texto blanco bold a la derecha: "¿Conocés algo sin gluten?"',
-    "",
-    '3. Subtítulo gris: "Ayudá a otros celíacos en 2 minutos"',
-    "",
-    "4. Dos filas tipográficas (como filas de lista A, SIN cards):",
-    '   Fila 1: "Lugar con local" bold blanco',
-    '           debajo gris: "Resto · café · panadería"',
-    "   Separador: línea gris fina",
-    '   Fila 2: "Emprendimiento" bold blanco',
-    '           debajo gris: "Marca · delivery · IG"',
-    "",
-    socialProof ? `5. Proof gris chico: "${socialProof}"` : "",
-    `6. Footer: línea verde fina + "${domain} · Mapa para celíacos"`,
-    "",
-    "PROHIBIDO ABSOLUTO:",
-    "· Foto / ilustración de fondo (comida, mesa, manos, panadería)",
-    "· Botones verdes, pills, chips, badges UI",
-    "· URLs, links, QR en la imagen",
-    "· Íconos, emojis, clipart",
-    "",
-    "Los links van en el caption, NO en la imagen.",
+    `Fallback ChatGPT — preferí Generar imagen (plantilla). ${spec.label} ${spec.ratio}.`,
+    "MISMO estilo A+D que listados: fondo negro #0a0a0a plano. Sin foto. Sin botones. Sin número inventado.",
+    includeLogo ? "Logo Celimap arriba chico." : "",
+    'Tag verde: "SUMÁ AL MAPA"',
+    'Headline blanco grande (SIN número hero): "¿Conocés algo sin gluten?"',
+    'Sub gris: "Ayudá a otros celíacos en 2 minutos"',
+    "2 filas numeradas 1 y 2 (como lista):",
+    '1. Lugar con local — Resto · café · panadería',
+    '2. Emprendimiento — Marca · delivery · IG',
+    proof ? `Proof: ${proof}` : "",
+    `Footer: ${domain} · Mapa para celíacos`,
+    "Links van en caption, no en imagen.",
   ]
     .filter(Boolean)
     .join("\n")

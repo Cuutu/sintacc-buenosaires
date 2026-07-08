@@ -15,7 +15,7 @@ import type {
   SocialPreviewResult,
 } from "@/lib/social/types"
 import { IMAGE_PROMPT_MAX_ITEMS } from "@/lib/social/image-prompt"
-import { LIST_PRESETS } from "@/lib/social/preset-engines"
+import { isTemplatePreset } from "@/lib/social/preset-engines"
 import { Copy, ExternalLink, ImageIcon, Loader2, Sparkles, ChevronDown, Download } from "lucide-react"
 
 type GeneratedImageResult = {
@@ -99,7 +99,7 @@ export function AdminSocialSection() {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const selectedPreset = PRESETS.find((p) => p.id === activePreset)!
-  const usesTemplate = LIST_PRESETS.includes(activePreset)
+  const usesTemplate = isTemplatePreset(activePreset)
 
   const loadItems = useCallback(async () => {
     if (activePreset === "milestone" || activePreset === "cta_suggest") {

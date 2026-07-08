@@ -1,9 +1,16 @@
 import { readFile } from "fs/promises"
 import path from "path"
+import type { ReactElement } from "react"
 import { ImageResponse } from "@vercel/og"
 import type { ImageFormat } from "@/lib/social/image-prompt"
-import type { SocialContentItem, SocialPreset } from "@/lib/social/types"
+import type { SocialContentItem, SocialMilestoneData, SocialPreset } from "@/lib/social/types"
 import { StoryListImage, buildStoryTemplateProps } from "@/lib/social/story-template"
+import {
+  StoryCtaImage,
+  StoryMilestoneImage,
+  buildCtaTemplateProps,
+  buildMilestoneTemplateProps,
+} from "@/lib/social/story-campaign"
 
 const FONT_DIR = path.join(
   process.cwd(),
@@ -26,6 +33,15 @@ async function loadFonts() {
   ]
 }
 
+async function toPng(element: ReactElement, format: ImageFormat): Promise<Buffer> {
+  const fonts = await loadFonts()
+  const width = 1080
+  const height = format === "story" ? 1920 : 1080
+  const response = new ImageResponse(element, { width, height, fonts })
+  const arrayBuffer = await response.arrayBuffer()
+  return Buffer.from(arrayBuffer)
+}
+
 export async function renderStoryPng(input: {
   preset: SocialPreset
   items: SocialContentItem[]
@@ -33,16 +49,25 @@ export async function renderStoryPng(input: {
   includeLogo?: boolean
 }): Promise<Buffer> {
   const props = buildStoryTemplateProps(input)
-  const fonts = await loadFonts()
-  const width = 1080
-  const height = input.format === "story" ? 1920 : 1080
+  return toPng(StoryListImage(props), input.format)
+}
 
-  const response = new ImageResponse(StoryListImage(props), {
-    width,
-    height,
-    fonts,
-  })
+export async function renderCtaPng(input: {
+  format: ImageFormat
+  includeLogo?: boolean
+  placesCount?: number
+  venturesCount?: number
+}): Promise<Buffer> {
+  const props = buildCtaTemplateProps(input)
+  return toPng(StoryCtaImage(props), input.format)
+}
 
-  const arrayBuffer = await response.arrayBuffer()
-  return Buffer.from(arrayBuffer)
+export async function renderMilestonePng(input: {
+  format: ImageFormat
+  includeLogo?: boolean
+  presetTitle: string
+  milestone: SocialMilestoneData
+}): Promise<Buffer> {
+  const props = buildMilestoneTemplateProps(input)
+  return toPng(StoryMilestoneImage(props), input.format)
 }
