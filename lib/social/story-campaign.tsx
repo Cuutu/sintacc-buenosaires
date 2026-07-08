@@ -6,7 +6,7 @@ import { getBaseUrl } from "@/lib/base-url"
 const GREEN = "#10b981"
 const BG = "#0a0a0a"
 const MUTED = "#a1a1aa"
-const BORDER = "#27272a"
+const WHITE = "#fafafa"
 
 const col = {
   display: "flex" as const,
@@ -40,8 +40,8 @@ function Shell({
   const isStory = format === "story"
   const width = 1080
   const height = isStory ? 1920 : 1080
-  const padX = 72
-  const padTop = isStory ? 80 : 56
+  const padX = isStory ? 80 : 64
+  const padTop = isStory ? 88 : 56
 
   return (
     <div
@@ -51,14 +51,18 @@ function Shell({
         height,
         backgroundColor: BG,
         fontFamily: "DM Sans",
-        color: "#fafafa",
+        color: WHITE,
+        alignItems: "center",
       }}
     >
       <div
         style={{
           ...col,
           flex: 1,
+          width: "100%",
           padding: `${padTop}px ${padX}px 48px`,
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         {logoUrl ? (
@@ -66,25 +70,37 @@ function Shell({
             style={{
               display: "flex",
               justifyContent: "center",
-              marginBottom: 40,
+              width: "100%",
+              marginBottom: isStory ? 56 : 32,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoUrl}
               alt=""
-              width={200}
-              height={56}
+              width={260}
+              height={72}
               style={{ objectFit: "contain" }}
             />
           </div>
         ) : null}
-        <div style={{ ...col, flex: 1 }}>{children}</div>
+        <div
+          style={{
+            ...col,
+            flex: 1,
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          {children}
+        </div>
       </div>
       <div
         style={{
           display: "flex",
           justifyContent: "center",
+          width: "100%",
           borderTop: `2px solid ${GREEN}`,
           padding: "28px 72px",
           fontSize: 22,
@@ -128,6 +144,10 @@ export function buildMilestoneTemplateProps(input: {
   }
 }
 
+/**
+ * CTA editorial centrado — mismo look que la referencia aprobada,
+ * fondo negro sólido (SIN foto). Tipografía + acento verde.
+ */
 export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: StoryCtaProps) {
   const isStory = format === "story"
   const proof = [
@@ -137,94 +157,144 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
     .filter(Boolean)
     .join(" · ")
 
-  const rows = [
-    { title: "Lugar con local", sub: "Resto · café · panadería" },
-    { title: "Emprendimiento", sub: "Marca · delivery · IG" },
-  ]
-
   return (
     <Shell format={format} logoUrl={logoUrl}>
+      {/* Zona hero centrada */}
+      <div style={{ ...col, alignItems: "center", width: "100%" }}>
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            fontSize: 20,
+            fontWeight: 700,
+            color: GREEN,
+            letterSpacing: "0.18em",
+            marginBottom: isStory ? 36 : 24,
+          }}
+        >
+          SUMÁ AL MAPA
+        </div>
+
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            fontSize: isStory ? 68 : 48,
+            fontWeight: 700,
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            textAlign: "center",
+            maxWidth: 920,
+            marginBottom: isStory ? 24 : 16,
+          }}
+        >
+          ¿Conocés algo sin gluten?
+        </div>
+
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            fontSize: isStory ? 28 : 22,
+            color: MUTED,
+            textAlign: "center",
+            lineHeight: 1.4,
+          }}
+        >
+          Ayudá a otros celíacos en 2 minutos
+        </div>
+      </div>
+
+      {/* Dos caminos — centrados, línea verde fina */}
       <div
         style={{
           ...col,
-          fontSize: 22,
-          fontWeight: 600,
-          color: GREEN,
-          letterSpacing: "0.12em",
-          marginBottom: 28,
+          alignItems: "center",
+          width: "100%",
+          maxWidth: 720,
+          marginTop: isStory ? 64 : 36,
+          marginBottom: isStory ? 64 : 36,
         }}
       >
-        SUMÁ AL MAPA
-      </div>
-
-      <div
-        style={{
-          ...col,
-          fontSize: isStory ? 56 : 44,
-          fontWeight: 700,
-          lineHeight: 1.15,
-          marginBottom: 20,
-          maxWidth: 900,
-        }}
-      >
-        ¿Conocés algo sin gluten?
-      </div>
-
-      <div
-        style={{
-          ...col,
-          fontSize: 24,
-          color: MUTED,
-          marginBottom: 56,
-        }}
-      >
-        Ayudá a otros celíacos en 2 minutos
-      </div>
-
-      <div style={{ ...col, flex: 1 }}>
-        {rows.map((row, index) => (
+        <div style={{ ...col, alignItems: "center", width: "100%", paddingBottom: 40 }}>
           <div
-            key={row.title}
             style={{
               ...col,
-              paddingTop: index === 0 ? 0 : 36,
-              paddingBottom: 36,
-              borderBottom: index < rows.length - 1 ? `1px solid ${BORDER}` : "none",
+              alignItems: "center",
+              fontSize: isStory ? 40 : 32,
+              fontWeight: 700,
+              marginBottom: 12,
+              textAlign: "center",
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
-              <div
-                style={{
-                  ...col,
-                  fontSize: 32,
-                  fontWeight: 700,
-                  color: GREEN,
-                  minWidth: 36,
-                }}
-              >
-                {index + 1}
-              </div>
-              <div style={{ ...col, flex: 1, gap: 8 }}>
-                <div
-                  style={{
-                    ...col,
-                    fontSize: 36,
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {row.title}
-                </div>
-                <div style={{ ...col, fontSize: 24, color: MUTED }}>{row.sub}</div>
-              </div>
-            </div>
+            Lugar con local
           </div>
-        ))}
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 26 : 22,
+              color: MUTED,
+              textAlign: "center",
+            }}
+          >
+            Resto · café · panadería
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            width: 120,
+            height: 3,
+            backgroundColor: GREEN,
+            marginBottom: 40,
+          }}
+        />
+
+        <div style={{ ...col, alignItems: "center", width: "100%" }}>
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 40 : 32,
+              fontWeight: 700,
+              marginBottom: 12,
+              textAlign: "center",
+            }}
+          >
+            Emprendimiento
+          </div>
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 26 : 22,
+              color: MUTED,
+              textAlign: "center",
+            }}
+          >
+            Marca · delivery · IG
+          </div>
+        </div>
       </div>
 
-      {proof ? (
-        <div style={{ ...col, fontSize: 22, color: MUTED, marginTop: 24 }}>{proof}</div>
-      ) : null}
+      {/* Proof */}
+      <div style={{ ...col, alignItems: "center", width: "100%" }}>
+        {proof ? (
+          <div
+            style={{
+              ...col,
+              alignItems: "center",
+              fontSize: isStory ? 24 : 20,
+              color: MUTED,
+              textAlign: "center",
+            }}
+          >
+            {`${proof} ya en Celimap`}
+          </div>
+        ) : null}
+      </div>
     </Shell>
   )
 }
@@ -245,72 +315,98 @@ export function StoryMilestoneImage({
 
   return (
     <Shell format={format} logoUrl={logoUrl}>
-      <div
-        style={{
-          ...col,
-          fontSize: 22,
-          fontWeight: 600,
-          color: GREEN,
-          letterSpacing: "0.12em",
-          marginBottom: 28,
-        }}
-      >
-        LA COMUNIDAD CRECE
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          marginBottom: 20,
-          gap: 24,
-        }}
-      >
+      <div style={{ ...col, alignItems: "center", width: "100%" }}>
         <div
           style={{
             ...col,
-            fontSize: isStory ? 120 : 96,
+            alignItems: "center",
+            fontSize: 20,
+            fontWeight: 700,
+            color: GREEN,
+            letterSpacing: "0.18em",
+            marginBottom: 32,
+          }}
+        >
+          LA COMUNIDAD CRECE
+        </div>
+
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            fontSize: isStory ? 140 : 100,
             fontWeight: 700,
             color: GREEN,
             lineHeight: 1,
+            letterSpacing: "-0.03em",
+            marginBottom: 16,
           }}
         >
           {places}
         </div>
-        <div style={{ display: "flex", width: 2, height: 72, backgroundColor: "#fafafa" }} />
+
         <div
           style={{
             ...col,
-            fontSize: isStory ? 36 : 30,
+            alignItems: "center",
+            fontSize: isStory ? 36 : 28,
             fontWeight: 700,
-            lineHeight: 1.2,
-            maxWidth: 640,
+            textAlign: "center",
+            marginBottom: 12,
           }}
         >
           lugares en el mapa
         </div>
+
+        <div
+          style={{
+            ...col,
+            alignItems: "center",
+            fontSize: 24,
+            color: MUTED,
+            textAlign: "center",
+            marginBottom: 48,
+          }}
+        >
+          {presetTitle}
+        </div>
       </div>
 
-      <div style={{ ...col, fontSize: 24, color: MUTED, marginBottom: 48 }}>
-        {presetTitle}
-      </div>
-
-      <div style={{ ...col, flex: 1 }}>
+      <div style={{ ...col, alignItems: "center", width: "100%", maxWidth: 640 }}>
         {stats.map((stat, index) => (
           <div
             key={stat.label}
             style={{
               ...col,
+              alignItems: "center",
+              width: "100%",
               paddingTop: index === 0 ? 0 : 28,
               paddingBottom: 28,
-              borderBottom: index < stats.length - 1 ? `1px solid ${BORDER}` : "none",
+              borderBottom:
+                index < stats.length - 1 ? `1px solid #27272a` : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
-              <div style={{ ...col, fontSize: 40, fontWeight: 700, color: GREEN }}>
-                {stat.value}
-              </div>
-              <div style={{ ...col, fontSize: 26, color: MUTED }}>{stat.label}</div>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: isStory ? 44 : 34,
+                fontWeight: 700,
+                color: GREEN,
+                marginBottom: 6,
+              }}
+            >
+              {stat.value}
+            </div>
+            <div
+              style={{
+                ...col,
+                alignItems: "center",
+                fontSize: 22,
+                color: MUTED,
+              }}
+            >
+              {stat.label}
             </div>
           </div>
         ))}
