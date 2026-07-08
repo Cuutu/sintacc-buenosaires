@@ -126,31 +126,46 @@ function buildMilestonePrompt(
 ): string {
   const spec = FORMAT_SPECS[format]
   const domain = getBaseUrl().replace(/^https?:\/\//, "")
+  const places = milestone.placesCount.toLocaleString("es-AR")
+  const reviews = milestone.reviewsCount.toLocaleString("es-AR")
+  const ventures = milestone.venturesCount.toLocaleString("es-AR")
 
   return [
-    `${spec.label} ${spec.ratio} ${spec.size}. Una sola imagen.`,
+    `Instagram ${spec.label} ${spec.ratio} ${spec.size}. UNA sola pieza editorial de campaña.`,
+    "NO es mockup de app. NO es dashboard. NO es landing HTML.",
     "",
-    "Estilo A: fondo negro #0a0a0a, verde #10b981, blanco. Minimal, sin cajas ni 3D.",
-    includeLogo ? "Logo Celimap adjunto arriba, chico." : "",
+    "DIRECCIÓN DE ARTE:",
+    "· Editorial lifestyle dark — atmósfera de comida real + comunidad",
+    "· Fondo: foto o ilustración cinematográfica de mesa compartida / pan sin gluten / café nocturno,",
+    "  con overlay negro suave (gradiente) para legibilidad",
+    "· Acento marca: verde #10b981 solo en 1–2 detalles (número hero o línea fina)",
+    "· Tipografía display bold, tracking tight, jerarquía clara",
+    "· Mucho aire. Máximo 6 líneas de texto en toda la pieza",
+    includeLogo
+      ? "· Logo Celimap adjunto: arriba, pequeño, como marca de campaña (no header de web)"
+      : "",
     "",
-    `Hero: "${presetTitle}"`,
-    "Subtítulo gris: La comunidad celíaca crece",
+    "COMPOSICIÓN (de arriba a abajo):",
+    `1. Tagline chica en verde: "LA COMUNIDAD CRECE"`,
+    `2. Número HERO enorme (ocupa ~30% del alto): "${places}"`,
+    `3. Una sola frase blanca bold debajo: "${presetTitle}"`,
+    `4. Tres stats en tipografía secundaria, espaciadas, SIN bullets ni íconos:`,
+    `   ${reviews} reseñas   ·   ${ventures} emprendimientos   ·   ${milestone.newPlacesThisMonth} nuevos este mes`,
+    `5. Footer mínimo: ${domain}`,
     "",
-    "4 números grandes, uno debajo del otro:",
-    `· ${milestone.placesCount.toLocaleString("es-AR")} lugares`,
-    `· ${milestone.reviewsCount.toLocaleString("es-AR")} reseñas`,
-    `· ${milestone.venturesCount.toLocaleString("es-AR")} emprendimientos`,
-    `· ${milestone.newPlacesThisMonth} nuevos este mes`,
-    "",
-    `Footer: ${domain} · Mapa para celíacos`,
+    "PROHIBIDO:",
+    "· Botones, pills, cards, cajas, sombras UI, iconos flat, emojis",
+    "· Listas con viñetas, URLs largas, QR, badges de features",
+    "· Aspecto de screenshot de celular o panel admin",
+    "· Clipart, 3D barato, glow neon púrpura",
   ]
     .filter(Boolean)
     .join("\n")
 }
 
 function buildCtaPrompt(
-  placesLink: string,
-  venturesLink: string,
+  _placesLink: string,
+  _venturesLink: string,
   placesCount: number | undefined,
   venturesCount: number | undefined,
   format: ImageFormat,
@@ -159,48 +174,49 @@ function buildCtaPrompt(
   const spec = FORMAT_SPECS[format]
   const domain = getBaseUrl().replace(/^https?:\/\//, "")
 
-  const statsLine = [
+  const socialProof = [
     placesCount ? `${placesCount.toLocaleString("es-AR")} lugares` : null,
-    venturesCount ? `${venturesCount.toLocaleString("es-AR")} emprendimientos` : null,
+    venturesCount ? `${venturesCount.toLocaleString("es-AR")} marcas` : null,
   ]
     .filter(Boolean)
     .join(" · ")
 
   return [
-    `${spec.label} ${spec.ratio}. Una sola imagen.`,
+    `Instagram ${spec.label} ${spec.ratio} ${spec.size}. UNA sola pieza de campaña social.`,
+    "Esto es un STORY de Instagram de marca — NO un mockup de app, NO un formulario, NO una landing.",
     "",
-    "Estilo A+D: fondo negro #0a0a0a, verde #10b981, blanco. Minimal, sin cards.",
-    includeLogo ? "Logo Celimap adjunto arriba, chico." : "",
+    "DIRECCIÓN DE ARTE (obligatoria):",
+    "· Estilo: editorial food + community campaign (tipo marca lifestyle, no SaaS)",
+    "· Fondo: escena fotográfica o ilustración rica — plato sin gluten, mesa compartida,",
+    "  manos pasando comida, panadería artesanal — con overlay oscuro cinematográfico",
+    "· Paleta: negro profundo, blanco, un solo acento verde #10b981",
+    "· Tipografía: display sans bold, jerarquía fuerte, mucho negative space",
+    "· Sensación: cálida, humana, argentina, invitante — no técnica",
+    includeLogo
+      ? "· Logo Celimap adjunto: arriba centrado, pequeño, como marca (no navbar)"
+      : "",
     "",
-    'Etiqueta verde chica: "SUMÁ A LA COMUNIDAD"',
+    "TEXTO EN IMAGEN (solo esto, nada más):",
+    '1. Eyebrow verde mayúsculas chico: "SUMÁ AL MAPA"',
+    '2. Headline blanco ENORME (protagonista visual): "¿Conocés algo sin gluten?"',
+    '3. Subhead gris corto: "Ayudá a otros celíacos en 2 minutos"',
+    "4. Dos caminos tipográficos (NO botones, NO cards, NO íconos Material):",
+    '   · Línea 1 bold: "Lugar con local" + debajo gris: "Resto · café · panadería"',
+    '   · Línea 2 bold: "Emprendimiento" + debajo gris: "Marca · delivery · IG"',
+    "   Separados por mucho aire o una línea fina verde, no por cajas",
+    socialProof ? `5. Proof chica abajo: "${socialProof} ya en Celimap"` : "",
+    `6. Footer mínimo: ${domain}`,
     "",
-    'Título blanco grande: "¿Conocés algo sin gluten?"',
-    'Subtítulo gris: "Lugares y emprendimientos · Celimap"',
+    "PROHIBIDO ABSOLUTO:",
+    "· Botones verdes tipo UI, pills, chips, badges",
+    "· URLs visibles, links, QR codes",
+    "· Íconos flat (pin, storefront, mapa), emojis",
+    "· Bullets de features (Gratis, 2 minutos, etc. como lista)",
+    "· Aspecto de screenshot de app / Figma / dashboard",
+    "· Dos columnas de formularios o bloques con borde",
+    "· Clipart, stock genérico de 'community icons', glow púrpura",
     "",
-    "2 bloques CTA claros (no listado de locales):",
-    "",
-    "Bloque 1 — LUGAR CON LOCAL:",
-    "· ícono 🗺️",
-    "· texto: Restaurante, café, panadería con dirección",
-    "· botón/link verde chico: Sugerir lugar",
-    `· URL visible: ${placesLink}`,
-    "",
-    "Bloque 2 — EMPRENDIMIENTO:",
-    "· ícono 🏪",
-    "· texto: Marca, viandas, pastelería por IG, WA o delivery",
-    "· botón/link verde chico: Sugerir emprendimiento",
-    `· URL visible: ${venturesLink}`,
-    "",
-    "Entre bloques: línea gris fina.",
-    "",
-    "Bullets chicos abajo:",
-    "· Gratis, 2 minutos",
-    "· Ayudás a otros celíacos",
-    statsLine ? `· Ya hay ${statsLine}` : "· Sumá al mapa de la comunidad",
-    "",
-    `Footer: ${domain} · Mapa para celíacos`,
-    "",
-    "NO logos de marcas. NO listado de nombres. Solo los 2 CTAs.",
+    "Los links van en el caption de Instagram, NO en la imagen.",
   ]
     .filter(Boolean)
     .join("\n")
