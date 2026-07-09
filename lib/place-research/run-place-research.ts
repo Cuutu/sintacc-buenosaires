@@ -231,18 +231,23 @@ export async function runPlaceResearch(
   if (!place) throw new Error("Lugar no encontrado")
 
   const existing = place.aiEnrichment
-  if (existing?.status === "running" && !isResearchStale(existing, place.updatedAt)) {
+  // Cola ya claim-eó el job (status=running). No salir early: eso deja jobs colgados forever.
+  if (
+    !options?.skipRunningMark &&
+    existing?.status === "running" &&
+    !isResearchStale(existing, place.updatedAt)
+  ) {
     return existing
   }
 
-  const running: AiResearch = {
-    status: "running",
-    startedAt: new Date(),
-    summary: "",
-    evidence: [],
-    needsAdmin: true,
-  }
   if (!options?.skipRunningMark) {
+    const running: AiResearch = {
+      status: "running",
+      startedAt: new Date(),
+      summary: "",
+      evidence: [],
+      needsAdmin: true,
+    }
     await persistPlaceResearchUpdate(place._id.toString(), { aiEnrichment: running })
   }
 

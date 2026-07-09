@@ -4,6 +4,7 @@ import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
 import { isPlaceInformationIncomplete } from "@/lib/place-incomplete"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
+import { waitUntil } from "@vercel/functions"
 
 const MAX_PLACES_PER_TICK = 1
 /** Vercel mata la función a los 60s; reclaim antes. */
@@ -137,11 +138,15 @@ async function claimNextQueuedPlace(): Promise<string | null> {
       $set: {
         "aiEnrichment.status": "running",
         "aiEnrichment.startedAt": new Date(),
+        "aiEnrichment.summary": "",
+        "aiEnrichment.evidence": [],
+        "aiEnrichment.needsAdmin": true,
         "aiEnrichment.error": undefined,
       },
     },
     {
       sort: { "aiEnrichment.startedAt": 1, updatedAt: 1 },
+      new: true,
       projection: { _id: 1 },
     }
   )
@@ -215,7 +220,7 @@ function scheduleNextQueueWorker(): void {
   }
 
   const baseUrl = getBaseUrl()
-  void fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
+  const task = fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
     method: "POST",
     headers: {
       "x-internal-job-secret": secret,
@@ -225,6 +230,12 @@ function scheduleNextQueueWorker(): void {
   }).catch((err) => {
     logApiError("scheduleNextQueueWorker", err, {})
   })
+
+  try {
+    waitUntil(task)
+  } catch {
+    void task
+  }
 }
 
 export async function runEnrichmentQueueWorker(): Promise<void> {
