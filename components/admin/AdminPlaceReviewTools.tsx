@@ -15,6 +15,7 @@ type QueueStats = {
   incomplete: number
   workerActive: boolean
   stalled?: boolean
+  stuckRunning?: number
 }
 
 type IncompletePlace = {
@@ -146,9 +147,9 @@ export function AdminPlaceReviewTools({
           const res = await fetch("/api/admin/places/enrichment-queue")
           if (!res.ok) return
           const stats = (await res.json()) as QueueStats
-          if (stats.stalled && stats.queued > 0) {
+          if (stats.stalled && (stats.queued > 0 || (stats.stuckRunning ?? 0) > 0)) {
             const now = Date.now()
-            if (now - lastAutoResumeRef.current > 30_000) {
+            if (now - lastAutoResumeRef.current > 60_000) {
               lastAutoResumeRef.current = now
               await fetch("/api/admin/places/enrichment-queue", {
                 method: "POST",

@@ -4,11 +4,10 @@ import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
 import { isPlaceInformationIncomplete } from "@/lib/place-incomplete"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
-import { RESEARCH_STALE_MS } from "@/lib/place-research/types"
-import { waitUntil } from "@vercel/functions"
 
-const MAX_PLACES_PER_TICK = 2
-const MAX_TICK_MS = 50_000
+const MAX_PLACES_PER_TICK = 1
+/** Vercel mata la función a los 60s; reclaim antes. */
+const QUEUE_JOB_STALE_MS = 65_000
 const ENQUEUE_LIMIT = 500
 
 export type EnrichmentQueueStats = {
@@ -19,6 +18,7 @@ export type EnrichmentQueueStats = {
   incomplete: number
   workerActive: boolean
   stalled: boolean
+  stuckRunning: number
 }
 
 function getInternalJobSecret(): string | null {
@@ -27,11 +27,17 @@ function getInternalJobSecret(): string | null {
 
 export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
   await connectDB()
-  const [queued, running, done, failed, places] = await Promise.all([
+  const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
+  const [queued, running, done, failed, stuckRunning, places] = await Promise.all([
     Place.countDocuments({ status: "approved", "aiEnrichment.status": "queued" }),
     Place.countDocuments({ status: "approved", "aiEnrichment.status": "running" }),
     Place.countDocuments({ status: "approved", "aiEnrichment.status": "done" }),
     Place.countDocuments({ status: "approved", "aiEnrichment.status": "failed" }),
+    Place.countDocuments({
+      status: "approved",
+      "aiEnrichment.status": "running",
+      "aiEnrichment.startedAt": { $lt: staleBefore },
+    }),
     Place.find({ status: "approved" })
       .select("name address neighborhood type types contact openingHours photos safetyLevel")
       .limit(3000)
@@ -39,6 +45,8 @@ export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
   ])
 
   const incomplete = places.filter((place) => isPlaceInformationIncomplete(place)).length
+  const stalled =
+    (queued > 0 && running === 0) || stuckRunning > 0 || (queued > 0 && stuckRunning > 0)
 
   return {
     queued,
@@ -46,14 +54,15 @@ export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
     done,
     failed,
     incomplete,
-    workerActive: running > 0,
-    stalled: queued > 0 && running === 0,
+    workerActive: running > 0 && stuckRunning < running,
+    stalled,
+    stuckRunning,
   }
 }
 
 export async function resetStaleEnrichmentJobs(): Promise<number> {
   await connectDB()
-  const staleBefore = new Date(Date.now() - RESEARCH_STALE_MS)
+  const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
   const result = await Place.updateMany(
     {
       status: "approved",
@@ -117,30 +126,54 @@ export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipp
   return { queued, skipped }
 }
 
+async function claimNextQueuedPlace(): Promise<string | null> {
+  await connectDB()
+  const claimed = await Place.findOneAndUpdate(
+    {
+      status: "approved",
+      "aiEnrichment.status": "queued",
+    },
+    {
+      $set: {
+        "aiEnrichment.status": "running",
+        "aiEnrichment.startedAt": new Date(),
+        "aiEnrichment.error": undefined,
+      },
+    },
+    {
+      sort: { "aiEnrichment.startedAt": 1, updatedAt: 1 },
+      projection: { _id: 1 },
+    }
+  )
+
+  return claimed?._id?.toString() ?? null
+}
+
 export async function processEnrichmentQueueTick(): Promise<{
   processed: number
   remaining: number
 }> {
-  const startedAt = Date.now()
   let processed = 0
 
-  while (processed < MAX_PLACES_PER_TICK && Date.now() - startedAt < MAX_TICK_MS) {
-    await connectDB()
-    const next = await Place.findOne({
-      status: "approved",
-      "aiEnrichment.status": "queued",
-    })
-      .sort({ "aiEnrichment.startedAt": 1, updatedAt: 1 })
-      .select("_id")
-
-    if (!next) break
+  while (processed < MAX_PLACES_PER_TICK) {
+    const placeId = await claimNextQueuedPlace()
+    if (!placeId) break
 
     try {
-      await runPlaceResearch(next._id.toString())
+      const result = await runPlaceResearch(placeId, {
+        lightweight: true,
+        skipRunningMark: true,
+      })
+      if (result.status === "failed") {
+        logApiError(
+          "processEnrichmentQueueTick",
+          new Error(`${placeId}: ${result.error ?? "IA falló"}`)
+        )
+      }
     } catch (err) {
-      logApiError("processEnrichmentQueueTick", err, {})
+      logApiError("processEnrichmentQueueTick", err)
       await Place.updateOne(
-        { _id: next._id, "aiEnrichment.status": { $in: ["queued", "running"] } },
+        { _id: placeId, "aiEnrichment.status": "running" },
         {
           $set: {
             aiEnrichment: {
@@ -170,23 +203,28 @@ export async function processEnrichmentQueueTick(): Promise<{
   return { processed, remaining }
 }
 
-async function invokeQueueWorkerExternal(): Promise<void> {
+function scheduleNextQueueWorker(): void {
   const secret = getInternalJobSecret()
-  if (!secret) return
+  if (!secret) {
+    logApiError(
+      "scheduleNextQueueWorker",
+      new Error("INTERNAL_JOB_SECRET no configurado — la cola no puede encadenarse en Vercel"),
+      {}
+    )
+    return
+  }
 
   const baseUrl = getBaseUrl()
-  try {
-    await fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
-      method: "POST",
-      headers: {
-        "x-internal-job-secret": secret,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    })
-  } catch (err) {
-    logApiError("invokeQueueWorkerExternal", err, {})
-  }
+  void fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
+    method: "POST",
+    headers: {
+      "x-internal-job-secret": secret,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  }).catch((err) => {
+    logApiError("scheduleNextQueueWorker", err, {})
+  })
 }
 
 export async function runEnrichmentQueueWorker(): Promise<void> {
@@ -194,23 +232,15 @@ export async function runEnrichmentQueueWorker(): Promise<void> {
     await resetStaleEnrichmentJobs()
     const { remaining } = await processEnrichmentQueueTick()
     if (remaining > 0) {
-      triggerEnrichmentQueueWorker()
-      void invokeQueueWorkerExternal()
+      scheduleNextQueueWorker()
     }
   } catch (err) {
     logApiError("runEnrichmentQueueWorker", err, {})
-  }
-}
-
-export function triggerEnrichmentQueueWorker(): void {
-  const task = runEnrichmentQueueWorker().catch((err) => {
-    logApiError("triggerEnrichmentQueueWorker", err, {})
-  })
-
-  try {
-    waitUntil(task)
-  } catch {
-    void task
+    const remaining = await Place.countDocuments({
+      status: "approved",
+      "aiEnrichment.status": "queued",
+    }).catch(() => 0)
+    if (remaining > 0) scheduleNextQueueWorker()
   }
 }
 
@@ -222,9 +252,8 @@ export async function startEnrichmentQueue(): Promise<{
   await resetStaleEnrichmentJobs()
   const { queued, skipped } = await enqueueIncompletePlaces()
   const stats = await getEnrichmentQueueStats()
-  if (stats.queued > 0) {
-    triggerEnrichmentQueueWorker()
-    void invokeQueueWorkerExternal()
+  if (stats.queued > 0 || stats.stuckRunning > 0) {
+    scheduleNextQueueWorker()
   }
   const latestStats = await getEnrichmentQueueStats()
   return { queued, skipped, stats: latestStats }
@@ -233,11 +262,10 @@ export async function startEnrichmentQueue(): Promise<{
 export async function resumeEnrichmentQueue(): Promise<EnrichmentQueueStats> {
   await resetStaleEnrichmentJobs()
   const stats = await getEnrichmentQueueStats()
-  if (stats.queued > 0) {
-    triggerEnrichmentQueueWorker()
-    void invokeQueueWorkerExternal()
+  if (stats.queued > 0 || stats.stuckRunning > 0) {
+    scheduleNextQueueWorker()
   }
-  return stats
+  return getEnrichmentQueueStats()
 }
 
 export function isValidInternalJobRequest(secret: string | null): boolean {

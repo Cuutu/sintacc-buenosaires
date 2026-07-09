@@ -30,26 +30,41 @@ export async function openRouterChatJson<T extends z.ZodTypeAny>(input: {
   messages: OpenRouterChatMessage[]
   schema: T
   model?: string
+  timeoutMs?: number
 }): Promise<OpenRouterChatResult<z.output<T>>> {
   const apiKey = getApiKey()
   const model = input.model ?? getDefaultModel()
   const baseUrl = getBaseUrl()
+  const timeoutMs = input.timeoutMs ?? 25_000
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
 
-  const res = await fetch(OPENROUTER_CHAT_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": baseUrl,
-      "X-Title": "Celimap Place Research",
-    },
-    body: JSON.stringify({
-      model,
-      messages: input.messages,
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
-  })
+  let res: Response
+  try {
+    res = await fetch(OPENROUTER_CHAT_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": baseUrl,
+        "X-Title": "Celimap Place Research",
+      },
+      body: JSON.stringify({
+        model,
+        messages: input.messages,
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+      }),
+      signal: controller.signal,
+    })
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("OpenRouter tardó demasiado (timeout).")
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 
   const json = (await res.json()) as {
     error?: { message?: string }

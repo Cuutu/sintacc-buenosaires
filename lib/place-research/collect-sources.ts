@@ -22,8 +22,9 @@ export async function collectResearchSources(input: {
   placeDraft: Record<string, unknown>
   googlePlace?: GooglePlaceEnriched | null
   mapsLinkResolved?: boolean
+  skipWebsiteFetch?: boolean
 }): Promise<ResearchSourceBundle> {
-  const { placeDraft, googlePlace, mapsLinkResolved } = input
+  const { placeDraft, googlePlace, mapsLinkResolved, skipWebsiteFetch } = input
   const contact = (placeDraft.contact as Record<string, string> | undefined) ?? {}
 
   const draftSummary = [
@@ -70,17 +71,19 @@ export async function collectResearchSources(input: {
   }
 
   const websiteTexts: string[] = []
-  if (googlePlace?.websiteUri) {
-    const pages = await fetchWebsitePaths(googlePlace.websiteUri)
-    websiteTexts.push(...pages)
-  }
-  if (
-    contact.url &&
-    !/instagram\.com|instagr\.am/i.test(contact.url) &&
-    !isGoogleMapsUrl(contact.url)
-  ) {
-    const pages = await fetchWebsitePaths(contact.url)
-    websiteTexts.push(...pages)
+  if (!skipWebsiteFetch) {
+    if (googlePlace?.websiteUri) {
+      const pages = await fetchWebsitePaths(googlePlace.websiteUri)
+      websiteTexts.push(...pages)
+    }
+    if (
+      contact.url &&
+      !/instagram\.com|instagr\.am/i.test(contact.url) &&
+      !isGoogleMapsUrl(contact.url)
+    ) {
+      const pages = await fetchWebsitePaths(contact.url)
+      websiteTexts.push(...pages)
+    }
   }
 
   const reviewSnippets = googlePlace?.reviewSnippets ?? []

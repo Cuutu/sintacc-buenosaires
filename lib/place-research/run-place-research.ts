@@ -218,7 +218,10 @@ function isResearchStale(ai?: AiResearch | null, updatedAt?: Date): boolean {
   return Date.now() - new Date(started).getTime() > RESEARCH_STALE_MS
 }
 
-export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
+export async function runPlaceResearch(
+  placeId: string,
+  options?: { lightweight?: boolean; skipRunningMark?: boolean }
+): Promise<AiResearch> {
   if (!isPlaceResearchEnabled()) {
     throw new Error("Investigación IA deshabilitada o sin OPENROUTER_API_KEY.")
   }
@@ -239,7 +242,9 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
     evidence: [],
     needsAdmin: true,
   }
-  await persistPlaceResearchUpdate(place._id.toString(), { aiEnrichment: running })
+  if (!options?.skipRunningMark) {
+    await persistPlaceResearchUpdate(place._id.toString(), { aiEnrichment: running })
+  }
 
   try {
     const draft = placeToDraft(place)
@@ -279,6 +284,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
       placeDraft: draft,
       googlePlace,
       mapsLinkResolved,
+      skipWebsiteFetch: options?.lightweight,
     })
     const { data: analysis, cost, model } = await openRouterChatJson({
       messages: [
@@ -286,6 +292,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
         { role: "user", content: buildResearchUserPrompt(bundle) },
       ],
       schema: aiResearchAnalysisSchema,
+      timeoutMs: options?.lightweight ? 20_000 : undefined,
     })
 
     const suggestedDraftPatch = buildGapFillPatch({
