@@ -68,30 +68,59 @@ export const aiResearchEvidenceSchema = z.object({
   url: z.string().optional(),
 })
 
-export const aiResearchAnalysisSchema = z.object({
-  matchConfidence: z.number().min(0).max(100),
-  gfConfidence: z.number().min(0).max(100),
-  recommendedSafetyLevel: SAFETY_LEVEL_ENUM.nullable(),
-  recommendedType: PLACE_TYPE_ENUM.nullable().optional(),
-  summary: z.string(),
-  evidence: z.array(aiResearchEvidenceSchema),
-  needsAdmin: z.boolean(),
-  suggestedFields: z
-    .preprocess((value) => (value == null ? undefined : value), z
-      .object({
-        name: optionalResearchString(),
-        address: optionalResearchString(),
-        neighborhood: optionalResearchString(),
-        type: optionalResearchPlaceType(),
-        openingHours: optionalResearchString(),
-        contact: optionalResearchContact(),
-        safetyLevel: optionalResearchSafetyLevel(),
-      })
-      .optional())
+export const aiResearchSuggestedFieldsSchema = z.object({
+  name: optionalResearchString(),
+  address: optionalResearchString(),
+  neighborhood: optionalResearchString(),
+  type: optionalResearchPlaceType(),
+  openingHours: optionalResearchString(),
+  contact: optionalResearchContact(),
+  safetyLevel: optionalResearchSafetyLevel(),
 })
 
 export type AiResearchEvidence = z.infer<typeof aiResearchEvidenceSchema>
-export type AiResearchAnalysis = z.infer<typeof aiResearchAnalysisSchema>
+export type AiResearchSuggestedFields = z.infer<typeof aiResearchSuggestedFieldsSchema>
+
+export type AiResearchAnalysis = {
+  matchConfidence: number
+  gfConfidence: number
+  recommendedSafetyLevel: z.infer<typeof SAFETY_LEVEL_ENUM> | null
+  recommendedType?: z.infer<typeof PLACE_TYPE_ENUM> | null
+  summary: string
+  evidence: AiResearchEvidence[]
+  needsAdmin: boolean
+  suggestedFields?: AiResearchSuggestedFields
+}
+
+export const aiResearchAnalysisSchema = z
+  .object({
+    matchConfidence: z.number().min(0).max(100),
+    gfConfidence: z.number().min(0).max(100),
+    recommendedSafetyLevel: SAFETY_LEVEL_ENUM.nullable(),
+    recommendedType: PLACE_TYPE_ENUM.nullable().optional(),
+    summary: z.string(),
+    evidence: z.array(aiResearchEvidenceSchema),
+    needsAdmin: z.boolean(),
+    suggestedFields: z.unknown().optional(),
+  })
+  .transform((data): AiResearchAnalysis => {
+    let suggestedFields: AiResearchSuggestedFields | undefined
+    if (data.suggestedFields != null) {
+      const parsed = aiResearchSuggestedFieldsSchema.safeParse(data.suggestedFields)
+      suggestedFields = parsed.success ? parsed.data : undefined
+    }
+
+    return {
+      matchConfidence: data.matchConfidence,
+      gfConfidence: data.gfConfidence,
+      recommendedSafetyLevel: data.recommendedSafetyLevel,
+      recommendedType: data.recommendedType,
+      summary: data.summary,
+      evidence: data.evidence,
+      needsAdmin: data.needsAdmin,
+      suggestedFields,
+    }
+  })
 
 export type AiResearchStatus = "pending" | "running" | "done" | "failed"
 

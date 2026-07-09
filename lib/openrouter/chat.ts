@@ -26,11 +26,11 @@ function getDefaultModel(): string {
   return process.env.OPENROUTER_TEXT_MODEL?.trim() || "openai/gpt-4.1-mini"
 }
 
-export async function openRouterChatJson<T>(input: {
+export async function openRouterChatJson<T extends z.ZodTypeAny>(input: {
   messages: OpenRouterChatMessage[]
-  schema: z.ZodType<T>
+  schema: T
   model?: string
-}): Promise<OpenRouterChatResult<T>> {
+}): Promise<OpenRouterChatResult<z.output<T>>> {
   const apiKey = getApiKey()
   const model = input.model ?? getDefaultModel()
   const baseUrl = getBaseUrl()
@@ -74,7 +74,7 @@ export async function openRouterChatJson<T>(input: {
     throw new Error("OpenRouter devolvió JSON inválido.")
   }
 
-  const data = input.schema.parse(parsed)
+  const data = input.schema.parse(parsed) as z.output<T>
 
   return {
     data,

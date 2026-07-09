@@ -19,6 +19,7 @@ import {
   aiResearchAnalysisSchema,
   RESEARCH_STALE_MS,
   type AiResearch,
+  type AiResearchAnalysis,
 } from "@/lib/place-research/types"
 import { waitUntil } from "@vercel/functions"
 import { z } from "zod"
@@ -88,7 +89,7 @@ function isResearchStale(ai?: AiResearch | null, updatedAt?: Date): boolean {
 function buildSuggestedPatch(input: {
   draft: Record<string, unknown>
   googlePlace: Awaited<ReturnType<typeof fetchGooglePlaceEnriched>>
-  analysis: ReturnType<typeof aiResearchAnalysisSchema.parse>
+  analysis: AiResearchAnalysis
 }): Partial<IPlace> {
   const { draft, googlePlace, analysis } = input
   const patch: Partial<IPlace> = {}
