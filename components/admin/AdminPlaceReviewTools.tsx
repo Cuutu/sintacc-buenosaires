@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Loader2, Sparkles, X } from "lucide-react"
+import { AlertTriangle, Loader2, Sparkles, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import type { PlaceDuplicatePair } from "@/lib/place-duplicates-scan"
@@ -14,6 +14,7 @@ type QueueStats = {
   failed: number
   incomplete: number
   workerActive: boolean
+  stalled?: boolean
 }
 
 type IncompletePlace = {
@@ -54,6 +55,59 @@ export function AdminPlaceReviewTools({
   const [incompletePlaces, setIncompletePlaces] = useState<IncompletePlace[]>([])
   const [batchRemaining, setBatchRemaining] = useState<number | null>(null)
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null)
+  const [selectedDeleteIds, setSelectedDeleteIds] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const lastAutoResumeRef = useRef(0)
+
+  const toggleDeleteSelection = (placeId: string) => {
+    setSelectedDeleteIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(placeId)) next.delete(placeId)
+      else next.add(placeId)
+      return next
+    })
+  }
+
+  const reloadDuplicates = async () => {
+    const res = await fetch("/api/admin/places/duplicates")
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || "Error al buscar duplicados")
+    setDuplicatePairs(data.pairs || [])
+    setDuplicateMeta({ scanned: data.scanned ?? 0, exactCount: data.exactCount ?? 0 })
+    setSelectedDeleteIds(new Set())
+  }
+
+  const deleteSelectedDuplicates = async () => {
+    if (selectedDeleteIds.size === 0) return
+    if (
+      !window.confirm(
+        `¿Eliminar ${selectedDeleteIds.size} lugar(es) seleccionado(s)? Esta acción no se puede deshacer.`
+      )
+    ) {
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/admin/places/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedDeleteIds],
+          action: "delete",
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al eliminar")
+      toast.success(data.message || "Lugares eliminados")
+      await reloadDuplicates()
+      onRefreshPlaces()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al eliminar")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const refreshIncomplete = async () => {
     const res = await fetch("/api/admin/places/incomplete")
@@ -70,11 +124,7 @@ export function AdminPlaceReviewTools({
     const load = async () => {
       try {
         if (mode === "duplicates") {
-          const res = await fetch("/api/admin/places/duplicates")
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || "Error al buscar duplicados")
-          setDuplicatePairs(data.pairs || [])
-          setDuplicateMeta({ scanned: data.scanned ?? 0, exactCount: data.exactCount ?? 0 })
+          await reloadDuplicates()
         } else {
           await refreshIncomplete()
         }
@@ -88,12 +138,30 @@ export function AdminPlaceReviewTools({
   }, [mode])
 
   useEffect(() => {
-    if (mode !== "incomplete" || !queueStats?.workerActive) return
+    if (mode !== "incomplete") return
     const timer = setInterval(() => {
-      void refreshIncomplete().then(() => onRefreshPlaces())
+      void refreshIncomplete()
+        .then(async () => {
+          onRefreshPlaces()
+          const res = await fetch("/api/admin/places/enrichment-queue")
+          if (!res.ok) return
+          const stats = (await res.json()) as QueueStats
+          if (stats.stalled && stats.queued > 0) {
+            const now = Date.now()
+            if (now - lastAutoResumeRef.current > 30_000) {
+              lastAutoResumeRef.current = now
+              await fetch("/api/admin/places/enrichment-queue", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "resume" }),
+              })
+            }
+          }
+        })
+        .catch(() => {})
     }, 5000)
     return () => clearInterval(timer)
-  }, [mode, queueStats?.workerActive, onRefreshPlaces])
+  }, [mode, onRefreshPlaces])
 
   const startQueue = async () => {
     setEnriching(true)
@@ -159,7 +227,7 @@ export function AdminPlaceReviewTools({
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {mode === "duplicates"
-              ? "Compara nombre, dirección y tipo entre lugares publicados."
+              ? "Solo coincidencias exactas: mismo nombre, dirección y tipo. Marcá cuál borrar."
               : "Enriquecé fichas vacías (solo nombre/dirección) con Google + IA."}
           </p>
         </div>
@@ -174,71 +242,83 @@ export function AdminPlaceReviewTools({
           Analizando…
         </div>
       ) : mode === "duplicates" ? (
-        <div className="space-y-2 max-h-80 overflow-y-auto">
+        <div className="space-y-2">
           {duplicateMeta ? (
             <p className="text-[11px] text-muted-foreground">
-              Escaneados {duplicateMeta.scanned} lugares · {duplicatePairs.length} pares ·{" "}
-              {duplicateMeta.exactCount} exactos
+              Escaneados {duplicateMeta.scanned} lugares · {duplicatePairs.length} duplicados
+              exactos
             </p>
           ) : null}
+
+          {duplicatePairs.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 gap-1.5"
+                disabled={deleting || selectedDeleteIds.size === 0}
+                onClick={deleteSelectedDuplicates}
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                Eliminar seleccionados ({selectedDeleteIds.size})
+              </Button>
+            </div>
+          ) : null}
+
+          <div className="space-y-2 max-h-80 overflow-y-auto">
           {duplicatePairs.length === 0 ? (
             <p className="text-xs text-muted-foreground py-4 text-center">
-              No se encontraron duplicados relevantes.
+              No hay duplicados exactos.
             </p>
           ) : (
             duplicatePairs.map((pair, index) => (
               <div
                 key={`${pair.placeA.id}-${pair.placeB.id}-${index}`}
-                className={`rounded-lg border px-3 py-2 text-xs ${
-                  pair.matchLevel === "exact"
-                    ? "border-red-500/40 bg-red-500/10"
-                    : "border-amber-500/30 bg-amber-500/10"
-                }`}
+                className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs"
               >
-                <div className="flex items-center gap-1 font-semibold mb-1">
-                  <AlertTriangle
-                    className={`h-3.5 w-3.5 ${
-                      pair.matchLevel === "exact" ? "text-red-400" : "text-amber-400"
-                    }`}
-                  />
-                  {pair.matchLevel === "exact"
-                    ? "Coincidencia exacta"
-                    : "Posible duplicado"}
+                <div className="flex items-center gap-1 font-semibold mb-2 text-red-200">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+                  Duplicado exacto
                 </div>
-                <div className="space-y-1 text-foreground/90">
-                  <div>
-                    <button
-                      type="button"
-                      className="font-medium hover:underline"
-                      onClick={() => onEditPlace(pair.placeA.id)}
+                <div className="space-y-2 text-foreground/90">
+                  {([pair.placeA, pair.placeB] as const).map((place) => (
+                    <label
+                      key={place.id}
+                      className="flex items-start gap-2 rounded border border-border/50 bg-background/30 px-2 py-1.5 cursor-pointer"
                     >
-                      {pair.placeA.name}
-                    </button>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {typeLabel(pair.placeA.type)} · {pair.placeA.address}
-                    </span>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      className="font-medium hover:underline"
-                      onClick={() => onEditPlace(pair.placeB.id)}
-                    >
-                      {pair.placeB.name}
-                    </button>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {typeLabel(pair.placeB.type)} · {pair.placeB.address}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {pair.reasons.join(", ")} · score {pair.score}
-                  </p>
+                      <input
+                        type="checkbox"
+                        className="mt-0.5"
+                        checked={selectedDeleteIds.has(place.id)}
+                        onChange={() => toggleDeleteSelection(place.id)}
+                      />
+                      <span className="min-w-0">
+                        <button
+                          type="button"
+                          className="font-medium hover:underline text-left"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            onEditPlace(place.id)
+                          }}
+                        >
+                          {place.name}
+                        </button>
+                        <span className="text-muted-foreground block">
+                          {typeLabel(place.type)} · {place.address}
+                          {place.neighborhood ? ` · ${place.neighborhood}` : ""}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             ))
           )}
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -251,8 +331,10 @@ export function AdminPlaceReviewTools({
               {queueStats.workerActive ? (
                 <span className="text-primary flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  Cola activa
+                  Procesando…
                 </span>
+              ) : queueStats.stalled ? (
+                <span className="text-amber-400">Cola pausada</span>
               ) : null}
             </div>
           ) : null}
@@ -271,7 +353,7 @@ export function AdminPlaceReviewTools({
               )}
               Encolar todos y enriquecer
             </Button>
-            {queueStats && queueStats.queued > 0 && !queueStats.workerActive ? (
+            {queueStats && queueStats.stalled ? (
               <Button size="sm" variant="outline" className="h-8 text-xs" onClick={resumeQueue}>
                 Reanudar cola
               </Button>

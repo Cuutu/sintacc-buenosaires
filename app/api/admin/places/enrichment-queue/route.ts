@@ -4,8 +4,8 @@ import { logApiError } from "@/lib/logger"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import {
   getEnrichmentQueueStats,
+  resumeEnrichmentQueue,
   startEnrichmentQueue,
-  triggerEnrichmentQueueWorker,
 } from "@/lib/place-enrichment-queue"
 
 export const maxDuration = 60
@@ -38,8 +38,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as { action?: string }
 
     if (body.action === "resume") {
-      triggerEnrichmentQueueWorker()
-      const stats = await getEnrichmentQueueStats()
+      const stats = await resumeEnrichmentQueue()
       return NextResponse.json({ message: "Cola reanudada", stats })
     }
 

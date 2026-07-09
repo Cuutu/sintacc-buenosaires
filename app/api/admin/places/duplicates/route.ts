@@ -11,13 +11,11 @@ export async function GET(request: NextRequest) {
     if (session instanceof NextResponse) return session
 
     const { pairs, scanned } = await scanPublishedPlaceDuplicates()
-    const exactCount = pairs.filter((pair) => pair.matchLevel === "exact").length
-
     return NextResponse.json({
       pairs,
       scanned,
       total: pairs.length,
-      exactCount,
+      exactCount: pairs.length,
     })
   } catch (error) {
     logApiError("/api/admin/places/duplicates", error, { request })

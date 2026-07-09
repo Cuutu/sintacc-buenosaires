@@ -69,12 +69,10 @@ export function getDuplicateMatchLevel(
   score: number
 ): "exact" | "likely" | null {
   const hasName = reasons.some((reason) => reason.startsWith("nombre"))
-  const hasAddress = reasons.some(
-    (reason) => reason.includes("direccion") || reason === "misma ubicacion"
-  )
+  const hasExactAddress = reasons.includes("misma direccion")
   const hasType = reasons.includes("mismo tipo")
 
-  if (hasName && hasAddress && hasType) return "exact"
+  if (hasName && hasExactAddress && hasType) return "exact"
   if (score >= 50) return "likely"
   return null
 }

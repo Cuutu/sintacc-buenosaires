@@ -47,4 +47,14 @@ describe("place duplicate detection", () => {
     expect(scored?.reasons).not.toContain("mismo tipo")
     expect(getDuplicateMatchLevel(scored!.reasons, scored!.score)).not.toBe("exact")
   })
+
+  it("does not mark exact when only GPS is close but address differs", () => {
+    const otherAddress = {
+      ...publishedPlace,
+      address: "Otra calle 999, CABA",
+      location: { lat: -34.6201, lng: -58.4301 },
+    }
+    const scored = scoreDuplicateCandidate(source, otherAddress)
+    expect(getDuplicateMatchLevel(scored!.reasons, scored!.score)).not.toBe("exact")
+  })
 })

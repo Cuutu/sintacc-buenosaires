@@ -99,10 +99,9 @@ export async function scanPublishedPlaceDuplicates(limit = 2500): Promise<{
     }
   }
 
-  pairs.sort((a, b) => {
-    if (a.matchLevel === b.matchLevel) return b.score - a.score
-    return a.matchLevel === "exact" ? -1 : 1
-  })
+  const exactPairs = pairs.filter((pair) => pair.matchLevel === "exact")
 
-  return { pairs, scanned: places.length }
+  exactPairs.sort((a, b) => b.score - a.score)
+
+  return { pairs: exactPairs, scanned: places.length }
 }

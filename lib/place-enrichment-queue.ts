@@ -4,6 +4,7 @@ import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
 import { isPlaceInformationIncomplete } from "@/lib/place-incomplete"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
+import { RESEARCH_STALE_MS } from "@/lib/place-research/types"
 import { waitUntil } from "@vercel/functions"
 
 const MAX_PLACES_PER_TICK = 10
@@ -17,6 +18,7 @@ export type EnrichmentQueueStats = {
   failed: number
   incomplete: number
   workerActive: boolean
+  stalled: boolean
 }
 
 function getInternalJobSecret(): string | null {
@@ -44,8 +46,31 @@ export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
     done,
     failed,
     incomplete,
-    workerActive: queued > 0 || running > 0,
+    workerActive: running > 0,
+    stalled: queued > 0 && running === 0,
   }
+}
+
+export async function resetStaleEnrichmentJobs(): Promise<number> {
+  await connectDB()
+  const staleBefore = new Date(Date.now() - RESEARCH_STALE_MS)
+  const result = await Place.updateMany(
+    {
+      status: "approved",
+      "aiEnrichment.status": "running",
+      $or: [
+        { "aiEnrichment.startedAt": { $lt: staleBefore } },
+        { "aiEnrichment.startedAt": { $exists: false } },
+      ],
+    },
+    {
+      $set: {
+        "aiEnrichment.status": "queued",
+        "aiEnrichment.error": undefined,
+      },
+    }
+  )
+  return result.modifiedCount
 }
 
 export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipped: number }> {
@@ -114,6 +139,24 @@ export async function processEnrichmentQueueTick(): Promise<{
       await runPlaceResearch(next._id.toString())
     } catch (err) {
       logApiError("processEnrichmentQueueTick", err, {})
+      await Place.updateOne(
+        { _id: next._id, "aiEnrichment.status": { $in: ["queued", "running"] } },
+        {
+          $set: {
+            aiEnrichment: {
+              status: "failed",
+              ranAt: new Date(),
+              summary: "",
+              evidence: [],
+              needsAdmin: true,
+              error:
+                err instanceof Error
+                  ? err.message
+                  : "Error al procesar lugar en cola",
+            },
+          },
+        }
+      )
     }
 
     processed++
@@ -127,38 +170,32 @@ export async function processEnrichmentQueueTick(): Promise<{
   return { processed, remaining }
 }
 
-async function invokeQueueWorker(): Promise<void> {
+async function invokeQueueWorkerExternal(): Promise<void> {
   const secret = getInternalJobSecret()
+  if (!secret) return
+
   const baseUrl = getBaseUrl()
-
-  if (secret) {
-    try {
-      await fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
-        method: "POST",
-        headers: {
-          "x-internal-job-secret": secret,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      })
-      return
-    } catch (err) {
-      logApiError("invokeQueueWorker/fetch", err, {})
-    }
+  try {
+    await fetch(`${baseUrl}/api/internal/place-enrichment-queue/run`, {
+      method: "POST",
+      headers: {
+        "x-internal-job-secret": secret,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    })
+  } catch (err) {
+    logApiError("invokeQueueWorkerExternal", err, {})
   }
-
-  await runEnrichmentQueueWorker()
 }
 
 export async function runEnrichmentQueueWorker(): Promise<void> {
   try {
+    await resetStaleEnrichmentJobs()
     const { remaining } = await processEnrichmentQueueTick()
     if (remaining > 0) {
-      if (getInternalJobSecret()) {
-        await invokeQueueWorker()
-      } else {
-        triggerEnrichmentQueueWorker()
-      }
+      triggerEnrichmentQueueWorker()
+      void invokeQueueWorkerExternal()
     }
   } catch (err) {
     logApiError("runEnrichmentQueueWorker", err, {})
@@ -182,12 +219,25 @@ export async function startEnrichmentQueue(): Promise<{
   skipped: number
   stats: EnrichmentQueueStats
 }> {
+  await resetStaleEnrichmentJobs()
   const { queued, skipped } = await enqueueIncompletePlaces()
-  if (queued > 0) {
-    triggerEnrichmentQueueWorker()
-  }
   const stats = await getEnrichmentQueueStats()
-  return { queued, skipped, stats }
+  if (stats.queued > 0) {
+    triggerEnrichmentQueueWorker()
+    void invokeQueueWorkerExternal()
+  }
+  const latestStats = await getEnrichmentQueueStats()
+  return { queued, skipped, stats: latestStats }
+}
+
+export async function resumeEnrichmentQueue(): Promise<EnrichmentQueueStats> {
+  await resetStaleEnrichmentJobs()
+  const stats = await getEnrichmentQueueStats()
+  if (stats.queued > 0) {
+    triggerEnrichmentQueueWorker()
+    void invokeQueueWorkerExternal()
+  }
+  return stats
 }
 
 export function isValidInternalJobRequest(secret: string | null): boolean {
