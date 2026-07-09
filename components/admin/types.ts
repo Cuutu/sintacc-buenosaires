@@ -5,7 +5,7 @@ export type DuplicateWarningItem = DuplicateCandidate & {
 }
 
 export type AiResearchItem = {
-  status?: "pending" | "running" | "done" | "failed"
+  status?: "pending" | "queued" | "running" | "done" | "failed"
   startedAt?: string
   ranAt?: string
   googlePlaceId?: string

@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2, Sparkles, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import type { PlaceDuplicatePair } from "@/lib/place-duplicates-scan"
+import type { AiResearchItem } from "@/components/admin/types"
+import { PlaceResearchPanel } from "@/components/admin/PlaceResearchPanel"
 
 type QueueStats = {
   queued: number
@@ -27,7 +29,10 @@ type IncompletePlace = {
   missing: string[]
   enrichmentStatus?: string
   enrichmentSummary?: string
+  aiEnrichment?: AiResearchItem
 }
+
+type ReviewFilter = "all" | "done" | "failed" | "pending"
 
 type Props = {
   mode: "duplicates" | "incomplete" | null
@@ -58,7 +63,18 @@ export function AdminPlaceReviewTools({
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null)
   const [selectedDeleteIds, setSelectedDeleteIds] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("done")
   const lastAutoResumeRef = useRef(0)
+
+  const filteredIncompletePlaces = useMemo(() => {
+    return incompletePlaces.filter((place) => {
+      const status = place.enrichmentStatus ?? "pending"
+      if (reviewFilter === "all") return true
+      if (reviewFilter === "done") return status === "done"
+      if (reviewFilter === "failed") return status === "failed"
+      return status === "pending" || !place.aiEnrichment?.status
+    })
+  }, [incompletePlaces, reviewFilter])
 
   const toggleDeleteSelection = (placeId: string) => {
     setSelectedDeleteIds((prev) => {
@@ -201,22 +217,6 @@ export function AdminPlaceReviewTools({
 
   const runBatchEnrichment = startQueue
 
-  const enrichOne = async (placeId: string) => {
-    setEnriching(true)
-    try {
-      const res = await fetch(`/api/admin/places/${placeId}/research`, { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Error al investigar")
-      toast.success("Lugar enriquecido con IA")
-      await refreshIncomplete()
-      onRefreshPlaces()
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error al investigar")
-    } finally {
-      setEnriching(false)
-    }
-  }
-
   if (!mode) return null
 
   return (
@@ -229,7 +229,7 @@ export function AdminPlaceReviewTools({
           <p className="text-xs text-muted-foreground mt-0.5">
             {mode === "duplicates"
               ? "Solo coincidencias exactas: mismo nombre, dirección y tipo. Marcá cuál borrar."
-              : "Enriquecé fichas vacías (solo nombre/dirección) con Google + IA."}
+              : "Enriquecé fichas vacías con Google + IA. Revisá informes, aplicá datos y editá la ficha."}
           </p>
         </div>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onClose}>
@@ -366,58 +366,61 @@ export function AdminPlaceReviewTools({
             ) : null}
           </div>
 
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {incompletePlaces.length === 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "done" as const, label: "Listos IA" },
+                { id: "failed" as const, label: "Fallidos" },
+                { id: "pending" as const, label: "Sin investigar" },
+                { id: "all" as const, label: "Todos" },
+              ] as const
+            ).map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setReviewFilter(filter.id)}
+                className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
+                  reviewFilter === filter.id
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-border/80"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3 max-h-[32rem] overflow-y-auto">
+            {filteredIncompletePlaces.length === 0 ? (
               <p className="text-xs text-muted-foreground py-4 text-center">
-                No hay lugares con ficha mínima pendiente.
+                No hay lugares en este filtro.
               </p>
             ) : (
-              incompletePlaces.map((place) => (
+              filteredIncompletePlaces.map((place) => (
                 <div
                   key={place._id}
                   className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-xs"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold">{place.name}</p>
-                      <p className="text-muted-foreground truncate">
-                        {place.address}
-                        {place.neighborhood ? ` · ${place.neighborhood}` : ""}
-                      </p>
-                      <p className="text-[10px] text-amber-400 mt-1">
-                        Falta: {place.missing.join(", ")}
-                      </p>
-                      {place.enrichmentStatus === "queued" ? (
-                        <p className="text-[10px] text-primary mt-1">En cola…</p>
-                      ) : null}
-                      {place.enrichmentStatus === "done" && place.enrichmentSummary ? (
-                        <p className="text-[10px] text-primary mt-1 line-clamp-2">
-                          IA: {place.enrichmentSummary}
-                        </p>
-                      ) : null}
-                      {place.enrichmentStatus === "failed" ? (
-                        <p className="text-[10px] text-red-400 mt-1">IA falló — reintentar</p>
-                      ) : null}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-[11px] shrink-0"
-                      disabled={
-                        enriching ||
-                        place.enrichmentStatus === "running" ||
-                        place.enrichmentStatus === "queued"
-                      }
-                      onClick={() => enrichOne(place._id)}
-                    >
-                      {place.enrichmentStatus === "running" ||
-                      place.enrichmentStatus === "queued" ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        "IA"
-                      )}
-                    </Button>
+                  <div className="min-w-0">
+                    <p className="font-semibold">{place.name}</p>
+                    <p className="text-muted-foreground truncate">
+                      {place.address}
+                      {place.neighborhood ? ` · ${place.neighborhood}` : ""}
+                    </p>
+                    <p className="text-[10px] text-amber-400 mt-1">
+                      Falta: {place.missing.join(", ")}
+                    </p>
                   </div>
+                  <PlaceResearchPanel
+                    placeId={place._id}
+                    placeName={place.name}
+                    aiResearch={place.aiEnrichment}
+                    onUpdated={() => {
+                      void refreshIncomplete()
+                      onRefreshPlaces()
+                    }}
+                    onEditPlace={onEditPlace}
+                  />
                 </div>
               ))
             )}

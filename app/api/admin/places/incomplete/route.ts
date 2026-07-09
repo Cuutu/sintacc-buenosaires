@@ -9,8 +9,17 @@ import {
 } from "@/lib/place-incomplete"
 import { getEnrichmentQueueStats, startEnrichmentQueue } from "@/lib/place-enrichment-queue"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
+import type { AiResearch } from "@/lib/place-research/types"
 
 export const maxDuration = 60
+
+function serializeAiResearch(ai?: AiResearch | null) {
+  if (!ai) return undefined
+  const startedAt =
+    ai.startedAt instanceof Date ? ai.startedAt.toISOString() : ai.startedAt
+  const ranAt = ai.ranAt instanceof Date ? ai.ranAt.toISOString() : ai.ranAt
+  return { ...ai, startedAt, ranAt }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,6 +44,7 @@ export async function GET(request: NextRequest) {
         missing: countMissingEnrichmentFields(place),
         enrichmentStatus: place.aiEnrichment?.status ?? "pending",
         enrichmentSummary: place.aiEnrichment?.summary,
+        aiEnrichment: serializeAiResearch(place.aiEnrichment as AiResearch | undefined),
       }))
 
     const queue = await getEnrichmentQueueStats()
