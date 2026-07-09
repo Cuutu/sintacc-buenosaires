@@ -108,7 +108,16 @@ export async function fetchWebsitePaths(baseUrl: string): Promise<string[]> {
   const home = await fetchWebsiteText(safe.toString())
   if (home) texts.push(`[homepage]\n${home}`)
 
-  for (const path of ["/menu", "/carta", "/carta-menu", "/nosotros"]) {
+  for (const path of [
+    "/menu",
+    "/carta",
+    "/carta-menu",
+    "/nosotros",
+    "/celiacos",
+    "/sin-tacc",
+    "/sin-gluten",
+    "/gluten-free",
+  ]) {
     const pageUrl = new URL(path, safe).toString()
     const text = await fetchWebsiteText(pageUrl)
     if (text && text !== home) {

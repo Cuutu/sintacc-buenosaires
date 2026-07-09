@@ -20,6 +20,8 @@ const ENRICHED_FIELD_MASK = [
   "userRatingCount",
   "reviews",
   "editorialSummary",
+  "generativeSummary",
+  "reviewSummary",
   "primaryType",
   "regularOpeningHours",
 ].join(",")
@@ -31,6 +33,9 @@ export type GooglePlaceEnriched = GooglePlaceDetails & {
   rating?: number
   userRatingCount?: number
   editorialSummary?: string
+  generativeOverview?: string
+  generativeDescription?: string
+  reviewSummaryText?: string
   primaryType?: string
   openingHoursText?: string
   reviewSnippets: string[]
@@ -39,6 +44,16 @@ export type GooglePlaceEnriched = GooglePlaceDetails & {
 interface GoogleReview {
   text?: { text?: string }
   rating?: number
+}
+
+interface GoogleGenerativeSummary {
+  overview?: { text?: string }
+  description?: { text?: string }
+}
+
+interface GoogleReviewSummary {
+  text?: { text?: string }
+  overview?: { text?: string }
 }
 
 interface GooglePlaceEnrichedResponse {
@@ -53,6 +68,8 @@ interface GooglePlaceEnrichedResponse {
   rating?: number
   userRatingCount?: number
   editorialSummary?: { text?: string }
+  generativeSummary?: GoogleGenerativeSummary
+  reviewSummary?: GoogleReviewSummary
   primaryType?: string
   regularOpeningHours?: { weekdayDescriptions?: string[] }
   reviews?: GoogleReview[]
@@ -91,9 +108,13 @@ export function normalizeGooglePlaceEnriched(
   const reviewSnippets = (place.reviews ?? [])
     .map((r) => r.text?.text?.trim())
     .filter((t): t is string => Boolean(t))
-    .slice(0, 5)
 
   const openingHoursText = place.regularOpeningHours?.weekdayDescriptions?.join("; ")
+  const generativeOverview = place.generativeSummary?.overview?.text?.trim()
+  const generativeDescription = place.generativeSummary?.description?.text?.trim()
+  const reviewSummaryText =
+    place.reviewSummary?.overview?.text?.trim() ||
+    place.reviewSummary?.text?.text?.trim()
 
   return {
     placeId,
@@ -108,6 +129,9 @@ export function normalizeGooglePlaceEnriched(
     rating: place.rating,
     userRatingCount: place.userRatingCount,
     editorialSummary: place.editorialSummary?.text,
+    generativeOverview,
+    generativeDescription,
+    reviewSummaryText,
     primaryType: place.primaryType,
     openingHoursText,
     reviewSnippets,
@@ -214,4 +238,68 @@ export async function findGooglePlaceFromMapsUrl(
   if (!hit?.placeId) return null
 
   return fetchGooglePlaceEnriched(hit.placeId)
+}
+
+/** Búsqueda extra orientada a sin TACC / celíaco (resumen Gemini de Google). */
+export async function fetchGoogleGlutenContextSearch(input: {
+  name: string
+  address?: string
+  lat?: number
+  lng?: number
+}): Promise<{ overview?: string; description?: string } | null> {
+  const apiKey = getGoogleMapsApiKey()
+  if (!apiKey || !input.name.trim()) return null
+
+  const addressParts = input.address?.split(",").map((p) => p.trim()).filter(Boolean) ?? []
+  const cityHint = addressParts.length >= 2 ? addressParts[addressParts.length - 2] : ""
+  const textQuery = [input.name, cityHint, "sin TACC celíaco"].filter(Boolean).join(" ")
+
+  const hasCoords = Number.isFinite(input.lat) && Number.isFinite(input.lng)
+  const center = hasCoords
+    ? { latitude: input.lat as number, longitude: input.lng as number }
+    : { latitude: -34.6037, longitude: -58.3816 }
+
+  const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.generativeSummary",
+    },
+    body: JSON.stringify({
+      textQuery,
+      languageCode: "es-419",
+      regionCode: "AR",
+      locationBias: {
+        circle: {
+          center,
+          radius: hasCoords ? 8000 : 50000,
+        },
+      },
+      maxResultCount: 3,
+    }),
+  })
+
+  if (!res.ok) return null
+
+  const data = (await res.json()) as {
+    places?: Array<{
+      displayName?: { text?: string }
+      generativeSummary?: GoogleGenerativeSummary
+    }>
+  }
+
+  const normalizedName = input.name.trim().toLowerCase()
+  const match =
+    data.places?.find((place) =>
+      place.displayName?.text?.trim().toLowerCase().includes(normalizedName.slice(0, 12))
+    ) ?? data.places?.[0]
+
+  if (!match?.generativeSummary) return null
+
+  return {
+    overview: match.generativeSummary.overview?.text?.trim(),
+    description: match.generativeSummary.description?.text?.trim(),
+  }
 }

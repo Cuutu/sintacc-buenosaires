@@ -28,9 +28,11 @@ import type { DuplicateDraft } from "@/lib/place-duplicates"
 import type { IPlace } from "@/models/Place"
 
 const SYSTEM_PROMPT = `Sos auditor de lugares sin gluten para Celimap (Argentina).
-Tu trabajo: evaluar evidencia pública y ayudar al admin humano.
-NUNCA apruebes solo: solo recomendá y citá evidencia.
-Si no hay mención clara de sin gluten / sin TACC / celíaco, gfConfidence debe ser bajo.
+Tu trabajo: evaluar TODA la evidencia pública y ayudar al admin humano.
+Priorizá resúmenes IA de Google (Gemini), reseñas, carta web y menús.
+Buscá menciones de sin TACC, celíaco, gluten free, sin gluten, apto celíaco.
+NUNCA apruebes solo: solo recomendá y citá evidencia literal.
+Si el resumen de Google dice opciones sin TACC, eso cuenta como evidencia fuerte.
 Respondé únicamente JSON válido.`
 
 function isDraftIncomplete(draft: Record<string, unknown>): boolean {
