@@ -63,8 +63,14 @@ export async function collectResearchSources(input: {
   if (contact.url) userLinks.push(`Link (declarado por usuario): ${contact.url}`)
 
   const websiteTexts: string[] = []
-  if (googlePlace?.websiteUri) {
-    const pages = await fetchWebsitePaths(googlePlace.websiteUri)
+  const websiteUrls = new Set<string>()
+  if (googlePlace?.websiteUri) websiteUrls.add(googlePlace.websiteUri)
+  if (contact.url && !/instagram\.com|instagr\.am/i.test(contact.url)) {
+    websiteUrls.add(contact.url.trim())
+  }
+
+  for (const url of websiteUrls) {
+    const pages = await fetchWebsitePaths(url)
     websiteTexts.push(...pages)
   }
 

@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import type { AiResearchItem } from "@/components/admin/types"
+
+const POLL_MS = 5000
+const STALE_MS = 90_000
 
 type Props = {
   suggestionId: string
@@ -34,6 +37,12 @@ function safetyLabel(level?: string | null): string {
   return "Sin evidencia clara"
 }
 
+function isRunningStale(ai?: AiResearchItem): boolean {
+  if (ai?.status !== "running") return false
+  if (!ai.startedAt) return true
+  return Date.now() - new Date(ai.startedAt).getTime() > STALE_MS
+}
+
 export function SuggestionResearchPanel({
   suggestionId,
   aiResearch,
@@ -42,6 +51,21 @@ export function SuggestionResearchPanel({
 }: Props) {
   const [open, setOpen] = useState(Boolean(aiResearch?.status === "done"))
   const [loading, setLoading] = useState(false)
+  const [staleRunning, setStaleRunning] = useState(() => isRunningStale(aiResearch))
+
+  useEffect(() => {
+    if (aiResearch?.status !== "running") {
+      setStaleRunning(false)
+      return
+    }
+    setStaleRunning(isRunningStale(aiResearch))
+    const staleTimer = setTimeout(() => setStaleRunning(true), STALE_MS)
+    const pollTimer = setInterval(() => onUpdated(), POLL_MS)
+    return () => {
+      clearTimeout(staleTimer)
+      clearInterval(pollTimer)
+    }
+  }, [aiResearch?.status, aiResearch?.startedAt, onUpdated])
 
   const runResearch = async () => {
     setLoading(true)
@@ -87,6 +111,8 @@ export function SuggestionResearchPanel({
     }
   }
 
+  const running = aiResearch?.status === "running" && !staleRunning
+
   return (
     <div className="mb-3 rounded-lg border border-border/80 bg-card/40">
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/60">
@@ -96,28 +122,41 @@ export function SuggestionResearchPanel({
               ? "border-primary/30 text-primary bg-primary/10"
               : aiResearch?.status === "failed"
                 ? "border-red-500/30 text-red-400 bg-red-500/10"
-                : "border-border text-muted-foreground"
+                : staleRunning
+                  ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
+                  : "border-border text-muted-foreground"
           }`}
         >
-          IA · {statusLabel(aiResearch)}
+          IA ·{" "}
+          {staleRunning
+            ? "Investigación colgada"
+            : statusLabel(aiResearch)}
         </span>
         <Button
           size="sm"
           variant="outline"
           className="h-7 text-xs gap-1 ml-auto"
           onClick={runResearch}
-          disabled={loading || aiResearch?.status === "running"}
+          disabled={loading || running}
         >
-          {loading || aiResearch?.status === "running" ? (
+          {loading || running ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
             <Sparkles className="h-3 w-3" />
           )}
-          {aiResearch?.status === "done" || aiResearch?.status === "failed"
-            ? "Re-investigar"
-            : "Investigar con IA"}
+          {staleRunning
+            ? "Reintentar investigación"
+            : aiResearch?.status === "done" || aiResearch?.status === "failed"
+              ? "Re-investigar"
+              : "Investigar con IA"}
         </Button>
       </div>
+
+      {staleRunning ? (
+        <p className="px-3 py-2 text-xs text-amber-400">
+          La investigación no terminó (común en deploy Vercel). Tocá reintentar.
+        </p>
+      ) : null}
 
       {aiResearch?.status === "failed" && aiResearch.error ? (
         <p className="px-3 py-2 text-xs text-red-400">{aiResearch.error}</p>

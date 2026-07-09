@@ -8,6 +8,7 @@ export const AiResearchSchema = new Schema<AiResearch>(
       enum: ["pending", "running", "done", "failed"],
       default: "pending",
     },
+    startedAt: Date,
     ranAt: Date,
     googlePlaceId: String,
     matchConfidence: Number,

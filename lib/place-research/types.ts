@@ -44,8 +44,11 @@ export type AiResearchAnalysis = z.infer<typeof aiResearchAnalysisSchema>
 
 export type AiResearchStatus = "pending" | "running" | "done" | "failed"
 
+export const RESEARCH_STALE_MS = 90_000
+
 export type AiResearch = {
   status: AiResearchStatus
+  startedAt?: Date
   ranAt?: Date
   googlePlaceId?: string
   matchConfidence?: number

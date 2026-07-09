@@ -12,10 +12,13 @@ import {
   collectResearchSources,
 } from "@/lib/place-research/collect-sources"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
+import { logApiError } from "@/lib/logger"
 import {
   aiResearchAnalysisSchema,
+  RESEARCH_STALE_MS,
   type AiResearch,
 } from "@/lib/place-research/types"
+import { waitUntil } from "@vercel/functions"
 import type { IPlace } from "@/models/Place"
 
 const SYSTEM_PROMPT = `Sos auditor de lugares sin gluten para Celimap (Argentina).
@@ -37,17 +40,42 @@ function isDraftIncomplete(draft: Record<string, unknown>): boolean {
   )
 }
 
+function extractInstagramHandle(url: string): string | null {
+  const match = url.match(/instagram\.com\/([^/?#]+)/i)
+  if (!match) return null
+  const handle = match[1].toLowerCase()
+  if (["p", "reel", "reels", "stories", "explore"].includes(handle)) return null
+  return handle
+}
+
 function buildSearchQuery(draft: Record<string, unknown>): string {
-  const parts = [
-    draft.name,
-    draft.address,
-    draft.neighborhood,
-    "Buenos Aires",
-  ]
+  const contact = (draft.contact as Record<string, string> | undefined) ?? {}
+  const parts = [draft.name, draft.address, draft.neighborhood]
     .map((p) => String(p ?? "").trim())
     .filter((p) => p && !p.includes("A completar"))
 
+  if (parts.length === 0 || isDraftIncomplete(draft)) {
+    const ig = contact.instagram ? extractInstagramHandle(contact.instagram) : null
+    if (ig) parts.push(ig.replace(/[._]/g, " "))
+    else if (contact.url && !/instagram\.com|instagr\.am/i.test(contact.url)) {
+      try {
+        const host = new URL(contact.url).hostname.replace(/^www\./, "")
+        parts.push(host.split(".")[0])
+      } catch {
+        // ignore invalid URL
+      }
+    }
+  }
+
+  parts.push("Buenos Aires")
   return parts.join(" ")
+}
+
+function isResearchStale(ai?: AiResearch | null, updatedAt?: Date): boolean {
+  if (ai?.status !== "running") return false
+  const started = ai.startedAt ?? updatedAt
+  if (!started) return true
+  return Date.now() - new Date(started).getTime() > RESEARCH_STALE_MS
 }
 
 function buildSuggestedPatch(input: {
@@ -141,8 +169,14 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
     throw new Error("Solo se investigan sugerencias pendientes.")
   }
 
+  const existing = suggestion.aiResearch
+  if (existing?.status === "running" && !isResearchStale(existing, suggestion.updatedAt)) {
+    return existing
+  }
+
   const running: AiResearch = {
     status: "running",
+    startedAt: new Date(),
     summary: "",
     evidence: [],
     needsAdmin: true,
@@ -231,8 +265,15 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
   }
 }
 
-/** Dispara investigación sin bloquear respuesta HTTP. */
+/** Dispara investigación sin bloquear respuesta HTTP (waitUntil en Vercel). */
 export function triggerSuggestionResearchAsync(suggestionId: string): void {
   if (!isPlaceResearchEnabled()) return
-  void runSuggestionResearch(suggestionId).catch(() => {})
+  const task = runSuggestionResearch(suggestionId).catch((err) => {
+    logApiError(`triggerSuggestionResearchAsync/${suggestionId}`, err)
+  })
+  try {
+    waitUntil(task)
+  } catch {
+    void task
+  }
 }

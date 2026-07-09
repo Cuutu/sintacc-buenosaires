@@ -1,5 +1,6 @@
 export type AiResearchItem = {
   status?: "pending" | "running" | "done" | "failed"
+  startedAt?: string
   ranAt?: string
   googlePlaceId?: string
   matchConfidence?: number
