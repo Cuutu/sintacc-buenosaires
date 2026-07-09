@@ -138,7 +138,60 @@ function buildGapFillPatch(input: {
     patch.safetyLevel = analysis.recommendedSafetyLevel
   }
 
+  if (suggested.neighborhood && isMissingField(draft.neighborhood)) {
+    patch.neighborhood = suggested.neighborhood
+  }
+
+  if (isMissingField(patch.neighborhood ?? draft.neighborhood)) {
+    const fallback = inferNeighborhoodFallback(draft, googlePlace)
+    if (fallback) patch.neighborhood = fallback
+  }
+
   return patch
+}
+
+function inferNeighborhoodFallback(
+  draft: Record<string, unknown>,
+  googlePlace: Awaited<ReturnType<typeof fetchGooglePlaceEnriched>> | null
+): string | undefined {
+  const userNb = String(draft.userProvidedNeighborhood ?? "").trim()
+  if (userNb) return userNb
+
+  const address = String(googlePlace?.address ?? draft.address ?? "").trim()
+  if (!address) return undefined
+
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+  if (parts.length < 2) return undefined
+
+  const candidate = parts[parts.length - 2]
+  if (!candidate || /^\d/.test(candidate)) return undefined
+  return candidate
+}
+
+async function persistPlaceResearchUpdate(
+  placeId: string,
+  input: {
+    aiEnrichment: AiResearch
+    patch?: Partial<IPlace>
+    existingContact?: IPlace["contact"]
+  }
+): Promise<void> {
+  const $set: Record<string, unknown> = { aiEnrichment: input.aiEnrichment }
+
+  if (input.patch) {
+    const { contact, ...rest } = input.patch
+    for (const [key, value] of Object.entries(rest)) {
+      if (value !== undefined) $set[key] = value
+    }
+    if (contact) {
+      $set.contact = { ...(input.existingContact ?? {}), ...contact }
+    }
+  }
+
+  await Place.updateOne({ _id: placeId }, { $set })
 }
 
 function isMissingField(value: unknown): boolean {
@@ -186,8 +239,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
     evidence: [],
     needsAdmin: true,
   }
-  place.aiEnrichment = running
-  await place.save()
+  await persistPlaceResearchUpdate(place._id.toString(), { aiEnrichment: running })
 
   try {
     const draft = placeToDraft(place)
@@ -245,9 +297,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
     const draftAutoFilled = Object.keys(suggestedDraftPatch).length > 0
     const nextDraft = draftAutoFilled ? mergePlacePatch(draft, suggestedDraftPatch) : draft
 
-    if (draftAutoFilled) {
-      Object.assign(place, nextDraft)
-    }
+    const mergedPlace = draftAutoFilled ? { ...place.toObject(), ...nextDraft } : place.toObject()
 
     const duplicateWarnings = await findDuplicateWarningsForDraft(
       nextDraft as DuplicateDraft
@@ -255,7 +305,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
 
     const needsAdmin =
       analysis.needsAdmin ||
-      isPlaceInformationIncomplete(place) ||
+      isPlaceInformationIncomplete(mergedPlace as IPlace) ||
       analysis.gfConfidence < 60 ||
       analysis.matchConfidence < 50 ||
       !googlePlace ||
@@ -281,8 +331,11 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
       model,
     }
 
-    place.aiEnrichment = result
-    await place.save()
+    await persistPlaceResearchUpdate(place._id.toString(), {
+      aiEnrichment: result,
+      patch: draftAutoFilled ? suggestedDraftPatch : undefined,
+      existingContact: place.contact,
+    })
     return result
   } catch (err: unknown) {
     const message =
@@ -299,8 +352,7 @@ export async function runPlaceResearch(placeId: string): Promise<AiResearch> {
       needsAdmin: true,
       error: message,
     }
-    place.aiEnrichment = failed
-    await place.save()
+    await persistPlaceResearchUpdate(place._id.toString(), { aiEnrichment: failed })
     return failed
   }
 }

@@ -7,8 +7,8 @@ import { runPlaceResearch } from "@/lib/place-research/run-place-research"
 import { RESEARCH_STALE_MS } from "@/lib/place-research/types"
 import { waitUntil } from "@vercel/functions"
 
-const MAX_PLACES_PER_TICK = 10
-const MAX_TICK_MS = 52_000
+const MAX_PLACES_PER_TICK = 2
+const MAX_TICK_MS = 50_000
 const ENQUEUE_LIMIT = 500
 
 export type EnrichmentQueueStats = {
