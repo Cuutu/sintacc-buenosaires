@@ -5,7 +5,7 @@ export const AiResearchSchema = new Schema<AiResearch>(
   {
     status: {
       type: String,
-      enum: ["pending", "running", "done", "failed"],
+      enum: ["pending", "queued", "running", "done", "failed"],
       default: "pending",
     },
     startedAt: Date,

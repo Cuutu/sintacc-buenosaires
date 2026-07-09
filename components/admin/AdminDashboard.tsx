@@ -57,6 +57,10 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
   const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(false)
   const [placeMissingBadgeFilter, setPlaceMissingBadgeFilter] = useState(false)
+  const [placeIncompleteOnlyFilter, setPlaceIncompleteOnlyFilter] = useState(false)
+  const [placeReviewMode, setPlaceReviewMode] = useState<"duplicates" | "incomplete" | null>(
+    null
+  )
   const [placesPage, setPlacesPage] = useState(1)
   const [placesPagination, setPlacesPagination] = useState<{ total: number; page: number; pages: number } | null>(null)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([])
@@ -189,6 +193,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
       if (placeNeighborhoodFilter) params.set("neighborhood", placeNeighborhoodFilter)
       if (placeMissingInfoFilter) params.set("missingInfo", "1")
       if (placeMissingBadgeFilter) params.set("missingBadge", "1")
+      if (placeIncompleteOnlyFilter) params.set("incompleteOnly", "1")
       params.set("page", String(p))
       params.set("limit", "25")
       const res = await fetch(`/api/admin/places?${params}`)
@@ -707,6 +712,10 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           handleDeletePlace={handleDeletePlace}
           editingPlaceId={editingPlaceId}
           setEditingPlaceId={setEditingPlaceId}
+          placeIncompleteOnlyFilter={placeIncompleteOnlyFilter}
+          setPlaceIncompleteOnlyFilter={setPlaceIncompleteOnlyFilter}
+          placeReviewMode={placeReviewMode}
+          setPlaceReviewMode={setPlaceReviewMode}
         />
       )}
 

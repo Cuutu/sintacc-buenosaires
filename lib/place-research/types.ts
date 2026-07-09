@@ -123,7 +123,7 @@ export const aiResearchAnalysisSchema = z
     }
   })
 
-export type AiResearchStatus = "pending" | "running" | "done" | "failed"
+export type AiResearchStatus = "pending" | "queued" | "running" | "done" | "failed"
 
 export const RESEARCH_STALE_MS = 90_000
 

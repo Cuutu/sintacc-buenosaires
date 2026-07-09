@@ -7,6 +7,7 @@ import { Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { TYPES } from "@/lib/constants"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
+import { AdminPlaceReviewTools } from "@/components/admin/AdminPlaceReviewTools"
 import type { PlaceItem } from "@/components/admin/types"
 import { getPlacePath } from "@/lib/place-url"
 
@@ -39,6 +40,10 @@ export type AdminPlacesSectionProps = {
   handleDeletePlace: (id: string, name: string) => void
   editingPlaceId: string | null
   setEditingPlaceId: (id: string | null) => void
+  placeIncompleteOnlyFilter: boolean
+  setPlaceIncompleteOnlyFilter: (v: boolean) => void
+  placeReviewMode: "duplicates" | "incomplete" | null
+  setPlaceReviewMode: (mode: "duplicates" | "incomplete" | null) => void
 }
 
 export function AdminPlacesSection(props: AdminPlacesSectionProps) {
@@ -68,10 +73,14 @@ const {
   handleDeletePlace,
   editingPlaceId,
   setEditingPlaceId,
+  placeIncompleteOnlyFilter,
+  setPlaceIncompleteOnlyFilter,
+  placeReviewMode,
+  setPlaceReviewMode,
 } = props
   return (
   <div className="rounded-xl border border-border overflow-hidden">
-    <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
+    <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between gap-3">
       <div>
         <h2 className="text-sm font-bold flex items-center gap-2">
           📍 Lugares publicados
@@ -85,7 +94,43 @@ const {
           Editá los datos, cambiá el nivel de seguridad o eliminá lugares incorrectos
         </p>
       </div>
+      <div className="flex flex-wrap gap-2 shrink-0">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          onClick={() =>
+            setPlaceReviewMode(placeReviewMode === "duplicates" ? null : "duplicates")
+          }
+        >
+          Revisar duplicados
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          onClick={() => {
+            const next = placeReviewMode === "incomplete" ? null : "incomplete"
+            setPlaceReviewMode(next)
+            if (next === "incomplete") {
+              setPlaceIncompleteOnlyFilter(true)
+              setPlaceFilter("approved")
+              setPlacesPage(1)
+              fetchPlaces("approved", 1)
+            }
+          }}
+        >
+          Sin información
+        </Button>
+      </div>
     </div>
+
+    <AdminPlaceReviewTools
+      mode={placeReviewMode}
+      onClose={() => setPlaceReviewMode(null)}
+      onRefreshPlaces={() => fetchPlaces(undefined, placesPage)}
+      onEditPlace={setEditingPlaceId}
+    />
 
     {/* Filtros */}
     <div className="px-4 py-3 border-b border-border bg-card/50 space-y-2">
@@ -183,6 +228,19 @@ const {
               : "border-border bg-card text-muted-foreground"
           }`}>
           📭 Sin información de contacto
+        </button>
+        <button
+          onClick={() => {
+            setPlaceIncompleteOnlyFilter(!placeIncompleteOnlyFilter)
+            setPlacesPage(1)
+            setTimeout(() => fetchPlaces(undefined, 1), 0)
+          }}
+          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+            placeIncompleteOnlyFilter
+              ? "border-primary/40 bg-primary/8 text-primary"
+              : "border-border bg-card text-muted-foreground"
+          }`}>
+          🧩 Ficha mínima
         </button>
       </div>
 

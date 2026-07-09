@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
 import { features } from "@/lib/features"
+import type { AiResearch } from "@/lib/place-research/types"
+import { AiResearchSchema } from "@/models/Suggestion.aiResearch"
 
 export interface IPlace extends Document {
   name: string
@@ -41,6 +43,7 @@ export interface IPlace extends Document {
   // Fase 2
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   lastConfirmedAt?: Date
+  aiEnrichment?: AiResearch
   createdAt: Date
   updatedAt: Date
 }
@@ -131,6 +134,10 @@ const PlaceSchema = new Schema<IPlace>(
     },
     lastConfirmedAt: {
       type: Date,
+    },
+    aiEnrichment: {
+      type: AiResearchSchema,
+      required: false,
     },
   },
   {

@@ -5,6 +5,7 @@ import { Review } from "@/models/Review"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import { getOrSetApiCache } from "@/lib/api-cache"
+import { isPlaceInformationIncomplete } from "@/lib/place-incomplete"
 
 const ADMIN_PLACES_CACHE_TTL_MS = 45 * 1000
 
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     const neighborhood = searchParams.get("neighborhood")
     const missingInfo = searchParams.get("missingInfo") === "1"
     const missingBadge = searchParams.get("missingBadge") === "1"
+    const incompleteOnly = searchParams.get("incompleteOnly") === "1"
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
@@ -72,11 +74,47 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `admin:places:${searchParams.toString()}`
     const data = await getOrSetApiCache(cacheKey, ADMIN_PLACES_CACHE_TTL_MS, async () => {
-      const places = await Place.find(query)
+      const fetchLimit = incompleteOnly ? 3000 : limit
+      const fetchSkip = incompleteOnly ? 0 : skip
+
+      let places = await Place.find(query)
         .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
+        .skip(fetchSkip)
+        .limit(fetchLimit)
         .lean()
+
+      if (incompleteOnly) {
+        places = places.filter((place) => isPlaceInformationIncomplete(place))
+        const total = places.length
+        places = places.slice(skip, skip + limit)
+        const placeIds = places.map((p: { _id: unknown }) => p._id)
+        let reviewStats: Array<{ _id: unknown; avgRating: number; count: number }> = []
+        if (placeIds.length > 0) {
+          reviewStats = await Review.aggregate([
+            { $match: { placeId: { $in: placeIds }, status: "visible" } },
+            { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
+          ])
+        }
+        const statsMap = new Map(
+          reviewStats.map((s) => [
+            String(s._id),
+            { avgRating: Math.round(s.avgRating * 10) / 10, totalReviews: s.count },
+          ])
+        )
+        const placesWithStats = places.map((p: Record<string, unknown>) => ({
+          ...p,
+          stats: statsMap.get(String(p._id)) || { avgRating: 0, totalReviews: 0 },
+        }))
+        return {
+          places: placesWithStats,
+          pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit),
+          },
+        }
+      }
 
       const total = await Place.countDocuments(query)
       const placeIds = places.map((p: any) => p._id)
