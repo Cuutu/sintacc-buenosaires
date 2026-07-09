@@ -148,30 +148,68 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                   </p>
                 )}
                 {suggestion.duplicateCandidates?.length ? (
-                  <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                  <div
+                    className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+                      suggestion.duplicateCandidates.some(
+                        (candidate) => candidate.matchLevel === "exact"
+                      )
+                        ? "border-red-500/40 bg-red-500/10"
+                        : "border-amber-500/30 bg-amber-500/10"
+                    }`}
+                  >
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                      <AlertTriangle
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${
+                          suggestion.duplicateCandidates.some(
+                            (candidate) => candidate.matchLevel === "exact"
+                          )
+                            ? "text-red-400"
+                            : "text-amber-400"
+                        }`}
+                      />
                       <div className="min-w-0 space-y-1.5">
-                        <p className="font-semibold text-amber-200">
-                          Posible duplicado
+                        <p
+                          className={`font-semibold ${
+                            suggestion.duplicateCandidates.some(
+                              (candidate) => candidate.matchLevel === "exact"
+                            )
+                              ? "text-red-200"
+                              : "text-amber-200"
+                          }`}
+                        >
+                          {suggestion.duplicateCandidates.some(
+                            (candidate) => candidate.matchLevel === "exact"
+                          )
+                            ? "Ya existe en el mapa (nombre, dirección y tipo)"
+                            : "Posible duplicado"}
                         </p>
                         <div className="space-y-1">
                           {suggestion.duplicateCandidates.map((candidate) => (
-                            <div key={`${candidate.kind}-${candidate.id}`} className="text-amber-100/90">
+                            <div key={`${candidate.kind}-${candidate.id}`} className="text-foreground/90">
                               <span className="font-medium">{candidate.name}</span>
-                              <span className="text-amber-100/60">
+                              <span className="text-muted-foreground">
                                 {" "}({candidate.kind === "place" ? "ya publicado" : "otra sugerencia pendiente"})
                               </span>
+                              {candidate.address ? (
+                                <span className="text-muted-foreground"> · {candidate.address}</span>
+                              ) : null}
+                              {candidate.type ? (
+                                <span className="text-muted-foreground">
+                                  {" "}· {getTypeLabel(candidate.type)}
+                                </span>
+                              ) : null}
                               {candidate.neighborhood && (
-                                <span className="text-amber-100/60"> - {candidate.neighborhood}</span>
+                                <span className="text-muted-foreground"> · {candidate.neighborhood}</span>
                               )}
                               {candidate.distanceMeters != null && (
-                                <span className="text-amber-100/60">
-                                  {" "}- {formatDistance(candidate.distanceMeters)}
+                                <span className="text-muted-foreground">
+                                  {" "}· {formatDistance(candidate.distanceMeters)}
                                 </span>
                               )}
-                              <div className="text-[11px] text-amber-100/60">
-                                Coincidencias: {candidate.reasons.join(", ")} - score {candidate.score}
+                              <div className="text-[11px] text-muted-foreground">
+                                {candidate.matchLevel === "exact"
+                                  ? "Coincidencia exacta: nombre, dirección y tipo"
+                                  : `Coincidencias: ${candidate.reasons.join(", ")} · score ${candidate.score}`}
                               </div>
                             </div>
                           ))}

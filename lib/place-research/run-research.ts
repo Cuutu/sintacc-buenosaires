@@ -23,6 +23,8 @@ import {
 } from "@/lib/place-research/types"
 import { waitUntil } from "@vercel/functions"
 import { z } from "zod"
+import { findDuplicateWarningsForDraft } from "@/lib/place-duplicates-loader"
+import type { DuplicateDraft } from "@/lib/place-duplicates"
 import type { IPlace } from "@/models/Place"
 
 const SYSTEM_PROMPT = `Sos auditor de lugares sin gluten para Celimap (Argentina).
@@ -285,12 +287,18 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
       suggestion.placeDraft = nextDraft as typeof suggestion.placeDraft
     }
 
-    const needsAdmin =
+    const duplicateWarnings = await findDuplicateWarningsForDraft(
+      nextDraft as DuplicateDraft,
+      suggestionId
+    )
+
+    let needsAdmin =
       analysis.needsAdmin ||
       isDraftIncomplete(nextDraft) ||
       analysis.gfConfidence < 60 ||
       analysis.matchConfidence < 50 ||
-      !googlePlace
+      !googlePlace ||
+      duplicateWarnings.some((warning) => warning.matchLevel === "exact")
 
     const result: AiResearch = {
       status: "done",
@@ -306,6 +314,7 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
         ? suggestedDraftPatch
         : undefined,
       draftAutoFilled,
+      duplicateWarnings: duplicateWarnings.length ? duplicateWarnings : undefined,
       needsAdmin,
       costUsd: cost,
       model,

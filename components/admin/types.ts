@@ -1,3 +1,9 @@
+import type { DuplicateCandidate } from "@/lib/place-duplicates"
+
+export type DuplicateWarningItem = DuplicateCandidate & {
+  matchLevel: "exact" | "likely"
+}
+
 export type AiResearchItem = {
   status?: "pending" | "running" | "done" | "failed"
   startedAt?: string
@@ -19,6 +25,7 @@ export type AiResearchItem = {
   costUsd?: number
   model?: string
   draftAutoFilled?: boolean
+  duplicateWarnings?: DuplicateWarningItem[]
 }
 
 export type SuggestionItem = {
@@ -45,10 +52,12 @@ export type SuggestionItem = {
     name: string
     address?: string
     neighborhood?: string
+    type?: string
     score: number
     reasons: string[]
     distanceMeters?: number
     status?: string
+    matchLevel?: "exact" | "likely"
   }>
 }
 

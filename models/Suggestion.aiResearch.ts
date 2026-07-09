@@ -32,6 +32,21 @@ export const AiResearchSchema = new Schema<AiResearch>(
     costUsd: Number,
     model: String,
     draftAutoFilled: Boolean,
+    duplicateWarnings: [
+      {
+        id: String,
+        kind: { type: String, enum: ["place", "suggestion"] },
+        name: String,
+        address: String,
+        neighborhood: String,
+        type: String,
+        score: Number,
+        reasons: [String],
+        distanceMeters: Number,
+        status: String,
+        matchLevel: { type: String, enum: ["exact", "likely"] },
+      },
+    ],
   },
   { _id: false }
 )

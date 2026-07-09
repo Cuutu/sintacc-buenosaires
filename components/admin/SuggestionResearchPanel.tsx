@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, Loader2, Sparkles } from "lucide-react"
+import { ChevronDown, Loader2, Sparkles, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
-import type { AiResearchItem } from "@/components/admin/types"
+import { TYPES } from "@/lib/constants"
+import type { AiResearchItem, DuplicateWarningItem } from "@/components/admin/types"
 
 const POLL_MS = 5000
 const STALE_MS = 90_000
@@ -41,6 +42,58 @@ function isRunningStale(ai?: AiResearchItem): boolean {
   if (ai?.status !== "running") return false
   if (!ai.startedAt) return true
   return Date.now() - new Date(ai.startedAt).getTime() > STALE_MS
+}
+
+function typeLabel(type?: string): string {
+  if (!type) return "sin tipo"
+  return TYPES.find((item) => item.value === type)?.label ?? type
+}
+
+function DuplicateWarningsList({ warnings }: { warnings: DuplicateWarningItem[] }) {
+  const hasExact = warnings.some((warning) => warning.matchLevel === "exact")
+
+  return (
+    <div
+      className={`rounded-lg border px-3 py-2 ${
+        hasExact
+          ? "border-red-500/40 bg-red-500/10"
+          : "border-amber-500/30 bg-amber-500/10"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <AlertTriangle
+          className={`mt-0.5 h-4 w-4 shrink-0 ${hasExact ? "text-red-400" : "text-amber-400"}`}
+        />
+        <div className="min-w-0 space-y-1.5">
+          <p className={`font-semibold ${hasExact ? "text-red-200" : "text-amber-200"}`}>
+            {hasExact
+              ? "Ya existe en el mapa (nombre, dirección y tipo)"
+              : "Posible duplicado"}
+          </p>
+          {warnings.map((warning) => (
+            <div key={`${warning.kind}-${warning.id}`} className="text-[11px] leading-relaxed">
+              <span className="font-medium text-foreground/90">{warning.name}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                ({warning.kind === "place" ? "publicado" : "otra sugerencia"})
+              </span>
+              {warning.address ? (
+                <span className="text-muted-foreground"> · {warning.address}</span>
+              ) : null}
+              {warning.type ? (
+                <span className="text-muted-foreground"> · {typeLabel(warning.type)}</span>
+              ) : null}
+              <div className="text-muted-foreground">
+                {warning.matchLevel === "exact"
+                  ? "Coincidencia exacta"
+                  : `Coincidencias: ${warning.reasons.join(", ")}`}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function SuggestionResearchPanel({
@@ -80,6 +133,16 @@ export function SuggestionResearchPanel({
           ? "Investigación lista — borrador completado con Google"
           : "Investigación completada"
       )
+      if (data.aiResearch?.duplicateWarnings?.length) {
+        const exact = data.aiResearch.duplicateWarnings.some(
+          (warning: DuplicateWarningItem) => warning.matchLevel === "exact"
+        )
+        toast.warning(
+          exact
+            ? "Atención: ya existe un lugar con mismo nombre, dirección y tipo"
+            : "Posible duplicado detectado — revisá antes de publicar"
+        )
+      }
       setOpen(true)
       onUpdated()
     } catch (err: unknown) {
@@ -164,6 +227,12 @@ export function SuggestionResearchPanel({
 
       {aiResearch?.status === "failed" && aiResearch.error ? (
         <p className="px-3 py-2 text-xs text-red-400">{aiResearch.error}</p>
+      ) : null}
+
+      {aiResearch?.status === "done" && aiResearch.duplicateWarnings?.length ? (
+        <div className="px-3 py-2">
+          <DuplicateWarningsList warnings={aiResearch.duplicateWarnings} />
+        </div>
       ) : null}
 
       {aiResearch?.status === "done" ? (

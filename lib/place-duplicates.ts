@@ -3,6 +3,8 @@ export type DuplicateCandidateKind = "place" | "suggestion"
 export interface DuplicateDraft {
   _id?: unknown
   name?: string
+  type?: string
+  types?: string[]
   address?: string
   addressText?: string
   neighborhood?: string
@@ -23,6 +25,7 @@ export interface DuplicateCandidate {
   name: string
   address?: string
   neighborhood?: string
+  type?: string
   score: number
   reasons: string[]
   distanceMeters?: number
@@ -59,6 +62,21 @@ export function findDuplicateCandidates(
     .filter((candidate) => candidate.score >= threshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
+}
+
+export function getDuplicateMatchLevel(
+  reasons: string[],
+  score: number
+): "exact" | "likely" | null {
+  const hasName = reasons.some((reason) => reason.startsWith("nombre"))
+  const hasAddress = reasons.some(
+    (reason) => reason.includes("direccion") || reason === "misma ubicacion"
+  )
+  const hasType = reasons.includes("mismo tipo")
+
+  if (hasName && hasAddress && hasType) return "exact"
+  if (score >= 50) return "likely"
+  return null
 }
 
 export function scoreDuplicateCandidate(
@@ -127,6 +145,13 @@ export function scoreDuplicateCandidate(
     reasons.push("mismo barrio/localidad")
   }
 
+  const sourceType = normalizeDraftType(source)
+  const candidateType = normalizeDraftType(candidate)
+  if (isUsefulText(sourceType) && sourceType === candidateType) {
+    score += 12
+    reasons.push("mismo tipo")
+  }
+
   const sharedContactReason = getSharedContactReason(source, candidate)
   if (sharedContactReason) {
     score += 80
@@ -155,6 +180,7 @@ export function scoreDuplicateCandidate(
     name: candidate.name || "Lugar sin nombre",
     address: candidate.address || candidate.addressText,
     neighborhood: candidate.neighborhood,
+    type: normalizeDraftType(candidate) || undefined,
     score: Math.min(100, score),
     reasons: [...new Set(reasons)],
     distanceMeters,
@@ -175,6 +201,11 @@ function normalizeSearchText(value: unknown): string {
 
 function compactText(value: string): string {
   return value.replace(/\s+/g, "")
+}
+
+function normalizeDraftType(draft: DuplicateDraft): string {
+  const value = draft.types?.[0] || draft.type
+  return normalizeSearchText(value)
 }
 
 function isUsefulText(value: string): boolean {

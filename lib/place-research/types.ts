@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { DuplicateWarning } from "@/lib/place-duplicates-loader"
 import type { IPlace } from "@/models/Place"
 
 const PLACE_TYPE_VALUES = [
@@ -143,4 +144,5 @@ export type AiResearch = {
   costUsd?: number
   model?: string
   draftAutoFilled?: boolean
+  duplicateWarnings?: DuplicateWarning[]
 }
