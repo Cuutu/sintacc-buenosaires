@@ -33,19 +33,23 @@ export const AiResearchSchema = new Schema<AiResearch>(
     model: String,
     draftAutoFilled: Boolean,
     duplicateWarnings: [
-      {
-        id: String,
-        kind: { type: String, enum: ["place", "suggestion"] },
-        name: String,
-        address: String,
-        neighborhood: String,
-        type: String,
-        score: Number,
-        reasons: [String],
-        distanceMeters: Number,
-        status: String,
-        matchLevel: { type: String, enum: ["exact", "likely"] },
-      },
+      new Schema(
+        {
+          id: String,
+          kind: { type: String, enum: ["place", "suggestion"] },
+          name: String,
+          address: String,
+          neighborhood: String,
+          // "type" necesita forma explícita: si no, Mongoose lee el subdoc como [String]
+          type: { type: String },
+          score: Number,
+          reasons: [String],
+          distanceMeters: Number,
+          status: String,
+          matchLevel: { type: String, enum: ["exact", "likely"] },
+        },
+        { _id: false }
+      ),
     ],
   },
   { _id: false }
