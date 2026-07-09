@@ -244,7 +244,7 @@ export function AdminPlaceReviewTools({
           <p className="text-xs text-muted-foreground mt-0.5">
             {mode === "duplicates"
               ? "Solo coincidencias exactas: mismo nombre, dirección y tipo. Marcá cuál borrar."
-              : "Enriquecé fichas vacías con Google + IA. Revisá informes, aplicá datos y editá la ficha."}
+              : "Lugares sin clasificación TACC u otros datos clave. Fotos no se listan acá."}
           </p>
         </div>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onClose}>

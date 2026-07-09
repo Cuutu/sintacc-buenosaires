@@ -4,9 +4,9 @@ import { Place } from "@/models/Place"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import {
-  countMissingEnrichmentFields,
+  countMissingConcreteFields,
   isPlaceEnrichmentReviewCandidate,
-  isPlaceInformationIncomplete,
+  isPlaceMissingConcreteInformation,
 } from "@/lib/place-incomplete"
 import { getEnrichmentQueueStats, startEnrichmentQueue } from "@/lib/place-enrichment-queue"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
         address: place.address,
         neighborhood: place.neighborhood,
         type: place.types?.[0] || place.type,
-        missing: countMissingEnrichmentFields(place),
+        missing: countMissingConcreteFields(place),
         enrichmentStatus: place.aiEnrichment?.status ?? "pending",
         enrichmentSummary: place.aiEnrichment?.summary,
         aiEnrichment: serializeAiResearch(place.aiEnrichment as AiResearch | undefined),
-        stillIncomplete: isPlaceInformationIncomplete(place),
+        stillIncomplete: isPlaceMissingConcreteInformation(place),
       }))
 
     const queue = await getEnrichmentQueueStats()

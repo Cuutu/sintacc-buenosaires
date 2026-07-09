@@ -2,7 +2,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
-import { isPlaceInformationIncomplete } from "@/lib/place-incomplete"
+import { isPlaceMissingConcreteInformation } from "@/lib/place-incomplete"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
 import { waitUntil } from "@vercel/functions"
 
@@ -45,7 +45,7 @@ export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
       .lean(),
   ])
 
-  const incomplete = places.filter((place) => isPlaceInformationIncomplete(place)).length
+  const incomplete = places.filter((place) => isPlaceMissingConcreteInformation(place)).length
   const stalled =
     (queued > 0 && running === 0) || stuckRunning > 0 || (queued > 0 && stuckRunning > 0)
 
@@ -102,7 +102,7 @@ export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipp
     }
 
     const shouldEnqueue =
-      isPlaceInformationIncomplete(place) || status === "failed"
+      isPlaceMissingConcreteInformation(place) || status === "failed"
     if (!shouldEnqueue) {
       skipped++
       continue

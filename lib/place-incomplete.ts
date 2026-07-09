@@ -60,20 +60,28 @@ export function isPlaceInformationIncomplete(place: PlaceLike): boolean {
   return enrichmentSignals < 2
 }
 
-/** Ficha vacía o con informe IA pendiente de revisar / reintentar. */
-export function isPlaceEnrichmentReviewCandidate(place: PlaceWithEnrichment): boolean {
-  if (isPlaceInformationIncomplete(place)) return true
-  const status = place.aiEnrichment?.status
-  return status === "done" || status === "failed" || status === "running" || status === "queued"
-}
-
-export function countMissingEnrichmentFields(place: PlaceLike): string[] {
+/** Falta info concreta (TACC, contacto, horarios, barrio, tipo). Fotos no cuentan. */
+export function countMissingConcreteFields(place: PlaceLike): string[] {
   const missing: string[] = []
   if (!hasContact(place)) missing.push("contacto")
   if (!place.openingHours?.trim()) missing.push("horarios")
-  if (!place.photos?.length) missing.push("fotos")
   if (!hasSafetyBadge(place)) missing.push("clasificación TACC")
   if (isPlaceholderText(place.neighborhood)) missing.push("barrio")
   if (place.type === "other") missing.push("tipo")
   return missing
+}
+
+export function isPlaceMissingConcreteInformation(place: PlaceLike): boolean {
+  if (!place.name?.trim()) return true
+  if (isPlaceholderText(place.address)) return true
+  return countMissingConcreteFields(place).length > 0
+}
+
+/** Mostrar en revisión admin: solo si falta info concreta (no solo fotos). */
+export function isPlaceEnrichmentReviewCandidate(place: PlaceWithEnrichment): boolean {
+  return isPlaceMissingConcreteInformation(place)
+}
+
+export function countMissingEnrichmentFields(place: PlaceLike): string[] {
+  return countMissingConcreteFields(place)
 }
