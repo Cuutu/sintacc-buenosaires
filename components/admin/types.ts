@@ -1,3 +1,24 @@
+export type AiResearchItem = {
+  status?: "pending" | "running" | "done" | "failed"
+  ranAt?: string
+  googlePlaceId?: string
+  matchConfidence?: number
+  gfConfidence?: number
+  recommendedSafetyLevel?: "dedicated_gf" | "gf_options" | null
+  recommendedType?: string
+  summary?: string
+  evidence?: Array<{
+    source: "google" | "website" | "user_link" | "reviews"
+    quote: string
+    url?: string
+  }>
+  suggestedDraftPatch?: Record<string, unknown>
+  needsAdmin?: boolean
+  error?: string
+  costUsd?: number
+  model?: string
+}
+
 export type SuggestionItem = {
   _id: string
   placeDraft: {
@@ -13,6 +34,7 @@ export type SuggestionItem = {
     tags?: string[]
   }
   suggestedByUserId?: { name?: string }
+  aiResearch?: AiResearchItem
   rejectionReason?: string
   rejectedAt?: string
   duplicateCandidates?: Array<{

@@ -10,6 +10,8 @@ import {
   isQuickSuggestion,
 } from "@/lib/validations"
 import { sendSuggestionNewEmail } from "@/lib/email-suggestions"
+import { isPlaceResearchAutoOnSubmit } from "@/lib/place-research/config"
+import { triggerSuggestionResearchAsync } from "@/lib/place-research/run-research"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
@@ -94,6 +96,10 @@ export async function POST(request: NextRequest) {
       suggestedByName: session.user.name ?? "Usuario",
       suggestedByEmail: session.user.email ?? "",
     }).catch(() => {})
+
+    if (isPlaceResearchAutoOnSubmit()) {
+      triggerSuggestionResearchAsync(suggestion._id.toString())
+    }
 
     return NextResponse.json(suggestion, { status: 201 })
   } catch (error: unknown) {

@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
 import { IPlace } from "./Place"
+import type { AiResearch } from "@/lib/place-research/types"
+import { AiResearchSchema } from "./Suggestion.aiResearch"
 
 export interface ISuggestion extends Document {
   placeDraft: Partial<IPlace>
@@ -8,6 +10,7 @@ export interface ISuggestion extends Document {
   rejectionReason?: string
   rejectedAt?: Date
   rejectedByUserId?: mongoose.Types.ObjectId
+  aiResearch?: AiResearch
   createdAt: Date
   updatedAt: Date
 }
@@ -36,6 +39,10 @@ const SuggestionSchema = new Schema<ISuggestion>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    aiResearch: {
+      type: AiResearchSchema,
+      default: undefined,
+    },
   },
   {
     timestamps: true,
@@ -43,6 +50,7 @@ const SuggestionSchema = new Schema<ISuggestion>(
 )
 
 SuggestionSchema.index({ status: 1, createdAt: -1 })
+SuggestionSchema.index({ status: 1, "aiResearch.status": 1 })
 
 export const Suggestion: Model<ISuggestion> =
   mongoose.models.Suggestion ||

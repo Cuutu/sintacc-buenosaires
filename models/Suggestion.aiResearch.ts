@@ -1,0 +1,35 @@
+import { Schema } from "mongoose"
+import type { AiResearch } from "@/lib/place-research/types"
+
+export const AiResearchSchema = new Schema<AiResearch>(
+  {
+    status: {
+      type: String,
+      enum: ["pending", "running", "done", "failed"],
+      default: "pending",
+    },
+    ranAt: Date,
+    googlePlaceId: String,
+    matchConfidence: Number,
+    gfConfidence: Number,
+    recommendedSafetyLevel: String,
+    recommendedType: String,
+    summary: { type: String, default: "" },
+    evidence: [
+      {
+        source: {
+          type: String,
+          enum: ["google", "website", "user_link", "reviews"],
+        },
+        quote: String,
+        url: String,
+      },
+    ],
+    suggestedDraftPatch: { type: Schema.Types.Mixed },
+    needsAdmin: { type: Boolean, default: true },
+    error: String,
+    costUsd: Number,
+    model: String,
+  },
+  { _id: false }
+)

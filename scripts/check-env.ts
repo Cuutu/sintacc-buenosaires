@@ -21,6 +21,9 @@ const optionalEnvVars = [
   "FEATURES",
   "OPENROUTER_API_KEY",
   "OPENROUTER_IMAGE_MODEL",
+  "OPENROUTER_TEXT_MODEL",
+  "PLACE_RESEARCH_ENABLED",
+  "PLACE_RESEARCH_AUTO_ON_SUBMIT",
 ]
 
 function checkEnv() {
@@ -61,6 +64,9 @@ function checkEnv() {
       warnings.push(varName)
       if (varName === "OPENROUTER_API_KEY") {
         console.log("   ℹ️  Sin OpenRouter: listados con plantilla OK; CTA/hitos requieren la key.")
+      }
+      if (varName === "OPENROUTER_TEXT_MODEL" || varName === "PLACE_RESEARCH_ENABLED") {
+        console.log("   ℹ️  Sin esto: investigación IA de sugerencias deshabilitada.")
       }
     }
   })

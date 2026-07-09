@@ -7,6 +7,7 @@ import { AlertTriangle, Search } from "lucide-react"
 import { TYPES } from "@/lib/constants"
 import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
+import { SuggestionResearchPanel } from "@/components/admin/SuggestionResearchPanel"
 import type { AdminCounts, SuggestionItem } from "@/components/admin/types"
 
 export type AdminSuggestionsSectionProps = {
@@ -36,6 +37,12 @@ const {
   getTypeLabel,
 } = props
 const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | null>(null)
+  const [researchFilter, setResearchFilter] = useState<"all" | "needs_research" | "needs_admin">(
+    "all"
+  )
+  const [draftPatchOverride, setDraftPatchOverride] = useState<Record<string, unknown> | null>(
+    null
+  )
   return (
   <div className="rounded-xl border border-border overflow-hidden">
     <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
@@ -49,13 +56,14 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
           )}
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Revisá cada lugar antes de publicarlo. Podés editar los datos si hay algo incorrecto.
+          Revisá cada lugar antes de publicarlo. La IA investiga Google y web pública; vos decidís
+          aprobar o rechazar.
         </p>
       </div>
     </div>
 
     {/* Buscador */}
-    <div className="px-4 py-2 border-b border-border bg-card/50">
+    <div className="px-4 py-2 border-b border-border bg-card/50 space-y-2">
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -64,6 +72,28 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
           onChange={(e) => setSuggestionSearch(e.target.value)}
           className="pl-9 h-8 text-sm"
         />
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {(
+          [
+            ["all", "Todas"],
+            ["needs_research", "Falta investigar"],
+            ["needs_admin", "Revisión manual"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setResearchFilter(id)}
+            className={`text-[10px] px-2 py-1 rounded-md border ${
+              researchFilter === id
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
 
@@ -78,6 +108,16 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
     ) : (
       <div className="divide-y divide-border">
         {suggestions
+          .filter((s) => {
+            if (researchFilter === "needs_research") {
+              const st = s.aiResearch?.status
+              return !st || st === "pending" || st === "failed"
+            }
+            if (researchFilter === "needs_admin") {
+              return s.aiResearch?.status === "done" && s.aiResearch.needsAdmin
+            }
+            return true
+          })
           .filter((s) => {
             if (!suggestionSearch.trim()) return true
             const q = suggestionSearch.toLowerCase()
@@ -140,6 +180,15 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                     </div>
                   </div>
                 ) : null}
+                <SuggestionResearchPanel
+                  suggestionId={suggestion._id}
+                  aiResearch={suggestion.aiResearch}
+                  onUpdated={fetchSuggestions}
+                  onApplyPatch={(patch) => {
+                    setDraftPatchOverride(patch)
+                    setEditingSuggestion(suggestion)
+                  }}
+                />
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
@@ -174,9 +223,18 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
     {editingSuggestion && (
       <SuggestionEditModal
         suggestionId={editingSuggestion._id}
-        placeDraft={editingSuggestion.placeDraft as any}
+        placeDraft={
+          draftPatchOverride
+            ? ({ ...editingSuggestion.placeDraft, ...draftPatchOverride } as any)
+            : (editingSuggestion.placeDraft as any)
+        }
         open={!!editingSuggestion}
-        onOpenChange={(open) => !open && setEditingSuggestion(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingSuggestion(null)
+            setDraftPatchOverride(null)
+          }
+        }}
         onSaved={fetchSuggestions}
         onApproved={fetchSuggestions}
       />
