@@ -95,13 +95,15 @@ export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipp
   let skipped = 0
 
   for (const place of places) {
-    if (!isPlaceInformationIncomplete(place)) {
+    const status = place.aiEnrichment?.status
+    if (status === "queued" || status === "running") {
       skipped++
       continue
     }
 
-    const status = place.aiEnrichment?.status
-    if (status === "queued" || status === "running") {
+    const shouldEnqueue =
+      isPlaceInformationIncomplete(place) || status === "failed"
+    if (!shouldEnqueue) {
       skipped++
       continue
     }

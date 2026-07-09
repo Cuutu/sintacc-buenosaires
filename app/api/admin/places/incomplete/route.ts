@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import {
   countMissingEnrichmentFields,
+  isPlaceEnrichmentReviewCandidate,
   isPlaceInformationIncomplete,
 } from "@/lib/place-incomplete"
 import { getEnrichmentQueueStats, startEnrichmentQueue } from "@/lib/place-enrichment-queue"
@@ -33,8 +34,8 @@ export async function GET(request: NextRequest) {
       .limit(3000)
       .lean()
 
-    const incomplete = places
-      .filter((place) => isPlaceInformationIncomplete(place))
+    const reviewPlaces = places
+      .filter((place) => isPlaceEnrichmentReviewCandidate(place))
       .map((place) => ({
         _id: place._id.toString(),
         name: place.name,
@@ -45,13 +46,15 @@ export async function GET(request: NextRequest) {
         enrichmentStatus: place.aiEnrichment?.status ?? "pending",
         enrichmentSummary: place.aiEnrichment?.summary,
         aiEnrichment: serializeAiResearch(place.aiEnrichment as AiResearch | undefined),
+        stillIncomplete: isPlaceInformationIncomplete(place),
       }))
 
     const queue = await getEnrichmentQueueStats()
 
     return NextResponse.json({
-      total: incomplete.length,
-      places: incomplete,
+      total: reviewPlaces.length,
+      incompleteCount: reviewPlaces.filter((place) => place.stillIncomplete).length,
+      places: reviewPlaces,
       queue,
     })
   } catch (error) {

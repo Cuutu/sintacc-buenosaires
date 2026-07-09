@@ -30,6 +30,7 @@ type IncompletePlace = {
   enrichmentStatus?: string
   enrichmentSummary?: string
   aiEnrichment?: AiResearchItem
+  stillIncomplete?: boolean
 }
 
 type ReviewFilter = "all" | "done" | "failed" | "pending"
@@ -60,11 +61,24 @@ export function AdminPlaceReviewTools({
   )
   const [incompletePlaces, setIncompletePlaces] = useState<IncompletePlace[]>([])
   const [batchRemaining, setBatchRemaining] = useState<number | null>(null)
+  const [incompleteOnlyCount, setIncompleteOnlyCount] = useState<number | null>(null)
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null)
   const [selectedDeleteIds, setSelectedDeleteIds] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("done")
   const lastAutoResumeRef = useRef(0)
+
+  const filterCounts = useMemo(() => {
+    const counts = { all: 0, done: 0, failed: 0, pending: 0 }
+    for (const place of incompletePlaces) {
+      counts.all++
+      const status = place.enrichmentStatus ?? "pending"
+      if (status === "done") counts.done++
+      else if (status === "failed") counts.failed++
+      else if (status === "pending" || !place.aiEnrichment?.status) counts.pending++
+    }
+    return counts
+  }, [incompletePlaces])
 
   const filteredIncompletePlaces = useMemo(() => {
     return incompletePlaces.filter((place) => {
@@ -132,6 +146,7 @@ export function AdminPlaceReviewTools({
     if (!res.ok) throw new Error(data.error || "Error al listar incompletos")
     setIncompletePlaces(data.places || [])
     setBatchRemaining(data.total ?? 0)
+    setIncompleteOnlyCount(data.incompleteCount ?? null)
     setQueueStats(data.queue || null)
   }
 
@@ -361,7 +376,10 @@ export function AdminPlaceReviewTools({
             ) : null}
             {batchRemaining != null ? (
               <span className="text-[11px] text-muted-foreground">
-                {batchRemaining} fichas mínimas
+                {batchRemaining} para revisar
+                {incompleteOnlyCount != null && incompleteOnlyCount !== batchRemaining
+                  ? ` · ${incompleteOnlyCount} ficha mínima`
+                  : null}
               </span>
             ) : null}
           </div>
@@ -369,10 +387,10 @@ export function AdminPlaceReviewTools({
           <div className="flex flex-wrap gap-2">
             {(
               [
-                { id: "done" as const, label: "Listos IA" },
-                { id: "failed" as const, label: "Fallidos" },
-                { id: "pending" as const, label: "Sin investigar" },
-                { id: "all" as const, label: "Todos" },
+                { id: "done" as const, label: "Listos IA", count: filterCounts.done },
+                { id: "failed" as const, label: "Fallidos", count: filterCounts.failed },
+                { id: "pending" as const, label: "Sin investigar", count: filterCounts.pending },
+                { id: "all" as const, label: "Todos", count: filterCounts.all },
               ] as const
             ).map((filter) => (
               <button
@@ -385,7 +403,7 @@ export function AdminPlaceReviewTools({
                     : "border-border text-muted-foreground hover:border-border/80"
                 }`}
               >
-                {filter.label}
+                {filter.label} ({filter.count})
               </button>
             ))}
           </div>
@@ -408,7 +426,9 @@ export function AdminPlaceReviewTools({
                       {place.neighborhood ? ` · ${place.neighborhood}` : ""}
                     </p>
                     <p className="text-[10px] text-amber-400 mt-1">
-                      Falta: {place.missing.join(", ")}
+                      {place.missing.length > 0
+                        ? `Falta: ${place.missing.join(", ")}`
+                        : "Ficha completa — revisá informe IA"}
                     </p>
                   </div>
                   <PlaceResearchPanel

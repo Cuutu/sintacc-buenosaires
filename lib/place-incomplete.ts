@@ -19,6 +19,10 @@ type PlaceLike = Pick<
   | "type"
 >
 
+type PlaceWithEnrichment = PlaceLike & {
+  aiEnrichment?: { status?: string } | null
+}
+
 function isPlaceholderText(value?: string | null): boolean {
   if (!value?.trim()) return true
   const normalized = value.trim().toLowerCase()
@@ -54,6 +58,13 @@ export function isPlaceInformationIncomplete(place: PlaceLike): boolean {
   ].filter(Boolean).length
 
   return enrichmentSignals < 2
+}
+
+/** Ficha vacía o con informe IA pendiente de revisar / reintentar. */
+export function isPlaceEnrichmentReviewCandidate(place: PlaceWithEnrichment): boolean {
+  if (isPlaceInformationIncomplete(place)) return true
+  const status = place.aiEnrichment?.status
+  return status === "done" || status === "failed" || status === "running" || status === "queued"
 }
 
 export function countMissingEnrichmentFields(place: PlaceLike): string[] {
