@@ -1,6 +1,67 @@
 import { z } from "zod"
 import type { IPlace } from "@/models/Place"
 
+const PLACE_TYPE_VALUES = [
+  "restaurant",
+  "cafe",
+  "bakery",
+  "store",
+  "icecream",
+  "bar",
+  "other",
+] as const
+
+const PLACE_TYPE_ENUM = z.enum(PLACE_TYPE_VALUES)
+const SAFETY_LEVEL_ENUM = z.enum(["dedicated_gf", "gf_options"])
+
+function isPlaceholderValue(value: unknown): boolean {
+  if (value == null) return true
+  const s = String(value).trim()
+  return !s || s.includes("A completar") || s === "(vacío)"
+}
+
+function optionalResearchString() {
+  return z.preprocess(
+    (value) => (isPlaceholderValue(value) ? undefined : value),
+    z.string().optional()
+  )
+}
+
+function optionalResearchPlaceType() {
+  return z.preprocess((value) => {
+    if (isPlaceholderValue(value)) return undefined
+    const parsed = PLACE_TYPE_ENUM.safeParse(value)
+    return parsed.success ? parsed.data : undefined
+  }, PLACE_TYPE_ENUM.optional())
+}
+
+function optionalResearchSafetyLevel() {
+  return z.preprocess((value) => {
+    if (value == null) return undefined
+    const parsed = SAFETY_LEVEL_ENUM.safeParse(value)
+    return parsed.success ? parsed.data : undefined
+  }, SAFETY_LEVEL_ENUM.optional())
+}
+
+function optionalResearchContact() {
+  return z.preprocess((value) => {
+    if (value == null || typeof value !== "object") return undefined
+    const contact = value as Record<string, unknown>
+    const cleaned = {
+      instagram: isPlaceholderValue(contact.instagram) ? undefined : String(contact.instagram),
+      url: isPlaceholderValue(contact.url) ? undefined : String(contact.url),
+      phone: isPlaceholderValue(contact.phone) ? undefined : String(contact.phone),
+    }
+    return Object.values(cleaned).some(Boolean) ? cleaned : undefined
+  }, z
+    .object({
+      instagram: z.string().optional(),
+      url: z.string().optional(),
+      phone: z.string().optional(),
+    })
+    .optional())
+}
+
 export const aiResearchEvidenceSchema = z.object({
   source: z.enum(["google", "website", "user_link", "reviews"]),
   quote: z.string(),
@@ -10,33 +71,23 @@ export const aiResearchEvidenceSchema = z.object({
 export const aiResearchAnalysisSchema = z.object({
   matchConfidence: z.number().min(0).max(100),
   gfConfidence: z.number().min(0).max(100),
-  recommendedSafetyLevel: z.enum(["dedicated_gf", "gf_options"]).nullable(),
-  recommendedType: z
-    .enum(["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"])
-    .nullable()
-    .optional(),
+  recommendedSafetyLevel: SAFETY_LEVEL_ENUM.nullable(),
+  recommendedType: PLACE_TYPE_ENUM.nullable().optional(),
   summary: z.string(),
   evidence: z.array(aiResearchEvidenceSchema),
   needsAdmin: z.boolean(),
   suggestedFields: z
-    .object({
-      name: z.string().optional(),
-      address: z.string().optional(),
-      neighborhood: z.string().optional(),
-      type: z
-        .enum(["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"])
-        .optional(),
-      openingHours: z.string().optional(),
-      contact: z
-        .object({
-          instagram: z.string().optional(),
-          url: z.string().optional(),
-          phone: z.string().optional(),
-        })
-        .optional(),
-      safetyLevel: z.enum(["dedicated_gf", "gf_options"]).optional(),
-    })
-    .optional(),
+    .preprocess((value) => (value == null ? undefined : value), z
+      .object({
+        name: optionalResearchString(),
+        address: optionalResearchString(),
+        neighborhood: optionalResearchString(),
+        type: optionalResearchPlaceType(),
+        openingHours: optionalResearchString(),
+        contact: optionalResearchContact(),
+        safetyLevel: optionalResearchSafetyLevel(),
+      })
+      .optional())
 })
 
 export type AiResearchEvidence = z.infer<typeof aiResearchEvidenceSchema>

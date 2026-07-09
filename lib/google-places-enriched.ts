@@ -3,6 +3,7 @@ import {
   getGoogleMapsApiKey,
   type GooglePlaceDetails,
 } from "@/lib/google-places"
+import { resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 
 const GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1/places"
 
@@ -114,10 +115,18 @@ export function normalizeGooglePlaceEnriched(
 }
 
 export async function searchGooglePlaceByText(
-  textQuery: string
+  textQuery: string,
+  opts?: { lat?: number; lng?: number; radius?: number }
 ): Promise<{ placeId: string; name?: string; address?: string } | null> {
   const apiKey = getGoogleMapsApiKey()
   if (!apiKey || !textQuery.trim()) return null
+
+  const hasCoords =
+    Number.isFinite(opts?.lat) && Number.isFinite(opts?.lng)
+  const center = hasCoords
+    ? { latitude: opts!.lat as number, longitude: opts!.lng as number }
+    : { latitude: -34.6037, longitude: -58.3816 }
+  const radius = hasCoords ? (opts?.radius ?? 300) : 50000
 
   const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
     method: "POST",
@@ -132,8 +141,8 @@ export async function searchGooglePlaceByText(
       regionCode: "AR",
       locationBias: {
         circle: {
-          center: { latitude: -34.6037, longitude: -58.3816 },
-          radius: 50000,
+          center,
+          radius,
         },
       },
       maxResultCount: 3,
@@ -181,4 +190,28 @@ export async function fetchGooglePlaceEnriched(
 
   const data = (await res.json()) as GooglePlaceEnrichedResponse
   return normalizeGooglePlaceEnriched(data)
+}
+
+export async function findGooglePlaceFromMapsUrl(
+  mapsUrl: string
+): Promise<GooglePlaceEnriched | null> {
+  const resolved = await resolveGoogleMapsUrl(mapsUrl)
+  if (!resolved) return null
+
+  if (resolved.placeId?.startsWith("ChIJ")) {
+    return fetchGooglePlaceEnriched(resolved.placeId)
+  }
+
+  const query = resolved.placeName?.trim()
+  if (!query) return null
+
+  const hit = await searchGooglePlaceByText(
+    query,
+    Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)
+      ? { lat: resolved.lat, lng: resolved.lng, radius: 250 }
+      : undefined
+  )
+  if (!hit?.placeId) return null
+
+  return fetchGooglePlaceEnriched(hit.placeId)
 }

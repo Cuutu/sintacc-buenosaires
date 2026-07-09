@@ -1,5 +1,6 @@
 import type { GooglePlaceEnriched } from "@/lib/google-places-enriched"
 import { fetchWebsitePaths } from "@/lib/place-research/fetch-website"
+import { isGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 
 export type ResearchSourceBundle = {
   draftSummary: string
@@ -20,8 +21,9 @@ function clip(text: string, max: number): string {
 export async function collectResearchSources(input: {
   placeDraft: Record<string, unknown>
   googlePlace?: GooglePlaceEnriched | null
+  mapsLinkResolved?: boolean
 }): Promise<ResearchSourceBundle> {
-  const { placeDraft, googlePlace } = input
+  const { placeDraft, googlePlace, mapsLinkResolved } = input
   const contact = (placeDraft.contact as Record<string, string> | undefined) ?? {}
 
   const draftSummary = [
@@ -60,17 +62,24 @@ export async function collectResearchSources(input: {
 
   const userLinks: string[] = []
   if (contact.instagram) userLinks.push(`Instagram (declarado por usuario): ${contact.instagram}`)
-  if (contact.url) userLinks.push(`Link (declarado por usuario): ${contact.url}`)
-
-  const websiteTexts: string[] = []
-  const websiteUrls = new Set<string>()
-  if (googlePlace?.websiteUri) websiteUrls.add(googlePlace.websiteUri)
-  if (contact.url && !/instagram\.com|instagr\.am/i.test(contact.url)) {
-    websiteUrls.add(contact.url.trim())
+  if (contact.url) {
+    userLinks.push(`Link (declarado por usuario): ${contact.url}`)
+    if (mapsLinkResolved && googlePlace?.name) {
+      userLinks.push(`Link Google Maps resuelto al lugar: ${googlePlace.name}`)
+    }
   }
 
-  for (const url of websiteUrls) {
-    const pages = await fetchWebsitePaths(url)
+  const websiteTexts: string[] = []
+  if (googlePlace?.websiteUri) {
+    const pages = await fetchWebsitePaths(googlePlace.websiteUri)
+    websiteTexts.push(...pages)
+  }
+  if (
+    contact.url &&
+    !/instagram\.com|instagr\.am/i.test(contact.url) &&
+    !isGoogleMapsUrl(contact.url)
+  ) {
+    const pages = await fetchWebsitePaths(contact.url)
     websiteTexts.push(...pages)
   }
 
@@ -139,5 +148,6 @@ export function buildResearchUserPrompt(bundle: ResearchSourceBundle): string {
     "- gf_options si menciona opciones sin TACC pero no dedicado.",
     "- needsAdmin=true si falta info, match bajo, o gfConfidence < 60.",
     "- Si no hay evidencia GF, gfConfidence bajo y recommendedSafetyLevel null.",
+    "- En suggestedFields: omití campos desconocidos; no uses null ni 'A completar'.",
   ].join("\n")
 }

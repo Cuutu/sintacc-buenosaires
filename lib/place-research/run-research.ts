@@ -3,6 +3,7 @@ import { Suggestion } from "@/models/Suggestion"
 import { openRouterChatJson } from "@/lib/openrouter/chat"
 import {
   fetchGooglePlaceEnriched,
+  findGooglePlaceFromMapsUrl,
   mapGooglePrimaryType,
   searchGooglePlaceByText,
 } from "@/lib/google-places-enriched"
@@ -11,6 +12,7 @@ import {
   buildResearchUserPrompt,
   collectResearchSources,
 } from "@/lib/place-research/collect-sources"
+import { isGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import { logApiError } from "@/lib/logger"
 import {
@@ -19,6 +21,7 @@ import {
   type AiResearch,
 } from "@/lib/place-research/types"
 import { waitUntil } from "@vercel/functions"
+import { z } from "zod"
 import type { IPlace } from "@/models/Place"
 
 const SYSTEM_PROMPT = `Sos auditor de lugares sin gluten para Celimap (Argentina).
@@ -57,7 +60,11 @@ function buildSearchQuery(draft: Record<string, unknown>): string {
   if (parts.length === 0 || isDraftIncomplete(draft)) {
     const ig = contact.instagram ? extractInstagramHandle(contact.instagram) : null
     if (ig) parts.push(ig.replace(/[._]/g, " "))
-    else if (contact.url && !/instagram\.com|instagr\.am/i.test(contact.url)) {
+    else if (
+      contact.url &&
+      !/instagram\.com|instagr\.am/i.test(contact.url) &&
+      !isGoogleMapsUrl(contact.url)
+    ) {
       try {
         const host = new URL(contact.url).hostname.replace(/^www\./, "")
         parts.push(host.split(".")[0])
@@ -186,28 +193,47 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
 
   try {
     const draft = (suggestion.placeDraft as Record<string, unknown>) || {}
-    const query = buildSearchQuery(draft)
+    const contact = (draft.contact as Record<string, string> | undefined) ?? {}
+    const userUrl = contact.url?.trim()
 
     let googlePlace = null
     let matchConfidence = 0
+    let mapsLinkResolved = false
 
-    if (getGoogleMapsApiKey() && query.length >= 3) {
-      const hit = await searchGooglePlaceByText(query)
-      if (hit?.placeId) {
-        googlePlace = await fetchGooglePlaceEnriched(hit.placeId)
+    if (getGoogleMapsApiKey()) {
+      if (userUrl && isGoogleMapsUrl(userUrl)) {
+        googlePlace = await findGooglePlaceFromMapsUrl(userUrl)
         if (googlePlace) {
-          const draftName = String(draft.name ?? "").toLowerCase()
-          const googleName = (googlePlace.name ?? "").toLowerCase()
-          matchConfidence = draftName.includes("completar")
-            ? 75
-            : googleName && draftName && googleName.includes(draftName.slice(0, 6))
-              ? 85
-              : 65
+          mapsLinkResolved = true
+          matchConfidence = 92
+        }
+      }
+
+      if (!googlePlace) {
+        const query = buildSearchQuery(draft)
+        if (query.length >= 3) {
+          const hit = await searchGooglePlaceByText(query)
+          if (hit?.placeId) {
+            googlePlace = await fetchGooglePlaceEnriched(hit.placeId)
+            if (googlePlace) {
+              const draftName = String(draft.name ?? "").toLowerCase()
+              const googleName = (googlePlace.name ?? "").toLowerCase()
+              matchConfidence = draftName.includes("completar")
+                ? 75
+                : googleName && draftName && googleName.includes(draftName.slice(0, 6))
+                  ? 85
+                  : 65
+            }
+          }
         }
       }
     }
 
-    const bundle = await collectResearchSources({ placeDraft: draft, googlePlace })
+    const bundle = await collectResearchSources({
+      placeDraft: draft,
+      googlePlace,
+      mapsLinkResolved,
+    })
     const { data: analysis, cost, model } = await openRouterChatJson({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -251,13 +277,19 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
     await suggestion.save()
     return result
   } catch (err: unknown) {
+    const message =
+      err instanceof z.ZodError
+        ? "La IA devolvió datos inválidos. Reintentá la investigación."
+        : err instanceof Error
+          ? err.message
+          : "Error en investigación"
     const failed: AiResearch = {
       status: "failed",
       ranAt: new Date(),
       summary: "",
       evidence: [],
       needsAdmin: true,
-      error: err instanceof Error ? err.message : "Error en investigación",
+      error: message,
     }
     suggestion.aiResearch = failed
     await suggestion.save()
