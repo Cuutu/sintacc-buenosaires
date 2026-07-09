@@ -1,9 +1,9 @@
 import {
   countMissingConcreteFields,
-  countMissingEnrichmentFields,
+  hasTaccClassification,
   isPlaceEnrichmentReviewCandidate,
   isPlaceInformationIncomplete,
-  isPlaceMissingConcreteInformation,
+  isPlaceMissingTaccClassification,
 } from "@/lib/place-incomplete"
 
 describe("place incomplete detection", () => {
@@ -34,7 +34,33 @@ describe("place incomplete detection", () => {
     ).toBe(false)
   })
 
-  it("lists missing concrete fields without photos", () => {
+  it("detects TACC from safetyLevel", () => {
+    expect(
+      hasTaccClassification({
+        safetyLevel: "gf_options",
+        tags: [],
+      })
+    ).toBe(true)
+    expect(isPlaceMissingTaccClassification({ safetyLevel: "gf_options" })).toBe(false)
+  })
+
+  it("detects TACC from opciones_sin_tacc tag when safetyLevel empty", () => {
+    const place = {
+      name: "Lo de Carlitos",
+      address: "Calle 1",
+      neighborhood: "Monte Grande",
+      type: "restaurant" as const,
+      safetyLevel: undefined,
+      tags: ["opciones_sin_tacc", "cocina_separada"],
+      photos: [] as string[],
+    }
+
+    expect(hasTaccClassification(place)).toBe(true)
+    expect(isPlaceEnrichmentReviewCandidate(place)).toBe(false)
+    expect(countMissingConcreteFields(place)).toEqual([])
+  })
+
+  it("lists only TACC when unclassified", () => {
     expect(
       countMissingConcreteFields({
         name: "Test",
@@ -43,49 +69,20 @@ describe("place incomplete detection", () => {
         type: "other",
         photos: [],
       })
-    ).toEqual(
-      expect.arrayContaining(["contacto", "horarios", "clasificación TACC", "tipo"])
-    )
-    expect(countMissingConcreteFields({
-      name: "Test",
-      address: "Calle 1",
-      neighborhood: "Palermo",
-      type: "other",
-      photos: [],
-    })).not.toContain("fotos")
+    ).toEqual(["clasificación TACC"])
   })
 
-  it("excludes place that only lacks photos from review list", () => {
+  it("excludes classified place even without photos", () => {
     const place = {
       name: "Cafe GF",
       address: "Calle 1",
       neighborhood: "Palermo",
       type: "cafe" as const,
-      contact: { instagram: "@cafe" },
-      openingHours: "9-18",
-      safetyLevel: "gf_options" as const,
+      safetyLevel: "dedicated_gf" as const,
       photos: [] as string[],
       aiEnrichment: { status: "done" },
     }
 
-    expect(isPlaceMissingConcreteInformation(place)).toBe(false)
     expect(isPlaceEnrichmentReviewCandidate(place)).toBe(false)
-    expect(countMissingEnrichmentFields(place)).toEqual([])
-  })
-
-  it("includes place missing TACC classification", () => {
-    const place = {
-      name: "Cafe",
-      address: "Calle 1",
-      neighborhood: "Palermo",
-      type: "cafe" as const,
-      contact: { instagram: "@cafe" },
-      openingHours: "9-18",
-      photos: ["https://example.com/1.jpg"],
-      aiEnrichment: { status: "done" },
-    }
-
-    expect(isPlaceEnrichmentReviewCandidate(place)).toBe(true)
-    expect(countMissingConcreteFields(place)).toContain("clasificación TACC")
   })
 })

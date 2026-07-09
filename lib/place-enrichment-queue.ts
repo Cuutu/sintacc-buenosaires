@@ -2,7 +2,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
-import { isPlaceMissingConcreteInformation } from "@/lib/place-incomplete"
+import { isPlaceMissingTaccClassification } from "@/lib/place-incomplete"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
 import { waitUntil } from "@vercel/functions"
 
@@ -40,12 +40,12 @@ export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
       "aiEnrichment.startedAt": { $lt: staleBefore },
     }),
     Place.find({ status: "approved" })
-      .select("name address neighborhood type types contact openingHours photos safetyLevel")
+      .select("name address neighborhood type types contact openingHours photos safetyLevel tags")
       .limit(3000)
       .lean(),
   ])
 
-  const incomplete = places.filter((place) => isPlaceMissingConcreteInformation(place)).length
+  const incomplete = places.filter((place) => isPlaceMissingTaccClassification(place)).length
   const stalled =
     (queued > 0 && running === 0) || stuckRunning > 0 || (queued > 0 && stuckRunning > 0)
 
@@ -86,7 +86,7 @@ export async function resetStaleEnrichmentJobs(): Promise<number> {
 export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipped: number }> {
   await connectDB()
   const places = await Place.find({ status: "approved" })
-    .select("name address neighborhood type types contact openingHours photos safetyLevel aiEnrichment")
+    .select("name address neighborhood type types contact openingHours photos safetyLevel tags aiEnrichment")
     .sort({ updatedAt: 1 })
     .limit(3000)
     .lean()
@@ -102,7 +102,7 @@ export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipp
     }
 
     const shouldEnqueue =
-      isPlaceMissingConcreteInformation(place) || status === "failed"
+      isPlaceMissingTaccClassification(place) || status === "failed"
     if (!shouldEnqueue) {
       skipped++
       continue

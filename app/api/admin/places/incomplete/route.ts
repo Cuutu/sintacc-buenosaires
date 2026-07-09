@@ -6,7 +6,7 @@ import { logApiError } from "@/lib/logger"
 import {
   countMissingConcreteFields,
   isPlaceEnrichmentReviewCandidate,
-  isPlaceMissingConcreteInformation,
+  isPlaceMissingTaccClassification,
 } from "@/lib/place-incomplete"
 import { getEnrichmentQueueStats, startEnrichmentQueue } from "@/lib/place-enrichment-queue"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
     const places = await Place.find({ status: "approved" })
-      .select("name address neighborhood type types contact openingHours photos safetyLevel aiEnrichment")
+      .select("name address neighborhood type types contact openingHours photos safetyLevel tags aiEnrichment")
       .sort({ updatedAt: -1 })
       .limit(3000)
       .lean()
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         enrichmentStatus: place.aiEnrichment?.status ?? "pending",
         enrichmentSummary: place.aiEnrichment?.summary,
         aiEnrichment: serializeAiResearch(place.aiEnrichment as AiResearch | undefined),
-        stillIncomplete: isPlaceMissingConcreteInformation(place),
+        stillIncomplete: isPlaceMissingTaccClassification(place),
       }))
 
     const queue = await getEnrichmentQueueStats()

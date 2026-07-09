@@ -17,6 +17,7 @@ type PlaceLike = Pick<
   | "photos"
   | "safetyLevel"
   | "type"
+  | "tags"
 >
 
 type PlaceWithEnrichment = PlaceLike & {
@@ -38,9 +39,33 @@ function hasContact(place: PlaceLike): boolean {
   )
 }
 
+/** Nivel efectivo: safetyLevel en DB o inferido desde tags del editor. */
+export function getEffectiveSafetyLevel(place: {
+  safetyLevel?: IPlace["safetyLevel"]
+  tags?: string[]
+}): IPlace["safetyLevel"] | undefined {
+  if (place.safetyLevel && place.safetyLevel !== "unknown") {
+    return place.safetyLevel
+  }
+  const tags = place.tags ?? []
+  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) {
+    return "dedicated_gf"
+  }
+  if (tags.includes("opciones_sin_tacc")) return "gf_options"
+  return undefined
+}
+
+/** Clasificado como 100% sin gluten u opciones sin TACC (lo del selector admin). */
+export function hasTaccClassification(place: {
+  safetyLevel?: IPlace["safetyLevel"]
+  tags?: string[]
+}): boolean {
+  const level = getEffectiveSafetyLevel(place)
+  return level === "dedicated_gf" || level === "gf_options"
+}
+
 function hasSafetyBadge(place: PlaceLike): boolean {
-  if (place.safetyLevel && place.safetyLevel !== "unknown") return true
-  return false
+  return hasTaccClassification(place)
 }
 
 /** Lugar con poca ficha: solo nombre/dirección o datos muy vacíos. */
@@ -60,26 +85,23 @@ export function isPlaceInformationIncomplete(place: PlaceLike): boolean {
   return enrichmentSignals < 2
 }
 
-/** Falta info concreta (TACC, contacto, horarios, barrio, tipo). Fotos no cuentan. */
+export function isPlaceMissingTaccClassification(place: PlaceLike): boolean {
+  return !hasTaccClassification(place)
+}
+
+/** Solo clasificación TACC para panel Sin información. */
 export function countMissingConcreteFields(place: PlaceLike): string[] {
-  const missing: string[] = []
-  if (!hasContact(place)) missing.push("contacto")
-  if (!place.openingHours?.trim()) missing.push("horarios")
-  if (!hasSafetyBadge(place)) missing.push("clasificación TACC")
-  if (isPlaceholderText(place.neighborhood)) missing.push("barrio")
-  if (place.type === "other") missing.push("tipo")
-  return missing
+  if (!hasTaccClassification(place)) return ["clasificación TACC"]
+  return []
 }
 
 export function isPlaceMissingConcreteInformation(place: PlaceLike): boolean {
-  if (!place.name?.trim()) return true
-  if (isPlaceholderText(place.address)) return true
-  return countMissingConcreteFields(place).length > 0
+  return isPlaceMissingTaccClassification(place)
 }
 
-/** Mostrar en revisión admin: solo si falta info concreta (no solo fotos). */
+/** Revisión admin: solo lugares sin 100% sin gluten ni opciones sin TACC. */
 export function isPlaceEnrichmentReviewCandidate(place: PlaceWithEnrichment): boolean {
-  return isPlaceMissingConcreteInformation(place)
+  return isPlaceMissingTaccClassification(place)
 }
 
 export function countMissingEnrichmentFields(place: PlaceLike): string[] {
