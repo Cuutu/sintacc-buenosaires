@@ -31,6 +31,7 @@ export const AiResearchSchema = new Schema<AiResearch>(
     error: String,
     costUsd: Number,
     model: String,
+    draftAutoFilled: Boolean,
   },
   { _id: false }
 )

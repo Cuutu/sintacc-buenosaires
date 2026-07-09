@@ -75,7 +75,11 @@ export function SuggestionResearchPanel({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al investigar")
-      toast.success("Investigación completada")
+      toast.success(
+        data.aiResearch?.draftAutoFilled
+          ? "Investigación lista — borrador completado con Google"
+          : "Investigación completada"
+      )
       setOpen(true)
       onUpdated()
     } catch (err: unknown) {
@@ -239,8 +243,15 @@ export function SuggestionResearchPanel({
                 </div>
               ) : null}
 
+              {aiResearch.draftAutoFilled ? (
+                <p className="text-[10px] text-primary">
+                  Borrador actualizado automáticamente (nombre, dirección, etc.).
+                </p>
+              ) : null}
+
               {aiResearch.suggestedDraftPatch &&
-              Object.keys(aiResearch.suggestedDraftPatch).length > 0 ? (
+              Object.keys(aiResearch.suggestedDraftPatch).length > 0 &&
+              !aiResearch.draftAutoFilled ? (
                 <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={applyPatch}>
                   Aplicar sugerencias al borrador
                 </Button>

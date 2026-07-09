@@ -18,6 +18,7 @@ export type AiResearchItem = {
   error?: string
   costUsd?: number
   model?: string
+  draftAutoFilled?: boolean
 }
 
 export type SuggestionItem = {

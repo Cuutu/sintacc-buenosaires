@@ -142,4 +142,5 @@ export type AiResearch = {
   error?: string
   costUsd?: number
   model?: string
+  draftAutoFilled?: boolean
 }

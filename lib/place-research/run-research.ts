@@ -110,6 +110,9 @@ function buildSuggestedPatch(input: {
   } else if (suggested.type) {
     patch.type = suggested.type
     patch.types = [suggested.type]
+  } else if (analysis.recommendedType) {
+    patch.type = analysis.recommendedType
+    patch.types = [analysis.recommendedType]
   }
 
   if (googlePlace?.openingHoursText && !draft.openingHours) {
@@ -163,6 +166,29 @@ function buildSuggestedPatch(input: {
   if (suggested.neighborhood && draftIncomplete) patch.neighborhood = suggested.neighborhood
 
   return patch
+}
+
+function mergeDraftPatch(
+  draft: Record<string, unknown>,
+  patch: Partial<IPlace>
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...draft, ...patch }
+
+  if (patch.contact) {
+    merged.contact = {
+      ...((draft.contact as Record<string, unknown>) ?? {}),
+      ...patch.contact,
+    }
+  }
+
+  if (patch.delivery) {
+    merged.delivery = {
+      ...((draft.delivery as Record<string, unknown>) ?? {}),
+      ...patch.delivery,
+    }
+  }
+
+  return merged
 }
 
 export async function runSuggestionResearch(suggestionId: string): Promise<AiResearch> {
@@ -243,18 +269,28 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
       schema: aiResearchAnalysisSchema,
     })
 
-    const needsAdmin =
-      analysis.needsAdmin ||
-      isDraftIncomplete(draft) ||
-      analysis.gfConfidence < 60 ||
-      analysis.matchConfidence < 50 ||
-      !googlePlace
-
     const suggestedDraftPatch = buildSuggestedPatch({
       draft,
       googlePlace,
       analysis: { ...analysis, matchConfidence: analysis.matchConfidence || matchConfidence },
     })
+
+    const draftAutoFilled =
+      isDraftIncomplete(draft) && Object.keys(suggestedDraftPatch).length > 0
+    const nextDraft = draftAutoFilled
+      ? mergeDraftPatch(draft, suggestedDraftPatch)
+      : draft
+
+    if (draftAutoFilled) {
+      suggestion.placeDraft = nextDraft as typeof suggestion.placeDraft
+    }
+
+    const needsAdmin =
+      analysis.needsAdmin ||
+      isDraftIncomplete(nextDraft) ||
+      analysis.gfConfidence < 60 ||
+      analysis.matchConfidence < 50 ||
+      !googlePlace
 
     const result: AiResearch = {
       status: "done",
@@ -269,6 +305,7 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
       suggestedDraftPatch: Object.keys(suggestedDraftPatch).length
         ? suggestedDraftPatch
         : undefined,
+      draftAutoFilled,
       needsAdmin,
       costUsd: cost,
       model,
