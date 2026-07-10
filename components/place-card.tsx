@@ -8,9 +8,12 @@ import { Star, MapPin } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { isOpenNow } from "@/lib/opening-hours"
 import { getPlacePath } from "@/lib/place-url"
+import { GoogleRatingBadge } from "@/components/google-rating-badge"
 
 interface PlaceCardProps {
-  place: IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
+  place: IPlace & {
+    stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
+  }
   onMapClick?: (place: IPlace) => void
 }
 
@@ -66,14 +69,16 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
         <CardContent className="pt-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
-              {place.stats?.avgRating ? (
+              {place.stats?.totalReviews && place.stats.totalReviews > 0 ? (
                 <>
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400 shrink-0" />
-                  <span className="font-semibold">{place.stats.avgRating.toFixed(1)}</span>
+                  <span className="font-semibold">{place.stats.avgRating?.toFixed(1)}</span>
                   <span className="text-xs text-muted-foreground">
                     ({place.stats.totalReviews})
                   </span>
                 </>
+              ) : place.googleSnapshot?.rating != null ? (
+                <GoogleRatingBadge snapshot={place.googleSnapshot} />
               ) : (
                 <span className="text-xs text-muted-foreground">Sin reseñas aún</span>
               )}

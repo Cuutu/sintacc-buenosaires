@@ -3,6 +3,39 @@ import { features } from "@/lib/features"
 import type { AiResearch } from "@/lib/place-research/types"
 import { AiResearchSchema } from "@/models/Suggestion.aiResearch"
 
+export type GoogleSnapshotReview = {
+  text: string
+  rating?: number
+  authorName?: string
+  relativeTime?: string
+}
+
+export type GoogleGlutenRelevantReview = {
+  text: string
+  rating?: number
+  authorName?: string
+  relativeTime?: string
+  relevanceScore: number
+}
+
+export type GooglePlaceSnapshot = {
+  rating?: number
+  userRatingCount?: number
+  reviewSummaryText?: string
+  googleMapsUri?: string
+  reviews: GoogleSnapshotReview[]
+  glutenRelevant: GoogleGlutenRelevantReview[]
+  glutenSignalSummary?: string
+  syncedAt: Date
+}
+
+export type GoogleSyncState = {
+  status: "queued" | "running" | "done" | "failed"
+  startedAt?: Date
+  ranAt?: Date
+  error?: string
+}
+
 export interface IPlace extends Document {
   name: string
   type: "restaurant" | "cafe" | "bakery" | "store" | "icecream" | "bar" | "other"
@@ -44,6 +77,12 @@ export interface IPlace extends Document {
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   lastConfirmedAt?: Date
   aiEnrichment?: AiResearch
+  /** Places API place id (ChIJ…) */
+  googlePlaceId?: string
+  /** Cache de rating + reviews Google (sync admin) */
+  googleSnapshot?: GooglePlaceSnapshot
+  /** Estado de la cola de sync Google */
+  googleSync?: GoogleSyncState
   createdAt: Date
   updatedAt: Date
 }
@@ -139,6 +178,46 @@ const PlaceSchema = new Schema<IPlace>(
       type: AiResearchSchema,
       required: false,
     },
+    googlePlaceId: {
+      type: String,
+      trim: true,
+      index: true,
+      sparse: true,
+    },
+    googleSnapshot: {
+      rating: Number,
+      userRatingCount: Number,
+      reviewSummaryText: String,
+      googleMapsUri: String,
+      reviews: [
+        {
+          text: { type: String, required: true },
+          rating: Number,
+          authorName: String,
+          relativeTime: String,
+        },
+      ],
+      glutenRelevant: [
+        {
+          text: { type: String, required: true },
+          rating: Number,
+          authorName: String,
+          relativeTime: String,
+          relevanceScore: { type: Number, required: true },
+        },
+      ],
+      glutenSignalSummary: String,
+      syncedAt: Date,
+    },
+    googleSync: {
+      status: {
+        type: String,
+        enum: ["queued", "running", "done", "failed"],
+      },
+      startedAt: Date,
+      ranAt: Date,
+      error: String,
+    },
   },
   {
     timestamps: true,
@@ -157,6 +236,8 @@ PlaceSchema.index({ status: 1, slug: 1 })
 PlaceSchema.index({ status: 1, safetyLevel: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })
 PlaceSchema.index({ "contact.instagram": 1, status: 1 })
+PlaceSchema.index({ status: 1, "googleSync.status": 1 })
+PlaceSchema.index({ status: 1, "googleSnapshot.syncedAt": 1 })
 
 export const Place: Model<IPlace> =
   mongoose.models.Place || mongoose.model<IPlace>("Place", PlaceSchema)

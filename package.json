@@ -14,6 +14,7 @@
     "check-indexes": "tsx scripts/check-indexes.ts",
     "benchmark:api": "tsx scripts/benchmark-api.ts",
     "backfill:place-slugs": "tsx scripts/backfill-place-slugs.ts",
+    "backfill:google-place-ids": "tsx scripts/backfill-google-place-ids.ts",
     "generate-noise": "node scripts/generate-noise.js",
     "remotion:studio": "remotion studio src/index.ts",
     "remotion:still": "remotion still src/index.ts CelimapDemo --scale=0.25",

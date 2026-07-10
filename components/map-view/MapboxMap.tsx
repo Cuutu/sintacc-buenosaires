@@ -84,6 +84,12 @@ function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalRev
     return `${avgRating.toFixed(1)} · ${totalReviews} reseña${totalReviews === 1 ? "" : "s"}`
   }
 
+  const googleRating = place.googleSnapshot?.rating
+  const googleCount = place.googleSnapshot?.userRatingCount
+  if (googleRating != null) {
+    return `${googleRating.toFixed(1)} Google${googleCount != null ? ` · ${googleCount}` : ""}`
+  }
+
   return null
 }
 

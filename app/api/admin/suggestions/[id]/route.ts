@@ -83,7 +83,13 @@ export async function PATCH(
         : currentDraft
 
       const placeData = buildPlaceFromDraft(draft)
-      const place = new Place({ ...placeData, source: "suggestion" })
+      const place = new Place({
+        ...placeData,
+        source: "suggestion",
+        ...(suggestion.aiResearch?.googlePlaceId
+          ? { googlePlaceId: suggestion.aiResearch.googlePlaceId }
+          : {}),
+      })
       place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
       await place.save()
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
@@ -189,7 +195,13 @@ export async function POST(
       : currentDraft
 
     const placeData = buildPlaceFromDraft(draft)
-    const place = new Place({ ...placeData, source: "suggestion" })
+    const place = new Place({
+      ...placeData,
+      source: "suggestion",
+      ...(suggestion.aiResearch?.googlePlaceId
+        ? { googlePlaceId: suggestion.aiResearch.googlePlaceId }
+        : {}),
+    })
     place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
     await place.save()
     invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])

@@ -42,8 +42,8 @@ export type AdminPlacesSectionProps = {
   setEditingPlaceId: (id: string | null) => void
   placeIncompleteOnlyFilter: boolean
   setPlaceIncompleteOnlyFilter: (v: boolean) => void
-  placeReviewMode: "duplicates" | "incomplete" | null
-  setPlaceReviewMode: (mode: "duplicates" | "incomplete" | null) => void
+  placeReviewMode: "duplicates" | "incomplete" | "google" | null
+  setPlaceReviewMode: (mode: "duplicates" | "incomplete" | "google" | null) => void
 }
 
 export function AdminPlacesSection(props: AdminPlacesSectionProps) {
@@ -121,6 +121,16 @@ const {
           }}
         >
           Sin información
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          onClick={() =>
+            setPlaceReviewMode(placeReviewMode === "google" ? null : "google")
+          }
+        >
+          Reviews Google
         </Button>
       </div>
     </div>

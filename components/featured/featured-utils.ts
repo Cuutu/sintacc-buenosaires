@@ -9,6 +9,10 @@ export type PlaceWithStats = {
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   delivery?: { available?: boolean }
   stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
+  googleSnapshot?: {
+    rating?: number
+    userRatingCount?: number
+  } | null
 }
 
 const SAFETY_CONFIG = {

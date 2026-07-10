@@ -183,6 +183,10 @@ async function persistPlaceResearchUpdate(
 ): Promise<void> {
   const $set: Record<string, unknown> = { aiEnrichment: input.aiEnrichment }
 
+  if (input.aiEnrichment.googlePlaceId) {
+    $set.googlePlaceId = input.aiEnrichment.googlePlaceId
+  }
+
   if (input.patch) {
     const { contact, ...rest } = input.patch
     for (const [key, value] of Object.entries(rest)) {

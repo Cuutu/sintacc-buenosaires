@@ -58,9 +58,9 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(false)
   const [placeMissingBadgeFilter, setPlaceMissingBadgeFilter] = useState(false)
   const [placeIncompleteOnlyFilter, setPlaceIncompleteOnlyFilter] = useState(false)
-  const [placeReviewMode, setPlaceReviewMode] = useState<"duplicates" | "incomplete" | null>(
-    null
-  )
+  const [placeReviewMode, setPlaceReviewMode] = useState<
+    "duplicates" | "incomplete" | "google" | null
+  >(null)
   const [placesPage, setPlacesPage] = useState(1)
   const [placesPagination, setPlacesPagination] = useState<{ total: number; page: number; pages: number } | null>(null)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([])

@@ -13,6 +13,8 @@ import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
 import { TagBadge } from "@/components/TagBadge"
 import { FavoriteButton } from "@/components/favorite-button"
 import { StickyActionBarMobile, PlaceHeroGallery } from "@/components/lugar"
+import { GoogleRatingBadge } from "@/components/google-rating-badge"
+import { GoogleReviewsSection } from "@/components/google-reviews-section"
 import { IPlace } from "@/models/Place"
 import { IReview } from "@/models/Review"
 import {
@@ -486,23 +488,40 @@ export default function LugarPage() {
               {place.name}
             </h1>
 
-            {/* Rating — solo si hay reseñas */}
-            {totalReviews > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-0.5">
-                  {[1,2,3,4,5].map((i) => (
-                    <Star key={i} className={`h-3.5 w-3.5 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"}`} />
-                  ))}
-                </div>
-                <span className="text-sm font-bold">{avgRating.toFixed(1)}</span>
-                <span className="text-muted-foreground text-sm">·</span>
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" })}
-                  className="text-xs text-primary hover:underline px-2 py-0.5 bg-primary/8 border border-primary/20 rounded"
-                >
-                  {totalReviews} {totalReviews === 1 ? "reseña" : "reseñas"} ↓
-                </button>
+            {/* Rating — Celimap primero; Google secundario */}
+            {(totalReviews > 0 || place.googleSnapshot?.rating != null) && (
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
+                {totalReviews > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-0.5">
+                      {[1,2,3,4,5].map((i) => (
+                        <Star key={i} className={`h-3.5 w-3.5 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"}`} />
+                      ))}
+                    </div>
+                    <span className="text-sm font-bold">{avgRating.toFixed(1)}</span>
+                    <span className="text-muted-foreground text-sm">·</span>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" })}
+                      className="text-xs text-primary hover:underline px-2 py-0.5 bg-primary/8 border border-primary/20 rounded"
+                    >
+                      {totalReviews} {totalReviews === 1 ? "reseña" : "reseñas"} ↓
+                    </button>
+                  </div>
+                ) : null}
+                {place.googleSnapshot?.rating != null ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("google-reviews-section")?.scrollIntoView({
+                        behavior: "smooth",
+                      })
+                    }
+                    className="hover:opacity-80"
+                  >
+                    <GoogleRatingBadge snapshot={place.googleSnapshot} size="md" />
+                  </button>
+                ) : null}
               </div>
             )}
 
@@ -790,6 +809,10 @@ export default function LugarPage() {
                 </div>
               )}
             </section>
+
+            <div id="google-reviews-section">
+              <GoogleReviewsSection snapshot={place.googleSnapshot} />
+            </div>
           </div>
           {/* /columna principal */}
 

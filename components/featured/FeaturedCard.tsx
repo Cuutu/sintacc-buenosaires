@@ -7,6 +7,7 @@ import type { PlaceWithStats } from "./featured-utils"
 import { getSafetyBadge, getDisplayTags } from "./featured-utils"
 import { TagBadge } from "@/components/TagBadge"
 import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
+import { GoogleRatingBadge } from "@/components/google-rating-badge"
 import { getPlacePath } from "@/lib/place-url"
 
 interface FeaturedCardProps {
@@ -62,8 +63,8 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
           <span className="line-clamp-1">{place.neighborhood}</span>
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-1.5 mt-3">
+        {/* Rating — Celimap primero; Google solo fallback */}
+        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
           {stats.totalReviews && stats.totalReviews > 0 ? (
             <>
               <Star className="h-4 w-4 fill-amber-400 text-amber-400 shrink-0" />
@@ -74,6 +75,8 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
                 ({stats.totalReviews})
               </span>
             </>
+          ) : place.googleSnapshot?.rating != null ? (
+            <GoogleRatingBadge snapshot={place.googleSnapshot} />
           ) : (
             <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
               Nuevo

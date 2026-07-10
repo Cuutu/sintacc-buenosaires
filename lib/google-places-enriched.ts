@@ -39,11 +39,19 @@ export type GooglePlaceEnriched = GooglePlaceDetails & {
   primaryType?: string
   openingHoursText?: string
   reviewSnippets: string[]
+  reviews: Array<{
+    text: string
+    rating?: number
+    authorName?: string
+    relativeTime?: string
+  }>
 }
 
 interface GoogleReview {
   text?: { text?: string }
   rating?: number
+  relativePublishTimeDescription?: string
+  authorAttribution?: { displayName?: string }
 }
 
 interface GoogleGenerativeSummary {
@@ -105,9 +113,20 @@ export function normalizeGooglePlaceEnriched(
     return null
   }
 
-  const reviewSnippets = (place.reviews ?? [])
-    .map((r) => r.text?.text?.trim())
-    .filter((t): t is string => Boolean(t))
+  const reviews = (place.reviews ?? [])
+    .map((r) => {
+      const text = r.text?.text?.trim()
+      if (!text) return null
+      return {
+        text,
+        rating: r.rating,
+        authorName: r.authorAttribution?.displayName?.trim() || undefined,
+        relativeTime: r.relativePublishTimeDescription?.trim() || undefined,
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => Boolean(r))
+
+  const reviewSnippets = reviews.map((r) => r.text)
 
   const openingHoursText = place.regularOpeningHours?.weekdayDescriptions?.join("; ")
   const generativeOverview = place.generativeSummary?.overview?.text?.trim()
@@ -135,6 +154,7 @@ export function normalizeGooglePlaceEnriched(
     primaryType: place.primaryType,
     openingHoursText,
     reviewSnippets,
+    reviews,
   }
 }
 
