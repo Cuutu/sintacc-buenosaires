@@ -64,19 +64,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = (await request.json().catch(() => ({}))) as { action?: string }
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: string
+      force?: boolean
+    }
 
     if (body.action === "resume") {
       const stats = await resumeGoogleSyncQueue()
       return NextResponse.json({ message: "Cola Google reanudada", stats })
     }
 
-    const result = await startGoogleSyncQueue()
+    const force = body.action === "force" || body.force === true
+    const result = await startGoogleSyncQueue({ force })
     return NextResponse.json({
       message:
         result.queued > 0
-          ? `Cola iniciada con ${result.queued} lugares`
-          : "No había lugares nuevos para sincronizar",
+          ? force
+            ? `Re-sincronización iniciada: ${result.queued} lugares`
+            : `Cola iniciada con ${result.queued} lugares`
+          : force
+            ? "No había lugares para re-sincronizar"
+            : "No había lugares nuevos para sincronizar",
       ...result,
     })
   } catch (error) {

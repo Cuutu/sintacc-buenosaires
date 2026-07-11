@@ -320,10 +320,14 @@ export function AdminPlaceReviewTools({
     }
   }
 
-  const startGoogleQueue = async () => {
+  const startGoogleQueue = async (force = false) => {
     setEnriching(true)
     try {
-      const res = await fetch("/api/admin/places/google-sync-queue", { method: "POST" })
+      const res = await fetch("/api/admin/places/google-sync-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(force ? { action: "force" } : {}),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al iniciar cola Google")
       toast.success(data.message || "Cola Google iniciada")
@@ -622,7 +626,7 @@ export function AdminPlaceReviewTools({
             <Button
               size="sm"
               className="h-8 gap-1.5"
-              onClick={startGoogleQueue}
+              onClick={() => startGoogleQueue(false)}
               disabled={enriching || googleStats?.configured === false}
             >
               {enriching ? (
@@ -631,6 +635,24 @@ export function AdminPlaceReviewTools({
                 <Sparkles className="h-3.5 w-3.5" />
               )}
               Encolar y sincronizar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "¿Re-sincronizar todos los lugares ya linkeados a Google? Vuelve a pedir rating y reseñas (útil tras cambios de lógica)."
+                  )
+                ) {
+                  return
+                }
+                void startGoogleQueue(true)
+              }}
+              disabled={enriching || googleStats?.configured === false}
+            >
+              Re-sincronizar todos
             </Button>
             {googleStats?.stalled ? (
               <Button

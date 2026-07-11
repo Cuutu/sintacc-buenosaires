@@ -108,11 +108,14 @@ export async function resetStaleGoogleSyncJobs(): Promise<number> {
   return result.modifiedCount
 }
 
-export async function enqueueGoogleSyncPlaces(): Promise<{
+export async function enqueueGoogleSyncPlaces(opts?: {
+  force?: boolean
+}): Promise<{
   queued: number
   skipped: number
 }> {
   await connectDB()
+  const force = Boolean(opts?.force)
 
   // Backfill googlePlaceId desde research si falta
   const needIdBackfill = await Place.find({
@@ -131,7 +134,7 @@ export async function enqueueGoogleSyncPlaces(): Promise<{
   }
 
   const places = await Place.find({ status: "approved" })
-    .select("googleSync googleSnapshot name")
+    .select("googleSync googleSnapshot name googlePlaceId")
     .sort({ updatedAt: 1 })
     .limit(5000)
     .lean()
@@ -145,7 +148,19 @@ export async function enqueueGoogleSyncPlaces(): Promise<{
       skipped++
       continue
     }
-    if (!placeNeedsGoogleSync(place)) {
+
+    if (force) {
+      // Re-sync: solo lugares que ya tienen vínculo Google o snapshot previo
+      const hasLink =
+        Boolean(place.googlePlaceId) ||
+        Boolean(place.googleSnapshot?.syncedAt) ||
+        status === "done" ||
+        status === "failed"
+      if (!hasLink && !placeNeedsGoogleSync(place)) {
+        skipped++
+        continue
+      }
+    } else if (!placeNeedsGoogleSync(place)) {
       skipped++
       continue
     }
@@ -284,13 +299,15 @@ export async function runGoogleSyncQueueWorker(): Promise<void> {
   }
 }
 
-export async function startGoogleSyncQueue(): Promise<{
+export async function startGoogleSyncQueue(opts?: {
+  force?: boolean
+}): Promise<{
   queued: number
   skipped: number
   stats: GoogleSyncQueueStats
 }> {
   await resetStaleGoogleSyncJobs()
-  const { queued, skipped } = await enqueueGoogleSyncPlaces()
+  const { queued, skipped } = await enqueueGoogleSyncPlaces({ force: opts?.force })
   const stats = await getGoogleSyncQueueStats()
   if (stats.queued > 0 || stats.stuckRunning > 0) {
     scheduleNextGoogleSyncWorker()
