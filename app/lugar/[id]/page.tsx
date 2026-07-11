@@ -811,7 +811,10 @@ export default function LugarPage() {
             </section>
 
             <div id="google-reviews-section">
-              <GoogleReviewsSection snapshot={place.googleSnapshot} />
+              <GoogleReviewsSection
+                snapshot={place.googleSnapshot}
+                showAllReviews={isDedicated}
+              />
             </div>
           </div>
           {/* /columna principal */}

@@ -5,7 +5,6 @@ import type { GoogleGlutenRelevantReview, GoogleSnapshotReview } from "@/models/
 const filterSchema = z.object({
   relevantIndexes: z.array(z.number().int().min(0)).default([]),
   scores: z.array(z.number().min(0).max(100)).default([]),
-  glutenSignalSummary: z.string().max(280).optional().nullable(),
 })
 
 const SYSTEM_PROMPT = `Sos auditor de reseñas de Google para Celimap (app de lugares sin gluten en Argentina).
@@ -13,15 +12,43 @@ Tu trabajo: indicar cuáles reseñas mencionan sin TACC, celíaco, gluten free, 
 NO inventes ni reescribas reseñas. Solo clasificá.
 Respondé únicamente JSON válido.`
 
+/** Lugar marcado 100% sin gluten (selector admin / tags). */
+export function isDedicatedGlutenFreePlace(place: {
+  name?: string | null
+  safetyLevel?: string | null
+  tags?: string[] | null
+  aiEnrichment?: { recommendedSafetyLevel?: string | null } | null
+}): boolean {
+  if (place.safetyLevel === "dedicated_gf") return true
+  if (place.aiEnrichment?.recommendedSafetyLevel === "dedicated_gf") return true
+
+  const tags = place.tags ?? []
+  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) return true
+
+  return false
+}
+
+function allReviewsAsRelevant(
+  reviews: GoogleSnapshotReview[]
+): GoogleGlutenRelevantReview[] {
+  return reviews.map((r) => ({ ...r, relevanceScore: 100 }))
+}
+
 export async function filterGlutenRelevantGoogleReviews(input: {
   placeName: string
   reviews: GoogleSnapshotReview[]
+  /** Si el lugar es 100% GF, todas las reseñas son relevantes */
+  isDedicatedGf?: boolean
 }): Promise<{
   glutenRelevant: GoogleGlutenRelevantReview[]
-  glutenSignalSummary?: string
 }> {
   if (input.reviews.length === 0) {
     return { glutenRelevant: [] }
+  }
+
+  // Lugar full GF: no hace falta que la reseña diga "sin TACC"
+  if (input.isDedicatedGf) {
+    return { glutenRelevant: allReviewsAsRelevant(input.reviews) }
   }
 
   const numbered = input.reviews
@@ -34,7 +61,7 @@ export async function filterGlutenRelevantGoogleReviews(input: {
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Lugar: ${input.placeName}\n\nReseñas Google:\n${numbered}\n\nJSON: { "relevantIndexes": number[], "scores": number[] (mismo orden que indexes, 0-100), "glutenSignalSummary": "1 frase o null" }`,
+          content: `Lugar: ${input.placeName}\n\nReseñas Google:\n${numbered}\n\nJSON: { "relevantIndexes": number[], "scores": number[] (mismo orden que indexes, 0-100) }`,
         },
       ],
       schema: filterSchema,
@@ -54,12 +81,8 @@ export async function filterGlutenRelevantGoogleReviews(input: {
 
     glutenRelevant.sort((a, b) => b.relevanceScore - a.relevanceScore)
 
-    return {
-      glutenRelevant,
-      glutenSignalSummary: data.glutenSignalSummary?.trim() || undefined,
-    }
+    return { glutenRelevant }
   } catch {
-    // Fallback sin IA: keywords locales
     const keywords =
       /sin\s*tacc|cel[ií]ac|gluten\s*free|sin\s*gluten|apto\s*cel|contaminaci[oó]n|cocina\s*separad|100\s*%\s*sin/i
     const glutenRelevant = input.reviews

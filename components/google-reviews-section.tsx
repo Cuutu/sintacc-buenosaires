@@ -3,16 +3,19 @@ import type { GooglePlaceSnapshot } from "@/models/Place"
 
 type Props = {
   snapshot?: GooglePlaceSnapshot | null
+  /** Si true, mostrar todas las reviews cacheadas (lugar 100% GF) */
+  showAllReviews?: boolean
 }
 
-export function GoogleReviewsSection({ snapshot }: Props) {
+export function GoogleReviewsSection({ snapshot, showAllReviews = false }: Props) {
   if (!snapshot?.syncedAt) return null
   if (snapshot.rating == null && !snapshot.reviews?.length && !snapshot.reviewSummaryText) {
     return null
   }
 
-  const snippets =
-    snapshot.glutenRelevant?.length > 0
+  const snippets = showAllReviews
+    ? (snapshot.reviews?.length ? snapshot.reviews : snapshot.glutenRelevant ?? []).slice(0, 5)
+    : snapshot.glutenRelevant?.length > 0
       ? snapshot.glutenRelevant.slice(0, 3)
       : []
 
@@ -60,12 +63,6 @@ export function GoogleReviewsSection({ snapshot }: Props) {
             </span>
           ) : null}
         </div>
-      ) : null}
-
-      {snapshot.glutenSignalSummary ? (
-        <p className="text-xs text-muted-foreground mb-3 italic">
-          Señal celíaca: {snapshot.glutenSignalSummary}
-        </p>
       ) : null}
 
       {snapshot.reviewSummaryText && snippets.length === 0 ? (

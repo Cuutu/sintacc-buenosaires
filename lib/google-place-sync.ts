@@ -6,7 +6,10 @@ import {
   searchGooglePlaceByText,
 } from "@/lib/google-places-enriched"
 import { getGoogleMapsApiKey } from "@/lib/google-places"
-import { filterGlutenRelevantGoogleReviews } from "@/lib/google-reviews-filter"
+import {
+  filterGlutenRelevantGoogleReviews,
+  isDedicatedGlutenFreePlace,
+} from "@/lib/google-reviews-filter"
 import { isGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { invalidateApiCache } from "@/lib/api-cache"
 
@@ -117,11 +120,12 @@ export async function syncPlaceGoogleReviews(placeId: string): Promise<{
     }
 
     const reviews = enriched.reviews.slice(0, 5)
-    const { glutenRelevant, glutenSignalSummary } =
-      await filterGlutenRelevantGoogleReviews({
-        placeName: place.name,
-        reviews,
-      })
+    const isDedicatedGf = isDedicatedGlutenFreePlace(place)
+    const { glutenRelevant } = await filterGlutenRelevantGoogleReviews({
+      placeName: place.name,
+      reviews,
+      isDedicatedGf,
+    })
 
     const snapshot: GooglePlaceSnapshot = {
       rating: enriched.rating,
@@ -130,7 +134,6 @@ export async function syncPlaceGoogleReviews(placeId: string): Promise<{
       googleMapsUri: enriched.googleMapsUri,
       reviews,
       glutenRelevant,
-      glutenSignalSummary,
       syncedAt: new Date(),
     }
 
