@@ -8,6 +8,7 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Toaster } from "sonner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { getBaseUrl } from "@/lib/base-url";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -20,12 +21,15 @@ const BASE_URL = getBaseUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Mapa para celíacos | Celimap - Lugares sin gluten en todo el mundo",
+    default: "Mapa para celíacos en Argentina | Celimap",
     template: "%s | Celimap",
   },
   description:
-    "Mapa para celíacos sin restricciones. Celimap: restaurantes, cafés y panaderías sin TACC en todo el mundo. Reseñas de la comunidad, certificados y opciones seguras para celíacos.",
+    "Mapa para celíacos de Argentina. Restaurantes, cafés y panaderías sin tacc verificados por la comunidad. Gratis y actualizado.",
   keywords: [
+    "mapa sin tacc",
+    "mapa celiaco",
+    "mapa celíaco",
     "mapa para celiacos",
     "mapa para celíacos",
     "Celimap",
@@ -96,6 +100,7 @@ export default function RootLayout({
           </MobileShell>
           <Toaster position="top-center" richColors closeButton />
           <InstallPrompt />
+          <OnboardingModal />
         </Providers>
         <Analytics />
       </body>

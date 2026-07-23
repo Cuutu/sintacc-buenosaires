@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
 import { features } from "@/lib/features"
+import { trackEvent } from "@/lib/analytics"
 
 interface FavoriteButtonProps {
   placeId: string
@@ -42,6 +43,7 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
       if (isFavorite) {
         await fetch(`/api/favorites?placeId=${placeId}`, { method: "DELETE" })
         setIsFavorite(false)
+        trackEvent("favorite_remove", { placeId })
       } else {
         await fetch("/api/favorites", {
           method: "POST",
@@ -49,6 +51,7 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
           body: JSON.stringify({ placeId }),
         })
         setIsFavorite(true)
+        trackEvent("favorite_add", { placeId })
       }
     } catch (error) {
       console.error("Error toggling favorite:", error)

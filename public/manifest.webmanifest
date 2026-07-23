@@ -1,7 +1,7 @@
 {
-  "name": "Celimap",
+  "name": "Celimap - Mapa para celíacos",
   "short_name": "Celimap",
-  "description": "Mapa para celíacos. Lugares sin TACC.",
+  "description": "Mapa para celíacos de Argentina. Lugares sin tacc.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

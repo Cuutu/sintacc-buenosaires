@@ -4,6 +4,8 @@ import { Place } from "@/models/Place"
 import mongoose from "mongoose"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
+import { PlaceJsonLd } from "@/components/seo/PlaceJsonLd"
+import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 
 export const dynamicParams = true
 export const dynamic = "force-dynamic"
@@ -91,6 +93,30 @@ export async function generateMetadata({ params }: LugarLayoutProps): Promise<Me
   }
 }
 
-export default function LugarLayout({ children }: LugarLayoutProps) {
-  return <>{children}</>
+export default async function LugarLayout({ params, children }: LugarLayoutProps) {
+  const { id } = await params
+  const place = await getApprovedPlaceByRouteParam(id)
+
+  return (
+    <>
+      {place ? (
+        <PlaceJsonLd
+          place={{
+            _id: place._id.toString(),
+            slug: place.slug,
+            name: place.name,
+            type: place.type,
+            neighborhood: place.neighborhood,
+            address: place.address,
+            location: place.location,
+            photos: place.photos,
+            contact: place.contact,
+            openingHours: place.openingHours,
+            stats: place.stats,
+          }}
+        />
+      ) : null}
+      {children}
+    </>
+  )
 }

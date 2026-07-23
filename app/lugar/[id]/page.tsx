@@ -34,6 +34,8 @@ import {
 } from "@/lib/instagram-url"
 import { isOpenNow } from "@/lib/opening-hours"
 import { getPlacePath } from "@/lib/place-url"
+import { trackEvent } from "@/lib/analytics"
+import { ShareButton } from "@/components/share/ShareButton"
 
 function isObjectId(value: string): boolean {
   return /^[a-f\d]{24}$/i.test(value)
@@ -73,6 +75,11 @@ export default function LugarPage() {
     if (!placeId) return
     fetchReviews()
     fetchContaminationReports()
+  }, [placeId])
+
+  useEffect(() => {
+    if (!placeId) return
+    trackEvent("place_view", { placeId })
   }, [placeId])
 
   useEffect(() => {
@@ -172,6 +179,10 @@ export default function LugarPage() {
 
   const mapsUrl = place
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`
+    : ""
+
+  const shareUrl = place
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://www.celimap.com.ar"}${getPlacePath(place)}`
     : ""
 
   const reportCount = place?.stats?.contaminationReportsCount ?? 0
@@ -296,6 +307,14 @@ export default function LugarPage() {
               Guardar lugar
             </Button>
           )}
+          {shareUrl ? (
+            <ShareButton
+              title={`${place!.name} · Celimap`}
+              shareUrl={shareUrl}
+              eventProps={{ placeId: place!._id.toString() }}
+              className="w-full min-h-[40px]"
+            />
+          ) : null}
           {!hideContamination && (
             <ContaminationReportForm
               placeId={placeId!}
@@ -443,7 +462,7 @@ export default function LugarPage() {
   return (
     <>
       {/* Mobile sticky bar — sin cambios, igual que antes */}
-      <StickyActionBarMobile place={place} />
+      <StickyActionBarMobile place={place} shareUrl={shareUrl} />
 
       <div className="container mx-auto px-4 py-6 pb-24 md:pb-10">
 

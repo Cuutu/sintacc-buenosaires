@@ -17,13 +17,13 @@ import { getBaseUrl } from "@/lib/base-url"
 const BASE_URL = getBaseUrl()
 
 export const metadata = {
-  title: "Mapa para celíacos | Lugares sin gluten en Argentina y el mundo",
+  title: "Mapa para celíacos en Argentina | Celimap",
   description:
-    "Mapa para celíacos sin restricciones. Encontrá restaurantes, cafés y panaderías sin TACC en Buenos Aires, Córdoba y toda Argentina. Lugares aptos celíacos verificados por la comunidad.",
+    "Mapa para celíacos de Argentina. Encontrá restaurantes, cafés y panaderías sin tacc en Buenos Aires, La Plata, Tucumán y más. Verificados por la comunidad.",
   openGraph: {
-    title: "Mapa para celíacos | Lugares sin gluten en Argentina",
+    title: "Mapa para celíacos en Argentina | Celimap",
     description:
-      "Encontrá restaurantes, cafés y panaderías sin TACC. Donde comer sin gluten en Buenos Aires, Córdoba y más. Verificados por la comunidad celíaca.",
+      "El mapa colaborativo para celíacos. Restaurantes, cafés y panaderías sin tacc con reseñas reales.",
     url: BASE_URL,
   },
   alternates: { canonical: BASE_URL },
@@ -69,11 +69,11 @@ export default function HomePage() {
 
           {/* H1 — la pieza más importante de la página */}
           <h1 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
-            Encontrá dónde
+            El mapa para celíacos
             <br />
-            comer{" "}
+            de{" "}
             <span className="relative inline-block">
-              <span className="text-primary">sin gluten</span>
+              <span className="text-primary">Argentina</span>
               {/* Línea decorativa bajo "sin gluten" */}
               <svg
                 className="absolute -bottom-1 left-0 w-full"
@@ -91,14 +91,12 @@ export default function HomePage() {
                 />
               </svg>
             </span>
-            <br />
-            cerca tuyo
           </h1>
 
           {/* Subtítulo */}
           <p className="text-center text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Restaurantes, cafés y panaderías sin TACC en Argentina y el mundo.
-            Verificados por la comunidad celíaca — con reseñas reales.
+            Restaurantes, cafés y panaderías sin tacc en La Plata, Tucumán, Buenos Aires y más.
+            Lugares verificados por la comunidad celíaca.
           </p>
 
           {/* Search bar prominente */}
@@ -371,10 +369,11 @@ export default function HomePage() {
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-12 md:py-16 max-w-3xl text-center">
             <h2 className="text-lg font-semibold mb-3">
-              El mapa para celíacos que la comunidad elige en todo el mundo
+              El mapa para celíacos que la comunidad elige
             </h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              Celimap es el mapa para celíacos sin fronteras. Encontrá restaurantes, cafés, panaderías y heladerías sin TACC donde sea que estés. Cada lugar tiene reseñas de la comunidad celíaca, nivel de seguridad (100% sin gluten u opciones) y datos de contacto. Actualizamos el mapa constantemente con sugerencias verificadas.
+              Celimap reúne restaurantes, cafés, panaderías y heladerías aptas para celíacos en Argentina.
+              Cada lugar tiene reseñas, nivel de seguridad y datos de contacto.
             </p>
           </div>
         </section>

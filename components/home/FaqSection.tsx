@@ -1,22 +1,27 @@
 import { HelpCircle, ChevronDown } from "lucide-react"
 
-const FAQ_ITEMS = [
+export const FAQ_ITEMS = [
   {
-    question: "¿Qué es el mapa para celíacos?",
+    question: "¿Qué es Celimap?",
     answer:
-      "Celimap es una plataforma global donde la comunidad comparte restaurantes, cafés y panaderías sin TACC en cualquier parte del mundo. Podés ver el mapa interactivo, filtrar por zona y nivel de seguridad, y leer reseñas de otros celíacos.",
+      "Celimap es un mapa colaborativo para celíacos. Encontrá restaurantes, cafés y panaderías sin tacc en Argentina, con reseñas de la comunidad y filtros por ciudad y barrio.",
+  },
+  {
+    question: "¿Hay un mapa para celíacos en Argentina?",
+    answer:
+      "Sí. Celimap cubre Buenos Aires, La Plata, Tucumán, Córdoba y más ciudades. Cada lugar tiene reseñas y nivel de seguridad.",
   },
   {
     question: "¿Dónde comer sin gluten?",
     answer:
-      "En Celimap encontrás el mapa de lugares sin gluten sin restricción geográfica. Incluye restaurantes 100% sin TACC, cafés con opciones aptas y panaderías certificadas. Cada lugar tiene reseñas de la comunidad celíaca.",
+      "En el mapa de Celimap hay restaurantes 100% sin tacc, cafés con opciones aptas y panaderías certificadas en todo el país.",
   },
   {
     question: "¿Cómo saber si un lugar es seguro para celíacos?",
     answer:
-      "En Celimap cada lugar tiene un nivel de seguridad: 100% sin gluten (dedicado) u opciones sin gluten. Las reseñas de la comunidad te ayudan a decidir. También podés reportar si tuviste una experiencia de contaminación.",
+      "Cada lugar muestra su nivel de seguridad: 100% sin gluten, opciones sin tacc, etc. Las reseñas de la comunidad te ayudan a decidir.",
   },
-]
+] as const
 
 export function FaqSection() {
   return (
@@ -25,7 +30,6 @@ export function FaqSection() {
       aria-label="Preguntas frecuentes"
     >
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col items-center text-center mb-10">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">
             <HelpCircle className="h-4 w-4" />
@@ -39,11 +43,10 @@ export function FaqSection() {
           </p>
         </div>
 
-        {/* Accordion FAQ */}
         <div className="space-y-3">
           {FAQ_ITEMS.map((item, i) => (
             <details
-              key={i}
+              key={item.question}
               open={i === 0}
               className="group rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden transition-all hover:border-primary/30 hover:bg-card/70 [&[open]]:border-primary/40 [&[open]]:bg-card/80"
             >

@@ -37,7 +37,11 @@ export default function SinGlutenArgentinaPage() {
       </h1>
       <p className="text-muted-foreground mb-6 max-w-2xl">
         Encontrá restaurantes, panaderías, cafés y más opciones sin gluten en toda Argentina.
-        Mapa de lugares celíacos verificados por la comunidad.
+        Explorá el{" "}
+        <Link href="/mapa" className="text-primary hover:underline">
+          mapa para celíacos
+        </Link>
+        .
       </p>
 
       <section className="mb-12 max-w-2xl">
@@ -81,6 +85,10 @@ export default function SinGlutenArgentinaPage() {
       <section className="max-w-2xl border-t border-border pt-8">
         <h2 className="text-lg font-semibold mb-4">Preguntas frecuentes</h2>
         <div className="space-y-4 text-sm text-muted-foreground">
+          <div>
+            <h3 className="font-medium text-foreground mb-1">¿Hay un mapa para celíacos en Argentina?</h3>
+            <p>Sí, Celimap es un mapa colaborativo con lugares en Buenos Aires, La Plata, Tucumán y más ciudades.</p>
+          </div>
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Dónde comer sin gluten en Argentina?</h3>
             <p>En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más ciudades.</p>

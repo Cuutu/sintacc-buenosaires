@@ -7,9 +7,10 @@ const withPWA = require("next-pwa")({
 const nextConfig = {
   async redirects() {
     return [
-      { source: "/mapa-para-celiacos", destination: "/mapa", permanent: true },
-      { source: "/mapa-para-celiacos/", destination: "/mapa", permanent: true },
-      { source: "/mapa-celiacos", destination: "/mapa", permanent: true },
+      { source: "/mapa-para-celiacos", destination: "/mapa-celiaco", permanent: true },
+      { source: "/mapa-para-celiacos/", destination: "/mapa-celiaco", permanent: true },
+      { source: "/mapa-celiacos", destination: "/mapa-celiaco", permanent: true },
+      { source: "/mapa-celiacos/", destination: "/mapa-celiaco", permanent: true },
       { source: "/sin-gluten", destination: "/sin-gluten-argentina", permanent: true },
     ];
   },

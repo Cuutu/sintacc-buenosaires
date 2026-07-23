@@ -14,6 +14,8 @@ const FOOTER_SECTIONS: FooterSection[] = [
     title: "Explorar",
     links: [
       { href: "/mapa", label: "Mapa para celíacos" },
+      { href: "/mapa-sin-tacc", label: "Mapa sin tacc" },
+      { href: "/mapa-celiaco", label: "Mapa celíaco" },
       { href: "/listas", label: "Listas" },
       { href: "/emprendimientos", label: "Emprendimientos" },
       { href: "/sin-gluten-argentina", label: "Lugares sin gluten Argentina" },
@@ -66,7 +68,7 @@ export function Footer() {
               />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              El mapa colaborativo para encontrar lugares sin TACC en Argentina y el mundo.
+              Mapa colaborativo para celíacos en Argentina.
             </p>
           </div>
 
