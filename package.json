@@ -20,9 +20,21 @@
     "remotion:still": "remotion still src/index.ts CelimapDemo --scale=0.25",
     "remotion:render": "remotion render src/index.ts CelimapDemo out/celimap-demo.mp4",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap open android",
+    "cap:ios": "npx cap open ios",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "android:keystore": "node scripts/generate-android-keystore.js",
+    "android:bundle": "cd android && gradlew.bat bundleRelease",
+    "assets:generate": "npx capacitor-assets generate --android --ios --assetPath assets --iconBackgroundColor #0b1220 --iconBackgroundColorDark #0b1220 --splashBackgroundColor #0b1220 --splashBackgroundColorDark #0b1220"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@fontsource/dm-sans": "^5.2.8",
     "@fontsource/dm-serif-display": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
@@ -69,6 +81,10 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@types/jest": "^29.5.11",
     "@types/mapbox-gl": "^3.1.0",

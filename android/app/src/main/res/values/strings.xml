@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Celimap</string>
+    <string name="title_activity_main">Celimap</string>
+    <string name="package_name">com.celimap.app</string>
+    <string name="custom_url_scheme">com.celimap.app</string>
+</resources>

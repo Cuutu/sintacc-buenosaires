@@ -1,0 +1,7 @@
+# Copiar a android/key.properties (NO commitear).
+# Generar keystore: npm run android:keystore
+
+storePassword=CAMBIAR_STORE_PASSWORD
+keyPassword=CAMBIAR_KEY_PASSWORD
+keyAlias=celimap
+storeFile=../secrets/celimap-release.keystore

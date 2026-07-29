@@ -4,7 +4,7 @@
             "outputFile": "com.celimap.app-mergeDebugResources-26:/values-watch-v21/values-watch-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Franco\\.gradle\\caches\\8.14.3\\transforms\\c3f09e8abd8bb01c9314454bd06bb337\\transformed\\appcompat-1.7.1\\res\\values-watch-v21\\values-watch-v21.xml",
+                    "source": "C:\\Users\\Franco\\AppData\\Local\\Temp\\cursor-sandbox-cache\\ddb775011ef36ea48137a4626897d143\\gradle\\caches\\8.14.3\\transforms\\c3f09e8abd8bb01c9314454bd06bb337\\transformed\\appcompat-1.7.1\\res\\values-watch-v21\\values-watch-v21.xml",
                     "from": {
                         "startLines": "2,6,10",
                         "startColumns": "4,4,4",

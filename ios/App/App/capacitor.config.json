@@ -3,15 +3,24 @@
 	"appName": "Celimap",
 	"webDir": "www",
 	"server": {
-		"url": "https://celimap.com.ar",
+		"url": "https://www.celimap.com.ar",
 		"cleartext": false
 	},
 	"plugins": {
 		"SplashScreen": {
-			"launchShowDuration": 0
+			"launchShowDuration": 1500,
+			"launchAutoHide": true,
+			"backgroundColor": "#0b1220",
+			"showSpinner": false
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#0b1220"
 		}
 	},
 	"packageClassList": [
-		"AppPlugin"
+		"AppPlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin"
 	]
 }

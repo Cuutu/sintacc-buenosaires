@@ -1,0 +1,9 @@
+{
+  "assetPath": "assets",
+  "iconPath": "assets/icon.png",
+  "iconBackgroundColor": "#0b1220",
+  "iconBackgroundColorDark": "#0b1220",
+  "splashBackgroundColor": "#0b1220",
+  "splashBackgroundColorDark": "#0b1220",
+  "platforms": ["android", "ios"]
+}

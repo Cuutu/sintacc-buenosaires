@@ -1,0 +1,73 @@
+workflows:
+  ios-testflight:
+    name: Celimap iOS TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Celimap
+    environment:
+      groups:
+        - app_store_credentials
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.celimap.app"
+        APP_STORE_APPLE_ID: "REPLACE_ASC_APP_ID"
+      ios_signing:
+        bundle_identifier: com.celimap.app
+        provisioning_profile: Celimap_AppStore
+      xcode: latest
+    scripts:
+      - name: Install npm deps
+        script: |
+          npm ci
+      - name: Capacitor sync iOS
+        script: |
+          npx cap sync ios
+      - name: Build IPA
+        script: |
+          xcode-project use-profiles
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+
+  android-aab:
+    name: Celimap Android AAB
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      groups:
+        - android_credentials
+      vars:
+        PACKAGE_NAME: "com.celimap.app"
+      java: 21
+    scripts:
+      - name: Install npm deps
+        script: |
+          npm ci
+      - name: Capacitor sync Android
+        script: |
+          npx cap sync android
+      - name: Write key.properties
+        script: |
+          cat <<EOF > android/key.properties
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
+      - name: Build release bundle
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
