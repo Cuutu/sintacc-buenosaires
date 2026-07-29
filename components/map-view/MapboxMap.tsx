@@ -21,7 +21,7 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 const SAFETY_MARKER_BG = {
   dedicated_gf: "#10d98a",
   gf_options: "#f6b33d",
-  other: "#334155",
+  other: "#6b7280", // Sin información
 } as const
 
 function getPlaceMarkerBg(place: IPlace, colorBySafety: boolean, fallback: string): string {
@@ -152,7 +152,7 @@ function buildPlacePopupHtml(place: IPlace, compact: boolean): string {
   // Mobile: solo nombre + estado sin TACC (tap abre detalle)
   if (compact) {
     return `
-    <a href="${detailPath}" style="display:block;width:min(260px,calc(100vw - 48px));text-decoration:none;overflow:hidden;border-radius:14px;background:linear-gradient(145deg,rgba(17,22,29,.97),rgba(7,11,15,.96));color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 32px rgba(0,0,0,.4);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 12px" onclick="event.stopPropagation()">
+    <a href="${detailPath}" style="display:block;width:min(260px,calc(100vw - 48px));text-decoration:none;overflow:hidden;border-radius:14px;background:#11161d;color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 32px rgba(0,0,0,.55);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 12px" onclick="event.stopPropagation()">
       <div title="${name}" style="color:#fff;font-size:15px;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
       <div style="margin-top:8px;display:flex;align-items:center">${safetyHtml}</div>
     </a>`
@@ -169,7 +169,7 @@ function buildPlacePopupHtml(place: IPlace, compact: boolean): string {
     : ""
 
   return `
-    <div style="width:min(315px,calc(100vw - 36px));overflow:hidden;border-radius:19px;background:linear-gradient(145deg,rgba(17,22,29,.97),rgba(7,11,15,.96));color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+    <div style="width:min(315px,calc(100vw - 36px));overflow:hidden;border-radius:19px;background:#11161d;color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
       <div style="position:relative;padding:11px">
         <div style="position:absolute;right:-66px;top:-78px;width:142px;height:142px;border-radius:999px;background:radial-gradient(circle,${accent}28,rgba(255,255,255,0) 66%);pointer-events:none"></div>
         <div style="position:relative;display:grid;grid-template-columns:76px 1fr;gap:11px;align-items:start">
@@ -382,7 +382,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const applyMarkerSelection = useCallback((entry: MarkerEntry, isSelected: boolean) => {
       entry.element.style.width = `${isSelected ? 48 : 36}px`
       entry.element.style.height = `${isSelected ? 48 : 36}px`
-      entry.element.style.zIndex = isSelected ? "6" : "1"
+      // Popup Mapbox usa z-index alto; marcador nunca por encima del popup
+      entry.element.style.zIndex = isSelected ? "2" : "1"
       entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid rgba(255,255,255,0.95)`
       entry.inner.style.boxShadow = isSelected
         ? "0 8px 24px rgba(0,0,0,0.45), 0 0 0 4px rgba(16,217,138,0.28)"
@@ -499,7 +500,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         })
         map.current = instance
         sharedPopupRef.current = new mapboxgl.Popup({
-          offset: 25,
+          offset: 42,
           className: "celimap-popup",
           closeButton: false,
           closeOnClick: true,

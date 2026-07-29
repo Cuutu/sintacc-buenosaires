@@ -1,31 +1,39 @@
 "use client"
 
+const ITEMS = [
+  { color: "#10d98a", label: "100% sin TACC" },
+  { color: "#f6b33d", label: "Tiene opciones" },
+  { color: "#6b7280", label: "Sin información" },
+] as const
+
 /** Leyenda de referencia (no interactiva) sobre el mapa. */
 export function MapLegend() {
   return (
     <div
       role="note"
       aria-label="Referencia de colores del mapa"
-      className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-10 max-w-[min(220px,calc(100vw-1.5rem))] rounded-2xl border border-white/14 bg-[#080c0f]/90 px-3 py-2.5 shadow-[0_12px_28px_rgba(0,0,0,0.45)] backdrop-blur-md md:bottom-4 md:left-4"
+      className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-20 w-[min(210px,calc(100vw-1.5rem))] rounded-2xl border border-white/18 bg-[#0a0e12]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-md md:bottom-5 md:left-5"
     >
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/45">
-        Referencia
-      </p>
-      <ul className="space-y-2 text-[11px] leading-none text-white/85">
-        <li className="flex items-center gap-2.5">
-          <span
-            className="h-3.5 w-3.5 shrink-0 rounded-full bg-[#10d98a] shadow-[0_0_0_2px_rgba(255,255,255,0.35)]"
-            aria-hidden
-          />
-          <span>100% sin TACC</span>
-        </li>
-        <li className="flex items-center gap-2.5">
-          <span
-            className="h-3.5 w-3.5 shrink-0 rounded-full bg-[#f6b33d] shadow-[0_0_0_2px_rgba(255,255,255,0.35)]"
-            aria-hidden
-          />
-          <span>Tiene opciones</span>
-        </li>
+      <p className="mb-2.5 text-[11px] font-bold tracking-wide text-white">Referencia</p>
+      <ul className="space-y-2.5">
+        {ITEMS.map((item) => (
+          <li key={item.label} className="flex items-center gap-2.5 text-[12px] font-medium leading-none text-white/90">
+            <span
+              className="relative flex h-5 w-5 shrink-0 items-center justify-center"
+              aria-hidden
+            >
+              <span
+                className="absolute inset-0 rounded-full opacity-35"
+                style={{ backgroundColor: item.color }}
+              />
+              <span
+                className="relative h-3 w-3 rounded-full ring-2 ring-white/90"
+                style={{ backgroundColor: item.color }}
+              />
+            </span>
+            <span>{item.label}</span>
+          </li>
+        ))}
       </ul>
     </div>
   )
