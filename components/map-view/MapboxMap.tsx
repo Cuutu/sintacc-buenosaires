@@ -20,7 +20,7 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 
 const SAFETY_MARKER_BG = {
   dedicated_gf: "#10d98a",
-  gf_options: "#1a6b4a",
+  gf_options: "#f6b33d",
   other: "#334155",
 } as const
 

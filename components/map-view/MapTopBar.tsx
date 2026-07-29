@@ -200,38 +200,38 @@ export function MapTopBar({
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <FilterChip
-            active={filters.safetyLevel === "dedicated_gf"}
-            label="100% sin TACC"
-            tone="primary"
-            onClick={() => toggleSafety("dedicated_gf")}
-            onClear={() => toggleSafety("dedicated_gf")}
-          />
-          <FilterChip
-            active={filters.safetyLevel === "gf_options"}
-            label="Tiene opciones"
-            tone="amber"
-            onClick={() => toggleSafety("gf_options")}
-            onClear={() => toggleSafety("gf_options")}
-          />
-          <FilterChip
-            active={Boolean(filters.type)}
-            label={filters.type ? TYPE_LABELS[filters.type] ?? "Tipo" : "Tipo de lugar"}
-            tone="neutral"
-            onClick={() => setMoreOpen(true)}
-            onClear={
-              filters.type
-                ? () => onFiltersChange({ ...filters, type: undefined })
-                : undefined
-            }
-          />
-          <div className="relative" ref={moreRef}>
+        <div ref={moreRef} className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <FilterChip
+              active={filters.safetyLevel === "dedicated_gf"}
+              label="100% sin TACC"
+              tone="primary"
+              onClick={() => toggleSafety("dedicated_gf")}
+              onClear={() => toggleSafety("dedicated_gf")}
+            />
+            <FilterChip
+              active={filters.safetyLevel === "gf_options"}
+              label="Tiene opciones"
+              tone="amber"
+              onClick={() => toggleSafety("gf_options")}
+              onClear={() => toggleSafety("gf_options")}
+            />
+            <FilterChip
+              active={Boolean(filters.type)}
+              label={filters.type ? TYPE_LABELS[filters.type] ?? "Tipo" : "Tipo de lugar"}
+              tone="neutral"
+              onClick={() => setMoreOpen(true)}
+              onClear={
+                filters.type
+                  ? () => onFiltersChange({ ...filters, type: undefined })
+                  : undefined
+              }
+            />
             <button
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               aria-expanded={moreOpen}
-              aria-haspopup="dialog"
+              aria-controls="mapa-more-filters"
               className={cn(
                 "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
                 moreActiveCount > 0 || moreOpen
@@ -245,69 +245,71 @@ export function MapTopBar({
                 <span className="rounded-full bg-black/20 px-1.5 text-[10px]">{moreActiveCount}</span>
               )}
             </button>
-
-            {moreOpen && (
-              <div
-                role="dialog"
-                aria-label="Más filtros"
-                className="absolute right-0 z-40 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-white/12 bg-[#0c1014] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
-                    Tipo de lugar
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setMoreOpen(false)}
-                    className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
-                    aria-label="Cerrar filtros"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => toggleType(type.value)}
-                      aria-pressed={filters.type === type.value}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                        filters.type === type.value
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
-                      )}
-                    >
-                      {TYPE_LABELS[type.value] ?? type.label}
-                    </button>
-                  ))}
-                </div>
-
-                <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-white/45">
-                  Características
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {TAG_CHIPS.map((chip) => (
-                    <button
-                      key={chip.id}
-                      type="button"
-                      onClick={() => toggleTag(chip.id)}
-                      aria-pressed={filters.tags.includes(chip.id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                        filters.tags.includes(chip.id)
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
-                      )}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Inline panel: evita corte por overflow del aside */}
+          {moreOpen && (
+            <div
+              id="mapa-more-filters"
+              role="region"
+              aria-label="Más filtros"
+              className="max-h-[min(50vh,360px)] overflow-y-auto rounded-2xl border border-white/12 bg-[#0c1014] p-4"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
+                  Tipo de lugar
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
+                  aria-label="Cerrar filtros"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => toggleType(type.value)}
+                    aria-pressed={filters.type === type.value}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                      filters.type === type.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
+                    )}
+                  >
+                    {TYPE_LABELS[type.value] ?? type.label}
+                  </button>
+                ))}
+              </div>
+
+              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-white/45">
+                Características
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {TAG_CHIPS.map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => toggleTag(chip.id)}
+                    aria-pressed={filters.tags.includes(chip.id)}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                      filters.tags.includes(chip.id)
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
+                    )}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {(resultCountLabel || onSortChange || hasActiveFilters) && (

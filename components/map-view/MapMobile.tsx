@@ -241,20 +241,6 @@ export function MapMobile({
             colorBySafety
           />
         </MapErrorBoundary>
-        <div className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-10 md:hidden">
-          <div className="rounded-xl border border-white/12 bg-[#080c0f]/82 px-2.5 py-1.5 text-[10px] text-white/75 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-[#10d98a]" />
-                100% sin TACC
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-[#1a6b4a]" />
-                Opciones
-              </span>
-            </div>
-          </div>
-        </div>
         <MapLegend />
       </div>
 
