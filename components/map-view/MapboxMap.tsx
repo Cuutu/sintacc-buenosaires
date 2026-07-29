@@ -16,6 +16,21 @@ import {
   getNeighborhoodSearchValues,
   normalizeSearchValue,
 } from "@/lib/map-search"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
+
+const SAFETY_MARKER_BG = {
+  dedicated_gf: "#10d98a",
+  gf_options: "#1a6b4a",
+  other: "#334155",
+} as const
+
+function getPlaceMarkerBg(place: IPlace, colorBySafety: boolean, fallback: string): string {
+  if (!colorBySafety) return fallback
+  const level = inferSafetyLevel(place)
+  if (level === "dedicated_gf") return SAFETY_MARKER_BG.dedicated_gf
+  if (level === "gf_options") return SAFETY_MARKER_BG.gf_options
+  return SAFETY_MARKER_BG.other
+}
 export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
   restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
   cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
@@ -118,9 +133,8 @@ function buildPlacePopupHtml(place: IPlace, compact: boolean): string {
   const locationLabel = escapeHtml([place.neighborhood, "CABA"].filter(Boolean).join(", "))
   const addressLabel = escapeHtml(place.addressText || place.address || place.neighborhood)
   const ratingLabel = getPopupRating(place)
-  const loc = place.location as { lat?: number; lng?: number; coordinates?: number[] }
-  const lng = loc.lng ?? loc.coordinates?.[0]
-  const lat = loc.lat ?? loc.coordinates?.[1]
+  const lng = place.location.lng
+  const lat = place.location.lat
   const directionsUrl = escapeHtml(
     Number.isFinite(lng) && Number.isFinite(lat)
       ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
@@ -264,6 +278,8 @@ interface MapboxMapProps {
   /** Callback cuando se obtiene la ubicación correctamente */
   onGeolocateSuccess?: () => void
   clusterMarkers?: boolean
+  /** Verde = 100% sin TACC; verde oscuro = opciones (en vez de color por categoría) */
+  colorBySafety?: boolean
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -283,6 +299,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       onGeolocateError,
       onGeolocateSuccess,
       clusterMarkers = false,
+      colorBySafety = false,
     },
     ref
   ) => {
@@ -363,9 +380,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [])
 
     const applyMarkerSelection = useCallback((entry: MarkerEntry, isSelected: boolean) => {
-      entry.element.style.width = `${isSelected ? 44 : 36}px`
-      entry.element.style.height = `${isSelected ? 44 : 36}px`
-      entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid white`
+      entry.element.style.width = `${isSelected ? 48 : 36}px`
+      entry.element.style.height = `${isSelected ? 48 : 36}px`
+      entry.element.style.zIndex = isSelected ? "6" : "1"
+      entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid rgba(255,255,255,0.95)`
+      entry.inner.style.boxShadow = isSelected
+        ? "0 8px 24px rgba(0,0,0,0.45), 0 0 0 4px rgba(16,217,138,0.28)"
+        : "0 2px 8px rgba(0,0,0,0.25)"
       entry.icon.style.fontSize = `${isSelected ? 20 : 16}px`
     }, [])
 
@@ -464,15 +485,19 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       mapboxgl.accessToken = token
 
-      if (!map.current) {
-        map.current = new mapboxgl.Map({
+      if (map.current) return
+
+      try {
+        const instance = new mapboxgl.Map({
           container: mapContainer.current,
           style: darkStyle
             ? "mapbox://styles/mapbox/dark-v11"
             : "mapbox://styles/mapbox/streets-v12",
           center: initialCenter ?? CABA_CENTER,
           zoom: initialZoom ?? CABA_ZOOM,
+          failIfMajorPerformanceCaveat: false,
         })
+        map.current = instance
         sharedPopupRef.current = new mapboxgl.Popup({
           offset: 25,
           className: "celimap-popup",
@@ -480,10 +505,32 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           closeOnClick: true,
           maxWidth: "none",
         })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        throw new Error(
+          /webgl|Failed to initialize/i.test(message)
+            ? "Failed to initialize WebGL"
+            : message
+        )
       }
 
-      return () => {}
-    }, [darkStyle, initialCenter, initialZoom])
+      return () => {
+        try {
+          sharedPopupRef.current?.remove()
+        } catch {
+          /* ignore */
+        }
+        sharedPopupRef.current = null
+        try {
+          map.current?.remove()
+        } catch {
+          /* ignore */
+        }
+        map.current = null
+      }
+      // Solo montar/desmontar: evita reinits por cambios de props y limpia en unmount
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     // GeolocateControl: punto azul de ubicación del usuario (solo en mobile, se activa con FAB)
     useEffect(() => {
@@ -608,19 +655,22 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         const config = isCluster
           ? TYPE_MARKERS.other
           : TYPE_MARKERS[item.place.type] || TYPE_MARKERS.other
+        const markerBg = isCluster
+          ? "linear-gradient(135deg, #06120f, #0f2f27)"
+          : getPlaceMarkerBg(item.place, colorBySafety, config.bg)
         const existingEntry = markerEntriesRef.current.get(item.id)
 
         if (existingEntry) {
           existingEntry.item = item
           existingEntry.marker.setLngLat([item.lng, item.lat])
           if (isCluster) {
-            existingEntry.inner.style.background = "linear-gradient(135deg, #06120f, #0f2f27)"
+            existingEntry.inner.style.background = markerBg
             existingEntry.inner.style.border = "2px solid rgba(16,185,129,0.85)"
             existingEntry.inner.style.boxShadow = "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)"
             existingEntry.icon.textContent = String(item.places.length)
             existingEntry.icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
           } else {
-            existingEntry.inner.style.background = config.bg
+            existingEntry.inner.style.background = markerBg
             existingEntry.icon.textContent = config.emoji
             applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === item.id)
           }
@@ -641,7 +691,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          background: ${isCluster ? "linear-gradient(135deg, #06120f, #0f2f27)" : config.bg};
+          background: ${markerBg};
           box-shadow: ${isCluster ? "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)" : "0 2px 8px rgba(0,0,0,0.25)"};
           display: flex;
           align-items: center;
@@ -650,6 +700,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           transform-origin: center center;
           color: white;
           font-weight: 800;
+          border: ${isCluster ? "2px solid rgba(16,185,129,0.85)" : "2px solid rgba(255,255,255,0.95)"};
         `
 
         const icon = document.createElement("span")
@@ -716,7 +767,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         entry.marker.remove()
         markerEntriesRef.current.delete(markerId)
       })
-    }, [applyMarkerSelection, markerItems, reduceMotion])
+    }, [applyMarkerSelection, colorBySafety, markerItems, reduceMotion])
 
     useEffect(() => {
       markerEntriesRef.current.forEach((entry, placeId) => {

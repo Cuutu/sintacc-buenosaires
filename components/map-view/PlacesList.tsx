@@ -1,16 +1,32 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { PlaceMiniCard } from "./PlaceMiniCard"
 import type { IPlace } from "@/models/Place"
-import { getPlacePath } from "@/lib/place-url"
 
 interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
   selectedPlaceId: string | null
   loading?: boolean
   onPlaceSelect?: (place: IPlace) => void
+  onClearFilters?: () => void
+}
+
+function PlaceCardSkeleton() {
+  return (
+    <div className="flex min-h-[124px] gap-3 rounded-2xl border border-white/8 bg-[#0c100e] p-3">
+      <div className="h-[100px] w-[100px] shrink-0 animate-pulse rounded-xl bg-white/5" />
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+        <div className="h-4 w-3/4 animate-pulse rounded bg-white/8" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-white/5" />
+        <div className="mt-1 flex gap-2">
+          <div className="h-5 w-24 animate-pulse rounded-full bg-white/5" />
+          <div className="h-5 w-14 animate-pulse rounded-full bg-white/5" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function PlacesList({
@@ -18,20 +34,17 @@ export function PlacesList({
   selectedPlaceId,
   loading = false,
   onPlaceSelect,
+  onClearFilters,
 }: PlacesListProps) {
-  const router = useRouter()
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
 
   const handlePlaceClick = React.useCallback(
     (place: IPlace) => {
-      if (selectedPlaceId === place._id.toString()) {
-        router.push(getPlacePath(place))
-        return
-      }
+      // Un click selecciona + centra mapa; no navega al detalle
       onPlaceSelect?.(place)
     },
-    [onPlaceSelect, router, selectedPlaceId]
+    [onPlaceSelect]
   )
 
   React.useEffect(() => {
@@ -41,12 +54,9 @@ export function PlacesList({
 
   if (loading) {
     return (
-      <div ref={listRef} className="space-y-2.5 px-5 pb-5">
+      <div ref={listRef} className="space-y-2.5 px-4 pb-6" aria-busy="true" aria-label="Cargando lugares">
         {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="h-[86px] animate-pulse rounded-2xl bg-white/5"
-          />
+          <PlaceCardSkeleton key={i} />
         ))}
       </div>
     )
@@ -54,14 +64,33 @@ export function PlacesList({
 
   if (places.length === 0) {
     return (
-      <div className="px-5 py-12 text-center text-muted-foreground">
-        No se encontraron lugares
+      <div className="px-5 py-12 text-center">
+        <p className="text-sm font-medium text-white/80">
+          No encontramos lugares con estos filtros en esta zona.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {onClearFilters && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            >
+              Limpiar filtros
+            </button>
+          )}
+          <Link
+            href="/sugerir"
+            className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            Sugerir un lugar
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div ref={listRef} className="space-y-2.5 px-5 pb-5">
+    <div ref={listRef} className="space-y-2.5 px-4 pb-6">
       {places.map((place) => (
         <div
           key={place._id.toString()}

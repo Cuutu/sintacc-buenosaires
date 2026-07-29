@@ -2,14 +2,15 @@
 
 import * as React from "react"
 import mapboxgl from "mapbox-gl"
-import { ArrowUpRight, MapPin, Sparkles, X } from "lucide-react"
+import { X } from "lucide-react"
 import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
+import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
+import { MapLegend } from "./MapLegend"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { filterPlacesInBounds } from "./geo"
-import { getPlacePath } from "@/lib/place-url"
-import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import type { IPlace } from "@/models/Place"
 
 type PlaceWithStats = IPlace & {
@@ -43,12 +44,6 @@ const TYPE_LABELS: Record<string, string> = {
   icecream: "Heladería",
   bar: "Bar",
   other: "Otro",
-}
-
-const SORT_DESCRIPTIONS: Record<SortOption, string> = {
-  default: "Orden original del mapa",
-  rating: "Mejor rating primero",
-  newest: "Más nuevos primero",
 }
 
 function getPlaceTimestamp(place: PlaceWithStats): number {
@@ -100,11 +95,7 @@ export function MapDesktop({
   const mapRef = React.useRef<MapboxMapRef>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [sort, setSort] = React.useState<SortOption>("default")
-
-  const selectedPlace = React.useMemo(
-    () => places.find((place) => place._id.toString() === selectedPlaceId) ?? null,
-    [places, selectedPlaceId]
-  )
+  const [mapKey, setMapKey] = React.useState(0)
 
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
@@ -185,40 +176,58 @@ export function MapDesktop({
     return list
   }, [searchQuery, visiblePlaces, sort])
 
-  const selectedSafety = selectedPlace
-    ? getSafetyBadge(inferSafetyLevel(selectedPlace) as any)
-    : null
+  const handlePlaceSelect = React.useCallback(
+    (place: IPlace) => {
+      onPlaceSelect(place)
+      if (place.location && mapRef.current) {
+        mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+      }
+    },
+    [onPlaceSelect]
+  )
+
+  const resultCountLabel = `${sortedPlaces.length} lugar${sortedPlaces.length !== 1 ? "es" : ""}${
+    searchQuery?.trim() ? "" : " en esta zona"
+  }`
 
   return (
-    <div className="grid h-full w-full grid-cols-12 bg-[#050807]">
-      <div className="relative col-span-7 overflow-hidden">
-        <MapboxMap
-          ref={mapRef}
-          places={places}
-          selectedPlaceId={selectedPlaceId ?? undefined}
-          onPlaceSelect={onPlaceSelect}
-          onBoundsChange={setBounds}
-          onMoveEnd={onMapMoveEnd}
-          searchQuery={searchQuery}
-          initialCenter={initialCenter}
-          initialZoom={initialZoom}
-          darkStyle
-          reduceMotion={reduceMotion}
-          clusterMarkers
-        />
+    <div className="flex h-full w-full bg-[#050807]">
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        <MapErrorBoundary
+          key={mapKey}
+          onRetry={() => setMapKey((k) => k + 1)}
+        >
+          <MapboxMap
+            ref={mapRef}
+            places={places}
+            selectedPlaceId={selectedPlaceId ?? undefined}
+            onPlaceSelect={onPlaceSelect}
+            onBoundsChange={setBounds}
+            onMoveEnd={onMapMoveEnd}
+            searchQuery={searchQuery}
+            initialCenter={initialCenter}
+            initialZoom={initialZoom}
+            darkStyle
+            reduceMotion={reduceMotion}
+            clusterMarkers
+            colorBySafety
+          />
+        </MapErrorBoundary>
+        <MapLegend />
 
         {hasActiveFilters && (
           <div className="pointer-events-auto absolute left-1/2 top-4 z-10 -translate-x-1/2">
             <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-white/15 bg-[#080c0f]/78 px-3 py-2 text-xs font-medium text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_14px_rgba(16,185,129,0.75)]" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
               <span className="truncate">
                 {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
               </span>
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="ml-1 shrink-0 text-white/62 transition hover:text-white"
+                className="ml-1 shrink-0 text-white/62 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                 title="Limpiar filtros"
+                aria-label="Limpiar filtros"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -227,7 +236,7 @@ export function MapDesktop({
         )}
       </div>
 
-      <aside className="col-span-5 flex min-w-0 flex-col overflow-y-auto border-l border-white/10 bg-[#070909]/96 shadow-[inset_1px_0_0_rgba(255,255,255,0.04)] backdrop-blur-xl">
+      <aside className="flex w-[min(480px,40vw)] min-w-[440px] max-w-[520px] shrink-0 flex-col overflow-hidden border-l border-white/10 bg-[#070909]/96">
         <MapTopBar
           variant="sidebar"
           filters={filters}
@@ -235,62 +244,19 @@ export function MapDesktop({
           onSearchChange={onSearchChange}
           sort={sort}
           onSortChange={setSort}
+          resultCountLabel={resultCountLabel}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar lugar o zona..."
         />
 
-        {selectedPlace && (
-          <section className="mx-5 mt-4 rounded-2xl border border-primary/25 bg-primary/[0.08] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.26)]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                  <Sparkles className="h-3 w-3" />
-                  Seleccionado
-                </div>
-                <h2 className="truncate text-base font-bold text-white">{selectedPlace.name}</h2>
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-white/62">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {selectedPlace.neighborhood}
-                </p>
-              </div>
-              <a
-                href={getPlacePath(selectedPlace)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
-                aria-label="Ver detalle"
-              >
-                <ArrowUpRight className="h-4 w-4" />
-              </a>
-            </div>
-            {selectedSafety && (
-              <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${selectedSafety.className}`}>
-                {selectedSafety.label}
-              </div>
-            )}
-          </section>
-        )}
-
-        <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-4">
-          <p className="text-sm text-white/62">
-            <span className="font-semibold text-white">{sortedPlaces.length}</span>
-            {" "}lugar{sortedPlaces.length !== 1 ? "es" : ""}{searchQuery?.trim() ? "" : " en el área"}
-            <span className="ml-2 text-xs text-white/36">· {SORT_DESCRIPTIONS[sort]}</span>
-          </p>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="flex items-center gap-1 text-xs text-white/52 transition hover:text-white"
-            >
-              <X className="h-3 w-3" />
-              Limpiar
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1 pt-1">
+        <div className="min-h-0 flex-1 overflow-y-auto pt-1">
           <PlacesList
             places={sortedPlaces}
             selectedPlaceId={selectedPlaceId}
             loading={loading}
-            onPlaceSelect={onPlaceSelect}
+            onPlaceSelect={handlePlaceSelect}
+            onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
           />
         </div>
       </aside>

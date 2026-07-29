@@ -30,10 +30,14 @@ export default function MapaLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Desktop: mapa full viewport; SEO debajo (scroll de página).
+  // Mobile: mapa full dvh (sin SEO visible; BottomNav aparte).
   return (
-    <div className="flex h-[100dvh] md:h-[calc(100vh-4rem)] -mb-[calc(5rem+env(safe-area-inset-bottom))] md:mb-0 min-h-0 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-col md:h-auto md:min-h-0 md:overflow-visible">
+      <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[calc(5rem+env(safe-area-inset-bottom))] md:mb-0 md:h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4rem)] md:shrink-0">
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      </div>
       <MapaSeoIntro />
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   )
 }

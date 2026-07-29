@@ -71,6 +71,8 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
       className={showLabel ? "min-h-[48px]" : undefined}
       onClick={toggleFavorite}
       disabled={loading}
+      aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+      aria-pressed={isFavorite}
     >
       <Heart
         className={`h-5 w-5 ${showLabel ? "mr-2" : ""} ${

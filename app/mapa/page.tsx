@@ -264,6 +264,13 @@ function MapaContent() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [pathname, router, searchParams])
 
+  const handleListOpen = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("list", "open")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
+
   return (
     <MapScreen
       places={places}
@@ -279,6 +286,7 @@ function MapaContent() {
       placeIdToFocus={placeIdFromUrl}
       listOpen={listOpen}
       onSheetCollapse={handleSheetCollapse}
+      onListOpen={handleListOpen}
       onMapMoveEnd={handleMapMoveEnd}
     />
   )

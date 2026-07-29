@@ -1,15 +1,21 @@
 "use client"
 
 import * as React from "react"
+import { List, X } from "lucide-react"
 import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
+import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
+import { MapLegend } from "./MapLegend"
 import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
+import { PlaceMiniCard } from "./PlaceMiniCard"
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { toast } from "sonner"
 import mapboxgl from "mapbox-gl"
-import { CABA_CENTER, filterPlacesInBounds } from "./geo"
+import { filterPlacesInBounds } from "./geo"
+import { cn } from "@/lib/utils"
+import { TYPES } from "@/lib/constants"
 import type { IPlace } from "@/models/Place"
 
 interface MapMobileProps {
@@ -24,12 +30,17 @@ interface MapMobileProps {
   initialCenter?: [number, number]
   initialZoom?: number
   placeIdToFocus?: string | null
-  /** Si true, el BottomSheet empieza abierto (desde ?list=open) */
   listOpen?: boolean
-  /** Callback cuando el usuario cierra el sheet manualmente */
   onSheetCollapse?: () => void
+  onListOpen?: () => void
   onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
 }
+
+const TAG_CHIPS = [
+  { id: "cocina_separada", label: "Cocina separada" },
+  { id: "certificado_sin_tacc", label: "Certificado" },
+  { id: "delivery", label: "Delivery" },
+] as const
 
 export function MapMobile({
   places,
@@ -45,6 +56,7 @@ export function MapMobile({
   placeIdToFocus,
   listOpen = false,
   onSheetCollapse,
+  onListOpen,
   onMapMoveEnd,
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
@@ -52,6 +64,8 @@ export function MapMobile({
   const lastFocusedPlaceIdRef = React.useRef<string | null>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [locating, setLocating] = React.useState(false)
+  const [mapKey, setMapKey] = React.useState(0)
+  const [moreOpen, setMoreOpen] = React.useState(false)
 
   const visiblePlaces = React.useMemo(() => {
     if (searchQuery?.trim()) return places
@@ -64,6 +78,11 @@ export function MapMobile({
     }
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
+
+  const selectedPlace = React.useMemo(
+    () => places.find((p) => p._id.toString() === selectedPlaceId) ?? null,
+    [places, selectedPlaceId]
+  )
 
   const triggerMapboxGeolocate = () => {
     if (!navigator.geolocation) {
@@ -153,6 +172,9 @@ export function MapMobile({
 
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
+    if (place.location && mapRef.current) {
+      mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+    }
   }
 
   const handleSnapChange = React.useCallback(
@@ -162,7 +184,6 @@ export function MapMobile({
     [onSheetCollapse]
   )
 
-  // Centrar mapa en lugar cuando placeIdToFocus está en la lista
   React.useEffect(() => {
     if (!placeIdToFocus || !mapRef.current) {
       lastFocusedPlaceIdRef.current = null
@@ -177,39 +198,99 @@ export function MapMobile({
     }
   }, [placeIdToFocus, places])
 
+  const clearExtraFilters = () => {
+    onFiltersChange({
+      ...filters,
+      type: undefined,
+      tags: filters.tags.filter((t) => t === "100_gf" || t === "opciones_sin_tacc"),
+    })
+  }
+
+  const hasExtraFilters =
+    Boolean(filters.type) ||
+    filters.tags.some((t) => t !== "100_gf" && t !== "opciones_sin_tacc")
+
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden">
+    <div className="relative h-full min-h-[100dvh] w-full overflow-hidden">
       <MapTopBar
         filters={filters}
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
+        onFiltersOpen={() => setMoreOpen(true)}
+        placeholder="Buscar lugar o zona..."
       />
 
       <div className="absolute inset-0">
-        <MapboxMap
-          ref={mapRef}
-          places={places}
-          selectedPlaceId={selectedPlaceId ?? undefined}
-          onPlaceSelect={handlePlaceSelect}
-          onBoundsChange={setBounds}
-          onMoveEnd={onMapMoveEnd}
-          searchQuery={searchQuery}
-          initialCenter={initialCenter}
-          initialZoom={initialZoom}
-          darkStyle
-          reduceMotion={reduceMotion}
-          enableGeolocate
-          onGeolocateError={handleGeolocateError}
-          onGeolocateSuccess={handleGeolocateSuccess}
-          clusterMarkers
-        />
+        <MapErrorBoundary key={mapKey} onRetry={() => setMapKey((k) => k + 1)}>
+          <MapboxMap
+            ref={mapRef}
+            places={places}
+            selectedPlaceId={selectedPlaceId ?? undefined}
+            onPlaceSelect={handlePlaceSelect}
+            onBoundsChange={setBounds}
+            onMoveEnd={onMapMoveEnd}
+            searchQuery={searchQuery}
+            initialCenter={initialCenter}
+            initialZoom={initialZoom}
+            darkStyle
+            reduceMotion={reduceMotion}
+            enableGeolocate
+            onGeolocateError={handleGeolocateError}
+            onGeolocateSuccess={handleGeolocateSuccess}
+            clusterMarkers
+            colorBySafety
+          />
+        </MapErrorBoundary>
+        <div className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-10 md:hidden">
+          <div className="rounded-xl border border-white/12 bg-[#080c0f]/82 px-2.5 py-1.5 text-[10px] text-white/75 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-[#10d98a]" />
+                100% sin TACC
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-[#1a6b4a]" />
+                Opciones
+              </span>
+            </div>
+          </div>
+        </div>
+        <MapLegend />
       </div>
 
       <FabButtons
         onNearMe={goToNearMe}
         locating={locating}
-        bottomOffset={listOpen ? "calc(18vh + 1rem)" : "calc(5rem + 1rem + env(safe-area-inset-bottom))"}
+        bottomOffset={
+          listOpen
+            ? "calc(18vh + 1rem)"
+            : selectedPlace && !listOpen
+              ? "calc(11rem + env(safe-area-inset-bottom))"
+              : "calc(5.5rem + env(safe-area-inset-bottom))"
+        }
       />
+
+      {!listOpen && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col items-center gap-2 px-3">
+          {selectedPlace && (
+            <div className="pointer-events-auto w-full max-w-[440px]">
+              <PlaceMiniCard
+                place={selectedPlace}
+                selected
+                onSelect={() => handlePlaceSelect(selectedPlace)}
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => onListOpen?.()}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <List className="h-4 w-4" aria-hidden />
+            Ver {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
+          </button>
+        </div>
+      )}
 
       {listOpen && (
         <MapBottomSheet
@@ -223,9 +304,110 @@ export function MapMobile({
               selectedPlaceId={selectedPlaceId}
               loading={loading}
               onPlaceSelect={handlePlaceSelect}
+              onClearFilters={hasExtraFilters || filters.tags.length > 0 ? () => {
+                onFiltersChange({
+                  search: filters.search,
+                  tags: [],
+                  type: undefined,
+                  neighborhood: undefined,
+                  safetyLevel: undefined,
+                })
+              } : undefined}
             />
           </div>
         </MapBottomSheet>
+      )}
+
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            className="absolute inset-0"
+            aria-label="Cerrar"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-label="Más filtros"
+            className="relative w-full max-w-md rounded-3xl border border-white/12 bg-[#0c1014] p-5 shadow-2xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-white">Más filtros</h2>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="rounded-full p-2 text-white/55 hover:bg-white/10 hover:text-white"
+                aria-label="Cerrar filtros"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              Tipo de lugar
+            </p>
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {TYPES.map((type) => (
+                <button
+                  key={type.value}
+                  type="button"
+                  aria-pressed={filters.type === type.value}
+                  onClick={() =>
+                    onFiltersChange({
+                      ...filters,
+                      type: filters.type === type.value ? undefined : type.value,
+                    })
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    filters.type === type.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-white/10 bg-white/[0.04] text-white/65"
+                  )}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+              Características
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {TAG_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  aria-pressed={filters.tags.includes(chip.id)}
+                  onClick={() => {
+                    const tags = filters.tags.includes(chip.id)
+                      ? filters.tags.filter((t) => t !== chip.id)
+                      : [...filters.tags, chip.id]
+                    onFiltersChange({ ...filters, tags })
+                  }}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    filters.tags.includes(chip.id)
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-white/10 bg-white/[0.04] text-white/65"
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            {hasExtraFilters && (
+              <button
+                type="button"
+                onClick={clearExtraFilters}
+                className="mt-4 text-xs font-medium text-white/55"
+              >
+                Limpiar filtros extra
+              </button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
