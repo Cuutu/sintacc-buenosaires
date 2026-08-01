@@ -8,6 +8,8 @@ export type PlaceWithStats = {
   tags?: string[]
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   delivery?: { available?: boolean }
+  /** Place ID de Google (ChIJ…) — usado por Places UI Kit en FeaturedCard */
+  googlePlaceId?: string | null
   stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
   googleSnapshot?: {
     rating?: number
