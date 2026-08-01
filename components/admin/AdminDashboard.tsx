@@ -11,6 +11,7 @@ import { AdminVenturesSection } from "@/components/admin/AdminVenturesSection"
 import { AdminReviewsSection } from "@/components/admin/AdminReviewsSection"
 import { AdminVentureReviewsSection } from "@/components/admin/AdminVentureReviewsSection"
 import { AdminPlacesSection } from "@/components/admin/AdminPlacesSection"
+import { AdminFeaturedSection } from "@/components/admin/AdminFeaturedSection"
 import { AdminContactsSection } from "@/components/admin/AdminContactsSection"
 import { AdminSocialSection } from "@/components/admin/AdminSocialSection"
 import type {
@@ -569,6 +570,15 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             onClick: () => { setActiveSection("places"); fetchPlaces(); fetchNeighborhoods() },
           },
           {
+            key: "featured",
+            icon: "⭐",
+            label: "Destacados",
+            desc: "Elegí los lugares del carrusel home",
+            badge: null,
+            urgent: false,
+            onClick: () => setActiveSection("featured"),
+          },
+          {
             key: "contacts",
             icon: "✉️",
             label: "Mensajes",
@@ -718,6 +728,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           setPlaceReviewMode={setPlaceReviewMode}
         />
       )}
+
+      {activeSection === "featured" && <AdminFeaturedSection />}
 
       {activeSection === "contacts" && (
         <AdminContactsSection

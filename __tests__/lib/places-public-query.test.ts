@@ -54,4 +54,14 @@ describe("buildPublicPlacesMongoQuery", () => {
     expect(neighborhoodMatchers.some((regex) => regex.test("San Nicolas"))).toBe(true)
     expect(neighborhoodMatchers.some((regex) => regex.test("San Nicolás"))).toBe(true)
   })
+
+  it("filters featured places when featured=true", () => {
+    const query = buildPublicPlacesMongoQuery({
+      featured: true,
+      page: 1,
+      limit: 3,
+    })
+    expect(query.status).toBe("approved")
+    expect(query.featured).toBe(true)
+  })
 })

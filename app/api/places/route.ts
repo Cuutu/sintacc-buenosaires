@@ -36,8 +36,13 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `public:places:${searchParams.toString()}`
     const data = await getOrSetApiCache(cacheKey, PUBLIC_PLACES_CACHE_TTL_MS, async () => {
+      const sort: Record<string, 1 | -1> =
+        parsed.featured === true
+          ? { featuredOrder: 1, createdAt: -1 }
+          : { createdAt: -1 }
+
       const places = await Place.find(query)
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip(skip)
         .limit(limit)
         .lean()

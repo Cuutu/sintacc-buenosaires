@@ -111,6 +111,10 @@ export function buildPublicPlacesMongoQuery(
     query.safetyLevel = params.safetyLevel
   }
 
+  if (params.featured === true) {
+    query.featured = true
+  }
+
   if (params.bbox) {
     const lngCondition =
       params.bbox.west <= params.bbox.east

@@ -83,6 +83,10 @@ export interface IPlace extends Document {
   googleSnapshot?: GooglePlaceSnapshot
   /** Estado de la cola de sync Google */
   googleSync?: GoogleSyncState
+  /** Destacado en home (selección admin) */
+  featured?: boolean
+  /** Orden entre destacados (menor = primero) */
+  featuredOrder?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -218,6 +222,15 @@ const PlaceSchema = new Schema<IPlace>(
       ranAt: Date,
       error: String,
     },
+    featured: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    featuredOrder: {
+      type: Number,
+      min: 0,
+    },
   },
   {
     timestamps: true,
@@ -238,6 +251,7 @@ PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })
 PlaceSchema.index({ "contact.instagram": 1, status: 1 })
 PlaceSchema.index({ status: 1, "googleSync.status": 1 })
 PlaceSchema.index({ status: 1, "googleSnapshot.syncedAt": 1 })
+PlaceSchema.index({ status: 1, featured: 1, featuredOrder: 1 })
 
 export const Place: Model<IPlace> =
   mongoose.models.Place || mongoose.model<IPlace>("Place", PlaceSchema)

@@ -28,36 +28,59 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
       setIsLoading(false)
       return
     }
-    fetchApi<{ places: PlaceWithStats[] }>(`/api/places?limit=${FETCH_LIMIT}`)
-      .then((data) => setPlaces(data.places ?? []))
-      .catch(() => setPlaces([]))
-      .finally(() => setIsLoading(false))
+
+    let cancelled = false
+    ;(async () => {
+      setIsLoading(true)
+      try {
+        // Preferir selección admin; si no hay, fallback a recientes
+        const featured = await fetchApi<{ places: PlaceWithStats[] }>(
+          `/api/places?featured=true&limit=${TARGET_COUNT}`
+        )
+        if (cancelled) return
+        if (featured.places?.length) {
+          setPlaces(featured.places)
+          return
+        }
+        const recent = await fetchApi<{ places: PlaceWithStats[] }>(
+          `/api/places?limit=${FETCH_LIMIT}`
+        )
+        if (!cancelled) setPlaces(recent.places ?? [])
+      } catch {
+        if (!cancelled) setPlaces([])
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [placesProp])
 
-  const displayPlaces = places ?? []
+  const displayPlaces = (places ?? []).slice(0, TARGET_COUNT)
   const skeletonsNeeded = Math.max(0, TARGET_COUNT - displayPlaces.length)
   const items: (PlaceWithStats | "skeleton")[] = isLoading
-    ? Array.from({ length: TARGET_COUNT }).fill("skeleton") as "skeleton"[]
+    ? (Array.from({ length: TARGET_COUNT }).fill("skeleton") as "skeleton"[])
     : [
         ...displayPlaces,
-        ...Array.from({ length: skeletonsNeeded }).fill("skeleton") as "skeleton"[],
+        ...(Array.from({ length: skeletonsNeeded }).fill("skeleton") as "skeleton"[]),
       ]
 
   return (
     <section>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold">Lugares destacados</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="text-2xl font-bold md:text-3xl">Lugares destacados</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Recomendados por la comunidad celíaca
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-3">
           <Button
             asChild
             size="sm"
-            className="w-fit bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-fit bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Link href="/mapa" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
@@ -66,14 +89,13 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
           </Button>
           <Link
             href="/mapa"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Ver todos
           </Link>
         </div>
       </div>
 
-      {/* Carousel */}
       <FeaturedCarousel items={items} isLoading={isLoading} />
     </section>
   )

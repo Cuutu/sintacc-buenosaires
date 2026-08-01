@@ -159,5 +159,6 @@ export type AdminSection =
   | "reviews"
   | "ventureReviews"
   | "places"
+  | "featured"
   | "contacts"
   | "social"

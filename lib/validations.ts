@@ -125,6 +125,12 @@ export const publicPlacesQuerySchema = z.object({
   citySlugs: z.array(z.string().min(1)).optional(),
   tags: z.array(z.string().min(1)).optional(),
   safetyLevel: z.enum(safetyLevelValues).optional(),
+  featured: z
+    .preprocess((v) => {
+      if (v === true || v === "true" || v === "1") return true
+      if (v === false || v === "false" || v === "0") return false
+      return undefined
+    }, z.boolean().optional()),
   bbox: z.preprocess(parseBbox, bboxSchema.optional()),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.preprocess(
@@ -149,6 +155,7 @@ export function parsePublicPlacesSearchParams(
     citySlugs: searchParams.get("citySlugs")?.split(",").filter(Boolean),
     tags: searchParams.get("tags")?.split(",").filter(Boolean),
     safetyLevel: searchParams.get("safetyLevel") ?? undefined,
+    featured: searchParams.get("featured") ?? undefined,
     bbox: searchParams.get("bbox") ?? undefined,
     page: searchParams.get("page") ?? "1",
     limit: searchParams.get("limit") ?? "20",
