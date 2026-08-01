@@ -13,7 +13,6 @@ import { FeaturedCard } from "./FeaturedCard"
 import { FeaturedSkeleton } from "./FeaturedSkeleton"
 import type { PlaceWithStats } from "./featured-utils"
 
-const TARGET_COUNT = 3
 const AUTOPLAY_DELAY = 3000
 
 function usePrefersReducedMotion(): boolean {

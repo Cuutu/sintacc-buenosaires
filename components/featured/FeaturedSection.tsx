@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { FeaturedCarousel } from "./FeaturedCarousel"
 import type { PlaceWithStats } from "./featured-utils"
 import { fetchApi } from "@/lib/fetchApi"
+import { MAX_FEATURED_PLACES } from "@/lib/featured-places"
 
-const TARGET_COUNT = 3
-const FETCH_LIMIT = 12
+const SKELETON_COUNT = 3
+const FALLBACK_LIMIT = MAX_FEATURED_PLACES
 
 interface FeaturedSectionProps {
   /** Si se pasa, se usan estos lugares. Si no, se fetchean. */
@@ -33,9 +34,9 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
     ;(async () => {
       setIsLoading(true)
       try {
-        // Preferir selección admin; si no hay, fallback a recientes
+        // Todos los destacados admin (hasta MAX), ordenados
         const featured = await fetchApi<{ places: PlaceWithStats[] }>(
-          `/api/places?featured=true&limit=${TARGET_COUNT}`
+          `/api/places?featured=true&limit=${MAX_FEATURED_PLACES}`
         )
         if (cancelled) return
         if (featured.places?.length) {
@@ -43,7 +44,7 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
           return
         }
         const recent = await fetchApi<{ places: PlaceWithStats[] }>(
-          `/api/places?limit=${FETCH_LIMIT}`
+          `/api/places?limit=${FALLBACK_LIMIT}`
         )
         if (!cancelled) setPlaces(recent.places ?? [])
       } catch {
@@ -58,14 +59,10 @@ export function FeaturedSection({ places: placesProp }: FeaturedSectionProps) {
     }
   }, [placesProp])
 
-  const displayPlaces = (places ?? []).slice(0, TARGET_COUNT)
-  const skeletonsNeeded = Math.max(0, TARGET_COUNT - displayPlaces.length)
+  const displayPlaces = (places ?? []).slice(0, MAX_FEATURED_PLACES)
   const items: (PlaceWithStats | "skeleton")[] = isLoading
-    ? (Array.from({ length: TARGET_COUNT }).fill("skeleton") as "skeleton"[])
-    : [
-        ...displayPlaces,
-        ...(Array.from({ length: skeletonsNeeded }).fill("skeleton") as "skeleton"[]),
-      ]
+    ? (Array.from({ length: SKELETON_COUNT }).fill("skeleton") as "skeleton"[])
+    : displayPlaces
 
   return (
     <section>

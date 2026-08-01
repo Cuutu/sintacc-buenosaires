@@ -164,8 +164,8 @@ export function AdminFeaturedSection() {
             Lugares destacados (home)
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Elegí hasta {max} lugares. El orden de esta lista es el del carrusel (la home muestra
-            los primeros 3).
+            Elegí hasta {max} lugares. El orden de esta lista es el del carrusel en la home
+            (se pueden deslizar todos).
           </p>
         </div>
         <div className="flex gap-2">
