@@ -118,11 +118,19 @@ export function GooglePlaceCover({
   return (
     <div
       className={cn("relative w-full bg-[#0a0f0c]", className)}
+      // Solo frena el Link padre en controles Google (Maps / atribución).
+      // El resto de la card sigue navegando al detalle (= Ver lugar).
       onClick={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
+        const target = e.target as HTMLElement | null
+        if (!target) return
+        if (
+          target.closest(
+            "a, button, gmp-place-attribution, [role='button'], [href]"
+          )
+        ) {
+          e.stopPropagation()
+        }
       }}
-      onKeyDown={(e) => e.stopPropagation()}
     >
       {status === "loading" && (
         <div className="aspect-[4/3] w-full animate-pulse bg-gradient-to-br from-emerald-500/15 via-transparent to-transparent" />
@@ -133,7 +141,7 @@ export function GooglePlaceCover({
           "w-full [&_gmp-place-details-compact]:w-full",
           status === "loading" && "absolute left-0 right-0 top-0 opacity-0 pointer-events-none"
         )}
-        aria-label="Foto y nombre de Google Places"
+        aria-label="Foto de Google Places"
       />
     </div>
   )

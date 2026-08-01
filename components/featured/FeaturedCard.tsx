@@ -45,7 +45,6 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
   )
 
   const useGoogleCover = canUseGoogle && googleStatus !== "error"
-  const hideNativeTitle = useGoogleCover && googleStatus === "ready"
 
   const hasCelimapRating = Boolean(stats.totalReviews && stats.totalReviews > 0)
   const hasGoogleRating = place.googleSnapshot?.rating != null
@@ -92,7 +91,6 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
             place={place}
             safetyLabel={safetyBadge.label}
             safetyDot={safetyBadge.dot}
-            showGoogleHint={googleStatus === "ready"}
           />
         </div>
       ) : (
@@ -107,16 +105,18 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
       )}
 
       <div className="flex flex-1 flex-col p-4 pt-3">
-        {!hideNativeTitle && (
-          <h3 className="mb-1 line-clamp-2 min-h-[2.75rem] text-lg font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
-            {place.name}
-          </h3>
-        )}
+        <h3 className="mb-1 line-clamp-2 min-h-[2.75rem] text-lg font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
+          {place.name}
+        </h3>
 
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden />
           <span className="line-clamp-1">{place.neighborhood}</span>
         </div>
+
+        <p className="mt-2 text-xs font-semibold text-primary group-hover:underline">
+          Ver lugar →
+        </p>
 
         <div className="mt-3 flex min-h-[1.25rem] flex-wrap items-center gap-1.5">
           {hasCelimapRating ? (
@@ -160,12 +160,10 @@ function MediaOverlays({
   place,
   safetyLabel,
   safetyDot,
-  showGoogleHint,
 }: {
   place: PlaceWithStats
   safetyLabel: string
   safetyDot: string
-  showGoogleHint?: boolean
 }) {
   return (
     <>
@@ -183,11 +181,6 @@ function MediaOverlays({
           {safetyLabel}
         </span>
       </div>
-      {showGoogleHint ? (
-        <span className="pointer-events-none absolute bottom-2 right-2 z-10 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/70">
-          Google
-        </span>
-      ) : null}
     </>
   )
 }
