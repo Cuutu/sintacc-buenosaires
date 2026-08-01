@@ -92,17 +92,19 @@ export function FeaturedCarousel({ items, isLoading }: FeaturedCarouselProps) {
         }}
         className="w-full"
       >
-        <CarouselContent className="-ml-2 md:-ml-4">
+        <CarouselContent className="-ml-2 items-stretch md:-ml-4">
           {items.map((item, index) => (
             <CarouselItem
               key={item === "skeleton" ? `skeleton-${index}` : item._id.toString()}
-              className="basis-full pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
+              className="h-auto basis-full pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
             >
-              {item === "skeleton" ? (
-                <FeaturedSkeleton />
-              ) : (
-                <FeaturedCard place={item} />
-              )}
+              <div className="h-full">
+                {item === "skeleton" ? (
+                  <FeaturedSkeleton />
+                ) : (
+                  <FeaturedCard place={item} />
+                )}
+              </div>
             </CarouselItem>
           ))}
         </CarouselContent>

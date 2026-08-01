@@ -7,27 +7,40 @@ import { cn } from "@/lib/utils"
 interface GooglePlaceCoverProps {
   placeId: string
   className?: string
+  onStatusChange?: (status: "loading" | "ready" | "error") => void
 }
 
 /**
- * Portada vía Places UI Kit (gmp-place-media). Solo para prueba en FeaturedCard.
- * Requiere NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY + Places UI Kit habilitado.
+ * Portada Places UI Kit: media + nombre del widget + atribución.
+ * Estilos de título solo vía CSS vars oficiales (--gmp-mat-*).
  */
-export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) {
+export function GooglePlaceCover({
+  placeId,
+  className,
+  onStatusChange,
+}: GooglePlaceCoverProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
+  const onStatusRef = useRef(onStatusChange)
+  onStatusRef.current = onStatusChange
+
+  useEffect(() => {
+    onStatusRef.current?.("loading")
+  }, [])
 
   useEffect(() => {
     let cancelled = false
     const host = hostRef.current
     if (!host || !placeId) return
 
-    const onError = () => {
-      if (!cancelled) setStatus("error")
+    const emit = (next: "loading" | "ready" | "error") => {
+      if (cancelled) return
+      setStatus(next)
+      onStatusRef.current?.(next)
     }
-    const onLoad = () => {
-      if (!cancelled) setStatus("ready")
-    }
+
+    const onError = () => emit("error")
+    const onLoad = () => emit("ready")
 
     ;(async () => {
       try {
@@ -41,20 +54,22 @@ export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) 
         compact.style.cssText = [
           "display:block",
           "width:100%",
-          "height:100%",
           "margin:0",
           "padding:0",
           "border:none",
           "background:transparent",
           "color-scheme:dark",
-          "overflow:hidden",
+          "--gmp-mat-font-family:inherit",
+          "--gmp-mat-font-title-small:700 1.125rem/1.35 inherit",
+          "--gmp-mat-color-on-surface:#f8fafc",
+          "--gmp-mat-color-surface:transparent",
+          "--gmp-mat-color-on-surface-variant:rgba(248,250,252,0.72)",
         ].join(";")
 
         const request = document.createElement("gmp-place-details-place-request")
         request.setAttribute("place", placeId)
 
         const config = document.createElement("gmp-place-content-config")
-        // Solo media + atribución (requisito Places UI Kit)
         config.appendChild(document.createElement("gmp-place-media"))
         const attribution = document.createElement("gmp-place-attribution")
         attribution.setAttribute("light-scheme-color", "gray")
@@ -66,14 +81,19 @@ export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) 
         compact.addEventListener("gmp-load", onLoad)
         hostRef.current.appendChild(compact)
 
-        // Timeout suave: si no carga, fallback visual del padre
         window.setTimeout(() => {
           if (!cancelled) {
-            setStatus((s) => (s === "loading" ? "error" : s))
+            setStatus((s) => {
+              if (s === "loading") {
+                onStatusRef.current?.("error")
+                return "error"
+              }
+              return s
+            })
           }
         }, 12000)
       } catch {
-        if (!cancelled) setStatus("error")
+        emit("error")
       }
     })()
 
@@ -87,7 +107,7 @@ export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) 
     return (
       <div
         className={cn(
-          "h-full w-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent",
+          "aspect-[4/3] w-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent",
           className
         )}
         aria-hidden
@@ -97,8 +117,7 @@ export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) 
 
   return (
     <div
-      className={cn("relative h-full w-full overflow-hidden bg-[#0a0f0c]", className)}
-      // Evita que el Link padre capture clicks de atribución Google
+      className={cn("relative w-full bg-[#0a0f0c]", className)}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -106,12 +125,15 @@ export function GooglePlaceCover({ placeId, className }: GooglePlaceCoverProps) 
       onKeyDown={(e) => e.stopPropagation()}
     >
       {status === "loading" && (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-emerald-500/15 via-transparent to-transparent" />
+        <div className="aspect-[4/3] w-full animate-pulse bg-gradient-to-br from-emerald-500/15 via-transparent to-transparent" />
       )}
       <div
         ref={hostRef}
-        className="absolute inset-0 [&_gmp-place-details-compact]:h-full [&_gmp-place-details-compact]:w-full"
-        aria-label="Foto de Google Places"
+        className={cn(
+          "w-full [&_gmp-place-details-compact]:w-full",
+          status === "loading" && "absolute left-0 right-0 top-0 opacity-0 pointer-events-none"
+        )}
+        aria-label="Foto y nombre de Google Places"
       />
     </div>
   )
