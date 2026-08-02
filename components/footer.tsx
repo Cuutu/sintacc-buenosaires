@@ -102,6 +102,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/privacidad"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/login"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -118,7 +126,10 @@ export function Footer() {
             establecimiento antes de consumir.
           </p>
           <p className="text-center text-xs text-muted-foreground/80">
-            © {new Date().getFullYear()} Celimap
+            © {new Date().getFullYear()} Celimap ·{" "}
+            <Link href="/privacidad" className="hover:text-foreground transition-colors">
+              Privacidad
+            </Link>
           </p>
         </div>
       </div>

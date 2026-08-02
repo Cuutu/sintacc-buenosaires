@@ -9,14 +9,12 @@ Nombre: Celimap
 
 ## Prerequisito legal (vos, fuera del shell)
 
-Stores exigen URL pública de privacidad. Hoy la web **no** tiene `/privacidad`.
+Stores exigen URL pública de privacidad.
 
-Opciones sin tocar este repo de shell:
+**URL:** https://www.celimap.com.ar/privacidad  
+(Implementada en la web: ruta `/privacidad`. Deployá a producción antes de pegarla en las consolas.)
 
-1. Agregar página de privacidad en la web en un PR aparte, o
-2. Hostear HTML estático en otro lado (Notion público, GitHub Pages, etc.)
-
-Usá esa URL en Play Console y App Store Connect.
+Checklist completo: [PREREQUISITES.md](./PREREQUISITES.md)
 
 Templates deep links (publicar en el dominio cuando quieras): [well-known-templates.md](./well-known-templates.md)
 

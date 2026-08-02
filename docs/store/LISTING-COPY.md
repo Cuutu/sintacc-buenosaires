@@ -24,8 +24,9 @@ Gratis y actualizado por la comunidad celíaca.
 **Category:** Food & Drink (o Maps & Navigation)
 **Tags:** celiaco, sin tacc, sin gluten, mapa
 
-**Privacy policy:** (pegar URL pública cuando exista)
-**Contact email:** (tu email de soporte)
+**Privacy policy:** https://www.celimap.com.ar/privacidad
+**Support URL / Contact:** https://www.celimap.com.ar (formulario de contacto) · hola@celimap.com.ar
+**Contact email:** hola@celimap.com.ar
 
 ---
 
@@ -54,8 +55,10 @@ Gratis. Hecho para la comunidad celíaca.
 
 **Keywords:** celiaco,sin tacc,sin gluten,mapa,restaurantes,celiacos,argentina
 
-**Privacy policy URL:** (pegar URL pública cuando exista)
+**Privacy policy URL:** https://www.celimap.com.ar/privacidad
 **Support URL:** https://www.celimap.com.ar
+**Marketing URL (opcional):** https://www.celimap.com.ar/que-es-celimap
+**Contact email:** hola@celimap.com.ar
 
 ---
 

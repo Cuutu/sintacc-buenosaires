@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { signIn, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -65,6 +66,13 @@ function LoginContent() {
           >
             Continuar con Google
           </Button>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Al continuar aceptás nuestra{" "}
+            <Link href="/privacidad" className="underline hover:text-foreground">
+              política de privacidad
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>
