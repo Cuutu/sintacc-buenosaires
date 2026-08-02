@@ -26,9 +26,25 @@ workflows:
           npx cap sync ios
       - name: Increment iOS build number
         script: |
-          cd ios/App
-          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID")
-          agvtool new-version -all $(($LATEST + 1))
+          set -eo pipefail
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= \([0-9]*\);/\1/')
+          LATEST=""
+          if LATEST_OUT=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null); then
+            LATEST="$LATEST_OUT"
+          fi
+          LATEST=$(echo "$LATEST" | tr -d '[:space:]')
+          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then
+            LATEST="$CURRENT"
+          fi
+          NEW=$((LATEST + 1))
+          if [ "$NEW" -le "$CURRENT" ]; then
+            NEW=$((CURRENT + 1))
+          fi
+          echo "Build numbers — App Store latest: $LATEST, project: $CURRENT → uploading: $NEW"
+          sed -i.bak "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" "$PBXPROJ"
+          rm -f "${PBXPROJ}.bak"
+          grep CURRENT_PROJECT_VERSION "$PBXPROJ"
       - name: Build IPA
         script: |
           xcode-project use-profiles
