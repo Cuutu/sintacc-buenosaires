@@ -12,7 +12,7 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.celimap.app"
-        APP_STORE_APPLE_ID: "REPLACE_ASC_APP_ID"
+        APP_STORE_APPLE_ID: "6797278308"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.celimap.app
