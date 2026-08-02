@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { signIn, useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
+import { signInWithGoogle } from "@/lib/native-sign-in"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -59,7 +60,7 @@ function LoginContent() {
             Inicia sesión con tu cuenta de Google para acceder a todas las funciones
           </p>
           <Button
-            onClick={() => signIn("google", { callbackUrl })}
+            onClick={() => signInWithGoogle(callbackUrl)}
             className="w-full"
             disabled={status === "loading"}
             size="lg"

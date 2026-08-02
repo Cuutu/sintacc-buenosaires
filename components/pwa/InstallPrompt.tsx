@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Download, ExternalLink, PlusSquare, Share2, Smartphone, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { isNativeApp } from "@/lib/native-app"
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>
@@ -101,6 +102,7 @@ export function InstallPrompt() {
 
   const canShow = useMemo(() => {
     if (!ready) return false
+    if (isNativeApp()) return false
     if (installed || isStandalone()) return false
     if (dismissedUntil > Date.now()) return false
     return Boolean(deferred || ios || mobile)

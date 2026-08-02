@@ -7,6 +7,7 @@ import { LayoutChrome } from "@/components/layout/LayoutChrome";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Toaster } from "sonner";
+import { NativeAppBridge } from "@/components/native/NativeAppBridge";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { getBaseUrl } from "@/lib/base-url";
@@ -99,6 +100,7 @@ export default function RootLayout({
             <LayoutChrome>{children}</LayoutChrome>
           </MobileShell>
           <Toaster position="top-center" richColors closeButton />
+          <NativeAppBridge />
           <InstallPrompt />
           <OnboardingModal />
         </Providers>

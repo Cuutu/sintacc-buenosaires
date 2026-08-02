@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useSession, signIn, signOut } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
+import { signInWithGoogle } from "@/lib/native-sign-in"
 import { Button } from "@/components/ui/button"
 import { User, LogOut, LogIn, Shield, Heart } from "lucide-react"
 import { features } from "@/lib/features"
@@ -66,7 +67,7 @@ export function Navbar() {
                 </div>
               </>
             ) : (
-              <Button onClick={() => signIn("google")}>
+              <Button onClick={() => signInWithGoogle()}>
                 <LogIn className="h-4 w-4 mr-2" />
                 Iniciar sesión
               </Button>

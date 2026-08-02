@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
+import { isNativeApp } from "@/lib/native-app"
 
 const STORAGE_KEY = "celimap_onboarded"
 
@@ -251,6 +252,10 @@ export function OnboardingModal() {
 
   useEffect(() => {
     try {
+      if (isNativeApp()) {
+        localStorage.setItem(STORAGE_KEY, "1")
+        return
+      }
       if (localStorage.getItem(STORAGE_KEY) === "1") return
       const timer = setTimeout(() => setOpen(true), 1200)
       return () => clearTimeout(timer)

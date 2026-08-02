@@ -241,7 +241,7 @@ export function MapMobile({
             colorBySafety
           />
         </MapErrorBoundary>
-        <MapLegend />
+        {!selectedPlace && !listOpen && <MapLegend />}
       </div>
 
       <FabButtons

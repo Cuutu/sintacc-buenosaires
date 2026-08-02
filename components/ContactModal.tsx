@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { useSession, signIn } from "next-auth/react"
+import { useSession } from "next-auth/react"
+import { signInWithGoogle } from "@/lib/native-sign-in"
 import {
   Dialog,
   DialogContent,
@@ -93,7 +94,7 @@ export function ContactModal({ open, onOpenChange }: ContactModalProps) {
               Necesitás estar logueado para contactarnos. Así podemos responderte
               directamente.
             </p>
-            <Button onClick={() => signIn("google")} className="w-full">
+            <Button onClick={() => signInWithGoogle()} className="w-full">
               Iniciar sesión con Google
             </Button>
           </div>
