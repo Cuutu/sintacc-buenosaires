@@ -29,19 +29,26 @@ workflows:
           set -eo pipefail
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
           CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= \([0-9]*\);/\1/')
-          LATEST=""
-          if LATEST_OUT=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null); then
-            LATEST="$LATEST_OUT"
+
+          # TestFlight builds count too — get-latest-app-store-build-number ignores them
+          TF=""
+          AS=""
+          if TF_OUT=$(app-store-connect get-latest-testflight-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
+            TF=$(echo "$TF_OUT" | tr -d '[:space:]')
           fi
-          LATEST=$(echo "$LATEST" | tr -d '[:space:]')
-          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then
-            LATEST="$CURRENT"
+          if AS_OUT=$(app-store-connect get-latest-app-store-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
+            AS=$(echo "$AS_OUT" | tr -d '[:space:]')
           fi
+
+          LATEST=0
+          for N in "$TF" "$AS" "$CURRENT"; do
+            if [[ "$N" =~ ^[0-9]+$ ]] && [ "$N" -gt "$LATEST" ]; then
+              LATEST=$N
+            fi
+          done
+
           NEW=$((LATEST + 1))
-          if [ "$NEW" -le "$CURRENT" ]; then
-            NEW=$((CURRENT + 1))
-          fi
-          echo "Build numbers — App Store latest: $LATEST, project: $CURRENT → uploading: $NEW"
+          echo "Build numbers — TestFlight: ${TF:-none}, App Store: ${AS:-none}, project: $CURRENT → uploading: $NEW"
           sed -i.bak "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" "$PBXPROJ"
           rm -f "${PBXPROJ}.bak"
           grep CURRENT_PROJECT_VERSION "$PBXPROJ"
