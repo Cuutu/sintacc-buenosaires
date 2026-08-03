@@ -11,6 +11,7 @@ export const CLIENT_ERROR_SOURCES = [
   "global-error",
   "window-error",
   "unhandled-rejection",
+  "map-cleanup",
 ] as const
 
 export type ClientErrorSource = (typeof CLIENT_ERROR_SOURCES)[number]

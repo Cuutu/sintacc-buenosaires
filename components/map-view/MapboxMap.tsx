@@ -26,6 +26,8 @@ import {
   isE2eMapboxForceInitError,
   isE2eMapboxMockEnabled,
 } from "@/lib/e2e-mapbox-adapter"
+import { createMapInstanceTeardown, type MapboxTeardownMap } from "@/lib/mapbox-teardown"
+import { reportClientError } from "@/lib/client-error-reporter"
 
 const SAFETY_MARKER_BG = {
   dedicated_gf: "#10d98a",
@@ -318,6 +320,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
     const disposedRef = useRef(false)
+    const mapTeardownRef = useRef(createMapInstanceTeardown())
     const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
     const userLocationMarkerRef = useRef<mapboxgl.Marker | null>(null)
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
@@ -504,7 +507,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       // Reset por remount (Strict Mode / Desktop→Mobile)
       disposedRef.current = false
-      let removed = false
+      const teardown = createMapInstanceTeardown()
+      mapTeardownRef.current = teardown
       let trackedInit = false
 
       const safeSetInitError = (msg: string | null) => {
@@ -517,8 +521,6 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       if (map.current) return
 
       const destroyMap = (instance: mapboxgl.Map | null) => {
-        if (removed) return
-        removed = true
         disposedRef.current = true
         try {
           sharedPopupRef.current?.remove()
@@ -539,12 +541,17 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           /* ignore */
         }
         userLocationMarkerRef.current = null
-        try {
-          instance?.remove()
-        } catch {
-          /* ignore */
-        }
+        geolocateControlRef.current = null
+
+        // Ownership: anular map ref antes; teardown.destroy → map.remove() una sola vez.
+        // No removeControl manual acá — Mapbox lo hace dentro de map.remove().
         if (map.current === instance) map.current = null
+        teardown.destroy({
+          onError: (error) => {
+            reportClientError({ source: "map-cleanup", error })
+          },
+        })
+
         if (trackedInit) {
           mapboxLifecycleTrackDestroy()
           trackedInit = false
@@ -587,6 +594,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           return
         }
         map.current = instance
+        teardown.bind(instance as unknown as MapboxTeardownMap)
         mapboxLifecycleTrackInit()
         trackedInit = true
         if (!isE2eMapboxMockEnabled()) {
@@ -641,8 +649,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       return () => {
         geolocate.off("error", onError)
         geolocate.off("trackuserlocationstart", onSuccess)
-        m.removeControl(geolocate)
-        geolocateControlRef.current = null
+        if (geolocateControlRef.current === geolocate) {
+          geolocateControlRef.current = null
+        }
+        // Ownership: no removeControl sync acá.
+        // En unmount, destroyMap → map.remove() quita el control.
+        // En toggle enableGeolocate, microtask removeControl si el mapa sigue vivo.
+        mapTeardownRef.current.releaseControl(geolocate, m as unknown as MapboxTeardownMap)
       }
     }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
