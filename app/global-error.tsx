@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { reportClientError } from "@/lib/client-error-reporter"
 
 export default function GlobalError({
@@ -10,8 +10,15 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [eventId, setEventId] = useState<string | null>(null)
+
   useEffect(() => {
-    reportClientError(error, "global-error", { digest: error.digest })
+    const id = reportClientError({
+      source: "global-error",
+      error,
+      digest: error.digest,
+    })
+    if (id) setEventId(id)
   }, [error])
 
   return (
@@ -33,6 +40,11 @@ export default function GlobalError({
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: 0, maxWidth: 360 }}>
             Tocá reintentar. Si sigue fallando, cerrá y abrí la app de nuevo.
           </p>
+          {eventId ? (
+            <p data-testid="error-event-id" style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", margin: 0 }}>
+              Código del error: <span style={{ fontFamily: "ui-monospace, monospace" }}>{eventId}</span>
+            </p>
+          ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
             <button
               type="button"

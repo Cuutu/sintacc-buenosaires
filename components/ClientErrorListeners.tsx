@@ -18,20 +18,30 @@ let onError: ((event: ErrorEvent) => void) | null = null
 let onRejection: ((event: PromiseRejectionEvent) => void) | null = null
 let showFallbackCb: ((v: boolean) => void) | null = null
 
-function applyChunkDecision(error: unknown, source: "window.onerror" | "unhandledrejection"): void {
-  const decision = decideChunkReload(error)
-  if (decision.action === "noop") {
-    reportClientError(error, source)
-    return
-  }
-  if (decision.action === "fallback") {
-    reportClientError(error, source)
-    showFallbackCb?.(true)
-    return
-  }
-  reportClientError(error, source)
-  if (typeof window !== "undefined") {
-    window.location.reload()
+function applyChunkDecision(
+  error: unknown,
+  source: "window-error" | "unhandled-rejection"
+): void {
+  try {
+    const decision = decideChunkReload(error)
+    if (decision.action === "noop") {
+      reportClientError({ source, error })
+      return
+    }
+    if (decision.action === "fallback") {
+      reportClientError({ source, error })
+      showFallbackCb?.(true)
+      return
+    }
+    reportClientError({ source, error })
+    if (typeof window !== "undefined") {
+      // WebKit a veces ignora reload() síncrono dentro del handler de `error`.
+      window.setTimeout(() => {
+        window.location.reload()
+      }, 0)
+    }
+  } catch {
+    /* never break page from reporter/chunk path */
   }
 }
 
@@ -43,10 +53,10 @@ function attachGlobalListeners() {
   }
   markChunkReloadSettled()
   onError = (event: ErrorEvent) => {
-    applyChunkDecision(event.error ?? event.message, "window.onerror")
+    applyChunkDecision(event.error ?? event.message, "window-error")
   }
   onRejection = (event: PromiseRejectionEvent) => {
-    applyChunkDecision(event.reason, "unhandledrejection")
+    applyChunkDecision(event.reason, "unhandled-rejection")
   }
   window.addEventListener("error", onError)
   window.addEventListener("unhandledrejection", onRejection)
@@ -54,34 +64,19 @@ function attachGlobalListeners() {
   bumpDiag("listenerAttachCycles")
 }
 
-function detachGlobalListeners() {
-  if (typeof window === "undefined") return
-  attached = Math.max(0, attached - 1)
-  if (attached > 0) return
-  if (onError) window.removeEventListener("error", onError)
-  if (onRejection) window.removeEventListener("unhandledrejection", onRejection)
-  onError = null
-  onRejection = null
+/** Adjuntar al cargar el módulo (antes del useEffect) — captura ChunkLoad temprano. */
+if (typeof window !== "undefined") {
+  attachGlobalListeners()
 }
 
-function isPreviewRuntime(): boolean {
-  const env = process.env.NEXT_PUBLIC_VERCEL_ENV || ""
-  if (env === "production") return false
-  if (env === "preview") return true
-  if (typeof window === "undefined") return false
-  const host = window.location.host
-  return host !== "www.celimap.com.ar" && host !== "celimap.com.ar" && env !== ""
-}
-
-function previewIngestSink(report: ClientErrorReport): void {
-  console.error("[CelimapClientError]", JSON.stringify(report))
-  if (typeof window === "undefined") return
-  void fetch("/api/client-errors", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...report, host: window.location.host }),
-    keepalive: true,
-  }).catch(() => {})
+/** Sink opcional extra (tests). El POST productivo lo hace el reporter. */
+function quietDevSink(report: ClientErrorReport): void {
+  if (process.env.NODE_ENV === "development") {
+    console.error(
+      "[CelimapClientError]",
+      JSON.stringify({ eventId: report.eventId, source: report.source })
+    )
+  }
 }
 
 export function ClientErrorListeners() {
@@ -90,11 +85,11 @@ export function ClientErrorListeners() {
   useEffect(() => {
     bumpDiag("clientErrorListenerMounts")
     showFallbackCb = setChunkFallback
-    if (isPreviewRuntime()) setClientErrorSink(previewIngestSink)
+    setClientErrorSink(quietDevSink)
+    // Refcount: listeners ya viven a nivel módulo; no detach en unmount.
     attachGlobalListeners()
     return () => {
       showFallbackCb = null
-      detachGlobalListeners()
       setClientErrorSink(null)
     }
   }, [])

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import type { ComponentType } from "react"
+import { useEffect, type ComponentType } from "react"
 import {
   BadgePlus,
   CircleUserRound,
@@ -18,6 +18,7 @@ import {
   BOTTOM_NAV_SLOT_KEYS,
   resolveBottomNavPerfilHref,
 } from "@/lib/bottom-nav-perfil"
+import { recordBottomNavIntent, setAuthStatusProbe } from "@/lib/nav-telemetry"
 
 const BASE_NAV_ITEMS = [
   { href: "/mapa", label: "Mapa", icon: MapPinned },
@@ -97,6 +98,10 @@ export function BottomNav() {
   const isAdmin = session?.user?.role === "admin"
   const isOnMap = pathname === "/mapa"
 
+  useEffect(() => {
+    setAuthStatusProbe(status)
+  }, [status])
+
   const rawItems = isAdmin
     ? BASE_NAV_ITEMS.map((item, i) => (i === 3 ? ADMIN_ITEM : item))
     : BASE_NAV_ITEMS
@@ -158,7 +163,9 @@ export function BottomNav() {
                       params.set("list", "open")
                     }
                     const qs = params.toString()
-                    router.replace(qs ? `/mapa?${qs}` : "/mapa", { scroll: false })
+                    const to = qs ? `/mapa?${qs}` : "/mapa"
+                    recordBottomNavIntent(pathname || "/", to, stableKey)
+                    router.replace(to, { scroll: false })
                   }}
                   className={cn(navItemClass, isExplorarActive ? "text-primary" : "text-white/86")}
                   aria-current={isExplorarActive ? "page" : undefined}
@@ -175,6 +182,7 @@ export function BottomNav() {
                 key={stableKey}
                 data-nav-slot={stableKey}
                 href="/mapa"
+                onClick={() => recordBottomNavIntent(pathname || "/", "/mapa", stableKey)}
                 className={cn(navItemClass, "text-white/86")}
                 aria-label={label}
                 title={label}
@@ -190,6 +198,7 @@ export function BottomNav() {
                 key={stableKey}
                 data-nav-slot={stableKey}
                 href={hrefStr}
+                onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
                 className={cn(
                   centerItemClass,
                   isActive
@@ -210,6 +219,7 @@ export function BottomNav() {
               key={stableKey}
               data-nav-slot={stableKey}
               href={hrefStr}
+              onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
               className={cn(navItemClass, isActive ? "text-primary" : "text-white/86")}
               aria-current={isActive ? "page" : undefined}
               aria-label={hrefStr === "/admin" ? "Panel de administracion" : label}
