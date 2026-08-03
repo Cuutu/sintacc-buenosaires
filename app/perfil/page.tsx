@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -12,6 +12,7 @@ import { fetchApi } from "@/lib/fetchApi"
 import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
+import { isAllowedAvatarUrl } from "@/lib/avatar-url"
 
 function normalizeFavoritePlace(raw: unknown): IPlace | null {
   if (!raw || typeof raw !== "object") return null
@@ -23,6 +24,7 @@ function normalizeFavoritePlace(raw: unknown): IPlace | null {
 export default function PerfilPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const redirectedRef = useRef(false)
   const [savedPlaces, setSavedPlaces] = useState<IPlace[]>([])
   const [loadingSaved, setLoadingSaved] = useState(true)
 
@@ -42,10 +44,14 @@ export default function PerfilPage() {
   }, [])
 
   useEffect(() => {
+    if (status === "loading") return
     if (status === "unauthenticated") {
+      if (redirectedRef.current) return
+      redirectedRef.current = true
       router.replace("/login")
       return
     }
+    redirectedRef.current = false
     if (status === "authenticated") {
       fetchSavedPlaces()
     }
@@ -53,7 +59,7 @@ export default function PerfilPage() {
 
   if (status === "loading" || status === "unauthenticated") {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8" data-auth-state={status}>
         <div className="animate-pulse space-y-4">
           <div className="h-12 w-48 bg-muted rounded" />
           <div className="h-32 bg-muted rounded-lg" />
@@ -69,7 +75,7 @@ export default function PerfilPage() {
       <Card className="border-white/10 bg-white/5 backdrop-blur-md">
         <CardHeader>
           <div className="flex items-center gap-4">
-            {session?.user?.image ? (
+            {session?.user?.image && isAllowedAvatarUrl(session.user.image) ? (
               <div className="relative h-16 w-16 rounded-full overflow-hidden shrink-0">
                 <Image
                   src={session.user.image}

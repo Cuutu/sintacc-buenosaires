@@ -6,7 +6,13 @@ import { reportClientError } from "@/lib/client-error-reporter"
 
 interface Props {
   children: React.ReactNode
-  /** Si true, en development re-lanza para ver overlay Next */
+  /**
+   * Cuando cambia (p.ej. pathname), limpia hasError vía componentDidUpdate.
+   * No combinar con key={pathname}.
+   */
+  resetKey?: string
+  /** page = fallback pantalla; chrome = fallback chico (BottomNav) */
+  variant?: "page" | "chrome"
   rethrowInDev?: boolean
 }
 
@@ -16,8 +22,7 @@ interface State {
 }
 
 /**
- * Boundary de sección/ruta. No reemplaza encontrar la causa raíz.
- * En development puede rethrow para no ocultar el error.
+ * Boundary de sección. Hipótesis: no es la causa raíz — protege chrome/page.
  */
 export class AppErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false, message: "" }
@@ -35,14 +40,22 @@ export class AppErrorBoundary extends React.Component<Props, State> {
     if (process.env.NODE_ENV === "development") {
       console.error("[AppErrorBoundary] componentStack", info.componentStack)
     }
-    if (this.props.rethrowInDev !== false && process.env.NODE_ENV === "development") {
-      // No rethrow aquí: rompería el boundary. Overlay Next ya loguea en consolas.
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (
+      prevProps.resetKey !== this.props.resetKey &&
+      this.props.resetKey !== undefined &&
+      this.state.hasError
+    ) {
+      this.retryCount = 0
+      this.setState({ hasError: false, message: "" })
     }
   }
 
   handleRetry = () => {
     this.retryCount += 1
-    if (this.retryCount > 3) {
+    if (this.props.variant !== "chrome" && this.retryCount > 3) {
       this.goHome()
       return
     }
@@ -58,45 +71,67 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    if (this.state.hasError) {
+    if (!this.state.hasError) return this.props.children
+
+    if (this.props.variant === "chrome") {
       return (
-        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-[#0a0f0c] px-6 py-12 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-amber-300">
-            <AlertTriangle className="h-7 w-7" aria-hidden />
-          </div>
-          <div className="max-w-sm space-y-2">
-            <p className="text-base font-semibold text-white">Algo falló en esta pantalla</p>
-            <p className="text-sm leading-relaxed text-white/60">
-              Podés reintentar o volver al inicio. El resto de la app sigue disponible.
-            </p>
-            {process.env.NODE_ENV === "development" && this.state.message ? (
-              <p className="break-words rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
-                {this.state.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={this.handleRetry}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
-            >
-              <RefreshCw className="h-4 w-4" aria-hidden />
-              Reintentar
-            </button>
-            <button
-              type="button"
-              onClick={this.goHome}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              <Home className="h-4 w-4" aria-hidden />
-              Ir al inicio
-            </button>
-          </div>
+        <div
+          className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#080c0f]/90 px-3 py-2 text-xs text-white shadow-lg"
+          data-error-boundary="chrome"
+          data-testid="bottom-nav-error-boundary"
+          role="alert"
+        >
+          <span>Nav con problema</span>
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="rounded-full bg-primary px-2.5 py-1 font-semibold text-primary-foreground"
+          >
+            Reintentar
+          </button>
         </div>
       )
     }
 
-    return this.props.children
+    return (
+      <div
+        className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-[#0a0f0c] px-6 py-12 text-center"
+        data-error-boundary="section"
+        data-testid="app-error-boundary"
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-amber-300">
+          <AlertTriangle className="h-7 w-7" aria-hidden />
+        </div>
+        <div className="max-w-sm space-y-2">
+          <p className="text-base font-semibold text-white">Algo falló en esta pantalla</p>
+          <p className="text-sm leading-relaxed text-white/60">
+            Podés reintentar o volver al inicio. El resto de la app sigue disponible.
+          </p>
+          {process.env.NODE_ENV === "development" && this.state.message ? (
+            <p className="break-words rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
+              {this.state.message}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden />
+            Reintentar
+          </button>
+          <button
+            type="button"
+            onClick={this.goHome}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            <Home className="h-4 w-4" aria-hidden />
+            Ir al inicio
+          </button>
+        </div>
+      </div>
+    )
   }
 }
