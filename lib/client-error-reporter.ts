@@ -290,6 +290,11 @@ function mapLegacySource(legacy?: string): ClientErrorSource {
     case "window-error":
     case "unhandled-rejection":
     case "map-cleanup":
+    case "native-oauth-start":
+    case "native-oauth-browser-opened":
+    case "native-oauth-return":
+    case "native-oauth-session-ready":
+    case "native-oauth-error":
       return legacy
     default:
       return "window-error"

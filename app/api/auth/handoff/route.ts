@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { encode } from "next-auth/jwt"
 import { authOptions } from "@/lib/auth"
+import { sanitizeReturnTo } from "@/lib/auth-return-to"
 import connectDB from "@/lib/mongodb"
 import { User } from "@/models/User"
 import { MobileAuthHandoff } from "@/models/MobileAuthHandoff"
-
-function sanitizeNextPath(next: string | null): string {
-  if (next && next.startsWith("/") && !next.startsWith("//")) return next
-  return "/perfil"
-}
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code")
@@ -56,7 +52,7 @@ export async function GET(request: NextRequest) {
     ? "__Secure-next-auth.session-token"
     : "next-auth.session-token"
 
-  const redirectPath = sanitizeNextPath(nextParam ?? handoff.nextPath)
+  const redirectPath = sanitizeReturnTo(nextParam ?? handoff.nextPath)
   const response = NextResponse.redirect(new URL(redirectPath, request.url))
 
   response.cookies.set(cookieName, token, {

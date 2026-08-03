@@ -12,6 +12,11 @@ export const CLIENT_ERROR_SOURCES = [
   "window-error",
   "unhandled-rejection",
   "map-cleanup",
+  "native-oauth-start",
+  "native-oauth-browser-opened",
+  "native-oauth-return",
+  "native-oauth-session-ready",
+  "native-oauth-error",
 ] as const
 
 export type ClientErrorSource = (typeof CLIENT_ERROR_SOURCES)[number]

@@ -2,15 +2,11 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import crypto from "crypto"
 import { authOptions } from "@/lib/auth"
+import { sanitizeReturnTo } from "@/lib/auth-return-to"
 import connectDB from "@/lib/mongodb"
 import { MobileAuthHandoff } from "@/models/MobileAuthHandoff"
 
-function sanitizeNextPath(next: unknown): string {
-  if (typeof next === "string" && next.startsWith("/") && !next.startsWith("//")) {
-    return next
-  }
-  return "/perfil"
-}
+const HANDOFF_TTL_MS = 120_000
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
@@ -19,12 +15,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}))
-  const nextPath = sanitizeNextPath(body.next)
+  const nextPath = sanitizeReturnTo((body as { next?: unknown }).next)
 
   await connectDB()
 
   const code = crypto.randomBytes(32).toString("hex")
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + HANDOFF_TTL_MS)
 
   await MobileAuthHandoff.create({
     code,
