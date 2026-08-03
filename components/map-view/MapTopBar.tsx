@@ -356,16 +356,16 @@ export function MapTopBar({
   ]
 
   return (
-    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
-      <div className="mb-2.5 flex gap-2">
+    <div className="fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-2.5 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md">
+      <div className="mb-2.5 flex min-w-0 gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" aria-hidden />
+          <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50 sm:left-4" aria-hidden />
           <input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Buscar lugar o zona"
-            className="flex h-11 min-h-[44px] w-full rounded-[1.25rem] border border-white/10 pl-11 pr-4 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary/70"
+            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-[1.25rem] border border-white/10 pl-10 pr-3 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary/70 sm:pl-11 sm:pr-4"
             style={{
               backgroundColor: "rgba(8, 12, 15, 0.78)",
               color: "#f4fff9",
@@ -394,7 +394,8 @@ export function MapTopBar({
         onMouseMove={handleChipsMouseMove}
         onMouseUp={handleChipsMouseUp}
         onMouseLeave={handleChipsMouseUp}
-        className="scrollbar-hide -mx-1 flex cursor-grab select-none snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5 active:cursor-grabbing"
+        className="scrollbar-hide -mx-0.5 flex max-w-full cursor-grab select-none snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5 active:cursor-grabbing"
+        data-overflow-allowed="map-chips"
       >
         {mobileSafetyChips.map((chip) => (
           <button

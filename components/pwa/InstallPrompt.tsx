@@ -148,7 +148,7 @@ export function InstallPrompt() {
   return (
     <>
       {!open && (
-        <div className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] mx-auto max-w-[440px] md:bottom-5 md:right-5 md:left-auto">
+        <div className="fixed inset-x-3 bottom-[calc(var(--bottom-nav-clearance)+0.25rem)] z-[70] mx-auto max-w-[440px] md:bottom-5 md:right-5 md:left-auto">
           <button
             type="button"
             onClick={() => setOpen(true)}

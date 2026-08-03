@@ -25,10 +25,10 @@ export function StickyActionBarMobile({ place, shareUrl, className }: StickyActi
   return (
     <div
       className={`
-        md:hidden fixed bottom-0 left-0 right-0 z-40
+        md:hidden fixed left-0 right-0 z-40
+        bottom-[var(--bottom-nav-clearance)]
         flex items-center justify-center gap-2 p-3
         bg-background/95 backdrop-blur-xl border-t border-border/50
-        pb-[calc(0.75rem+env(safe-area-inset-bottom))]
         ${className ?? ""}
       `}
     >

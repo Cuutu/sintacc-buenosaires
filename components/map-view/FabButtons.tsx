@@ -17,7 +17,7 @@ export function FabButtons({
 }: FabButtonsProps) {
   return (
     <div
-      className="fixed right-4 z-30"
+      className="fixed right-3 z-30 sm:right-4"
       style={{ bottom: bottomOffset }}
     >
       <Button

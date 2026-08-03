@@ -1,44 +1,49 @@
 "use client"
 
 import { Suspense } from "react"
+import { usePathname } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BottomNav } from "@/components/nav/BottomNav"
+import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { useIsMobile } from "@/components/map-view/useMediaQuery"
+import { cn } from "@/lib/utils"
 
 interface LayoutChromeProps {
   children: React.ReactNode
 }
 
 /**
- * LayoutChrome: decide qué chrome mostrar según breakpoint.
- * - Mobile (<=768px): sin Navbar, sin Footer, con BottomNav
- * - Desktop: Navbar + Footer, sin BottomNav
+ * LayoutChrome: chrome por breakpoint + safe areas (política B edge-to-edge).
+ * - null (sin medir): sin Navbar/Footer/BottomNav → evita flash desktop en phone
+ * - Mobile: BottomNav; pt safe-top salvo /mapa (full-bleed); pb = --bottom-nav-clearance
+ * - Desktop: Navbar + Footer; sin paddings móviles
+ * Fondos pueden ir edge-to-edge; inset solo en flujo de contenido interactivo.
  */
 export function LayoutChrome({ children }: LayoutChromeProps) {
   const isMobile = useIsMobile()
+  const pathname = usePathname()
+  const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
+  const showDesktopChrome = isMobile === false
+  const showMobileChrome = isMobile === true
 
   return (
     <>
-      {/* Navbar: solo desktop */}
-      {!isMobile && <Navbar />}
+      {showDesktopChrome && <Navbar />}
 
-      {/* Main: padding inferior para bottom nav en mobile */}
       <main
-        className={
-          isMobile
-            ? "min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]"
-            : "min-h-screen"
-        }
+        className={cn(
+          "min-h-screen",
+          showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
+          showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]"
+        )}
       >
-        {children}
+        <AppErrorBoundary key={pathname}>{children}</AppErrorBoundary>
       </main>
 
-      {/* Footer: solo desktop */}
-      {!isMobile && <Footer />}
+      {showDesktopChrome && <Footer />}
 
-      {/* BottomNav: solo mobile (Suspense por useSearchParams) */}
-      {isMobile && (
+      {showMobileChrome && (
         <Suspense fallback={null}>
           <BottomNav />
         </Suspense>
