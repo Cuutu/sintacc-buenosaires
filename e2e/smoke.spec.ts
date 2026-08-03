@@ -18,8 +18,6 @@ import {
 } from "./helpers"
 import { E2E_PLACE } from "./fixtures/payloads"
 
-test.describe.configure({ tag: ["@hermetic", "@mobile"] })
-
 const SMOKE_ROUTES = [
   { path: "/", name: "home" },
   { path: "/mapa", name: "mapa" },
