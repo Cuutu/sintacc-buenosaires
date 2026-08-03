@@ -27,7 +27,11 @@ import { toast } from "sonner"
 import { fetchApi } from "@/lib/fetchApi"
 import { TYPES } from "@/lib/constants"
 import { features } from "@/lib/features"
-import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
+import {
+  inferSafetyLevel,
+  getSafetyBadge,
+  getNonPrimarySafetyTags,
+} from "@/components/featured/featured-utils"
 import {
   getInstagramDisplayHandle,
   normalizeInstagramUrl,
@@ -624,12 +628,18 @@ export default function LugarPage() {
               )}
             </div>
 
-            {/* Tags */}
-            {place.tags && place.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6 pb-6 border-b border-border/40">
-                {place.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}
-              </div>
-            )}
+            {/* Tags (sin duplicar badge principal 100% / opciones) */}
+            {(() => {
+              const displayTags = getNonPrimarySafetyTags(place.tags ?? [])
+              if (displayTags.length === 0) return null
+              return (
+                <div className="flex flex-wrap gap-2 mb-6 pb-6 border-b border-border/40">
+                  {displayTags.map((tag) => (
+                    <TagBadge key={tag} tag={tag} />
+                  ))}
+                </div>
+              )
+            })()}
 
             {/* ══ SECCIÓN RESEÑAS ═══════════════════════════════════════ */}
             <section id="reviews-section">

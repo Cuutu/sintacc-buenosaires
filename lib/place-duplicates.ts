@@ -71,8 +71,17 @@ export function getDuplicateMatchLevel(
   const hasName = reasons.some((reason) => reason.startsWith("nombre"))
   const hasExactAddress = reasons.includes("misma direccion")
   const hasType = reasons.includes("mismo tipo")
+  const sameLocation = reasons.includes("misma ubicacion")
+  const sameNeighborhood = reasons.includes("mismo barrio/localidad")
+  const strongName =
+    reasons.includes("nombre igual") ||
+    reasons.includes("nombre muy parecido") ||
+    reasons.includes("nombre casi igual")
 
+  // Exacto clásico
   if (hasName && hasExactAddress && hasType) return "exact"
+  // Mismo local con nombre variante (Campo Bravo vs CAMPOBRAVO Caballito)
+  if (strongName && sameLocation && (hasType || sameNeighborhood)) return "exact"
   if (score >= 50) return "likely"
   return null
 }
@@ -89,8 +98,8 @@ export function scoreDuplicateCandidate(
 
   const sourceName = normalizeSearchText(source.name)
   const candidateName = normalizeSearchText(candidate.name)
-  const sourceNameCompact = compactText(sourceName)
-  const candidateNameCompact = compactText(candidateName)
+  const sourceNameCompact = coreNameCompact(sourceName, source.neighborhood)
+  const candidateNameCompact = coreNameCompact(candidateName, candidate.neighborhood)
 
   if (isUsefulText(sourceName) && isUsefulText(candidateName)) {
     if (sourceNameCompact === candidateNameCompact) {
@@ -199,6 +208,19 @@ function normalizeSearchText(value: unknown): string {
 
 function compactText(value: string): string {
   return value.replace(/\s+/g, "")
+}
+
+/**
+ * Nombre “de marca”: saca barrio/localidad pegado al final
+ * ("CAMPOBRAVO Caballito" + barrio Caballito → campobravo).
+ */
+function coreNameCompact(normalizedName: string, neighborhood?: string): string {
+  let compact = compactText(normalizedName)
+  const hood = compactText(normalizeSearchText(neighborhood))
+  if (hood.length >= 4 && compact.endsWith(hood) && compact.length > hood.length + 3) {
+    compact = compact.slice(0, -hood.length)
+  }
+  return compact
 }
 
 function normalizeDraftType(draft: DuplicateDraft): string {

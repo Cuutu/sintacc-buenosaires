@@ -85,9 +85,11 @@ export function AdminPlaceReviewTools({
   const [loading, setLoading] = useState(false)
   const [enriching, setEnriching] = useState(false)
   const [duplicatePairs, setDuplicatePairs] = useState<PlaceDuplicatePair[]>([])
-  const [duplicateMeta, setDuplicateMeta] = useState<{ scanned: number; exactCount: number } | null>(
-    null
-  )
+  const [duplicateMeta, setDuplicateMeta] = useState<{
+    scanned: number
+    exactCount: number
+    likelyCount: number
+  } | null>(null)
   const [incompletePlaces, setIncompletePlaces] = useState<IncompletePlace[]>([])
   const [batchRemaining, setBatchRemaining] = useState<number | null>(null)
   const [incompleteOnlyCount, setIncompleteOnlyCount] = useState<number | null>(null)
@@ -158,7 +160,11 @@ export function AdminPlaceReviewTools({
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Error al buscar duplicados")
     setDuplicatePairs(data.pairs || [])
-    setDuplicateMeta({ scanned: data.scanned ?? 0, exactCount: data.exactCount ?? 0 })
+    setDuplicateMeta({
+      scanned: data.scanned ?? 0,
+      exactCount: data.exactCount ?? 0,
+      likelyCount: data.likelyCount ?? 0,
+    })
     setSelectedDeleteIds(new Set())
   }
 
@@ -372,7 +378,7 @@ export function AdminPlaceReviewTools({
 
   const subtitle =
     mode === "duplicates"
-      ? "Solo coincidencias exactas: mismo nombre, dirección y tipo. Marcá cuál borrar."
+      ? "Exactos y muy probables: nombre parecido, misma ubicación/barrio o dirección. Marcá cuál borrar."
       : mode === "incomplete"
         ? "Solo lugares sin clasificar: 100% sin gluten u opciones sin TACC."
         : "Sincroniza rating y reseñas de Google. Celimap sigue siendo la fuente principal."
@@ -398,8 +404,8 @@ export function AdminPlaceReviewTools({
         <div className="space-y-2">
           {duplicateMeta ? (
             <p className="text-[11px] text-muted-foreground">
-              Escaneados {duplicateMeta.scanned} lugares · {duplicatePairs.length} duplicados
-              exactos
+              Escaneados {duplicateMeta.scanned} lugares · {duplicateMeta.exactCount} exactos ·{" "}
+              {duplicateMeta.likelyCount} probables · {duplicatePairs.length} total
             </p>
           ) : null}
 
@@ -425,18 +431,39 @@ export function AdminPlaceReviewTools({
           <div className="space-y-2 max-h-80 overflow-y-auto">
           {duplicatePairs.length === 0 ? (
             <p className="text-xs text-muted-foreground py-4 text-center">
-              No hay duplicados exactos.
+              No hay duplicados para revisar.
             </p>
           ) : (
-            duplicatePairs.map((pair, index) => (
+            duplicatePairs.map((pair, index) => {
+              const isExact = pair.matchLevel === "exact"
+              return (
               <div
                 key={`${pair.placeA.id}-${pair.placeB.id}-${index}`}
-                className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs"
+                className={
+                  isExact
+                    ? "rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs"
+                    : "rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs"
+                }
               >
-                <div className="flex items-center gap-1 font-semibold mb-2 text-red-200">
-                  <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-                  Duplicado exacto
+                <div
+                  className={
+                    isExact
+                      ? "flex items-center gap-1 font-semibold mb-2 text-red-200"
+                      : "flex items-center gap-1 font-semibold mb-2 text-amber-200"
+                  }
+                >
+                  <AlertTriangle
+                    className={
+                      isExact ? "h-3.5 w-3.5 text-red-400" : "h-3.5 w-3.5 text-amber-400"
+                    }
+                  />
+                  {isExact ? "Duplicado exacto" : "Duplicado probable"} · score {pair.score}
                 </div>
+                {pair.reasons?.length ? (
+                  <p className="mb-2 text-[10px] text-muted-foreground">
+                    {pair.reasons.join(" · ")}
+                  </p>
+                ) : null}
                 <div className="space-y-2 text-foreground/90">
                   {([pair.placeA, pair.placeB] as const).map((place) => (
                     <label
@@ -469,7 +496,8 @@ export function AdminPlaceReviewTools({
                   ))}
                 </div>
               </div>
-            ))
+              )
+            })
           )}
           </div>
         </div>

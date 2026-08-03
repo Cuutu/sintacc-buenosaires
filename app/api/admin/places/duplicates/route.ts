@@ -11,11 +11,14 @@ export async function GET(request: NextRequest) {
     if (session instanceof NextResponse) return session
 
     const { pairs, scanned } = await scanPublishedPlaceDuplicates()
+    const exactCount = pairs.filter((pair) => pair.matchLevel === "exact").length
+    const likelyCount = pairs.filter((pair) => pair.matchLevel === "likely").length
     return NextResponse.json({
       pairs,
       scanned,
       total: pairs.length,
-      exactCount: pairs.length,
+      exactCount,
+      likelyCount,
     })
   } catch (error) {
     logApiError("/api/admin/places/duplicates", error, { request })
