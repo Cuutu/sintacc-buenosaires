@@ -8,8 +8,12 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Toaster } from "sonner";
 import { NativeAppBridge } from "@/components/native/NativeAppBridge";
+import { NativeStatusBar } from "@/components/native/NativeStatusBar";
+import { NativeLayoutDebug } from "@/components/native/NativeLayoutDebug";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
+import { ClientErrorListeners } from "@/components/ClientErrorListeners";
+import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { getBaseUrl } from "@/lib/base-url";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -71,7 +75,8 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "default" },
+  // black-translucent + viewportFit cover → PWA edge-to-edge; env(safe-area-*) activos
+  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "black-translucent" },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -84,6 +89,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0b1220",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -96,11 +104,15 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <JsonLdScript />
         <Providers>
+          <ClientErrorListeners />
+          <PreviewBadge />
           <MobileShell>
             <LayoutChrome>{children}</LayoutChrome>
           </MobileShell>
           <Toaster position="top-center" richColors closeButton />
           <NativeAppBridge />
+          <NativeStatusBar />
+          <NativeLayoutDebug />
           <InstallPrompt />
           <OnboardingModal />
         </Providers>
