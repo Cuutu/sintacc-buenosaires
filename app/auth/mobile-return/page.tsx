@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { isNativeApp } from "@/lib/native-app"
+import { sanitizeReturnTo } from "@/lib/auth-return-to"
+import { reportNativeOAuth } from "@/lib/native-oauth-report"
 
 function MobileReturnContent() {
   const searchParams = useSearchParams()
@@ -11,8 +12,8 @@ function MobileReturnContent() {
   const [message, setMessage] = useState("Preparando sesión…")
 
   useEffect(() => {
-    const safeNext =
-      next.startsWith("/") && !next.startsWith("//") ? next : "/perfil"
+    const safeNext = sanitizeReturnTo(next)
+    const startedAt = Date.now()
 
     fetch("/api/auth/mobile-handoff", {
       method: "POST",
@@ -26,30 +27,41 @@ function MobileReturnContent() {
         if (!data.code) throw new Error("missing code")
 
         setMessage("Volviendo a Celimap…")
+        reportNativeOAuth("native-oauth-return", {
+          route: "/auth/mobile-return",
+          deepLink: true,
+          durationMs: Date.now() - startedAt,
+        })
+
+        // Path fijo del binario TestFlight actual (NativeAppBridge).
         const params = new URLSearchParams({
           code: data.code,
           next: safeNext,
         })
         const deepLink = `celimap://auth/handoff?${params.toString()}`
-
-        // Intenta deep link nativo; si no, muestra hint
         window.location.href = deepLink
 
-        // Fallback: si seguimos en browser a los 2s
         window.setTimeout(() => {
           setMessage(
             "Si no volviste a la app, cerrá esta ventana y abrí Celimap desde TestFlight."
           )
         }, 2000)
       })
-      .catch(() => setError(true))
+      .catch(() => {
+        setError(true)
+        reportNativeOAuth("native-oauth-error", {
+          route: "/auth/mobile-return",
+          code: "handoff_failed",
+        })
+      })
   }, [next])
 
   if (error) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-muted-foreground">
-          No pudimos volver a la app. Cerrá esta ventana e intentá iniciar sesión otra vez desde Celimap.
+          No pudimos volver a la app. Cerrá esta ventana e intentá iniciar sesión otra vez desde
+          Celimap.
         </p>
       </div>
     )
@@ -59,11 +71,6 @@ function MobileReturnContent() {
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 px-6 text-center">
       <p className="text-sm font-medium">Sesión lista</p>
       <p className="text-sm text-muted-foreground">{message}</p>
-      {!isNativeApp() && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Estás en el navegador. Abrí Celimap (TestFlight) para continuar logueado.
-        </p>
-      )}
     </div>
   )
 }
