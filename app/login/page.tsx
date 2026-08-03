@@ -51,6 +51,8 @@ function LoginContent() {
       await signInWithGoogle(callbackUrl)
     } catch {
       setError("No pudimos iniciar sesión con Google. Probá de nuevo.")
+    } finally {
+      // Google sheet / browser may be dismissed without navigating away.
       setSigningIn(false)
     }
   }

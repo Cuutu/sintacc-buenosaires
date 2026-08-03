@@ -53,10 +53,7 @@ export function resolveNativeAuthOrigin(
   return PROD_ORIGIN
 }
 
-/**
- * @deprecated Browser OAuth start URL — kept for tests/rollback docs only.
- * Login nativo ya no abre Browser; usa Google Sign-In SDK.
- */
+/** Browser OAuth start URL — fallback for binaries without the native SDK. */
 export function buildNativeGoogleStartUrl(
   returnTo: string,
   origin = resolveNativeAuthOrigin()
@@ -69,8 +66,32 @@ export function buildNativeGoogleStartUrl(
   return `${origin}/auth/native-start?${params.toString()}`
 }
 
-/** Warm Google Sign-In plugin (safe to call multiple times). */
+/**
+ * Native Google Sign-In only exists in binaries built after the Capgo plugin
+ * was added; older TestFlight/Play installs run this same web bundle.
+ */
+export function hasNativeGoogleSignInPlugin(): boolean {
+  if (typeof window === "undefined") return false
+  const cap = (
+    window as Window & {
+      Capacitor?: {
+        isPluginAvailable?: (name: string) => boolean
+        Plugins?: Record<string, unknown>
+      }
+    }
+  ).Capacitor
+  if (!cap) return false
+  try {
+    if (cap.isPluginAvailable?.("SocialLogin")) return true
+  } catch {
+    // fall through to registry check
+  }
+  return Boolean(cap.Plugins?.SocialLogin)
+}
+
+/** Warm Google Sign-In plugin (no-op when the binary lacks it). */
 export async function warmNativeGoogleSignIn(): Promise<void> {
+  if (!hasNativeGoogleSignInPlugin()) return
   await ensureNativeGoogleReady()
 }
 
@@ -173,11 +194,38 @@ async function signInWithNativeGoogleSdk(callbackUrl: string): Promise<void> {
   })
 }
 
+const CANCEL_PATTERNS = [
+  "cancel",
+  "canceled",
+  "cancelled",
+  "user_cancel",
+  "12501",
+  "-5",
+]
+
+function isUserCancellation(error: unknown): boolean {
+  const message = (
+    error instanceof Error ? error.message : String(error ?? "")
+  ).toLowerCase()
+  return CANCEL_PATTERNS.some((p) => message.includes(p))
+}
+
+/** Legacy path: system browser → /auth/native-start → deep link handoff. */
+async function signInWithBrowserOAuth(callbackUrl: string): Promise<void> {
+  const { Browser } = await import("@capacitor/browser")
+  const url = buildNativeGoogleStartUrl(callbackUrl)
+  reportNativeOAuth("native-oauth-browser-opened", {
+    route: "/auth/native-start",
+    browser: true,
+  })
+  await Browser.open({ url, presentationStyle: "popover" })
+}
+
 /**
  * Google sign-in:
  * - Web → NextAuth GoogleProvider
- * - Capacitor → native Google Sign-In SDK → grant → CredentialsProvider
- * No Browser.open / Safari sheet for login.
+ * - Capacitor with SDK → native Google Sign-In → grant → CredentialsProvider
+ * - Capacitor without SDK (older binary) → Browser OAuth handoff
  */
 export async function signInWithGoogle(callbackUrl = "/perfil") {
   const safeCallback = sanitizeReturnTo(callbackUrl)
@@ -186,18 +234,34 @@ export async function signInWithGoogle(callbackUrl = "/perfil") {
     return signIn("google", { callbackUrl: safeCallback })
   }
 
+  if (hasNativeGoogleSignInPlugin()) {
+    try {
+      await signInWithNativeGoogleSdk(safeCallback)
+      return
+    } catch (error) {
+      console.error("Native Google Sign-In failed:", error)
+      reportNativeOAuth("native-oauth-error", {
+        route: "social-login/google",
+        code:
+          error instanceof Error
+            ? error.message.slice(0, 40)
+            : "native_google_failed",
+        browser: false,
+      })
+      // User dismissed the Google sheet: don't push them into Safari.
+      if (isUserCancellation(error)) return
+    }
+  }
+
   try {
-    await signInWithNativeGoogleSdk(safeCallback)
+    await signInWithBrowserOAuth(safeCallback)
   } catch (error) {
-    console.error("Native Google Sign-In failed:", error)
+    console.error("Browser OAuth fallback failed:", error)
     reportNativeOAuth("native-oauth-error", {
-      route: "social-login/google",
-      code:
-        error instanceof Error
-          ? error.message.slice(0, 40)
-          : "native_google_failed",
+      route: "/auth/native-start",
+      code: "browser_open_failed",
       browser: false,
     })
-    throw error
+    return signIn("google", { callbackUrl: safeCallback })
   }
 }
