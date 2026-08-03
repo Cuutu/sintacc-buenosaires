@@ -7,6 +7,7 @@ import { reportClientError, type ClientErrorSource } from "@/lib/client-error-re
 export type NativeOAuthStage =
   | "native-oauth-start"
   | "native-oauth-browser-opened"
+  | "native-oauth-sdk-ok"
   | "native-oauth-return"
   | "native-oauth-session-ready"
   | "native-oauth-error"
@@ -14,6 +15,7 @@ export type NativeOAuthStage =
 const stages = new Set<NativeOAuthStage>([
   "native-oauth-start",
   "native-oauth-browser-opened",
+  "native-oauth-sdk-ok",
   "native-oauth-return",
   "native-oauth-session-ready",
   "native-oauth-error",
