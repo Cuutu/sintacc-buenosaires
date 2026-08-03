@@ -125,14 +125,7 @@ function isCompactMapPopup(): boolean {
 }
 
 function buildPlacePopupHtml(place: IPlace, compact: boolean): string {
-  const tags = (place.tags ?? []) as string[]
-  const level =
-    (place as { safetyLevel?: string }).safetyLevel ??
-    (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")
-      ? "dedicated_gf"
-      : tags.includes("opciones_sin_tacc")
-        ? "gf_options"
-        : null)
+  const level = inferSafetyLevel(place) ?? null
 
   const popupType = (place.types?.[0] ?? place.type) as string
   const markerConfig = TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other

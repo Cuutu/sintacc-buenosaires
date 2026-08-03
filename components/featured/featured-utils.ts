@@ -53,6 +53,9 @@ const PRIMARY_SAFETY_TAGS = new Set([
   "sin_info",
 ])
 
+/** Tags que ya se muestran vía badge/hero de safety — no repetir en detalle. */
+const SAFETY_BADGE_TAGS = new Set(["100_gf", "opciones_sin_tacc"])
+
 function safetyFromTags(tags: string[] = []): PrimarySafetyLevel | undefined {
   if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) {
     return "dedicated_gf"
@@ -62,31 +65,30 @@ function safetyFromTags(tags: string[] = []): PrimarySafetyLevel | undefined {
 }
 
 /**
- * Infiere safetyLevel desde tags cuando no está seteado en el lugar.
- * Mantiene consistencia con la vista de detalle que muestra ambos.
+ * Fuente de verdad: tags primero; `safetyLevel` solo si no hay señal en tags.
+ * Evita “VERIFICADO / 100%” cuando el tag dice opciones (y viceversa).
  */
 export function inferSafetyLevel(place: {
   safetyLevel?: PlaceWithStats["safetyLevel"]
   tags?: string[]
 }): PlaceWithStats["safetyLevel"] {
-  if (place.safetyLevel) return place.safetyLevel
-  return safetyFromTags(place.tags)
+  return safetyFromTags(place.tags) ?? place.safetyLevel
 }
 
 /**
- * Fuente única de presentación del estado TACC en FeaturedCard.
+ * Fuente única de presentación del estado TACC (Featured / detalle / mapa).
  *
  * Regla:
- * 1. Si `safetyLevel` es un estado concreto (dedicated / opciones / riesgo) → ese.
- * 2. Si falta o es `unknown` → inferir desde tags (100_gf / certificado / opciones).
+ * 1. Si tags implican dedicated / opciones → ese.
+ * 2. Si no, usar `safetyLevel` concreto (dedicated / opciones / riesgo).
  * 3. Si no hay señal → `unknown`.
- *
- * Así no se muestra “Sin info verificada” junto a “100% sin gluten” por tags.
  */
 export function resolvePrimarySafety(place: {
   safetyLevel?: PlaceWithStats["safetyLevel"]
   tags?: string[]
 }): PrimarySafetyLevel {
+  const fromTags = safetyFromTags(place.tags)
+  if (fromTags) return fromTags
   const level = place.safetyLevel
   if (
     level === "dedicated_gf" ||
@@ -95,7 +97,12 @@ export function resolvePrimarySafety(place: {
   ) {
     return level
   }
-  return safetyFromTags(place.tags) ?? "unknown"
+  return "unknown"
+}
+
+/** Tags de detalle/lista sin duplicar el badge principal de safety. */
+export function getNonPrimarySafetyTags(tags: string[] = []): string[] {
+  return tags.filter((tag) => !SAFETY_BADGE_TAGS.has(tag))
 }
 
 export function getSafetyBadge(safetyLevel?: PlaceWithStats["safetyLevel"] | PrimarySafetyLevel) {
@@ -105,7 +112,7 @@ export function getSafetyBadge(safetyLevel?: PlaceWithStats["safetyLevel"] | Pri
 
 /**
  * Detecta inconsistencias de datos (solo reporte; no muta DB).
- * Ej.: safetyLevel=unknown pero tags con 100_gf / certificado.
+ * Tag es fuente de verdad: flaggea si `safetyLevel` diverge o falta.
  */
 export function getSafetyDataConflict(place: {
   name?: string
@@ -114,19 +121,12 @@ export function getSafetyDataConflict(place: {
 }): string | null {
   const field = place.safetyLevel
   const fromTags = safetyFromTags(place.tags)
-  if ((!field || field === "unknown") && fromTags && fromTags !== "unknown") {
+  if (!fromTags) return null
+  if (!field || field === "unknown") {
     return `${place.name ?? "lugar"}: safetyLevel=${field ?? "∅"} pero tags implican ${fromTags}`
   }
-  if (
-    field === "dedicated_gf" &&
-    (place.tags ?? []).includes("opciones_sin_tacc") &&
-    !(place.tags ?? []).includes("100_gf") &&
-    !(place.tags ?? []).includes("certificado_sin_tacc")
-  ) {
-    return `${place.name ?? "lugar"}: safetyLevel=dedicated_gf pero solo tag opciones_sin_tacc`
-  }
-  if (field === "gf_options" && (place.tags ?? []).includes("100_gf")) {
-    return `${place.name ?? "lugar"}: safetyLevel=gf_options pero tag 100_gf`
+  if (field !== fromTags) {
+    return `${place.name ?? "lugar"}: safetyLevel=${field} pero tags implican ${fromTags}`
   }
   return null
 }
