@@ -280,6 +280,8 @@ interface MapboxMapProps {
   clusterMarkers?: boolean
   /** Verde = 100% sin TACC; verde oscuro = opciones (en vez de color por categoría) */
   colorBySafety?: boolean
+  /** Si false, no muestra popup Mapbox (mobile usa card inferior) */
+  showPopup?: boolean
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -300,6 +302,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       onGeolocateSuccess,
       clusterMarkers = false,
       colorBySafety = false,
+      showPopup = true,
     },
     ref
   ) => {
@@ -315,6 +318,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     selectedPlaceIdRef.current = selectedPlaceId
     const onPlaceSelectRef = useRef(onPlaceSelect)
     onPlaceSelectRef.current = onPlaceSelect
+    const showPopupRef = useRef(showPopup)
+    showPopupRef.current = showPopup
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
@@ -733,7 +738,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           const currentPlace = currentItem.place
           onPlaceSelectRef.current?.(currentPlace)
 
-          if (sharedPopupRef.current && map.current) {
+          if (showPopupRef.current && sharedPopupRef.current && map.current) {
             const lng = (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0]
             const lat = (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1]
             const html = buildPlacePopupHtml(currentPlace, isCompactMapPopup())
@@ -775,7 +780,14 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         if (entry.item.kind !== "place") return
         applyMarkerSelection(entry, placeId === selectedPlaceId)
       })
-    }, [selectedPlaceId, applyMarkerSelection])
+      if (!showPopup) {
+        try {
+          sharedPopupRef.current?.remove()
+        } catch {
+          /* ignore */
+        }
+      }
+    }, [selectedPlaceId, applyMarkerSelection, showPopup])
 
     useEffect(() => {
       const markerEntries = markerEntriesRef.current

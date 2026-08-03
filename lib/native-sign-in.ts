@@ -14,10 +14,14 @@ export async function signInWithGoogle(callbackUrl = "/perfil") {
     return signIn("google", { callbackUrl: safeCallback })
   }
 
-  const { Browser } = await import("@capacitor/browser")
-  const origin = window.location.origin
-  const returnPath = `/auth/mobile-return?next=${encodeURIComponent(safeCallback)}`
-  const signInUrl = `${origin}/api/auth/signin/google?callbackUrl=${encodeURIComponent(returnPath)}`
-
-  await Browser.open({ url: signInUrl, presentationStyle: "popover" })
+  try {
+    const { Browser } = await import("@capacitor/browser")
+    const origin = window.location.origin
+    const returnPath = `/auth/mobile-return?next=${encodeURIComponent(safeCallback)}`
+    const signInUrl = `${origin}/api/auth/signin/google?callbackUrl=${encodeURIComponent(returnPath)}`
+    await Browser.open({ url: signInUrl, presentationStyle: "popover" })
+  } catch (error) {
+    console.error("Native Google sign-in failed, falling back:", error)
+    return signIn("google", { callbackUrl: safeCallback })
+  }
 }

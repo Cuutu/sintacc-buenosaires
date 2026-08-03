@@ -239,6 +239,7 @@ export function MapMobile({
             onGeolocateSuccess={handleGeolocateSuccess}
             clusterMarkers
             colorBySafety
+            showPopup={false}
           />
         </MapErrorBoundary>
         {!selectedPlace && !listOpen && <MapLegend />}

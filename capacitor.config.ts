@@ -9,10 +9,13 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   android: {
-    // Ayuda a detectar shell nativo / debug
     appendUserAgent: " CelimapNative/1",
     backgroundColor: "#0b1220",
     allowMixedContent: false,
+  },
+  ios: {
+    appendUserAgent: " CelimapNative/1",
+    backgroundColor: "#0b1220",
   },
   plugins: {
     SplashScreen: {

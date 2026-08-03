@@ -90,10 +90,10 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
     <div
       className={cn(
         "group relative flex min-h-[124px] max-h-[150px] gap-3 rounded-2xl border p-3 transition-colors",
-        "bg-[#0c100e]",
+        "bg-[#0c100e] shadow-[0_12px_40px_rgba(0,0,0,0.55)]",
         selected
-          ? "border-primary/60 bg-primary/[0.07] ring-1 ring-primary/25"
-          : "border-white/10 hover:border-white/18 hover:bg-white/[0.03]"
+          ? "border-primary/70 ring-1 ring-primary/30"
+          : "border-white/10 hover:border-white/18 hover:bg-[#101612]"
       )}
     >
       {selected && (

@@ -22,7 +22,15 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
     try {
       const res = await fetch("/api/favorites")
       const data = await res.json()
-      const favoriteIds = data.favorites?.map((f: any) => f.placeId._id.toString()) || []
+      const favoriteIds =
+        data.favorites
+          ?.map((f: { placeId?: { _id?: { toString(): string } } | string | null }) => {
+            const place = f?.placeId
+            if (!place) return null
+            if (typeof place === "string") return place
+            return place._id?.toString?.() ?? null
+          })
+          .filter(Boolean) || []
       setIsFavorite(favoriteIds.includes(placeId))
     } catch (error) {
       console.error("Error checking favorite:", error)

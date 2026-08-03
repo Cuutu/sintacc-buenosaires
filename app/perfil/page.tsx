@@ -13,6 +13,13 @@ import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
 
+function normalizeFavoritePlace(raw: unknown): IPlace | null {
+  if (!raw || typeof raw !== "object") return null
+  const place = raw as Partial<IPlace> & { _id?: { toString(): string } | string }
+  if (!place._id || !place.name) return null
+  return place as IPlace
+}
+
 export default function PerfilPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -21,8 +28,12 @@ export default function PerfilPage() {
 
   const fetchSavedPlaces = useCallback(async () => {
     try {
-      const data = await fetchApi<{ favorites: Array<{ placeId: IPlace }> }>("/api/favorites")
-      setSavedPlaces(data.favorites?.map((f) => f.placeId) || [])
+      const data = await fetchApi<{ favorites: Array<{ placeId: unknown }> }>("/api/favorites")
+      const places =
+        data.favorites
+          ?.map((f) => normalizeFavoritePlace(f.placeId))
+          .filter((p): p is IPlace => Boolean(p)) || []
+      setSavedPlaces(places)
     } catch {
       setSavedPlaces([])
     } finally {
@@ -31,14 +42,16 @@ export default function PerfilPage() {
   }, [])
 
   useEffect(() => {
-    if (session) {
-      fetchSavedPlaces()
-    } else {
-      setLoadingSaved(false)
+    if (status === "unauthenticated") {
+      router.replace("/login")
+      return
     }
-  }, [session, fetchSavedPlaces])
+    if (status === "authenticated") {
+      fetchSavedPlaces()
+    }
+  }, [status, router, fetchSavedPlaces])
 
-  if (status === "loading") {
+  if (status === "loading" || status === "unauthenticated") {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
@@ -49,11 +62,6 @@ export default function PerfilPage() {
     )
   }
 
-  if (!session) {
-    router.replace("/login")
-    return null
-  }
-
   return (
     <div className="container mx-auto px-4 py-6 max-w-lg">
       <h1 className="text-2xl font-bold mb-6">Perfil</h1>
@@ -61,7 +69,7 @@ export default function PerfilPage() {
       <Card className="border-white/10 bg-white/5 backdrop-blur-md">
         <CardHeader>
           <div className="flex items-center gap-4">
-            {session.user?.image ? (
+            {session?.user?.image ? (
               <div className="relative h-16 w-16 rounded-full overflow-hidden shrink-0">
                 <Image
                   src={session.user.image}
@@ -77,8 +85,8 @@ export default function PerfilPage() {
               </div>
             )}
             <div>
-              <CardTitle className="text-lg">{session.user?.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{session.user?.email}</p>
+              <CardTitle className="text-lg">{session?.user?.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
             </div>
           </div>
         </CardHeader>
@@ -127,23 +135,27 @@ export default function PerfilPage() {
             </p>
           ) : (
             <div className="space-y-3">
-              {savedPlaces.slice(0, 5).map((place) => (
-                <Link key={place._id.toString()} href={getPlacePath(place)}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
-                      {TYPES.find((t) => t.value === place.type)?.emoji || "📍"}
+              {savedPlaces.slice(0, 5).map((place) => {
+                const id =
+                  typeof place._id === "string" ? place._id : place._id.toString()
+                return (
+                  <Link key={id} href={getPlacePath(place)}>
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors">
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
+                        {TYPES.find((t) => t.value === place.type)?.emoji || "📍"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{place.name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {place.neighborhood}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{place.name}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        {place.neighborhood}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              })}
               {savedPlaces.length > 5 && (
                 <Link href="/favoritos">
                   <Button variant="ghost" className="w-full">
