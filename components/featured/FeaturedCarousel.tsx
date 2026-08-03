@@ -76,6 +76,7 @@ export function FeaturedCarousel({ items, isLoading }: FeaturedCarouselProps) {
   return (
     <div
       className="relative"
+      data-overflow-allowed="featured-carousel"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onPointerDown={handlePointerDown}

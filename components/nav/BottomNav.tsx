@@ -32,10 +32,10 @@ const BASE_NAV_ITEMS = [
 const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck }
 
 const navItemClass =
-  "group relative flex h-12 w-12 items-center justify-center rounded-full transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  "group relative flex h-11 w-11 min-h-[44px] min-w-[44px] shrink items-center justify-center rounded-full transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-12"
 
 const centerItemClass =
-  "group relative flex h-14 w-[76px] items-center justify-center rounded-[1.75rem] transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  "group relative flex h-12 w-14 min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-[1.75rem] transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-14 sm:w-[76px]"
 
 function NavGlyph({
   Icon,
@@ -119,12 +119,15 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed left-3 right-3 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/15 bg-[#080c0f]/64 shadow-[0_18px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl"
-      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/15 bg-[#080c0f]/64 shadow-[0_18px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3"
+      style={{
+        bottom: "calc(var(--bottom-nav-float-gap) + var(--safe-area-bottom))",
+      }}
       role="navigation"
       aria-label="Navegacion principal"
+      data-testid="bottom-nav"
     >
-      <div className="flex h-16 items-center justify-around gap-1 px-3">
+      <div className="flex h-16 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-3">
         {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }: any) => {
           const hrefStr = href ?? "/"
           const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Home" && !hasMapListToggle

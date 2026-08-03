@@ -12,7 +12,8 @@ export function MapLegend() {
     <div
       role="note"
       aria-label="Referencia de colores del mapa"
-      className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-20 w-[min(210px,calc(100vw-1.5rem))] rounded-2xl border border-white/18 bg-[#0a0e12]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-md md:bottom-5 md:left-5"
+      className="pointer-events-none absolute bottom-[calc(var(--bottom-nav-clearance)+1.5rem)] left-3 z-20 w-[min(210px,calc(100vw-1.5rem))] rounded-2xl border border-white/18 bg-[#0a0e12]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-md md:bottom-5 md:left-5"
+      data-overflow-allowed="decoration"
     >
       <p className="mb-2.5 text-[11px] font-bold tracking-wide text-white">Referencia</p>
       <ul className="space-y-2.5">

@@ -11,6 +11,10 @@
 		"backgroundColor": "#0b1220",
 		"allowMixedContent": false
 	},
+	"ios": {
+		"appendUserAgent": " CelimapNative/1",
+		"backgroundColor": "#0b1220"
+	},
 	"plugins": {
 		"SplashScreen": {
 			"launchShowDuration": 0,
@@ -20,7 +24,8 @@
 		},
 		"StatusBar": {
 			"style": "DARK",
-			"backgroundColor": "#0b1220"
+			"backgroundColor": "#0b1220",
+			"overlaysWebView": true
 		}
 	}
 }

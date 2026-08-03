@@ -1,0 +1,317 @@
+﻿diff --git a/android/app/capacitor.build.gradle b/android/app/capacitor.build.gradle
+index d17ceef..1b6e7b7 100644
+--- a/android/app/capacitor.build.gradle
++++ b/android/app/capacitor.build.gradle
+@@ -10,6 +10,7 @@ android {
+ apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
+ dependencies {
+     implementation project(':capacitor-app')
++    implementation project(':capacitor-browser')
+     implementation project(':capacitor-splash-screen')
+     implementation project(':capacitor-status-bar')
+ 
+diff --git a/android/app/src/main/assets/capacitor.config.json b/android/app/src/main/assets/capacitor.config.json
+index 45a1544..ef02483 100644
+--- a/android/app/src/main/assets/capacitor.config.json
++++ b/android/app/src/main/assets/capacitor.config.json
+@@ -11,6 +11,10 @@
+ 		"backgroundColor": "#0b1220",
+ 		"allowMixedContent": false
+ 	},
++	"ios": {
++		"appendUserAgent": " CelimapNative/1",
++		"backgroundColor": "#0b1220"
++	},
+ 	"plugins": {
+ 		"SplashScreen": {
+ 			"launchShowDuration": 0,
+@@ -20,7 +24,8 @@
+ 		},
+ 		"StatusBar": {
+ 			"style": "DARK",
+-			"backgroundColor": "#0b1220"
++			"backgroundColor": "#0b1220",
++			"overlaysWebView": true
+ 		}
+ 	}
+ }
+diff --git a/android/app/src/main/assets/capacitor.plugins.json b/android/app/src/main/assets/capacitor.plugins.json
+index 1a508ac..4e4b16e 100644
+--- a/android/app/src/main/assets/capacitor.plugins.json
++++ b/android/app/src/main/assets/capacitor.plugins.json
+@@ -3,6 +3,10 @@
+ 		"pkg": "@capacitor/app",
+ 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
+ 	},
++	{
++		"pkg": "@capacitor/browser",
++		"classpath": "com.capacitorjs.plugins.browser.BrowserPlugin"
++	},
+ 	{
+ 		"pkg": "@capacitor/splash-screen",
+ 		"classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin"
+diff --git a/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/results.bin b/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/results.bin
+deleted file mode 100644
+index 7ed749e..0000000
+--- a/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/results.bin
++++ /dev/null
+@@ -1 +0,0 @@
+-o/bundleLibRuntimeToDirDebug
+diff --git a/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+deleted file mode 100644
+index 601f245..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/.transforms/dd55f24659fc50d05ad7be6bd1bfe588/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/.transforms/e8a74a8682793e84eff487909968bd12/results.bin b/android/capacitor-cordova-android-plugins/build/.transforms/e8a74a8682793e84eff487909968bd12/results.bin
+deleted file mode 100644
+index 0d259dd..0000000
+--- a/android/capacitor-cordova-android-plugins/build/.transforms/e8a74a8682793e84eff487909968bd12/results.bin
++++ /dev/null
+@@ -1 +0,0 @@
+-o/classes
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+deleted file mode 100644
+index acc579b..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:amazon="http://schemas.amazon.com/apk/res/android"
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="capacitor.cordova.android.plugins" >
+-
+-    <uses-sdk android:minSdkVersion="24" />
+-
+-    <application>
+-    </application>
+-
+-</manifest>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+deleted file mode 100644
+index 1553a13..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
++++ /dev/null
+@@ -1,18 +0,0 @@
+-{
+-  "version": 3,
+-  "artifactType": {
+-    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
+-    "kind": "Directory"
+-  },
+-  "applicationId": "capacitor.cordova.android.plugins",
+-  "variantName": "debug",
+-  "elements": [
+-    {
+-      "type": "SINGLE",
+-      "filters": [],
+-      "attributes": [],
+-      "outputFile": "AndroidManifest.xml"
+-    }
+-  ],
+-  "elementType": "File"
+-}
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar b/android/capacitor-cordova-android-plugins/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar
+deleted file mode 100644
+index 15cb0ec..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/android/capacitor-cordova-android-plugins/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+deleted file mode 100644
+index 1211b1e..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
++++ /dev/null
+@@ -1,6 +0,0 @@
+-aarFormatVersion=1.0
+-aarMetadataVersion=1.0
+-minCompileSdk=1
+-minCompileSdkExtension=0
+-minAndroidGradlePluginVersion=1.0.0
+-coreLibraryDesugaringEnabled=false
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/android/capacitor-cordova-android-plugins/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+deleted file mode 100644
+index 9e26dfe..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
++++ /dev/null
+@@ -1 +0,0 @@
+-{}
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/annotations_typedef_file/debug/extractDebugAnnotations/typedefs.txt b/android/capacitor-cordova-android-plugins/build/intermediates/annotations_typedef_file/debug/extractDebugAnnotations/typedefs.txt
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/android/capacitor-cordova-android-plugins/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+deleted file mode 100644
+index 68a4e4c..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/android/capacitor-cordova-android-plugins/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+deleted file mode 100644
+index 68a4e4c..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/android/capacitor-cordova-android-plugins/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug-mergeJavaRes/merge-state b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug-mergeJavaRes/merge-state
+deleted file mode 100644
+index 1c983fc..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug-mergeJavaRes/merge-state and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+deleted file mode 100644
+index 6bbc181..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
++++ /dev/null
+@@ -1 +0,0 @@
+-#Wed Jul 29 01:17:35 ART 2026
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+deleted file mode 100644
+index 8a4e255..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/debug/packageDebugResources/merger.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\build\generated\res\resValues\debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\build\generated\res\resValues\debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugAssets/merger.xml b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugAssets/merger.xml
+deleted file mode 100644
+index 3fe42e2..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugAssets/merger.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\debug\assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\build\intermediates\shader_assets\debug\compileDebugShaders\out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+deleted file mode 100644
+index 2de1c43..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\debug\jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugShaders/merger.xml b/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugShaders/merger.xml
+deleted file mode 100644
+index 30e90e4..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/incremental/mergeDebugShaders/merger.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\debug\shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/android/capacitor-cordova-android-plugins/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+deleted file mode 100644
+index 78ac5b8..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
++++ /dev/null
+@@ -1,2 +0,0 @@
+-R_DEF: Internal format may change without notice
+-local
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/android/capacitor-cordova-android-plugins/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+deleted file mode 100644
+index c18aa48..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
++++ /dev/null
+@@ -1,12 +0,0 @@
+-1<?xml version="1.0" encoding="utf-8"?>
+-2<manifest xmlns:amazon="http://schemas.amazon.com/apk/res/android"
+-3    xmlns:android="http://schemas.android.com/apk/res/android"
+-4    package="capacitor.cordova.android.plugins" >
+-5
+-6    <uses-sdk android:minSdkVersion="24" />
+-7
+-8    <application>
+-8-->C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:4:1-6:15
+-9    </application>
+-10
+-11</manifest>
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capacitor-cordova-android-plugins.jar b/android/capacitor-cordova-android-plugins/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capacitor-cordova-android-plugins.jar
+deleted file mode 100644
+index 15cb0ec..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capacitor-cordova-android-plugins.jar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/android/capacitor-cordova-android-plugins/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+deleted file mode 100644
+index acc579b..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:amazon="http://schemas.amazon.com/apk/res/android"
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="capacitor.cordova.android.plugins" >
+-
+-    <uses-sdk android:minSdkVersion="24" />
+-
+-    <application>
+-    </application>
+-
+-</manifest>
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/android/capacitor-cordova-android-plugins/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+deleted file mode 100644
+index 0637a08..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
++++ /dev/null
+@@ -1 +0,0 @@
+-[]
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/android/capacitor-cordova-android-plugins/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+deleted file mode 100644
+index 08f4ebe..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-0 Warning/Error
+\ No newline at end of file
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/android/capacitor-cordova-android-plugins/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+deleted file mode 100644
+index 15cb0ec..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/android/capacitor-cordova-android-plugins/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+deleted file mode 100644
+index 27b33a7..0000000
+--- a/android/capacitor-cordova-android-plugins/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-capacitor.cordova.android.plugins
+diff --git a/android/capacitor-cordova-android-plugins/build/outputs/aar/capacitor-cordova-android-plugins-debug.aar b/android/capacitor-cordova-android-plugins/build/outputs/aar/capacitor-cordova-android-plugins-debug.aar
+deleted file mode 100644
+index 33aa6ea..0000000
+Binary files a/android/capacitor-cordova-android-plugins/build/outputs/aar/capacitor-cordova-android-plugins-debug.aar and /dev/null differ
+diff --git a/android/capacitor-cordova-android-plugins/build/outputs/logs/manifest-merger-debug-report.txt b/android/capacitor-cordova-android-plugins/build/outputs/logs/manifest-merger-debug-report.txt
+deleted file mode 100644
+index ccff5f8..0000000
+--- a/android/capacitor-cordova-android-plugins/build/outputs/logs/manifest-merger-debug-report.txt
++++ /dev/null
+@@ -1,20 +0,0 @@
+--- Merging decision tree log ---
+-manifest
+-ADDED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:2:1-8:12
+-INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:2:1-8:12
+-	package
+-		INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml
+-	xmlns:amazon
+-		ADDED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:3:1-57
+-	xmlns:android
+-		ADDED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:2:11-69
+-application
+-ADDED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml:4:1-6:15
+-uses-sdk
+-INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml reason: use-sdk injection requested
+-INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml
+-INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml
+-	android:targetSdkVersion
+-		INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml
+-	android:minSdkVersion
+-		INJECTED from C:\Users\Franco\Desktop\sintacc-bsas\android\capacitor-cordova-android-plugins\src\main\AndroidManifest.xml
+diff --git a/android/capacitor.settings.gradle b/android/capacitor.settings.gradle
+index df38bc9..23ba03c 100644
+--- a/android/capacitor.settings.gradle
++++ b/android/capacitor.settings.gradle
+@@ -5,6 +5,9 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
+ include ':capacitor-app'
+ project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
+ 
++include ':capacitor-browser'
++project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
++
+ include ':capacitor-splash-screen'
+ project(':capacitor-splash-screen').projectDir = new File('../node_modules/@capacitor/splash-screen/android')
+ 

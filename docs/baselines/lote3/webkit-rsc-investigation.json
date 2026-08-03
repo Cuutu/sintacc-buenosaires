@@ -1,0 +1,259 @@
+{
+  "pageErrors": [],
+  "networkFailures": [
+    {
+      "url": "http://127.0.0.1:3000/api/places?featured=true&limit=6",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/_vercel/insights/script.js",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "script",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/mapa?_rsc=19zvn",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": true
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/lists?limit=6",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/auth/session",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/sugerir?_rsc=19zvn",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": true
+    },
+    {
+      "url": "http://127.0.0.1:3000/favoritos?_rsc=19zvn",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": true
+    },
+    {
+      "url": "http://127.0.0.1:3000/login?_rsc=19zvn",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "fetch",
+      "isRscPrefetch": true
+    },
+    {
+      "url": "http://127.0.0.1:3000/_vercel/insights/script.js",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "script",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/_vercel/insights/script.js",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "script",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/_vercel/insights/script.js",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "script",
+      "isRscPrefetch": false
+    },
+    {
+      "url": "http://127.0.0.1:3000/_vercel/insights/script.js",
+      "method": "GET",
+      "failure": "Load request cancelled",
+      "resourceType": "script",
+      "isRscPrefetch": false
+    }
+  ],
+  "responses500": [
+    {
+      "url": "http://127.0.0.1:3000/api/stats",
+      "method": "GET",
+      "status": 500,
+      "resourceType": "fetch",
+      "isRscPrefetch": false
+    }
+  ],
+  "rscRequests": [
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/mapa?_rsc=19zvn",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/sugerir?_rsc=19zvn",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/favoritos?_rsc=19zvn",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/login?_rsc=19zvn",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/?_rsc=1bebu",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/favoritos?_rsc=1bebu",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/sugerir?_rsc=1bebu",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/login?_rsc=1bebu",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/login?_rsc=qzr8h",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": null,
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/mapa?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/sugerir?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/privacidad?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/privacidad?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/mapa?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/favoritos?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/sugerir?_rsc=1obve",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/mapa?_rsc=1x0x4",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/favoritos?_rsc=1x0x4",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    },
+    {
+      "t": "request",
+      "url": "http://127.0.0.1:3000/login?_rsc=1x0x4",
+      "method": "GET",
+      "resourceType": "fetch",
+      "prefetchHeader": "1",
+      "purpose": null
+    }
+  ],
+  "matchesExactFingerprint": [],
+  "otherPageErrors": [],
+  "notes": [
+    "Corrida serial workers=1 contra next start (prod build)",
+    "Fingerprint permitido solo: /^\\/127.0.0.1:\\d+\\/...\\?_rsc=... due to access control checks.$/",
+    "WebKit Playwright ≠ WKWebView iOS"
+  ]
+}

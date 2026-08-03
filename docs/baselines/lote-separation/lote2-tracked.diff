@@ -1,0 +1,345 @@
+﻿diff --git a/app/globals.css b/app/globals.css
+index 9263377..ea681d9 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -25,6 +25,18 @@
+     --input: 240 8% 18%;
+     --ring: 160 84% 39%;
+     --radius: 0.75rem;
++
++    /* Lote 2 ÔÇö safe areas (pol├¡tica B: edge-to-edge + CSS). env() ÔåÆ 0px fuera de inset. */
++    --safe-area-top: env(safe-area-inset-top, 0px);
++    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
++    --safe-area-left: env(safe-area-inset-left, 0px);
++    --safe-area-right: env(safe-area-inset-right, 0px);
++    --mobile-header-gap: 0.75rem;
++    --bottom-nav-height: 4rem; /* h-16 interactivo */
++    --bottom-nav-float-gap: 0.75rem; /* aire entre nav y home indicator */
++    --bottom-nav-clearance: calc(
++      var(--bottom-nav-height) + var(--bottom-nav-float-gap) + var(--safe-area-bottom) + 0.25rem
++    );
+   }
+ 
+   .light {
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 80518b9..8df6eab 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -8,8 +8,10 @@ import { MobileShell } from "@/components/layout/MobileShell";
+ import { JsonLdScript } from "@/components/seo/JsonLdScript";
+ import { Toaster } from "sonner";
+ import { NativeAppBridge } from "@/components/native/NativeAppBridge";
++import { NativeStatusBar } from "@/components/native/NativeStatusBar";
+ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+ import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
++import { ClientErrorListeners } from "@/components/ClientErrorListeners";
+ import { getBaseUrl } from "@/lib/base-url";
+ 
+ const jakarta = Plus_Jakarta_Sans({
+@@ -71,7 +73,8 @@ export const metadata: Metadata = {
+   },
+   robots: { index: true, follow: true },
+   manifest: "/manifest.webmanifest",
+-  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "default" },
++  // black-translucent + viewportFit cover ÔåÆ PWA edge-to-edge; env(safe-area-*) activos
++  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "black-translucent" },
+   icons: {
+     icon: [
+       { url: "/favicon.ico" },
+@@ -84,6 +87,9 @@ export const metadata: Metadata = {
+ 
+ export const viewport: Viewport = {
+   themeColor: "#0b1220",
++  width: "device-width",
++  initialScale: 1,
++  viewportFit: "cover",
+ };
+ 
+ export default function RootLayout({
+@@ -96,11 +102,13 @@ export default function RootLayout({
+       <body className="font-sans antialiased">
+         <JsonLdScript />
+         <Providers>
++          <ClientErrorListeners />
+           <MobileShell>
+             <LayoutChrome>{children}</LayoutChrome>
+           </MobileShell>
+           <Toaster position="top-center" richColors closeButton />
+           <NativeAppBridge />
++          <NativeStatusBar />
+           <InstallPrompt />
+           <OnboardingModal />
+         </Providers>
+diff --git a/app/mapa/layout.tsx b/app/mapa/layout.tsx
+index 5647376..ffe87de 100644
+--- a/app/mapa/layout.tsx
++++ b/app/mapa/layout.tsx
+@@ -34,7 +34,7 @@ export default function MapaLayout({
+   // Mobile: mapa full dvh (sin SEO visible; BottomNav aparte).
+   return (
+     <div className="flex min-h-0 flex-col md:h-auto md:min-h-0 md:overflow-visible">
+-      <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[calc(5rem+env(safe-area-inset-bottom))] md:mb-0 md:h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4rem)] md:shrink-0">
++      <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[var(--bottom-nav-clearance)] md:mb-0 md:h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4rem)] md:shrink-0">
+         <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+       </div>
+       <MapaSeoIntro />
+diff --git a/app/page.tsx b/app/page.tsx
+index 6f8c7f5..2710174 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -57,7 +57,7 @@ export default function HomePage() {
+           <div className="celimap-hero-noise" aria-hidden />
+         </div>
+ 
+-        <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-20 max-w-5xl">
++        <div className="container mx-auto px-4 pt-8 pb-12 md:pt-24 md:pb-20 max-w-5xl">
+ 
+           {/* Badge de apertura */}
+           <div className="flex justify-center mb-8">
+diff --git a/capacitor.config.ts b/capacitor.config.ts
+index 1a1b36a..1b58ff2 100644
+--- a/capacitor.config.ts
++++ b/capacitor.config.ts
+@@ -28,6 +28,8 @@ const config: CapacitorConfig = {
+     StatusBar: {
+       style: "DARK",
+       backgroundColor: "#0b1220",
++      // Pol├¡tica B: WebView edge-to-edge; insets v├¡a CSS env(safe-area-*)
++      overlaysWebView: true,
+     },
+   },
+ }
+diff --git a/components/layout/LayoutChrome.tsx b/components/layout/LayoutChrome.tsx
+index 4694db1..66601f6 100644
+--- a/components/layout/LayoutChrome.tsx
++++ b/components/layout/LayoutChrome.tsx
+@@ -1,44 +1,49 @@
+ "use client"
+ 
+ import { Suspense } from "react"
++import { usePathname } from "next/navigation"
+ import { Navbar } from "@/components/navbar"
+ import { Footer } from "@/components/footer"
+ import { BottomNav } from "@/components/nav/BottomNav"
++import { AppErrorBoundary } from "@/components/AppErrorBoundary"
+ import { useIsMobile } from "@/components/map-view/useMediaQuery"
++import { cn } from "@/lib/utils"
+ 
+ interface LayoutChromeProps {
+   children: React.ReactNode
+ }
+ 
+ /**
+- * LayoutChrome: decide qu├® chrome mostrar seg├║n breakpoint.
+- * - Mobile (<=768px): sin Navbar, sin Footer, con BottomNav
+- * - Desktop: Navbar + Footer, sin BottomNav
++ * LayoutChrome: chrome por breakpoint + safe areas (pol├¡tica B edge-to-edge).
++ * - null (sin medir): sin Navbar/Footer/BottomNav ÔåÆ evita flash desktop en phone
++ * - Mobile: BottomNav; pt safe-top salvo /mapa (full-bleed); pb = --bottom-nav-clearance
++ * - Desktop: Navbar + Footer; sin paddings m├│viles
++ * Fondos pueden ir edge-to-edge; inset solo en flujo de contenido interactivo.
+  */
+ export function LayoutChrome({ children }: LayoutChromeProps) {
+   const isMobile = useIsMobile()
++  const pathname = usePathname()
++  const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
++  const showDesktopChrome = isMobile === false
++  const showMobileChrome = isMobile === true
+ 
+   return (
+     <>
+-      {/* Navbar: solo desktop */}
+-      {!isMobile && <Navbar />}
++      {showDesktopChrome && <Navbar />}
+ 
+-      {/* Main: padding inferior para bottom nav en mobile */}
+       <main
+-        className={
+-          isMobile
+-            ? "min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]"
+-            : "min-h-screen"
+-        }
++        className={cn(
++          "min-h-screen",
++          showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
++          showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]"
++        )}
+       >
+-        {children}
++        <AppErrorBoundary key={pathname}>{children}</AppErrorBoundary>
+       </main>
+ 
+-      {/* Footer: solo desktop */}
+-      {!isMobile && <Footer />}
++      {showDesktopChrome && <Footer />}
+ 
+-      {/* BottomNav: solo mobile (Suspense por useSearchParams) */}
+-      {isMobile && (
++      {showMobileChrome && (
+         <Suspense fallback={null}>
+           <BottomNav />
+         </Suspense>
+diff --git a/components/lugar/StickyActionBarMobile.tsx b/components/lugar/StickyActionBarMobile.tsx
+index 5c13293..e618463 100644
+--- a/components/lugar/StickyActionBarMobile.tsx
++++ b/components/lugar/StickyActionBarMobile.tsx
+@@ -25,10 +25,10 @@ export function StickyActionBarMobile({ place, shareUrl, className }: StickyActi
+   return (
+     <div
+       className={`
+-        md:hidden fixed bottom-0 left-0 right-0 z-40
++        md:hidden fixed left-0 right-0 z-40
++        bottom-[var(--bottom-nav-clearance)]
+         flex items-center justify-center gap-2 p-3
+         bg-background/95 backdrop-blur-xl border-t border-border/50
+-        pb-[calc(0.75rem+env(safe-area-inset-bottom))]
+         ${className ?? ""}
+       `}
+     >
+diff --git a/components/map-view/BottomSheet.tsx b/components/map-view/BottomSheet.tsx
+index 04d23ed..db6cd88 100644
+--- a/components/map-view/BottomSheet.tsx
++++ b/components/map-view/BottomSheet.tsx
+@@ -131,7 +131,7 @@ export function MapBottomSheet({
+       <div
+         ref={listRef}
+         onScroll={handleListScroll}
+-        className="overflow-y-auto overscroll-contain h-[calc(100%-3.5rem)] pb-[env(safe-area-inset-bottom)] touch-pan-y"
++        className="overflow-y-auto overscroll-contain h-[calc(100%-3.5rem)] pb-[var(--safe-area-bottom)] touch-pan-y"
+       >
+         {children}
+       </div>
+diff --git a/components/map-view/MapLegend.tsx b/components/map-view/MapLegend.tsx
+index d6ad045..716eab0 100644
+--- a/components/map-view/MapLegend.tsx
++++ b/components/map-view/MapLegend.tsx
+@@ -12,7 +12,7 @@ export function MapLegend() {
+     <div
+       role="note"
+       aria-label="Referencia de colores del mapa"
+-      className="pointer-events-none absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-20 w-[min(210px,calc(100vw-1.5rem))] rounded-2xl border border-white/18 bg-[#0a0e12]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-md md:bottom-5 md:left-5"
++      className="pointer-events-none absolute bottom-[calc(var(--bottom-nav-clearance)+1.5rem)] left-3 z-20 w-[min(210px,calc(100vw-1.5rem))] rounded-2xl border border-white/18 bg-[#0a0e12]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-md md:bottom-5 md:left-5"
+     >
+       <p className="mb-2.5 text-[11px] font-bold tracking-wide text-white">Referencia</p>
+       <ul className="space-y-2.5">
+diff --git a/components/map-view/MapMobile.tsx b/components/map-view/MapMobile.tsx
+index 820e869..406c9a5 100644
+--- a/components/map-view/MapMobile.tsx
++++ b/components/map-view/MapMobile.tsx
+@@ -252,13 +252,13 @@ export function MapMobile({
+           listOpen
+             ? "calc(18vh + 1rem)"
+             : selectedPlace && !listOpen
+-              ? "calc(11rem + env(safe-area-inset-bottom))"
+-              : "calc(5.5rem + env(safe-area-inset-bottom))"
++              ? "calc(var(--bottom-nav-clearance) + 5.5rem)"
++              : "calc(var(--bottom-nav-clearance) + 0.5rem)"
+         }
+       />
+ 
+       {!listOpen && (
+-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col items-center gap-2 px-3">
++        <div className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 flex flex-col items-center gap-2 px-3">
+           {selectedPlace && (
+             <div className="pointer-events-auto w-full max-w-[440px]">
+               <PlaceMiniCard
+@@ -306,7 +306,7 @@ export function MapMobile({
+       )}
+ 
+       {moreOpen && (
+-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
++        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(var(--bottom-nav-float-gap)+var(--safe-area-bottom))]">
+           <button
+             type="button"
+             className="absolute inset-0"
+diff --git a/components/map-view/MapTopBar.tsx b/components/map-view/MapTopBar.tsx
+index 7c7c738..71e7be6 100644
+--- a/components/map-view/MapTopBar.tsx
++++ b/components/map-view/MapTopBar.tsx
+@@ -356,7 +356,7 @@ export function MapTopBar({
+   ]
+ 
+   return (
+-    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
++    <div className="fixed left-3 right-3 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
+       <div className="mb-2.5 flex gap-2">
+         <div className="relative min-w-0 flex-1">
+           <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" aria-hidden />
+diff --git a/components/nav/BottomNav.tsx b/components/nav/BottomNav.tsx
+index 88f8c21..f581d8d 100644
+--- a/components/nav/BottomNav.tsx
++++ b/components/nav/BottomNav.tsx
+@@ -120,7 +120,9 @@ export function BottomNav() {
+   return (
+     <nav
+       className="fixed left-3 right-3 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/15 bg-[#080c0f]/64 shadow-[0_18px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl"
+-      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
++      style={{
++        bottom: "calc(var(--bottom-nav-float-gap) + var(--safe-area-bottom))",
++      }}
+       role="navigation"
+       aria-label="Navegacion principal"
+     >
+diff --git a/components/pwa/InstallPrompt.tsx b/components/pwa/InstallPrompt.tsx
+index 3208c36..1266db3 100644
+--- a/components/pwa/InstallPrompt.tsx
++++ b/components/pwa/InstallPrompt.tsx
+@@ -148,7 +148,7 @@ export function InstallPrompt() {
+   return (
+     <>
+       {!open && (
+-        <div className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] mx-auto max-w-[440px] md:bottom-5 md:right-5 md:left-auto">
++        <div className="fixed inset-x-3 bottom-[calc(var(--bottom-nav-clearance)+0.25rem)] z-[70] mx-auto max-w-[440px] md:bottom-5 md:right-5 md:left-auto">
+           <button
+             type="button"
+             onClick={() => setOpen(true)}
+diff --git a/components/ui/bottom-sheet.tsx b/components/ui/bottom-sheet.tsx
+index fdacf33..68a98e7 100644
+--- a/components/ui/bottom-sheet.tsx
++++ b/components/ui/bottom-sheet.tsx
+@@ -54,7 +54,7 @@ export function BottomSheet({
+         <div className="w-12 h-1.5 rounded-full bg-white/30" aria-hidden />
+       </button>
+ 
+-      <div className="overflow-y-auto overscroll-contain h-[calc(100%-3rem)] pb-[env(safe-area-inset-bottom)]">
++      <div className="overflow-y-auto overscroll-contain h-[calc(100%-3rem)] pb-[var(--safe-area-bottom)]">
+         {children}
+       </div>
+     </div>
+diff --git a/lib/native-app.ts b/lib/native-app.ts
+index 5ecf0f7..9965f5d 100644
+--- a/lib/native-app.ts
++++ b/lib/native-app.ts
+@@ -1,12 +1,29 @@
+ import { Capacitor } from "@capacitor/core"
+ 
+-/** Detecta shell Capacitor (TestFlight / Play), no Safari ni PWA. */
+-export function isNativeApp(): boolean {
++function hasCapacitorBridge(): boolean {
+   if (typeof window === "undefined") return false
++  const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } })
++    .Capacitor
++  if (cap?.isNativePlatform?.()) return true
+   try {
+     if (Capacitor.isNativePlatform()) return true
+   } catch {
+-    // Capacitor no disponible (SSR / web pura)
++    // ignore
++  }
++  const root = document.documentElement
++  if (
++    root.classList.contains("plt-capacitor") ||
++    root.classList.contains("hybrid") ||
++    root.classList.contains("plt-ios") ||
++    root.classList.contains("plt-android")
++  ) {
++    return true
+   }
+   return window.navigator.userAgent.includes("CelimapNative")
+ }
++
++/** Detecta shell Capacitor (TestFlight / Play), no Safari ni PWA. */
++export function isNativeApp(): boolean {
++  if (typeof window === "undefined") return false
++  return hasCapacitorBridge()
++}

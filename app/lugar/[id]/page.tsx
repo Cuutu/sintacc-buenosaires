@@ -464,7 +464,7 @@ export default function LugarPage() {
       {/* Mobile sticky bar — sin cambios, igual que antes */}
       <StickyActionBarMobile place={place} shareUrl={shareUrl} />
 
-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-10">
+      <div className="container mx-auto px-4 py-6 pb-[var(--lugar-bottom-clearance)] md:pb-10">
 
         {/* Back link */}
         <Link

@@ -25,6 +25,23 @@
     --input: 240 8% 18%;
     --ring: 160 84% 39%;
     --radius: 0.75rem;
+
+    /* Lote 2 — safe areas (política B: edge-to-edge + CSS). env() → 0px fuera de inset. */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+    --mobile-header-gap: 0.75rem;
+    --bottom-nav-height: 4rem; /* h-16 interactivo */
+    --bottom-nav-float-gap: 0.75rem; /* aire entre nav y home indicator */
+    --bottom-nav-clearance: calc(
+      var(--bottom-nav-height) + var(--bottom-nav-float-gap) + var(--safe-area-bottom) + 0.25rem
+    );
+    /* StickyActionBarMobile: altura visual aprox (botones 48px + padding) */
+    --sticky-action-bar-height: 4.25rem;
+    --lugar-bottom-clearance: calc(
+      var(--bottom-nav-clearance) + var(--sticky-action-bar-height)
+    );
   }
 
   .light {

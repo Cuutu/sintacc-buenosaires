@@ -131,7 +131,7 @@ export function MapBottomSheet({
       <div
         ref={listRef}
         onScroll={handleListScroll}
-        className="overflow-y-auto overscroll-contain h-[calc(100%-3.5rem)] pb-[env(safe-area-inset-bottom)] touch-pan-y"
+        className="overflow-y-auto overscroll-contain h-[calc(100%-3.5rem)] pb-[var(--safe-area-bottom)] touch-pan-y"
       >
         {children}
       </div>

@@ -1,22 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useSyncExternalStore } from "react"
+import { getMediaQueryStore } from "@/lib/media-query-store"
 
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false)
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const media = window.matchMedia(query)
-    setMatches(media.matches)
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
-    media.addEventListener("change", handler)
-    return () => media.removeEventListener("change", handler)
-  }, [query])
-
-  return matches
+/**
+ * null = SSR / sin medir aún.
+ * Evita montar MapDesktop en phone por default false.
+ */
+export function useMediaQuery(query: string): boolean | null {
+  const store = getMediaQueryStore(query)
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
 }
 
-export function useIsMobile(): boolean {
+export function useIsMobile(): boolean | null {
   return useMediaQuery("(max-width: 768px)")
 }
+
+export { resolveMapVariant } from "@/lib/media-query-store"

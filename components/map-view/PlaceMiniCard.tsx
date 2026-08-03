@@ -108,7 +108,7 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
         aria-label={`Seleccionar ${place.name}`}
       >
         <div
-          className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-xl ring-1 ring-white/8"
+          className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/8 sm:h-[100px] sm:w-[100px]"
           style={
             !place.photos?.[0]
               ? {

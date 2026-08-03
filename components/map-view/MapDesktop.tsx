@@ -25,6 +25,8 @@ type PlaceWithStats = IPlace & {
 interface MapDesktopProps {
   places: IPlace[]
   loading: boolean
+  loadError?: string | null
+  onRetryLoad?: () => void
   filters: MapFilters
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
@@ -81,6 +83,8 @@ function compareName(a: IPlace, b: IPlace): number {
 export function MapDesktop({
   places,
   loading,
+  loadError = null,
+  onRetryLoad,
   filters,
   onFiltersChange,
   onSearchChange,
@@ -255,6 +259,8 @@ export function MapDesktop({
             places={sortedPlaces}
             selectedPlaceId={selectedPlaceId}
             loading={loading}
+            loadError={loadError}
+            onRetryLoad={onRetryLoad}
             onPlaceSelect={handlePlaceSelect}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
           />

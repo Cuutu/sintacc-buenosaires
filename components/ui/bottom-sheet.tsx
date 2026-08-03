@@ -54,7 +54,7 @@ export function BottomSheet({
         <div className="w-12 h-1.5 rounded-full bg-white/30" aria-hidden />
       </button>
 
-      <div className="overflow-y-auto overscroll-contain h-[calc(100%-3rem)] pb-[env(safe-area-inset-bottom)]">
+      <div className="overflow-y-auto overscroll-contain h-[calc(100%-3rem)] pb-[var(--safe-area-bottom)]">
         {children}
       </div>
     </div>
