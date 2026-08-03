@@ -14,6 +14,7 @@ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { PreviewBadge } from "@/components/native/PreviewBadge";
+import { PwaRegister } from "@/components/pwa/PwaRegister";
 import { getBaseUrl } from "@/lib/base-url";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -105,6 +106,7 @@ export default function RootLayout({
         <JsonLdScript />
         <Providers>
           <ClientErrorListeners />
+          <PwaRegister />
           <PreviewBadge />
           <MobileShell>
             <LayoutChrome>{children}</LayoutChrome>

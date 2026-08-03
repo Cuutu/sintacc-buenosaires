@@ -14,6 +14,10 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  BOTTOM_NAV_SLOT_KEYS,
+  resolveBottomNavPerfilHref,
+} from "@/lib/bottom-nav-perfil"
 
 const BASE_NAV_ITEMS = [
   { href: "/mapa", label: "Mapa", icon: MapPinned },
@@ -88,7 +92,7 @@ export function BottomNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const listOpen = searchParams.get("list") === "open"
   const isAdmin = session?.user?.role === "admin"
   const isOnMap = pathname === "/mapa"
@@ -98,22 +102,21 @@ export function BottomNav() {
     : BASE_NAV_ITEMS
 
   const navItems = rawItems.map((item, index) => {
+    const slotKey = BOTTOM_NAV_SLOT_KEYS[index] ?? `slot-${index}`
+
     if (index === 0 && isOnMap) {
-      return { ...item, href: "/", label: "Home", icon: Home }
+      return { ...item, href: "/", label: "Home", icon: Home, slotKey }
     }
 
-    const withFallback = item as typeof item & { fallbackHref?: string; fallbackLabel?: string }
-    if ("fallbackHref" in item && !session) {
+    if ("fallbackHref" in item) {
       return {
         ...item,
-        href: withFallback.fallbackHref ?? "/login",
-        label: withFallback.fallbackLabel ?? item.label,
+        href: resolveBottomNavPerfilHref(status),
+        label: "Perfil",
+        slotKey,
       }
     }
-    if ("fallbackHref" in item && session) {
-      return { ...item, href: "/perfil", label: "Perfil" }
-    }
-    return item
+    return { ...item, slotKey }
   })
   const hasMapListToggle = navItems.some((item) => "isListToggle" in item && item.isListToggle)
 
@@ -128,8 +131,9 @@ export function BottomNav() {
       data-testid="bottom-nav"
     >
       <div className="flex h-16 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-3">
-        {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle }: any) => {
+        {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle, slotKey }: any) => {
           const hrefStr = href ?? "/"
+          const stableKey = slotKey || hrefStr
           const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Home" && !hasMapListToggle
           const isExplorarActive = isListToggle && pathname === "/mapa"
           const isActive = isListToggle
@@ -143,8 +147,9 @@ export function BottomNav() {
             if (isOnMap) {
               return (
                 <button
-                  key="explorar"
+                  key={stableKey}
                   type="button"
+                  data-nav-slot={stableKey}
                   onClick={() => {
                     const params = new URLSearchParams(searchParams.toString())
                     if (listOpen) {
@@ -167,7 +172,8 @@ export function BottomNav() {
 
             return (
               <Link
-                key="explorar-link"
+                key={stableKey}
+                data-nav-slot={stableKey}
                 href="/mapa"
                 className={cn(navItemClass, "text-white/86")}
                 aria-label={label}
@@ -181,7 +187,8 @@ export function BottomNav() {
           if (isCenter) {
             return (
               <Link
-                key={hrefStr}
+                key={stableKey}
+                data-nav-slot={stableKey}
                 href={hrefStr}
                 className={cn(
                   centerItemClass,
@@ -200,7 +207,8 @@ export function BottomNav() {
 
           return (
             <Link
-              key={hrefStr}
+              key={stableKey}
+              data-nav-slot={stableKey}
               href={hrefStr}
               className={cn(navItemClass, isActive ? "text-primary" : "text-white/86")}
               aria-current={isActive ? "page" : undefined}
