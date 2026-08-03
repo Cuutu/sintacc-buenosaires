@@ -1,6 +1,8 @@
 import { NextAuthOptions } from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import connectDB from "@/lib/mongodb"
+import { consumeNativeGoogleGrant } from "@/lib/native-google-auth"
 import { User } from "@/models/User"
 
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || []
@@ -15,9 +17,29 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    // Opaque one-time grant from POST /api/auth/native/google (Capacitor SDK → WebView cookie).
+    CredentialsProvider({
+      id: "native-google",
+      name: "Native Google",
+      credentials: {
+        grant: { label: "Grant", type: "text" },
+      },
+      async authorize(credentials) {
+        const grant = credentials?.grant
+        if (!grant || typeof grant !== "string") return null
+        const user = await consumeNativeGoogleGrant(grant)
+        if (!user) return null
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
+      },
+    }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
           await connectDB()
@@ -45,6 +67,7 @@ export const authOptions: NextAuthOptions = {
           return false
         }
       }
+      // native-google: user already upserted when grant was created
       return true
     },
     async jwt({ token, user: providerUser }) {
