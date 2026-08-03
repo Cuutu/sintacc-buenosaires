@@ -21,6 +21,8 @@ import type { IPlace } from "@/models/Place"
 interface MapMobileProps {
   places: IPlace[]
   loading: boolean
+  loadError?: string | null
+  onRetryLoad?: () => void
   filters: MapFilters
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
@@ -45,6 +47,8 @@ const TAG_CHIPS = [
 export function MapMobile({
   places,
   loading,
+  loadError = null,
+  onRetryLoad,
   filters,
   onFiltersChange,
   onSearchChange,
@@ -252,13 +256,16 @@ export function MapMobile({
           listOpen
             ? "calc(18vh + 1rem)"
             : selectedPlace && !listOpen
-              ? "calc(11rem + env(safe-area-inset-bottom))"
-              : "calc(5.5rem + env(safe-area-inset-bottom))"
+              ? "calc(var(--bottom-nav-clearance) + 5.5rem)"
+              : "calc(var(--bottom-nav-clearance) + 0.5rem)"
         }
       />
 
       {!listOpen && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col items-center gap-2 px-3">
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 flex flex-col items-center gap-2 px-3"
+          data-overflow-allowed="decoration"
+        >
           {selectedPlace && (
             <div className="pointer-events-auto w-full max-w-[440px]">
               <PlaceMiniCard
@@ -271,7 +278,7 @@ export function MapMobile({
           <button
             type="button"
             onClick={() => onListOpen?.()}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
           >
             <List className="h-4 w-4" aria-hidden />
             Ver {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
@@ -290,6 +297,8 @@ export function MapMobile({
               places={visiblePlaces}
               selectedPlaceId={selectedPlaceId}
               loading={loading}
+              loadError={loadError}
+              onRetryLoad={onRetryLoad}
               onPlaceSelect={handlePlaceSelect}
               onClearFilters={hasExtraFilters || filters.tags.length > 0 ? () => {
                 onFiltersChange({
@@ -306,7 +315,7 @@ export function MapMobile({
       )}
 
       {moreOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(var(--bottom-nav-float-gap)+var(--safe-area-bottom))]">
           <button
             type="button"
             className="absolute inset-0"

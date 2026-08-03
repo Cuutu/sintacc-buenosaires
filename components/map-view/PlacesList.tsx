@@ -9,6 +9,8 @@ interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
   selectedPlaceId: string | null
   loading?: boolean
+  loadError?: string | null
+  onRetryLoad?: () => void
   onPlaceSelect?: (place: IPlace) => void
   onClearFilters?: () => void
 }
@@ -33,6 +35,8 @@ export function PlacesList({
   places,
   selectedPlaceId,
   loading = false,
+  loadError = null,
+  onRetryLoad,
   onPlaceSelect,
   onClearFilters,
 }: PlacesListProps) {
@@ -58,6 +62,24 @@ export function PlacesList({
         {[1, 2, 3, 4].map((i) => (
           <PlaceCardSkeleton key={i} />
         ))}
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="px-5 py-12 text-center" data-places-error="1">
+        <p className="text-sm font-medium text-white/80">No pudimos cargar los lugares</p>
+        <p className="mt-2 text-xs text-white/55">{loadError}</p>
+        {onRetryLoad && (
+          <button
+            type="button"
+            onClick={onRetryLoad}
+            className="mt-4 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            Reintentar
+          </button>
+        )}
       </div>
     )
   }
@@ -91,18 +113,23 @@ export function PlacesList({
 
   return (
     <div ref={listRef} className="space-y-2.5 px-4 pb-6">
-      {places.map((place) => (
-        <div
-          key={place._id.toString()}
-          ref={selectedPlaceId === place._id.toString() ? selectedRef : null}
-        >
-          <PlaceMiniCard
-            place={place}
-            selected={selectedPlaceId === place._id.toString()}
-            onSelect={() => handlePlaceClick(place)}
-          />
-        </div>
-      ))}
+      {places
+        .filter((place) => place?._id != null)
+        .map((place) => {
+          const id = String(place._id)
+          return (
+            <div
+              key={id}
+              ref={selectedPlaceId === id ? selectedRef : null}
+            >
+              <PlaceMiniCard
+                place={place}
+                selected={selectedPlaceId === id}
+                onSelect={() => handlePlaceClick(place)}
+              />
+            </div>
+          )
+        })}
     </div>
   )
 }

@@ -76,6 +76,7 @@ function MapaContent() {
       : undefined
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
+  const [placesError, setPlacesError] = useState<string | null>(null)
   const [viewport, setViewport] = useState<MapViewport | null>(null)
   const [debouncedViewport, setDebouncedViewport] = useState<MapViewport | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
@@ -174,6 +175,7 @@ function MapaContent() {
     const requestSeq = fetchRequestSeqRef.current + 1
     fetchRequestSeqRef.current = requestSeq
     setLoading(true)
+    setPlacesError(null)
     try {
       const params = new URLSearchParams()
       params.append("limit", String(MAP_PLACES_LIMIT))
@@ -197,10 +199,13 @@ function MapaContent() {
         filterKey,
       }
       setPlaces(data.places || [])
+      setPlacesError(null)
     } catch (error: any) {
       if (requestSeq !== fetchRequestSeqRef.current) return
-      toast.error(error?.message || "Error al cargar lugares")
+      const message = error?.message || "Error al cargar lugares"
+      toast.error(message)
       setPlaces([])
+      setPlacesError(message)
     } finally {
       if (requestSeq === fetchRequestSeqRef.current) setLoading(false)
     }
@@ -275,6 +280,11 @@ function MapaContent() {
     <MapScreen
       places={places}
       loading={loading}
+      loadError={placesError}
+      onRetryLoad={() => {
+        lastFetchedViewportRef.current = null
+        fetchPlaces()
+      }}
       filters={filters}
       onFiltersChange={setFilters}
       onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}

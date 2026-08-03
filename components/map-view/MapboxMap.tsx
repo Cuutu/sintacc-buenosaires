@@ -17,6 +17,15 @@ import {
   normalizeSearchValue,
 } from "@/lib/map-search"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import {
+  mapboxLifecycleTrackDestroy,
+  mapboxLifecycleTrackInit,
+} from "@/lib/mapbox-lifecycle"
+import {
+  createE2eMockMapboxMap,
+  isE2eMapboxForceInitError,
+  isE2eMapboxMockEnabled,
+} from "@/lib/e2e-mapbox-adapter"
 
 const SAFETY_MARKER_BG = {
   dedicated_gf: "#10d98a",
@@ -308,6 +317,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
   ) => {
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
+    const disposedRef = useRef(false)
     const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
     const userLocationMarkerRef = useRef<mapboxgl.Marker | null>(null)
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
@@ -325,6 +335,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const onMoveEndRef = useRef(onMoveEnd)
     onMoveEndRef.current = onMoveEnd
     const [markerLayoutVersion, setMarkerLayoutVersion] = useState(0)
+    const [initError, setInitError] = useState<string | null>(null)
 
     const triggerGeolocate = useCallback(() => {
       geolocateControlRef.current?.trigger()
@@ -332,12 +343,16 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     const flyTo = useCallback(
       (lng: number, lat: number, zoom = 15) => {
-        if (!map.current) return
-        map.current.flyTo({
-          center: [lng, lat],
-          zoom,
-          duration: reduceMotion ? 0 : 1000,
-        })
+        if (disposedRef.current || !map.current) return
+        try {
+          map.current.flyTo({
+            center: [lng, lat],
+            zoom,
+            duration: reduceMotion ? 0 : 1000,
+          })
+        } catch {
+          /* mapa ya destruido */
+        }
       },
       [reduceMotion]
     )
@@ -404,10 +419,11 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           place,
           lng: place.location?.lng,
           lat: place.location?.lat,
-          id: place._id.toString(),
+          id: place._id != null ? String(place._id) : "",
         }))
-        .filter((item): item is { place: IPlace; lng: number; lat: number; id: string } =>
-          Number.isFinite(item.lng) && Number.isFinite(item.lat)
+        .filter(
+          (item): item is { place: IPlace; lng: number; lat: number; id: string } =>
+            Boolean(item.id) && Number.isFinite(item.lng) && Number.isFinite(item.lat)
         )
 
       if (!clusterMarkers || !m || m.getZoom() >= 15) {
@@ -455,18 +471,21 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         if (cluster.places.length === 1) {
           const place = cluster.places[0]
           return {
-            id: place._id.toString(),
-            kind: "place",
+            id: place._id != null ? String(place._id) : `orphan:${cluster.lng},${cluster.lat}`,
+            kind: "place" as const,
             place,
             lng: cluster.lng,
             lat: cluster.lat,
           }
         }
 
-        const ids = cluster.places.map((place) => place._id.toString()).sort()
+        const ids = cluster.places
+          .map((place) => (place._id != null ? String(place._id) : ""))
+          .filter(Boolean)
+          .sort()
         return {
           id: `cluster:${ids.join(":")}`,
-          kind: "cluster",
+          kind: "cluster" as const,
           places: cluster.places,
           lng: cluster.lng,
           lat: cluster.lat,
@@ -483,56 +502,114 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     useEffect(() => {
       if (!mapContainer.current) return
 
-      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-      if (!token) {
-        console.error("MAPBOX_TOKEN no configurado")
-        return
+      // Reset por remount (Strict Mode / Desktop→Mobile)
+      disposedRef.current = false
+      let removed = false
+      let trackedInit = false
+
+      const safeSetInitError = (msg: string | null) => {
+        if (disposedRef.current) return
+        setInitError(msg)
       }
 
-      mapboxgl.accessToken = token
+      safeSetInitError(null)
 
       if (map.current) return
 
-      try {
-        const instance = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: darkStyle
-            ? "mapbox://styles/mapbox/dark-v11"
-            : "mapbox://styles/mapbox/streets-v12",
-          center: initialCenter ?? CABA_CENTER,
-          zoom: initialZoom ?? CABA_ZOOM,
-          failIfMajorPerformanceCaveat: false,
-        })
-        map.current = instance
-        sharedPopupRef.current = new mapboxgl.Popup({
-          offset: 42,
-          className: "celimap-popup",
-          closeButton: false,
-          closeOnClick: true,
-          maxWidth: "none",
-        })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        throw new Error(
-          /webgl|Failed to initialize/i.test(message)
-            ? "Failed to initialize WebGL"
-            : message
-        )
-      }
-
-      return () => {
+      const destroyMap = (instance: mapboxgl.Map | null) => {
+        if (removed) return
+        removed = true
+        disposedRef.current = true
         try {
           sharedPopupRef.current?.remove()
         } catch {
           /* ignore */
         }
         sharedPopupRef.current = null
+        const markers = markerEntriesRef.current
         try {
-          map.current?.remove()
+          markers.forEach((entry) => entry.marker.remove())
+          markers.clear()
         } catch {
           /* ignore */
         }
-        map.current = null
+        try {
+          userLocationMarkerRef.current?.remove()
+        } catch {
+          /* ignore */
+        }
+        userLocationMarkerRef.current = null
+        try {
+          instance?.remove()
+        } catch {
+          /* ignore */
+        }
+        if (map.current === instance) map.current = null
+        if (trackedInit) {
+          mapboxLifecycleTrackDestroy()
+          trackedInit = false
+        }
+      }
+
+      try {
+        if (isE2eMapboxForceInitError()) {
+          throw new Error("Failed to initialize WebGL")
+        }
+
+        let instance: mapboxgl.Map
+        if (isE2eMapboxMockEnabled()) {
+          // Adapter E2E explícito — no WebGL real / no tiles Mapbox
+          instance = createE2eMockMapboxMap(mapContainer.current)
+        } else {
+          const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+          if (!token) {
+            console.error("MAPBOX_TOKEN no configurado")
+            safeSetInitError("Mapa no configurado")
+            return
+          }
+          mapboxgl.accessToken = token
+          instance = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: darkStyle
+              ? "mapbox://styles/mapbox/dark-v11"
+              : "mapbox://styles/mapbox/streets-v12",
+            center: initialCenter ?? CABA_CENTER,
+            zoom: initialZoom ?? CABA_ZOOM,
+            failIfMajorPerformanceCaveat: false,
+          })
+        }
+        if (disposedRef.current) {
+          try {
+            instance.remove()
+          } catch {
+            /* ignore */
+          }
+          return
+        }
+        map.current = instance
+        mapboxLifecycleTrackInit()
+        trackedInit = true
+        if (!isE2eMapboxMockEnabled()) {
+          sharedPopupRef.current = new mapboxgl.Popup({
+            offset: 42,
+            className: "celimap-popup",
+            closeButton: false,
+            closeOnClick: true,
+            maxWidth: "none",
+          })
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        const friendly = /webgl|Failed to initialize/i.test(message)
+          ? "Failed to initialize WebGL"
+          : message
+        console.error("[MapboxMap] init failed", friendly)
+        safeSetInitError(friendly)
+        // NO rethrow: Error Boundary no atrapa useEffect
+      }
+
+      return () => {
+        destroyMap(map.current)
       }
       // Solo montar/desmontar: evita reinits por cambios de props y limpia en unmount
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -541,7 +618,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     // GeolocateControl: punto azul de ubicación del usuario (solo en mobile, se activa con FAB)
     useEffect(() => {
       const m = map.current
-      if (!m || !enableGeolocate) return
+      if (!m || disposedRef.current || !enableGeolocate) return
+      if (isE2eMapboxMockEnabled()) return
 
       if (!navigator.geolocation) return
 
@@ -628,30 +706,41 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     useEffect(() => {
       const m = map.current
-      if (!m) return
+      if (!m || disposedRef.current) return
       const onLoadOrMoveEnd = () => {
-        setMarkerLayoutVersion((version) => version + 1)
-        const b = m.getBounds()
-        if (!b) return
-        onBoundsChangeRef.current?.(b)
-        onMoveEndRef.current?.(m.getZoom(), {
-          west: b.getWest(),
-          south: b.getSouth(),
-          east: b.getEast(),
-          north: b.getNorth(),
-        })
+        if (disposedRef.current || !map.current) return
+        try {
+          setMarkerLayoutVersion((version) => version + 1)
+          const b = m.getBounds()
+          if (!b) return
+          onBoundsChangeRef.current?.(b)
+          onMoveEndRef.current?.(m.getZoom(), {
+            west: b.getWest(),
+            south: b.getSouth(),
+            east: b.getEast(),
+            north: b.getNorth(),
+          })
+        } catch {
+          /* mapa destruido */
+        }
       }
       m.on("load", onLoadOrMoveEnd)
       m.on("moveend", onLoadOrMoveEnd)
       return () => {
-        m.off("load", onLoadOrMoveEnd)
-        m.off("moveend", onLoadOrMoveEnd)
+        try {
+          m.off("load", onLoadOrMoveEnd)
+          m.off("moveend", onLoadOrMoveEnd)
+        } catch {
+          /* ignore */
+        }
       }
     }, [])
 
     useEffect(() => {
       const m = map.current
-      if (!m) return
+      if (!m || disposedRef.current) return
+      // Adapter E2E: sin Markers/Popup reales (lifecycle ya validado en init)
+      if (isE2eMapboxMockEnabled()) return
 
       const nextMarkerIds = new Set<string>()
 
@@ -806,18 +895,37 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
       if (lastFocusedPlaceIdRef.current === selectedPlaceId) return
 
-      const place = places.find((p) => p._id.toString() === selectedPlaceId)
-      if (place) {
+      const place = places.find((p) => p._id != null && String(p._id) === selectedPlaceId)
+      const lng = place?.location?.lng
+      const lat = place?.location?.lat
+      if (place && Number.isFinite(lng) && Number.isFinite(lat)) {
         lastFocusedPlaceIdRef.current = selectedPlaceId
-        map.current.flyTo({
-          center: [place.location.lng, place.location.lat],
-          zoom: 15,
-          duration: reduceMotion ? 0 : 1000,
-        })
+        try {
+          map.current.flyTo({
+            center: [lng as number, lat as number],
+            zoom: 15,
+            duration: reduceMotion ? 0 : 1000,
+          })
+        } catch {
+          /* mapa destruido */
+        }
       }
     }, [selectedPlaceId, places, reduceMotion])
 
-    return <div ref={mapContainer} className="w-full h-full" />
+    if (initError) {
+      return (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#0a0f0c] px-4 text-center">
+          <p className="text-sm font-semibold text-white">No pudimos cargar el mapa</p>
+          <p className="max-w-xs text-xs text-white/55">
+            {initError === "Mapa no configurado"
+              ? "Falta la configuración del mapa en este entorno."
+              : "Este dispositivo no pudo iniciar el mapa. Usá la lista de lugares."}
+          </p>
+        </div>
+      )
+    }
+
+    return <div ref={mapContainer} className="h-full w-full" data-overflow-allowed="mapbox-canvas" />
   }
 )
 
