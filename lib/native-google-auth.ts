@@ -179,7 +179,7 @@ async function exchangeServerAuthCode(
   return {
     sub: profile.sub,
     email: normalizeEmail(profile.email),
-    emailVerified: profile.email_verified !== false,
+    emailVerified: true,
     name: (profile.name || profile.email.split("@")[0] || "Usuario").trim(),
     image: profile.picture || undefined,
   }
