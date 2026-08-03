@@ -289,6 +289,7 @@ function mapLegacySource(legacy?: string): ClientErrorSource {
     case "next-route-error":
     case "window-error":
     case "unhandled-rejection":
+    case "map-cleanup":
       return legacy
     default:
       return "window-error"
