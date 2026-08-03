@@ -31,18 +31,27 @@ test.describe("ChunkLoadError recovery @hermetic @critical", () => {
 
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "load" })
+    await expect(page.getByTestId("bottom-nav")).toBeVisible({ timeout: 12_000 })
     await page.evaluate(() => sessionStorage.clear())
 
-    await Promise.all([
-      page.waitForEvent("load", { timeout: 15_000 }).catch(() => null),
-      page.evaluate(() => {
-        const err = new Error("Loading chunk 99 failed")
-        err.name = "ChunkLoadError"
-        window.dispatchEvent(
-          new ErrorEvent("error", { error: err, message: err.message, filename: "x.js" })
-        )
-      }),
-    ])
+    const dispatched = await page.evaluate(() => {
+      const err = new Error("Loading chunk 99 failed")
+      err.name = "ChunkLoadError"
+      window.dispatchEvent(
+        new ErrorEvent("error", { error: err, message: err.message, filename: "x.js" })
+      )
+      const keys: string[] = []
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i)
+        if (k?.startsWith("celimap_chunk_reload_v1:")) keys.push(k)
+      }
+      return keys
+    })
+    expect(dispatched.length).toBe(1)
+    expect(dispatched[0]).not.toMatch(/favoritos|perfil/)
+
+    // WebKit: reload va por setTimeout(0)
+    await page.waitForEvent("load", { timeout: 15_000 }).catch(() => null)
     await page.waitForTimeout(600)
 
     const keys = await readChunkReloadKeys(page)

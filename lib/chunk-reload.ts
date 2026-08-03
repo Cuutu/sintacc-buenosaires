@@ -3,7 +3,7 @@
  * Clave GLOBAL por build (sin pathname). Máx. 1 reload automático / sesión-build.
  */
 
-import { sanitizeMessage } from "@/lib/client-error-reporter"
+import { sanitizeMessage } from "@/lib/client-error-sanitize"
 
 export const CHUNK_RELOAD_STORAGE_PREFIX = "celimap_chunk_reload_v1:"
 

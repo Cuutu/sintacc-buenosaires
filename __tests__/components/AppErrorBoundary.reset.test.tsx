@@ -20,7 +20,9 @@ describe("AppErrorBoundary + LayoutChrome contratos", () => {
 
   it("LayoutChrome: resetKey sin key; BottomNav chrome estable", () => {
     const src = read("components/layout/LayoutChrome.tsx")
-    expect(src).toContain("<AppErrorBoundary resetKey={routeKey}>")
+    expect(src).toContain("resetKey={routeKey}")
+    expect(src).toContain('source="page-boundary"')
+    expect(src).toContain('source="bottom-nav-boundary"')
     expect(src).toContain('variant="chrome"')
     expect(src).not.toMatch(/AppErrorBoundary\s+key=\{/)
     expect(src).toContain("bumpDiag(\"layoutChromeMounts\")")

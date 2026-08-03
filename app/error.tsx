@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { AlertTriangle, Home, RefreshCw } from "lucide-react"
 import { reportClientError } from "@/lib/client-error-reporter"
 
@@ -11,8 +11,15 @@ export default function RouteError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [eventId, setEventId] = useState<string | null>(null)
+
   useEffect(() => {
-    reportClientError(error, "error-tsx", { digest: error.digest })
+    const id = reportClientError({
+      source: "next-route-error",
+      error,
+      digest: error.digest,
+    })
+    if (id) setEventId(id)
   }, [error])
 
   return (
@@ -25,6 +32,11 @@ export default function RouteError({
         <p className="text-sm leading-relaxed text-white/60">
           Hubo un error inesperado. Reintentá o volvé al inicio.
         </p>
+        {eventId ? (
+          <p className="text-xs text-white/55" data-testid="error-event-id">
+            Código del error: <span className="font-mono tracking-wide text-white/80">{eventId}</span>
+          </p>
+        ) : null}
         {process.env.NODE_ENV === "development" ? (
           <p className="break-words rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
             {error.message}

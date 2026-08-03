@@ -2,7 +2,7 @@
 
 import React from "react"
 import { AlertTriangle, Home, RefreshCw } from "lucide-react"
-import { reportClientError } from "@/lib/client-error-reporter"
+import { reportClientError, type ClientErrorSource } from "@/lib/client-error-reporter"
 
 interface Props {
   children: React.ReactNode
@@ -13,22 +13,25 @@ interface Props {
   resetKey?: string
   /** page = fallback pantalla; chrome = fallback chico (BottomNav) */
   variant?: "page" | "chrome"
+  /** Source explícito; default según variant */
+  source?: ClientErrorSource
   rethrowInDev?: boolean
 }
 
 interface State {
   hasError: boolean
   message: string
+  eventId: string | null
 }
 
 /**
  * Boundary de sección. Hipótesis: no es la causa raíz — protege chrome/page.
  */
 export class AppErrorBoundary extends React.Component<Props, State> {
-  state: State = { hasError: false, message: "" }
+  state: State = { hasError: false, message: "", eventId: null }
   private retryCount = 0
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       message: error?.message || "Error inesperado",
@@ -36,7 +39,15 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    reportClientError(error, "boundary")
+    const source: ClientErrorSource =
+      this.props.source ||
+      (this.props.variant === "chrome" ? "bottom-nav-boundary" : "page-boundary")
+    const eventId = reportClientError({
+      source,
+      error,
+      componentStack: info.componentStack,
+    })
+    if (eventId) this.setState({ eventId })
     if (process.env.NODE_ENV === "development") {
       console.error("[AppErrorBoundary] componentStack", info.componentStack)
     }
@@ -49,7 +60,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
       this.state.hasError
     ) {
       this.retryCount = 0
-      this.setState({ hasError: false, message: "" })
+      this.setState({ hasError: false, message: "", eventId: null })
     }
   }
 
@@ -59,14 +70,24 @@ export class AppErrorBoundary extends React.Component<Props, State> {
       this.goHome()
       return
     }
-    this.setState({ hasError: false, message: "" })
+    this.setState({ hasError: false, message: "", eventId: null })
   }
 
   goHome = () => {
-    this.setState({ hasError: false, message: "" })
+    this.setState({ hasError: false, message: "", eventId: null })
     this.retryCount = 0
     if (typeof window !== "undefined") {
       window.location.assign("/")
+    }
+  }
+
+  copyCode = async () => {
+    const id = this.state.eventId
+    if (!id || typeof navigator === "undefined" || !navigator.clipboard) return
+    try {
+      await navigator.clipboard.writeText(id)
+    } catch {
+      /* ignore */
     }
   }
 
@@ -82,6 +103,11 @@ export class AppErrorBoundary extends React.Component<Props, State> {
           role="alert"
         >
           <span>Nav con problema</span>
+          {this.state.eventId ? (
+            <span data-testid="error-event-id" className="font-mono text-[10px] text-white/70">
+              {this.state.eventId}
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={this.handleRetry}
@@ -107,6 +133,12 @@ export class AppErrorBoundary extends React.Component<Props, State> {
           <p className="text-sm leading-relaxed text-white/60">
             Podés reintentar o volver al inicio. El resto de la app sigue disponible.
           </p>
+          {this.state.eventId ? (
+            <p className="text-xs text-white/55" data-testid="error-event-id">
+              Código del error:{" "}
+              <span className="font-mono tracking-wide text-white/80">{this.state.eventId}</span>
+            </p>
+          ) : null}
           {process.env.NODE_ENV === "development" && this.state.message ? (
             <p className="break-words rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
               {this.state.message}
@@ -130,6 +162,16 @@ export class AppErrorBoundary extends React.Component<Props, State> {
             <Home className="h-4 w-4" aria-hidden />
             Ir al inicio
           </button>
+          {this.state.eventId ? (
+            <button
+              type="button"
+              onClick={this.copyCode}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
+              data-testid="copy-error-code"
+            >
+              Copiar código
+            </button>
+          ) : null}
         </div>
       </div>
     )
