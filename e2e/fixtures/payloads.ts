@@ -42,6 +42,17 @@ export const E2E_FAVORITES_EMPTY = { favorites: [] as const }
 /** NextAuth: sesión válida no autenticada → body `null` + 200. */
 export const E2E_SESSION_UNAUTH = null
 
+/** Sesión autenticada mínima (sin PII real). */
+export const E2E_SESSION_AUTH = {
+  user: {
+    name: "E2E User",
+    email: "e2e@example.com",
+    image: "https://lh3.googleusercontent.com/a/e2e-fixture",
+    role: "user",
+  },
+  expires: "2099-01-01T00:00:00.000Z",
+} as const
+
 export const E2E_CSRF = { csrfToken: "e2e-hermetic-csrf-token" }
 
 export const E2E_PROVIDERS = {

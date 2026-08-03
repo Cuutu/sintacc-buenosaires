@@ -187,6 +187,148 @@ export async function assertNoAppCrash(page: Page): Promise<void> {
   if (/Application error:\s*a client-side exception has occurred/i.test(body)) {
     throw new Error("Pantalla Application error detectada")
   }
+  if (/Celimap tuvo un problema/i.test(body)) {
+    throw new Error('Pantalla global-error "Celimap tuvo un problema" detectada')
+  }
+  if (/Algo falló en esta pantalla/i.test(body)) {
+    throw new Error("AppErrorBoundary visible (no esperado en happy-path)")
+  }
+}
+
+/** Clicks reales BottomNav (no page.goto). */
+export async function clickBottomNav(
+  page: Page,
+  slot: "home-map" | "favoritos" | "sugerir" | "explorar" | "perfil",
+  opts: { settleMs?: number } = {}
+): Promise<void> {
+  const nav = page.getByTestId("bottom-nav")
+  await expectVisibleNav(nav)
+  const target = nav.locator(`[data-nav-slot="${slot}"]`).first()
+  await target.click({ timeout: 10_000 })
+  const settleMs = opts.settleMs ?? 0
+  if (settleMs > 0) await page.waitForTimeout(settleMs)
+}
+
+/** Cadencia humana entre tabs (~0.7–1.1s). */
+export const HUMAN_TAB_SETTLE_MS = 850
+
+export async function assertNoRedirectLoop(
+  page: Page,
+  sampleMs = 2500,
+  maxUnique = 6
+): Promise<void> {
+  const seen: string[] = []
+  const start = Date.now()
+  while (Date.now() - start < sampleMs) {
+    const path = new URL(page.url()).pathname
+    seen.push(path)
+    await page.waitForTimeout(200)
+  }
+  const unique = new Set(seen)
+  // Alternancia rápida A↔B muchas veces
+  let flips = 0
+  for (let i = 1; i < seen.length; i++) {
+    if (seen[i] !== seen[i - 1]) flips += 1
+  }
+  if (flips > maxUnique && unique.size <= 2) {
+    throw new Error(`Redirect loop sospechoso: flips=${flips} paths=${[...unique].join(",")}`)
+  }
+}
+
+export async function readChunkReloadKeys(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i)
+      if (k && k.startsWith("celimap_chunk_reload_v1:")) out.push(k)
+    }
+    return out
+  })
+}
+
+/** Habilita contadores __celimapDiag (next start = production; hace falta flag). */
+export async function enableCelimapDiag(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    ;(window as Window & { __CELIMAP_DIAG__?: boolean }).__CELIMAP_DIAG__ = true
+  })
+}
+
+export async function readCelimapDiag(page: Page): Promise<{
+  layoutChromeMounts: number
+  clientErrorListenerMounts: number
+  listenerAttachCycles: number
+} | null> {
+  return page.evaluate(() => {
+    return (
+      (window as Window & { __celimapDiag?: {
+        layoutChromeMounts: number
+        clientErrorListenerMounts: number
+        listenerAttachCycles: number
+      } }).__celimapDiag ?? null
+    )
+  })
+}
+
+export async function countReloadsViaPerformance(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const navs = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[]
+    return navs.length || 1
+  })
+}
+
+async function expectVisibleNav(nav: ReturnType<Page["getByTestId"]>): Promise<void> {
+  await nav.waitFor({ state: "visible", timeout: 12_000 })
+}
+
+export async function assertSingleChrome(page: Page): Promise<void> {
+  const counts = await page.evaluate(() => ({
+    bottomNavs: document.querySelectorAll('[data-testid="bottom-nav"]').length,
+    sectionBoundaries: document.querySelectorAll('[data-error-boundary="section"]').length,
+    mapCanvases: document.querySelectorAll(
+      "canvas.mapboxgl-canvas, canvas[data-e2e-mapbox-adapter]"
+    ).length,
+  }))
+  if (counts.bottomNavs > 1) {
+    throw new Error(`BottomNav duplicado: ${counts.bottomNavs}`)
+  }
+  if (counts.sectionBoundaries > 1) {
+    // 0 ok (sin error); >1 = múltiples UIs de error montadas
+    throw new Error(`Error boundaries UI acumulados: ${counts.sectionBoundaries}`)
+  }
+  if (counts.mapCanvases > 1) {
+    throw new Error(`Mapa canvas acumulados: ${counts.mapCanvases}`)
+  }
+}
+
+export async function attachUnhandledRejectionGuard(page: Page): Promise<string[]> {
+  const rejections: string[] = []
+  await page.addInitScript(() => {
+    window.addEventListener("unhandledrejection", (e) => {
+      const w = window as Window & { __celimapRej?: string[] }
+      w.__celimapRej = w.__celimapRej || []
+      const r = e.reason
+      w.__celimapRej.push(String(r && ((r as Error).stack || (r as Error).message || r)))
+    })
+  })
+  page.on("load", async () => {
+    const batch = await page.evaluate(() => {
+      const w = window as Window & { __celimapRej?: string[] }
+      const out = w.__celimapRej || []
+      w.__celimapRej = []
+      return out
+    })
+    rejections.push(...batch)
+  })
+  return rejections
+}
+
+export async function drainUnhandledRejections(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const w = window as Window & { __celimapRej?: string[] }
+    const out = w.__celimapRej || []
+    w.__celimapRej = []
+    return out
+  })
 }
 
 export async function assertBodyHasVisibleContent(page: Page): Promise<void> {
@@ -322,10 +464,14 @@ export function assertHappyPathNetwork(
   const unexpectedFail = networkFailures.filter((r) => {
     if (isVercelInsightsPath(r.url)) return false
     if (r.isRscPrefetch) return false
+    // E2E abort intencional de SW (tests herméticos)
+    if (/\/sw\.js(\?|$)/.test(r.url)) return false
     const fail = (r.failure || "").toLowerCase()
     if (fail.includes("abort") || fail.includes("cancel") || fail.includes("ns_binding_aborted")) {
       return false
     }
+    // WebKit: "Blocked by Web Inspector" cuando route.abort(sw.js)
+    if (fail.includes("blocked by web inspector") && /\/sw\.js(\?|$)/.test(r.url)) return false
     return true
   })
   if (unexpectedFail.length) {
