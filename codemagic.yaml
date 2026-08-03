@@ -13,6 +13,7 @@ workflows:
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.celimap.app"
         APP_STORE_APPLE_ID: "6797278308"
+        CAPACITOR_RELEASE_LOCK: "1"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.celimap.app
@@ -21,16 +22,22 @@ workflows:
       - name: Install npm deps
         script: |
           npm ci
-      - name: Capacitor sync iOS
+      - name: Capacitor sync iOS (producción)
         script: |
+          unset CAPACITOR_SERVER_MODE || true
+          unset CAPACITOR_SERVER_URL || true
+          export CAPACITOR_RELEASE_LOCK=1
           npx cap sync ios
+          grep -q 'www.celimap.com.ar' ios/App/App/capacitor.config.json
+          if grep -qi 'vercel\.app' ios/App/App/capacitor.config.json; then
+            echo "ERROR: capacitor.config.json Release contiene URL preview"
+            exit 1
+          fi
       - name: Increment iOS build number
         script: |
           set -eo pipefail
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
           CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= \([0-9]*\);/\1/')
-
-          # TestFlight builds count too — get-latest-app-store-build-number ignores them
           TF=""
           AS=""
           if TF_OUT=$(app-store-connect get-latest-testflight-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
@@ -39,20 +46,110 @@ workflows:
           if AS_OUT=$(app-store-connect get-latest-app-store-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
             AS=$(echo "$AS_OUT" | tr -d '[:space:]')
           fi
-
           LATEST=0
           for N in "$TF" "$AS" "$CURRENT"; do
             if [[ "$N" =~ ^[0-9]+$ ]] && [ "$N" -gt "$LATEST" ]; then
               LATEST=$N
             fi
           done
-
           NEW=$((LATEST + 1))
           echo "Build numbers — TestFlight: ${TF:-none}, App Store: ${AS:-none}, project: $CURRENT → uploading: $NEW"
           sed -i.bak "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" "$PBXPROJ"
           rm -f "${PBXPROJ}.bak"
           grep CURRENT_PROJECT_VERSION "$PBXPROJ"
       - name: Build IPA
+        script: |
+          xcode-project use-profiles
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+
+  ios-testflight-preview:
+    name: Celimap iOS TestFlight Preview
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Celimap
+    environment:
+      groups:
+        - app_store_credentials
+      vars:
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.celimap.app"
+        APP_STORE_APPLE_ID: "6797278308"
+        CAPACITOR_SERVER_MODE: "preview"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.celimap.app
+      xcode: latest
+    scripts:
+      - name: Validate preview URL
+        script: |
+          set -eo pipefail
+          if [ -z "${CAPACITOR_SERVER_URL:-}" ]; then
+            echo "ERROR: CAPACITOR_SERVER_URL requerido para ios-testflight-preview"
+            exit 1
+          fi
+          case "$CAPACITOR_SERVER_URL" in
+            https://www.celimap.com.ar*|https://celimap.com.ar*)
+              echo "ERROR: preview no puede apuntar a producción"
+              exit 1
+              ;;
+            https://*)
+              echo "Preview URL OK: $CAPACITOR_SERVER_URL"
+              ;;
+            *)
+              echo "ERROR: CAPACITOR_SERVER_URL debe ser https://"
+              exit 1
+              ;;
+          esac
+      - name: Install npm deps
+        script: |
+          npm ci
+      - name: Capacitor sync iOS (preview)
+        script: |
+          export CAPACITOR_SERVER_MODE=preview
+          export CAPACITOR_SERVER_URL
+          npx cap sync ios
+          grep -F "$CAPACITOR_SERVER_URL" ios/App/App/capacitor.config.json
+          if grep -q 'www.celimap.com.ar' ios/App/App/capacitor.config.json; then
+            echo "ERROR: sync preview dejó URL de producción"
+            exit 1
+          fi
+      - name: Increment iOS build number
+        script: |
+          set -eo pipefail
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          CURRENT=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= \([0-9]*\);/\1/')
+          TF=""
+          AS=""
+          if TF_OUT=$(app-store-connect get-latest-testflight-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
+            TF=$(echo "$TF_OUT" | tr -d '[:space:]')
+          fi
+          if AS_OUT=$(app-store-connect get-latest-app-store-build-number --all-versions "$APP_STORE_APPLE_ID" 2>/dev/null); then
+            AS=$(echo "$AS_OUT" | tr -d '[:space:]')
+          fi
+          LATEST=0
+          for N in "$TF" "$AS" "$CURRENT"; do
+            if [[ "$N" =~ ^[0-9]+$ ]] && [ "$N" -gt "$LATEST" ]; then
+              LATEST=$N
+            fi
+          done
+          NEW=$((LATEST + 1))
+          echo "Preview build → $NEW (TF=${TF:-none} AS=${AS:-none} proj=$CURRENT)"
+          sed -i.bak "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" "$PBXPROJ"
+          rm -f "${PBXPROJ}.bak"
+          grep CURRENT_PROJECT_VERSION "$PBXPROJ"
+      - name: Build IPA Preview
         script: |
           xcode-project use-profiles
           xcode-project build-ipa \
@@ -76,6 +173,7 @@ workflows:
         - android_credentials
       vars:
         PACKAGE_NAME: "com.celimap.app"
+        CAPACITOR_RELEASE_LOCK: "1"
       java: 21
     scripts:
       - name: Install npm deps
@@ -83,6 +181,9 @@ workflows:
           npm ci
       - name: Capacitor sync Android
         script: |
+          unset CAPACITOR_SERVER_MODE || true
+          unset CAPACITOR_SERVER_URL || true
+          export CAPACITOR_RELEASE_LOCK=1
           npx cap sync android
       - name: Write key.properties
         script: |

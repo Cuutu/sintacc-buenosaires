@@ -1,0 +1,25 @@
+﻿LOTE1_UNTRACKED:
+app/error.tsx
+app/global-error.tsx
+components/AppErrorBoundary.tsx
+components/ClientErrorListeners.tsx
+lib/client-error-reporter.ts
+lib/favoritos-auth-view.ts
+lib/mapbox-lifecycle.ts
+lib/media-query-store.ts
+__tests__/components/useIsMobile.test.ts
+__tests__/lib/client-error-reporter.test.ts
+__tests__/lib/favoritos-auth-view.test.ts
+__tests__/lib/mapbox-lifecycle.test.ts
+__tests__/lib/media-query-store.test.ts
+
+P2_UNTRACKED:
+components/native/NativeStatusBar.tsx
+
+DOCS (neither):
+docs/auditoria-movil-celimap.md
+docs/baselines/**
+
+LAYOUT_SHARED app/layout.tsx:
+Lote1: ClientErrorListeners import+mount
+P2: viewportFit cover; NativeStatusBar import+mount; appleWebApp may stay
