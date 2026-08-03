@@ -1,0 +1,706 @@
+﻿diff --git a/app/favoritos/page.tsx b/app/favoritos/page.tsx
+index 6a1b432..b1e09d9 100644
+--- a/app/favoritos/page.tsx
++++ b/app/favoritos/page.tsx
+@@ -1,6 +1,6 @@
+ "use client"
+ 
+-import { useEffect, useState, useCallback } from "react"
++import { useEffect, useState, useCallback, useRef } from "react"
+ import { useSession } from "next-auth/react"
+ import { useRouter } from "next/navigation"
+ import Link from "next/link"
+@@ -12,40 +12,71 @@ import { CreateListModal } from "@/components/lists/CreateListModal"
+ import { ListCard, type ListWithDetails } from "@/components/lists/ListCard"
+ import { IPlace } from "@/models/Place"
+ import { fetchApi } from "@/lib/fetchApi"
++import { resolveFavoritosAuthView } from "@/lib/favoritos-auth-view"
+ import { toast } from "sonner"
+ import { MapPin, ListPlus, Trash2 } from "lucide-react"
+ 
++function FavoritosSkeleton({ state }: { state: string }) {
++  return (
++    <div className="container mx-auto px-4 py-8" data-auth-state={state}>
++      <div className="animate-pulse space-y-4">
++        <div className="h-10 w-48 rounded bg-muted" />
++        <div className="h-32 rounded-lg bg-muted" />
++      </div>
++    </div>
++  )
++}
++
+ export default function FavoritosPage() {
+-  const { data: session } = useSession()
++  const { data: session, status } = useSession()
+   const router = useRouter()
++  const redirectedRef = useRef(false)
+   const [favorites, setFavorites] = useState<IPlace[]>([])
+   const [lists, setLists] = useState<ListWithDetails[]>([])
+   const [loading, setLoading] = useState(true)
+   const [listsLoading, setListsLoading] = useState(false)
+   const [createModalOpen, setCreateModalOpen] = useState(false)
++  const [loadError, setLoadError] = useState<string | null>(null)
+ 
+   const fetchFavorites = useCallback(async () => {
++    setLoadError(null)
++    setLoading(true)
+     try {
+       const data = await fetchApi<{
+-        favorites: Array<{ placeId: IPlace }>
++        favorites: Array<{ placeId: IPlace | null }>
+       }>("/api/favorites")
+-      setFavorites(data.favorites?.map((f) => f.placeId) || [])
++      setFavorites(
++        (data.favorites ?? [])
++          .map((f) => f.placeId)
++          .filter((p): p is IPlace => Boolean(p && (p as IPlace)._id && (p as IPlace).name))
++      )
+     } catch (error: any) {
+-      toast.error(error?.message || "Error al cargar favoritos")
++      const message = error?.message || "Error al cargar favoritos"
++      setLoadError(message)
++      toast.error(message)
+     } finally {
+       setLoading(false)
+     }
+   }, [])
+ 
++  const authView = resolveFavoritosAuthView({
++    status,
++    hasSessionUser: Boolean(session?.user),
++  })
++
+   useEffect(() => {
+-    if (!session) {
+-      router.push("/login")
++    if (authView.kind === "loading") return
++    if (authView.kind === "unauthenticated") {
++      if (redirectedRef.current) return
++      redirectedRef.current = true
++      router.replace("/login")
+       return
+     }
+-
+-    fetchFavorites()
+-  }, [session, router, fetchFavorites])
+-
++    if (authView.kind === "ready") {
++      redirectedRef.current = false
++      fetchFavorites()
++    }
++  }, [authView.kind, router, fetchFavorites])
+   const fetchLists = async () => {
+     setListsLoading(true)
+     try {
+@@ -71,12 +102,48 @@ export default function FavoritosPage() {
+     }
+   }
+ 
+-  if (!session) {
+-    return null
++  if (authView.kind === "loading" || authView.kind === "unauthenticated") {
++    return <FavoritosSkeleton state={authView.kind} />
++  }
++
++  if (authView.kind === "session_error") {
++    return (
++      <div className="container mx-auto px-4 py-8" data-auth-state="session_error">
++        <Card>
++          <CardContent className="space-y-4 py-8 text-center">
++            <p className="text-sm text-muted-foreground">{authView.message}</p>
++            <Button type="button" onClick={() => window.location.reload()}>
++              Reintentar
++            </Button>
++            <div>
++              <Button asChild variant="outline">
++                <Link href="/">Ir al inicio</Link>
++              </Button>
++            </div>
++          </CardContent>
++        </Card>
++      </div>
++    )
++  }
++
++  if (loadError && !loading && favorites.length === 0) {
++    return (
++      <div className="container mx-auto px-4 py-8" data-auth-state="load_error">
++        <h1 className="mb-6 text-3xl font-bold">Guardados</h1>
++        <Card>
++          <CardContent className="space-y-4 py-8 text-center">
++            <p className="text-sm text-muted-foreground">{loadError}</p>
++            <Button type="button" onClick={() => fetchFavorites()}>
++              Reintentar
++            </Button>
++          </CardContent>
++        </Card>
++      </div>
++    )
+   }
+ 
+   return (
+-    <div className="container mx-auto px-4 py-8">
++    <div className="container mx-auto px-4 py-8" data-auth-state="ready">
+       <h1 className="text-3xl font-bold mb-6">Guardados</h1>
+ 
+       <Tabs defaultValue="favoritos" className="space-y-6">
+diff --git a/components/layout/LayoutChrome.tsx b/components/layout/LayoutChrome.tsx
+index 4694db1..cb28896 100644
+--- a/components/layout/LayoutChrome.tsx
++++ b/components/layout/LayoutChrome.tsx
+@@ -1,10 +1,13 @@
+ "use client"
+ 
+ import { Suspense } from "react"
++import { usePathname } from "next/navigation"
+ import { Navbar } from "@/components/navbar"
+ import { Footer } from "@/components/footer"
+ import { BottomNav } from "@/components/nav/BottomNav"
++import { AppErrorBoundary } from "@/components/AppErrorBoundary"
+ import { useIsMobile } from "@/components/map-view/useMediaQuery"
++import { cn } from "@/lib/utils"
+ 
+ interface LayoutChromeProps {
+   children: React.ReactNode
+@@ -12,33 +15,35 @@ interface LayoutChromeProps {
+ 
+ /**
+  * LayoutChrome: decide qu├® chrome mostrar seg├║n breakpoint.
++ * - null (sin medir): sin Navbar/Footer/BottomNav ÔåÆ evita flash desktop en phone
+  * - Mobile (<=768px): sin Navbar, sin Footer, con BottomNav
+  * - Desktop: Navbar + Footer, sin BottomNav
++ * - Safe-area top en mobile (excepto /mapa full-bleed) ÔÇö WIP P2, no alterar en Lote 1
+  */
+ export function LayoutChrome({ children }: LayoutChromeProps) {
+   const isMobile = useIsMobile()
++  const pathname = usePathname()
++  const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
++  const showDesktopChrome = isMobile === false
++  const showMobileChrome = isMobile === true
+ 
+   return (
+     <>
+-      {/* Navbar: solo desktop */}
+-      {!isMobile && <Navbar />}
++      {showDesktopChrome && <Navbar />}
+ 
+-      {/* Main: padding inferior para bottom nav en mobile */}
+       <main
+-        className={
+-          isMobile
+-            ? "min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]"
+-            : "min-h-screen"
+-        }
++        className={cn(
++          "min-h-screen",
++          showMobileChrome && "pb-[calc(5rem+env(safe-area-inset-bottom,0px))]",
++          showMobileChrome && !isMapRoute && "pt-[env(safe-area-inset-top,0px)]"
++        )}
+       >
+-        {children}
++        <AppErrorBoundary key={pathname}>{children}</AppErrorBoundary>
+       </main>
+ 
+-      {/* Footer: solo desktop */}
+-      {!isMobile && <Footer />}
++      {showDesktopChrome && <Footer />}
+ 
+-      {/* BottomNav: solo mobile (Suspense por useSearchParams) */}
+-      {isMobile && (
++      {showMobileChrome && (
+         <Suspense fallback={null}>
+           <BottomNav />
+         </Suspense>
+diff --git a/components/map-view/MapScreen.tsx b/components/map-view/MapScreen.tsx
+index a55c6c2..9e6d9f4 100644
+--- a/components/map-view/MapScreen.tsx
++++ b/components/map-view/MapScreen.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { MapMobile } from "./MapMobile"
+ import { MapDesktop } from "./MapDesktop"
+-import { useIsMobile } from "./useMediaQuery"
++import { resolveMapVariant, useIsMobile } from "./useMediaQuery"
+ import type { MapFilters } from "./MapTopBar"
+ import type { MapViewportBounds } from "./MapboxMap"
+ import type { IPlace } from "@/models/Place"
+@@ -43,10 +43,49 @@ export function MapScreen({
+   onMapMoveEnd,
+ }: MapScreenProps) {
+   const isMobile = useIsMobile()
++  const variant = resolveMapVariant(isMobile)
+ 
+-  if (isMobile) {
++  // Una sola variante: loading | mobile | desktop ÔÇö nunca Desktop+Mobile juntos
++  if (variant === "loading") {
+     return (
+-      <MapMobile
++      <div
++        className="flex h-full min-h-[50vh] w-full items-center justify-center bg-[#050807] text-sm text-white/50"
++        aria-busy
++        aria-label="Cargando mapa"
++        data-map-variant="loading"
++      >
++        Cargando mapaÔÇª
++      </div>
++    )
++  }
++
++  if (variant === "mobile") {
++    return (
++      <div className="h-full w-full" data-map-variant="mobile">
++        <MapMobile
++          places={places}
++          loading={loading}
++          filters={filters}
++          onFiltersChange={onFiltersChange}
++          onSearchChange={onSearchChange}
++          searchQuery={searchQuery}
++          selectedPlaceId={selectedPlaceId}
++          onPlaceSelect={onPlaceSelect}
++          initialCenter={initialCenter}
++          initialZoom={initialZoom}
++          placeIdToFocus={placeIdToFocus}
++          listOpen={listOpen}
++          onSheetCollapse={onSheetCollapse}
++          onListOpen={onListOpen}
++          onMapMoveEnd={onMapMoveEnd}
++        />
++      </div>
++    )
++  }
++
++  return (
++    <div className="h-full w-full" data-map-variant="desktop">
++      <MapDesktop
+         places={places}
+         loading={loading}
+         filters={filters}
+@@ -57,28 +96,8 @@ export function MapScreen({
+         onPlaceSelect={onPlaceSelect}
+         initialCenter={initialCenter}
+         initialZoom={initialZoom}
+-        placeIdToFocus={placeIdToFocus}
+-        listOpen={listOpen}
+-        onSheetCollapse={onSheetCollapse}
+-        onListOpen={onListOpen}
+         onMapMoveEnd={onMapMoveEnd}
+       />
+-    )
+-  }
+-
+-  return (
+-    <MapDesktop
+-      places={places}
+-      loading={loading}
+-      filters={filters}
+-      onFiltersChange={onFiltersChange}
+-      onSearchChange={onSearchChange}
+-      searchQuery={searchQuery}
+-      selectedPlaceId={selectedPlaceId}
+-      onPlaceSelect={onPlaceSelect}
+-      initialCenter={initialCenter}
+-      initialZoom={initialZoom}
+-      onMapMoveEnd={onMapMoveEnd}
+-    />
++    </div>
+   )
+ }
+diff --git a/components/map-view/MapboxMap.tsx b/components/map-view/MapboxMap.tsx
+index ca068d4..26bdf5f 100644
+--- a/components/map-view/MapboxMap.tsx
++++ b/components/map-view/MapboxMap.tsx
+@@ -17,6 +17,10 @@ import {
+   normalizeSearchValue,
+ } from "@/lib/map-search"
+ import { inferSafetyLevel } from "@/components/featured/featured-utils"
++import {
++  mapboxLifecycleTrackDestroy,
++  mapboxLifecycleTrackInit,
++} from "@/lib/mapbox-lifecycle"
+ 
+ const SAFETY_MARKER_BG = {
+   dedicated_gf: "#10d98a",
+@@ -308,6 +312,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+   ) => {
+     const mapContainer = useRef<HTMLDivElement>(null)
+     const map = useRef<mapboxgl.Map | null>(null)
++    const disposedRef = useRef(false)
+     const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
+     const userLocationMarkerRef = useRef<mapboxgl.Marker | null>(null)
+     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
+@@ -325,6 +330,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+     const onMoveEndRef = useRef(onMoveEnd)
+     onMoveEndRef.current = onMoveEnd
+     const [markerLayoutVersion, setMarkerLayoutVersion] = useState(0)
++    const [initError, setInitError] = useState<string | null>(null)
+ 
+     const triggerGeolocate = useCallback(() => {
+       geolocateControlRef.current?.trigger()
+@@ -332,12 +338,16 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+ 
+     const flyTo = useCallback(
+       (lng: number, lat: number, zoom = 15) => {
+-        if (!map.current) return
+-        map.current.flyTo({
+-          center: [lng, lat],
+-          zoom,
+-          duration: reduceMotion ? 0 : 1000,
+-        })
++        if (disposedRef.current || !map.current) return
++        try {
++          map.current.flyTo({
++            center: [lng, lat],
++            zoom,
++            duration: reduceMotion ? 0 : 1000,
++          })
++        } catch {
++          /* mapa ya destruido */
++        }
+       },
+       [reduceMotion]
+     )
+@@ -404,10 +414,11 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+           place,
+           lng: place.location?.lng,
+           lat: place.location?.lat,
+-          id: place._id.toString(),
++          id: place._id != null ? String(place._id) : "",
+         }))
+-        .filter((item): item is { place: IPlace; lng: number; lat: number; id: string } =>
+-          Number.isFinite(item.lng) && Number.isFinite(item.lat)
++        .filter(
++          (item): item is { place: IPlace; lng: number; lat: number; id: string } =>
++            Boolean(item.id) && Number.isFinite(item.lng) && Number.isFinite(item.lat)
+         )
+ 
+       if (!clusterMarkers || !m || m.getZoom() >= 15) {
+@@ -455,18 +466,21 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+         if (cluster.places.length === 1) {
+           const place = cluster.places[0]
+           return {
+-            id: place._id.toString(),
+-            kind: "place",
++            id: place._id != null ? String(place._id) : `orphan:${cluster.lng},${cluster.lat}`,
++            kind: "place" as const,
+             place,
+             lng: cluster.lng,
+             lat: cluster.lat,
+           }
+         }
+ 
+-        const ids = cluster.places.map((place) => place._id.toString()).sort()
++        const ids = cluster.places
++          .map((place) => (place._id != null ? String(place._id) : ""))
++          .filter(Boolean)
++          .sort()
+         return {
+           id: `cluster:${ids.join(":")}`,
+-          kind: "cluster",
++          kind: "cluster" as const,
+           places: cluster.places,
+           lng: cluster.lng,
+           lat: cluster.lat,
+@@ -483,9 +497,22 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+     useEffect(() => {
+       if (!mapContainer.current) return
+ 
++      // Reset por remount (Strict Mode / DesktopÔåÆMobile)
++      disposedRef.current = false
++      let removed = false
++      let trackedInit = false
++
++      const safeSetInitError = (msg: string | null) => {
++        if (disposedRef.current) return
++        setInitError(msg)
++      }
++
++      safeSetInitError(null)
++
+       const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+       if (!token) {
+         console.error("MAPBOX_TOKEN no configurado")
++        safeSetInitError("Mapa no configurado")
+         return
+       }
+ 
+@@ -493,6 +520,41 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+ 
+       if (map.current) return
+ 
++      const destroyMap = (instance: mapboxgl.Map | null) => {
++        if (removed) return
++        removed = true
++        disposedRef.current = true
++        try {
++          sharedPopupRef.current?.remove()
++        } catch {
++          /* ignore */
++        }
++        sharedPopupRef.current = null
++        const markers = markerEntriesRef.current
++        try {
++          markers.forEach((entry) => entry.marker.remove())
++          markers.clear()
++        } catch {
++          /* ignore */
++        }
++        try {
++          userLocationMarkerRef.current?.remove()
++        } catch {
++          /* ignore */
++        }
++        userLocationMarkerRef.current = null
++        try {
++          instance?.remove()
++        } catch {
++          /* ignore */
++        }
++        if (map.current === instance) map.current = null
++        if (trackedInit) {
++          mapboxLifecycleTrackDestroy()
++          trackedInit = false
++        }
++      }
++
+       try {
+         const instance = new mapboxgl.Map({
+           container: mapContainer.current,
+@@ -503,7 +565,17 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+           zoom: initialZoom ?? CABA_ZOOM,
+           failIfMajorPerformanceCaveat: false,
+         })
++        if (disposedRef.current) {
++          try {
++            instance.remove()
++          } catch {
++            /* ignore */
++          }
++          return
++        }
+         map.current = instance
++        mapboxLifecycleTrackInit()
++        trackedInit = true
+         sharedPopupRef.current = new mapboxgl.Popup({
+           offset: 42,
+           className: "celimap-popup",
+@@ -513,26 +585,16 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+         })
+       } catch (err) {
+         const message = err instanceof Error ? err.message : String(err)
+-        throw new Error(
+-          /webgl|Failed to initialize/i.test(message)
+-            ? "Failed to initialize WebGL"
+-            : message
+-        )
++        const friendly = /webgl|Failed to initialize/i.test(message)
++          ? "Failed to initialize WebGL"
++          : message
++        console.error("[MapboxMap] init failed", friendly)
++        safeSetInitError(friendly)
++        // NO rethrow: Error Boundary no atrapa useEffect
+       }
+ 
+       return () => {
+-        try {
+-          sharedPopupRef.current?.remove()
+-        } catch {
+-          /* ignore */
+-        }
+-        sharedPopupRef.current = null
+-        try {
+-          map.current?.remove()
+-        } catch {
+-          /* ignore */
+-        }
+-        map.current = null
++        destroyMap(map.current)
+       }
+       // Solo montar/desmontar: evita reinits por cambios de props y limpia en unmount
+       // eslint-disable-next-line react-hooks/exhaustive-deps
+@@ -541,7 +603,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+     // GeolocateControl: punto azul de ubicaci├│n del usuario (solo en mobile, se activa con FAB)
+     useEffect(() => {
+       const m = map.current
+-      if (!m || !enableGeolocate) return
++      if (!m || disposedRef.current || !enableGeolocate) return
+ 
+       if (!navigator.geolocation) return
+ 
+@@ -628,30 +690,39 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+ 
+     useEffect(() => {
+       const m = map.current
+-      if (!m) return
++      if (!m || disposedRef.current) return
+       const onLoadOrMoveEnd = () => {
+-        setMarkerLayoutVersion((version) => version + 1)
+-        const b = m.getBounds()
+-        if (!b) return
+-        onBoundsChangeRef.current?.(b)
+-        onMoveEndRef.current?.(m.getZoom(), {
+-          west: b.getWest(),
+-          south: b.getSouth(),
+-          east: b.getEast(),
+-          north: b.getNorth(),
+-        })
++        if (disposedRef.current || !map.current) return
++        try {
++          setMarkerLayoutVersion((version) => version + 1)
++          const b = m.getBounds()
++          if (!b) return
++          onBoundsChangeRef.current?.(b)
++          onMoveEndRef.current?.(m.getZoom(), {
++            west: b.getWest(),
++            south: b.getSouth(),
++            east: b.getEast(),
++            north: b.getNorth(),
++          })
++        } catch {
++          /* mapa destruido */
++        }
+       }
+       m.on("load", onLoadOrMoveEnd)
+       m.on("moveend", onLoadOrMoveEnd)
+       return () => {
+-        m.off("load", onLoadOrMoveEnd)
+-        m.off("moveend", onLoadOrMoveEnd)
++        try {
++          m.off("load", onLoadOrMoveEnd)
++          m.off("moveend", onLoadOrMoveEnd)
++        } catch {
++          /* ignore */
++        }
+       }
+     }, [])
+ 
+     useEffect(() => {
+       const m = map.current
+-      if (!m) return
++      if (!m || disposedRef.current) return
+ 
+       const nextMarkerIds = new Set<string>()
+ 
+@@ -806,17 +877,36 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
+       }
+       if (lastFocusedPlaceIdRef.current === selectedPlaceId) return
+ 
+-      const place = places.find((p) => p._id.toString() === selectedPlaceId)
+-      if (place) {
++      const place = places.find((p) => p._id != null && String(p._id) === selectedPlaceId)
++      const lng = place?.location?.lng
++      const lat = place?.location?.lat
++      if (place && Number.isFinite(lng) && Number.isFinite(lat)) {
+         lastFocusedPlaceIdRef.current = selectedPlaceId
+-        map.current.flyTo({
+-          center: [place.location.lng, place.location.lat],
+-          zoom: 15,
+-          duration: reduceMotion ? 0 : 1000,
+-        })
++        try {
++          map.current.flyTo({
++            center: [lng as number, lat as number],
++            zoom: 15,
++            duration: reduceMotion ? 0 : 1000,
++          })
++        } catch {
++          /* mapa destruido */
++        }
+       }
+     }, [selectedPlaceId, places, reduceMotion])
+ 
++    if (initError) {
++      return (
++        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#0a0f0c] px-4 text-center">
++          <p className="text-sm font-semibold text-white">No pudimos cargar el mapa</p>
++          <p className="max-w-xs text-xs text-white/55">
++            {initError === "Mapa no configurado"
++              ? "Falta la configuraci├│n del mapa en este entorno."
++              : "Este dispositivo no pudo iniciar el mapa. Us├í la lista de lugares."}
++          </p>
++        </div>
++      )
++    }
++
+     return <div ref={mapContainer} className="w-full h-full" />
+   }
+ )
+diff --git a/components/map-view/PlacesList.tsx b/components/map-view/PlacesList.tsx
+index 1a332b7..890f5bf 100644
+--- a/components/map-view/PlacesList.tsx
++++ b/components/map-view/PlacesList.tsx
+@@ -91,18 +91,23 @@ export function PlacesList({
+ 
+   return (
+     <div ref={listRef} className="space-y-2.5 px-4 pb-6">
+-      {places.map((place) => (
+-        <div
+-          key={place._id.toString()}
+-          ref={selectedPlaceId === place._id.toString() ? selectedRef : null}
+-        >
+-          <PlaceMiniCard
+-            place={place}
+-            selected={selectedPlaceId === place._id.toString()}
+-            onSelect={() => handlePlaceClick(place)}
+-          />
+-        </div>
+-      ))}
++      {places
++        .filter((place) => place?._id != null)
++        .map((place) => {
++          const id = String(place._id)
++          return (
++            <div
++              key={id}
++              ref={selectedPlaceId === id ? selectedRef : null}
++            >
++              <PlaceMiniCard
++                place={place}
++                selected={selectedPlaceId === id}
++                onSelect={() => handlePlaceClick(place)}
++              />
++            </div>
++          )
++        })}
+     </div>
+   )
+ }
+diff --git a/components/map-view/useMediaQuery.ts b/components/map-view/useMediaQuery.ts
+index 53f5578..dfed21d 100644
+--- a/components/map-view/useMediaQuery.ts
++++ b/components/map-view/useMediaQuery.ts
+@@ -1,22 +1,19 @@
+ "use client"
+ 
+-import { useState, useEffect } from "react"
++import { useSyncExternalStore } from "react"
++import { getMediaQueryStore } from "@/lib/media-query-store"
+ 
+-export function useMediaQuery(query: string): boolean {
+-  const [matches, setMatches] = useState(false)
+-
+-  useEffect(() => {
+-    if (typeof window === "undefined") return
+-    const media = window.matchMedia(query)
+-    setMatches(media.matches)
+-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
+-    media.addEventListener("change", handler)
+-    return () => media.removeEventListener("change", handler)
+-  }, [query])
+-
+-  return matches
++/**
++ * null = SSR / sin medir a├║n.
++ * Evita montar MapDesktop en phone por default false.
++ */
++export function useMediaQuery(query: string): boolean | null {
++  const store = getMediaQueryStore(query)
++  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
+ }
+ 
+-export function useIsMobile(): boolean {
++export function useIsMobile(): boolean | null {
+   return useMediaQuery("(max-width: 768px)")
+ }
++
++export { resolveMapVariant } from "@/lib/media-query-store"

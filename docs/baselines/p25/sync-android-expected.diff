@@ -1,0 +1,66 @@
+﻿diff --git a/android/app/capacitor.build.gradle b/android/app/capacitor.build.gradle
+index d17ceef..1b6e7b7 100644
+--- a/android/app/capacitor.build.gradle
++++ b/android/app/capacitor.build.gradle
+@@ -10,6 +10,7 @@ android {
+ apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
+ dependencies {
+     implementation project(':capacitor-app')
++    implementation project(':capacitor-browser')
+     implementation project(':capacitor-splash-screen')
+     implementation project(':capacitor-status-bar')
+ 
+diff --git a/android/app/src/main/assets/capacitor.config.json b/android/app/src/main/assets/capacitor.config.json
+index 45a1544..ef02483 100644
+--- a/android/app/src/main/assets/capacitor.config.json
++++ b/android/app/src/main/assets/capacitor.config.json
+@@ -11,6 +11,10 @@
+ 		"backgroundColor": "#0b1220",
+ 		"allowMixedContent": false
+ 	},
++	"ios": {
++		"appendUserAgent": " CelimapNative/1",
++		"backgroundColor": "#0b1220"
++	},
+ 	"plugins": {
+ 		"SplashScreen": {
+ 			"launchShowDuration": 0,
+@@ -20,7 +24,8 @@
+ 		},
+ 		"StatusBar": {
+ 			"style": "DARK",
+-			"backgroundColor": "#0b1220"
++			"backgroundColor": "#0b1220",
++			"overlaysWebView": true
+ 		}
+ 	}
+ }
+diff --git a/android/app/src/main/assets/capacitor.plugins.json b/android/app/src/main/assets/capacitor.plugins.json
+index 1a508ac..4e4b16e 100644
+--- a/android/app/src/main/assets/capacitor.plugins.json
++++ b/android/app/src/main/assets/capacitor.plugins.json
+@@ -3,6 +3,10 @@
+ 		"pkg": "@capacitor/app",
+ 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
+ 	},
++	{
++		"pkg": "@capacitor/browser",
++		"classpath": "com.capacitorjs.plugins.browser.BrowserPlugin"
++	},
+ 	{
+ 		"pkg": "@capacitor/splash-screen",
+ 		"classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin"
+diff --git a/android/capacitor.settings.gradle b/android/capacitor.settings.gradle
+index df38bc9..23ba03c 100644
+--- a/android/capacitor.settings.gradle
++++ b/android/capacitor.settings.gradle
+@@ -5,6 +5,9 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
+ include ':capacitor-app'
+ project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
+ 
++include ':capacitor-browser'
++project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
++
+ include ':capacitor-splash-screen'
+ project(':capacitor-splash-screen').projectDir = new File('../node_modules/@capacitor/splash-screen/android')
+ 

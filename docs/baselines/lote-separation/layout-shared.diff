@@ -1,0 +1,40 @@
+﻿diff --git a/app/layout.tsx b/app/layout.tsx
+index 80518b9..7c8ece7 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -8,8 +8,10 @@ import { MobileShell } from "@/components/layout/MobileShell";
+ import { JsonLdScript } from "@/components/seo/JsonLdScript";
+ import { Toaster } from "sonner";
+ import { NativeAppBridge } from "@/components/native/NativeAppBridge";
++import { NativeStatusBar } from "@/components/native/NativeStatusBar";
+ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+ import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
++import { ClientErrorListeners } from "@/components/ClientErrorListeners";
+ import { getBaseUrl } from "@/lib/base-url";
+ 
+ const jakarta = Plus_Jakarta_Sans({
+@@ -84,6 +86,9 @@ export const metadata: Metadata = {
+ 
+ export const viewport: Viewport = {
+   themeColor: "#0b1220",
++  width: "device-width",
++  initialScale: 1,
++  viewportFit: "cover",
+ };
+ 
+ export default function RootLayout({
+@@ -96,11 +101,14 @@ export default function RootLayout({
+       <body className="font-sans antialiased">
+         <JsonLdScript />
+         <Providers>
++          <ClientErrorListeners />
+           <MobileShell>
+             <LayoutChrome>{children}</LayoutChrome>
+           </MobileShell>
+           <Toaster position="top-center" richColors closeButton />
+           <NativeAppBridge />
++          {/* NativeStatusBar = WIP P2 (safe-area). No alterar pol├¡tica en Lote 1. */}
++          <NativeStatusBar />
+           <InstallPrompt />
+           <OnboardingModal />
+         </Providers>

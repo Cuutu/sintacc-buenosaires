@@ -1,0 +1,129 @@
+﻿diff --git a/app/auth/mobile-return/page.tsx b/app/auth/mobile-return/page.tsx
+index e9d6918..9b587e8 100644
+--- a/app/auth/mobile-return/page.tsx
++++ b/app/auth/mobile-return/page.tsx
+@@ -2,11 +2,13 @@
+ 
+ import { Suspense, useEffect, useState } from "react"
+ import { useSearchParams } from "next/navigation"
++import { isNativeApp } from "@/lib/native-app"
+ 
+ function MobileReturnContent() {
+   const searchParams = useSearchParams()
+   const next = searchParams.get("next") ?? "/perfil"
+   const [error, setError] = useState(false)
++  const [message, setMessage] = useState("Preparando sesi├│nÔÇª")
+ 
+   useEffect(() => {
+     const safeNext =
+@@ -22,11 +24,23 @@ function MobileReturnContent() {
+         if (!res.ok) throw new Error("handoff failed")
+         const data = (await res.json()) as { code?: string }
+         if (!data.code) throw new Error("missing code")
++
++        setMessage("Volviendo a CelimapÔÇª")
+         const params = new URLSearchParams({
+           code: data.code,
+           next: safeNext,
+         })
+-        window.location.href = `celimap://auth/handoff?${params.toString()}`
++        const deepLink = `celimap://auth/handoff?${params.toString()}`
++
++        // Intenta deep link nativo; si no, muestra hint
++        window.location.href = deepLink
++
++        // Fallback: si seguimos en browser a los 2s
++        window.setTimeout(() => {
++          setMessage(
++            "Si no volviste a la app, cerr├í esta ventana y abr├¡ Celimap desde TestFlight."
++          )
++        }, 2000)
+       })
+       .catch(() => setError(true))
+   }, [next])
+@@ -35,7 +49,7 @@ function MobileReturnContent() {
+     return (
+       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
+         <p className="text-sm text-muted-foreground">
+-          No pudimos volver a la app. Cierra esta ventana e intenta iniciar sesi├│n otra vez.
++          No pudimos volver a la app. Cerr├í esta ventana e intent├í iniciar sesi├│n otra vez desde Celimap.
+         </p>
+       </div>
+     )
+@@ -44,7 +58,12 @@ function MobileReturnContent() {
+   return (
+     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 px-6 text-center">
+       <p className="text-sm font-medium">Sesi├│n lista</p>
+-      <p className="text-sm text-muted-foreground">Volviendo a CelimapÔÇª</p>
++      <p className="text-sm text-muted-foreground">{message}</p>
++      {!isNativeApp() && (
++        <p className="mt-2 text-xs text-muted-foreground">
++          Est├ís en el navegador. Abr├¡ Celimap (TestFlight) para continuar logueado.
++        </p>
++      )}
+     </div>
+   )
+ }
+diff --git a/app/page.tsx b/app/page.tsx
+index 6f8c7f5..2710174 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -57,7 +57,7 @@ export default function HomePage() {
+           <div className="celimap-hero-noise" aria-hidden />
+         </div>
+ 
+-        <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-20 max-w-5xl">
++        <div className="container mx-auto px-4 pt-8 pb-12 md:pt-24 md:pb-20 max-w-5xl">
+ 
+           {/* Badge de apertura */}
+           <div className="flex justify-center mb-8">
+diff --git a/components/map-view/MapTopBar.tsx b/components/map-view/MapTopBar.tsx
+index 7c7c738..482f9ad 100644
+--- a/components/map-view/MapTopBar.tsx
++++ b/components/map-view/MapTopBar.tsx
+@@ -356,7 +356,7 @@ export function MapTopBar({
+   ]
+ 
+   return (
+-    <div className="fixed left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
++    <div className="fixed left-3 right-3 top-[calc(1.1rem+env(safe-area-inset-top,0px))] z-30 mx-auto max-w-[440px] rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-3 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl md:left-6 md:right-auto md:top-6 md:max-w-md">
+       <div className="mb-2.5 flex gap-2">
+         <div className="relative min-w-0 flex-1">
+           <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50" aria-hidden />
+diff --git a/lib/native-app.ts b/lib/native-app.ts
+index 5ecf0f7..9965f5d 100644
+--- a/lib/native-app.ts
++++ b/lib/native-app.ts
+@@ -1,12 +1,29 @@
+ import { Capacitor } from "@capacitor/core"
+ 
+-/** Detecta shell Capacitor (TestFlight / Play), no Safari ni PWA. */
+-export function isNativeApp(): boolean {
++function hasCapacitorBridge(): boolean {
+   if (typeof window === "undefined") return false
++  const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } })
++    .Capacitor
++  if (cap?.isNativePlatform?.()) return true
+   try {
+     if (Capacitor.isNativePlatform()) return true
+   } catch {
+-    // Capacitor no disponible (SSR / web pura)
++    // ignore
++  }
++  const root = document.documentElement
++  if (
++    root.classList.contains("plt-capacitor") ||
++    root.classList.contains("hybrid") ||
++    root.classList.contains("plt-ios") ||
++    root.classList.contains("plt-android")
++  ) {
++    return true
+   }
+   return window.navigator.userAgent.includes("CelimapNative")
+ }
++
++/** Detecta shell Capacitor (TestFlight / Play), no Safari ni PWA. */
++export function isNativeApp(): boolean {
++  if (typeof window === "undefined") return false
++  return hasCapacitorBridge()
++}
