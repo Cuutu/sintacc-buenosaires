@@ -292,6 +292,7 @@ function mapLegacySource(legacy?: string): ClientErrorSource {
     case "map-cleanup":
     case "native-oauth-start":
     case "native-oauth-browser-opened":
+    case "native-oauth-sdk-ok":
     case "native-oauth-return":
     case "native-oauth-session-ready":
     case "native-oauth-error":

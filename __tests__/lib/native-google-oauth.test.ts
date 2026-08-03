@@ -8,8 +8,8 @@ import {
 import { sanitizeReturnTo } from "@/lib/auth-return-to"
 import { parseNativeAuthHandoffUrl } from "@/lib/native-auth-deeplink"
 
-describe("native Google OAuth start URL", () => {
-  it("abre /auth/native-start, no GET /api/auth/signin/google ni /login", () => {
+describe("native Google OAuth helpers", () => {
+  it("buildNativeGoogleStartUrl still builds legacy Browser URL (rollback only)", () => {
     const url = buildNativeGoogleStartUrl("/perfil", "https://www.celimap.com.ar")
     expect(url).toContain("https://www.celimap.com.ar/auth/native-start?")
     expect(url).toContain("from=native")
@@ -27,6 +27,15 @@ describe("native Google OAuth start URL", () => {
     expect(resolveNativeAuthOrigin("https://www.celimap.com.ar")).toBe(
       "https://www.celimap.com.ar"
     )
+  })
+
+  it("exposes public Google client ids for native SDK", async () => {
+    const { getNativeGoogleIosClientId, getNativeGoogleWebClientId } = await import(
+      "@/lib/native-sign-in"
+    )
+    expect(getNativeGoogleWebClientId()).toContain("apps.googleusercontent.com")
+    expect(getNativeGoogleIosClientId()).toContain("apps.googleusercontent.com")
+    expect(getNativeGoogleIosClientId()).toContain("ffml8h7qtolnmkgddd9dl0iv9a3i0fmo")
   })
 })
 

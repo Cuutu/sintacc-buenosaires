@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
@@ -21,6 +21,8 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { status } = useSession()
+  const [signingIn, setSigningIn] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const callbackUrl = useMemo(() => {
     const rawCallbackUrl = searchParams.get("callbackUrl")
@@ -42,6 +44,17 @@ function LoginContent() {
     return <LoginLoadingState />
   }
 
+  async function handleGoogleSignIn() {
+    setError(null)
+    setSigningIn(true)
+    try {
+      await signInWithGoogle(callbackUrl)
+    } catch {
+      setError("No pudimos iniciar sesión con Google. Probá de nuevo.")
+      setSigningIn(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
       <Image
@@ -59,13 +72,18 @@ function LoginContent() {
           <p className="text-center text-muted-foreground mb-6">
             Inicia sesión con tu cuenta de Google para acceder a todas las funciones
           </p>
+          {error ? (
+            <p className="mb-4 text-center text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
           <Button
-            onClick={() => signInWithGoogle(callbackUrl)}
+            onClick={() => void handleGoogleSignIn()}
             className="w-full"
-            disabled={status === "loading"}
+            disabled={status === "loading" || signingIn}
             size="lg"
           >
-            Continuar con Google
+            {signingIn ? "Conectando…" : "Continuar con Google"}
           </Button>
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Al continuar aceptás nuestra{" "}

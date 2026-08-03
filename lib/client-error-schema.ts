@@ -14,6 +14,7 @@ export const CLIENT_ERROR_SOURCES = [
   "map-cleanup",
   "native-oauth-start",
   "native-oauth-browser-opened",
+  "native-oauth-sdk-ok",
   "native-oauth-return",
   "native-oauth-session-ready",
   "native-oauth-error",
