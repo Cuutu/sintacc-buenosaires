@@ -8,6 +8,7 @@ import {
   pluralizeExperiences,
   pluralizeUsers,
 } from "@/components/stats/utils"
+import { statsCarouselCardWidthCss } from "@/lib/overflow-audit"
 
 export type Stats = {
   places: number | null
@@ -63,22 +64,20 @@ function StatCardContent({
   isLoading: boolean
 }) {
   return (
-    <article
-      className="min-h-[120px] flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-300"
-    >
-      <header className="flex items-center gap-3 mb-3">
+    <article className="flex min-h-[120px] min-w-0 flex-col rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md transition-all duration-300">
+      <header className="mb-3 flex min-w-0 items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
         </div>
-        <div>
-          <h3 className="text-base font-medium text-white/90">{title}</h3>
-          <p className="text-xs text-white/60">{subtext}</p>
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-medium text-white/90">{title}</h3>
+          <p className="truncate text-xs text-white/60">{subtext}</p>
         </div>
       </header>
       {isLoading ? (
         <div className="h-10 w-20 animate-pulse rounded bg-white/10" />
       ) : (
-        <p className="text-2xl font-semibold tabular-nums text-primary">
+        <p className="break-words text-xl font-semibold tabular-nums text-primary sm:text-2xl">
           {displayValue ?? "—"} {valueLabel}
         </p>
       )}
@@ -86,6 +85,11 @@ function StatCardContent({
   )
 }
 
+/**
+ * Mobile: carrusel horizontal intencional (snap + peek).
+ * Marcador data-overflow-allowed="stats-carousel" = overflow legítimo.
+ * Desktop/tablet md+: grid 3 cols.
+ */
 export function StatsRow() {
   const [stats, setStats] = useState<Stats>({
     places: null,
@@ -93,6 +97,7 @@ export function StatsRow() {
     users: null,
   })
   const [isLoading, setIsLoading] = useState(true)
+  const cardWidth = statsCarouselCardWidthCss()
 
   useEffect(() => {
     fetchApi<{ placesCount?: number; reviewsCount?: number; usersCount?: number }>(
@@ -106,18 +111,30 @@ export function StatsRow() {
 
   return (
     <>
-      {/* Mobile: horizontal scroll con snap */}
-      <div className="md:hidden w-full overflow-x-auto scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
-        <div className="flex gap-4 pb-2" style={{ width: "max-content" }}>
-          {CARDS.map(({ icon: Icon, title, valueKey, pluralize, subtext }) => {
+      <div
+        role="region"
+        aria-label="Estadísticas de Celimap"
+        data-overflow-allowed="stats-carousel"
+        data-carousel="stats"
+        className="scrollbar-hide max-w-full touch-pan-x snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:hidden"
+        style={{ scrollPaddingInline: "1rem" }}
+      >
+        <div className="flex w-max gap-3 pb-2 pl-1 pr-4">
+          {CARDS.map(({ icon: Icon, title, valueKey, pluralize, subtext }, index) => {
             const value = stats[valueKey]
             const displayValue =
               value != null ? value.toLocaleString("es-AR") : undefined
             const valueLabel = value != null ? pluralize(value) : ""
+            const isLast = index === CARDS.length - 1
             return (
               <div
                 key={valueKey}
-                className="w-[min(calc(100vw-2rem),280px)] shrink-0 snap-center"
+                className="shrink-0 snap-start"
+                style={{
+                  width: cardWidth,
+                  // Padding final extra: última tarjeta scrollea completa
+                  marginRight: isLast ? "0.25rem" : undefined,
+                }}
               >
                 <StatCardContent
                   Icon={Icon}
@@ -132,15 +149,15 @@ export function StatsRow() {
           })}
         </div>
       </div>
-      {/* Desktop: grid */}
-      <div className="hidden md:grid md:grid-cols-3 md:gap-6 md:max-w-4xl md:mx-auto">
+
+      <div className="mx-auto hidden max-w-4xl md:grid md:grid-cols-3 md:gap-6">
         {CARDS.map(({ icon: Icon, title, valueKey, pluralize, subtext }) => {
           const value = stats[valueKey]
           const displayValue =
             value != null ? value.toLocaleString("es-AR") : undefined
           const valueLabel = value != null ? pluralize(value) : ""
           return (
-            <div key={valueKey}>
+            <div key={valueKey} className="min-w-0">
               <StatCardContent
                 Icon={Icon}
                 title={title}

@@ -39,7 +39,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden min-h-[92vh] flex flex-col justify-center">
 
         {/* Background atmosférico en capas (noise solo acá, no en body) */}
-        <div className="absolute inset-0 -z-10 pointer-events-none">
+        <div className="absolute inset-0 -z-10 pointer-events-none" data-overflow-allowed="decoration">
           {/* Blob principal top-right */}
           <div className="celimap-hero-blob absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-primary/15 blur-[120px]" />
           {/* Blob secundario bottom-left */}
@@ -57,7 +57,7 @@ export default function HomePage() {
           <div className="celimap-hero-noise" aria-hidden />
         </div>
 
-        <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-20 max-w-5xl">
+        <div className="container mx-auto px-4 pt-8 pb-12 md:pt-24 md:pb-20 max-w-5xl">
 
           {/* Badge de apertura */}
           <div className="flex justify-center mb-8">
@@ -68,11 +68,11 @@ export default function HomePage() {
           </div>
 
           {/* H1 — la pieza más importante de la página */}
-          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
+          <h1 className="mb-6 text-center text-[1.75rem] font-extrabold leading-[1.12] tracking-tight sm:text-4xl sm:leading-[1.05] md:text-5xl lg:text-6xl xl:text-7xl">
             El mapa para celíacos
             <br />
             de{" "}
-            <span className="relative inline-block">
+            <span className="relative inline-block max-w-full">
               <span className="text-primary">Argentina</span>
               {/* Línea decorativa bajo "sin gluten" */}
               <svg
@@ -309,8 +309,14 @@ export default function HomePage() {
           <div className="container mx-auto px-4 py-16 md:py-20 max-w-5xl">
             <div className="relative rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent overflow-hidden px-8 py-12 text-center">
               {/* Glow decorativo */}
-              <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/15 blur-[60px] pointer-events-none" />
-              <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-primary/10 blur-[60px] pointer-events-none" />
+              <div
+                data-overflow-allowed="decoration"
+                className="pointer-events-none absolute inset-0"
+                aria-hidden
+              >
+                <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/15 blur-[60px]" />
+                <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-primary/10 blur-[60px]" />
+              </div>
 
               <div className="relative">
                 <div className="inline-flex items-center gap-2 text-primary mb-4">
