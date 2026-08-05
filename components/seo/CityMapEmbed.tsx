@@ -7,7 +7,7 @@ import { fetchApi } from "@/lib/fetchApi"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
-import { getCityCenter } from "@/lib/seo/cities"
+import { getCityCenter, getCityBySlug } from "@/lib/seo/cities"
 
 interface CityMapEmbedProps {
   citySlug: string
@@ -16,6 +16,7 @@ interface CityMapEmbedProps {
 
 export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
   const centerConfig = getCityCenter(citySlug)
+  const city = getCityBySlug(citySlug)
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
@@ -32,7 +33,12 @@ export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
     try {
       const params = new URLSearchParams()
       params.append("limit", "999")
-      params.append("citySlugs", citySlug)
+      if (city) {
+        params.append("provinceSlugs", city.provinceSlug)
+        params.append("localitySlugs", citySlug)
+      } else {
+        params.append("citySlugs", citySlug)
+      }
       const data = await fetchApi<{ places: IPlace[] }>(`/api/places?${params.toString()}`)
       setPlaces(data.places || [])
     } catch (err: unknown) {
@@ -41,7 +47,7 @@ export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
     } finally {
       setLoading(false)
     }
-  }, [citySlug])
+  }, [city, citySlug])
 
   useEffect(() => {
     fetchPlaces()
@@ -69,8 +75,8 @@ export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
         <Link
           href={
             centerConfig
-              ? `/mapa?citySlugs=${citySlug}&lng=${centerConfig.center[0]}&lat=${centerConfig.center[1]}&zoom=${centerConfig.zoom}`
-              : `/mapa?citySlugs=${citySlug}`
+              ? `/mapa?provinceSlugs=${city?.provinceSlug ?? ""}&localitySlugs=${citySlug}&lng=${centerConfig.center[0]}&lat=${centerConfig.center[1]}&zoom=${centerConfig.zoom}`
+              : `/mapa?localitySlugs=${citySlug}`
           }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >

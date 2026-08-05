@@ -22,7 +22,29 @@ describe("buildPublicPlacesMongoQuery", () => {
         ]),
       },
     ])
-    expect(query.neighborhood).toEqual(expect.objectContaining({ $in: expect.any(Array) }))
+    expect(query.locality).toEqual({ $in: ["buenos-aires"] })
+  })
+
+  it("filters by provinceSlugs using the normalized province field", () => {
+    const query = buildPublicPlacesMongoQuery({
+      provinceSlugs: ["cordoba"],
+      page: 1,
+      limit: 20,
+    })
+
+    expect(query.status).toBe("approved")
+    expect(query.province).toEqual({ $in: ["cordoba"] })
+  })
+
+  it("filters by localitySlugs using the normalized locality field", () => {
+    const query = buildPublicPlacesMongoQuery({
+      localitySlugs: ["la-plata", "mar-del-plata"],
+      page: 1,
+      limit: 20,
+    })
+
+    expect(query.status).toBe("approved")
+    expect(query.locality).toEqual({ $in: ["la-plata", "mar-del-plata"] })
   })
 
   it("matches neighborhood aliases when filtering by neighborhood", () => {

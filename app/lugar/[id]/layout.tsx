@@ -22,6 +22,8 @@ interface PlaceMetadataInput {
   neighborhood: string
   type: string
   address?: string
+  province?: string
+  locality?: string
   photos?: string[]
 }
 
@@ -107,6 +109,8 @@ export default async function LugarLayout({ params, children }: LugarLayoutProps
             name: place.name,
             type: place.type,
             neighborhood: place.neighborhood,
+            province: place.province,
+            locality: place.locality,
             address: place.address,
             location: place.location,
             photos: place.photos,

@@ -4,6 +4,7 @@ const TAG_BY_PREFIX: Record<string, string> = {
   "public:places:": "public:places",
   "admin:places:": "admin:places",
   "admin:counts": "admin:counts",
+  "seo:province:": "seo:province",
 }
 
 function resolveTag(cacheKey: string): string {

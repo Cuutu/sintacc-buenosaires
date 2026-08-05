@@ -10,6 +10,8 @@ interface PlaceListWithFiltersProps {
   currentCategory?: string
   topNeighborhoods?: { name: string; count: number }[]
   basePath?: string
+  provinceSlug?: string
+  provinceName?: string
 }
 
 export function PlaceListWithFilters({
@@ -19,6 +21,8 @@ export function PlaceListWithFilters({
   currentCategory,
   topNeighborhoods = [],
   basePath = "/sin-gluten",
+  provinceSlug,
+  provinceName,
 }: PlaceListWithFiltersProps) {
   const placeForCard = (p: PlaceSEO) =>
     ({
@@ -68,6 +72,18 @@ export function PlaceListWithFilters({
               </Link>
             ))}
           </div>
+        </section>
+      )}
+
+      {provinceSlug && provinceName && (
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Toda la provincia</h2>
+          <Link
+            href={`/sin-gluten/provincia/${provinceSlug}`}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-sm font-medium transition-colors"
+          >
+            Ver todos los lugares sin TACC en la provincia de {provinceName}
+          </Link>
         </section>
       )}
 

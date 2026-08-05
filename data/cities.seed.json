@@ -3,6 +3,7 @@
     "slug": "buenos-aires",
     "name": "Buenos Aires",
     "province": "CABA",
+    "provinceSlug": "caba",
     "neighborhoods": [
       "Palermo",
       "Recoleta",
@@ -23,135 +24,140 @@
       "Retiro",
       "Parque Chacabuco",
       "Núñez",
-      "Saavedra",
-      "San Isidro",
-      "Vicente López",
-      "Tigre",
-      "Avellaneda",
-      "Lanús",
-      "Lomas de Zamora",
-      "Quilmes",
-      "Berazategui",
-      "Florencio Varela",
-      "San Martín",
-      "Tres de Febrero",
-      "Morón",
-      "Merlo",
-      "Moreno"
+      "Saavedra"
     ]
   },
   {
     "slug": "cordoba",
     "name": "Córdoba",
     "province": "Córdoba",
+    "provinceSlug": "cordoba",
     "neighborhoods": ["Córdoba", "Nueva Córdoba", "Centro", "Alta Córdoba", "Güemes", "Villa Carlos Paz"]
   },
   {
     "slug": "rosario",
     "name": "Rosario",
     "province": "Santa Fe",
+    "provinceSlug": "santa-fe",
     "neighborhoods": ["Rosario", "Centro", "Pichincha", "Echesortu", "Fisherton"]
   },
   {
     "slug": "mendoza",
     "name": "Mendoza",
     "province": "Mendoza",
+    "provinceSlug": "mendoza",
     "neighborhoods": ["Mendoza", "Centro", "Chacras de Coria", "Godoy Cruz", "Luján de Cuyo"]
   },
   {
     "slug": "la-plata",
     "name": "La Plata",
     "province": "Buenos Aires",
+    "provinceSlug": "buenos-aires",
     "neighborhoods": ["La Plata", "Centro", "Gonnet", "City Bell", "Tolosa"]
   },
   {
     "slug": "mar-del-plata",
     "name": "Mar del Plata",
     "province": "Buenos Aires",
+    "provinceSlug": "buenos-aires",
     "neighborhoods": ["Mar del Plata", "Centro", "La Perla", "Playa Grande", "Bristol"]
   },
   {
     "slug": "san-miguel-de-tucuman",
     "name": "San Miguel de Tucumán",
     "province": "Tucumán",
+    "provinceSlug": "tucuman",
     "neighborhoods": ["San Miguel de Tucumán", "Centro", "Yerba Buena"]
   },
   {
     "slug": "salta",
     "name": "Salta",
     "province": "Salta",
+    "provinceSlug": "salta",
     "neighborhoods": ["Salta", "Centro", "Balmaceda", "Villa San Lorenzo"]
   },
   {
     "slug": "santa-fe",
     "name": "Santa Fe",
     "province": "Santa Fe",
+    "provinceSlug": "santa-fe",
     "neighborhoods": ["Santa Fe", "Centro", "Costanera Este", "Sauce Viejo"]
   },
   {
     "slug": "san-juan",
     "name": "San Juan",
     "province": "San Juan",
+    "provinceSlug": "san-juan",
     "neighborhoods": ["San Juan", "Centro", "Rawson", "Rivadavia"]
   },
   {
     "slug": "resistencia",
     "name": "Resistencia",
     "province": "Chaco",
+    "provinceSlug": "chaco",
     "neighborhoods": ["Resistencia", "Centro", "Barranqueras"]
   },
   {
     "slug": "neuquen",
     "name": "Neuquén",
     "province": "Neuquén",
+    "provinceSlug": "neuquen",
     "neighborhoods": ["Neuquén", "Centro", "Centenario"]
   },
   {
     "slug": "corrientes",
     "name": "Corrientes",
     "province": "Corrientes",
+    "provinceSlug": "corrientes",
     "neighborhoods": ["Corrientes", "Centro", "Camba Cuá"]
   },
   {
     "slug": "parana",
     "name": "Paraná",
     "province": "Entre Ríos",
+    "provinceSlug": "entre-rios",
     "neighborhoods": ["Paraná", "Centro", "Costanera"]
   },
   {
     "slug": "bahia-blanca",
     "name": "Bahía Blanca",
     "province": "Buenos Aires",
+    "provinceSlug": "buenos-aires",
     "neighborhoods": ["Bahía Blanca", "Centro", "Ingeniero White"]
   },
   {
     "slug": "san-luis",
     "name": "San Luis",
     "province": "San Luis",
+    "provinceSlug": "san-luis",
     "neighborhoods": ["San Luis", "Centro", "La Punta"]
   },
   {
     "slug": "rio-cuarto",
     "name": "Río Cuarto",
     "province": "Córdoba",
+    "provinceSlug": "cordoba",
     "neighborhoods": ["Río Cuarto", "Centro"]
   },
   {
     "slug": "comodoro-rivadavia",
     "name": "Comodoro Rivadavia",
     "province": "Chubut",
+    "provinceSlug": "chubut",
     "neighborhoods": ["Comodoro Rivadavia", "Centro"]
   },
   {
     "slug": "tandil",
     "name": "Tandil",
     "province": "Buenos Aires",
+    "provinceSlug": "buenos-aires",
     "neighborhoods": ["Tandil", "Centro", "Gardey"]
   },
   {
     "slug": "ushuaia",
     "name": "Ushuaia",
     "province": "Tierra del Fuego",
+    "provinceSlug": "tierra-del-fuego",
     "neighborhoods": ["Ushuaia", "Centro", "Andorra"]
   }
 ]

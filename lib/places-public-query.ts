@@ -1,8 +1,6 @@
 import type { FilterQuery } from "mongoose"
 import type { IPlace } from "@/models/Place"
 import type { PublicPlacesQuery } from "@/lib/validations"
-import { getCityBySlug } from "@/lib/seo/cities"
-import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getNeighborhoodSearchValues } from "@/lib/map-search"
 
 function makeSearchRegex(value: string): RegExp {
@@ -74,22 +72,12 @@ export function buildPublicPlacesMongoQuery(
   }
 
   if (params.citySlugs && params.citySlugs.length > 0) {
-    const allNeighborhoods: string[] = []
-    for (const slug of params.citySlugs) {
-      const province = getProvinceBySlug(slug)
-      if (province) {
-        for (const cs of province.citySlugs) {
-          const city = getCityBySlug(cs)
-          if (city) allNeighborhoods.push(...city.neighborhoods)
-        }
-      } else {
-        const city = getCityBySlug(slug)
-        if (city) allNeighborhoods.push(...city.neighborhoods)
-      }
-    }
-    if (allNeighborhoods.length > 0) {
-      query.neighborhood = { $in: [...new Set(allNeighborhoods)] }
-    }
+    // citySlugs son locality slugs normalizados (ej: "la-plata", "cordoba")
+    query.locality = { $in: params.citySlugs }
+  } else if (params.provinceSlugs && params.provinceSlugs.length > 0) {
+    query.province = { $in: params.provinceSlugs }
+  } else if (params.localitySlugs && params.localitySlugs.length > 0) {
+    query.locality = { $in: params.localitySlugs }
   } else if (params.neighborhood) {
     const neighborhoodValues = getNeighborhoodSearchValues(params.neighborhood)
     if (neighborhoodValues.length > 0) {

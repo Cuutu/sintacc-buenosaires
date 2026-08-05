@@ -60,6 +60,8 @@ function MapaContent() {
   const placeIdFromUrl = searchParams.get("place")
   const listOpen = searchParams.get("list") === "open"
   const citySlugsFromUrl = searchParams.get("citySlugs")
+  const provinceSlugsFromUrl = searchParams.get("provinceSlugs")
+  const localitySlugsFromUrl = searchParams.get("localitySlugs")
   const latParam = searchParams.get("lat")
   const lngParam = searchParams.get("lng")
   const zoomParam = searchParams.get("zoom")
@@ -97,7 +99,6 @@ function MapaContent() {
     filterKey: string
   } | null>(null)
 
-  // Sincronizar URL ?search= con el estado cuando cambia la URL
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
     if (urlSearch === lastSyncedUrlSearchRef.current) return
@@ -127,7 +128,6 @@ function MapaContent() {
     return () => clearTimeout(t)
   }, [viewport])
 
-  // Actualizar la URL cuando cambia el search (para que refresh/back mantenga la búsqueda)
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
     if (debouncedSearch === urlSearch) return
@@ -148,6 +148,8 @@ function MapaContent() {
     const effectiveNeighborhood = searchNeighborhood ?? filters.neighborhood ?? ""
     const filterKey = JSON.stringify({
       citySlugs: searchNeighborhood ? "" : citySlugsFromUrl ?? "",
+      provinceSlugs: searchNeighborhood ? "" : provinceSlugsFromUrl ?? "",
+      localitySlugs: searchNeighborhood ? "" : localitySlugsFromUrl ?? "",
       search: freeTextSearch,
       type: filters.type ?? "",
       neighborhood: effectiveNeighborhood,
@@ -183,6 +185,8 @@ function MapaContent() {
         params.append("bbox", formatBbox(expandedViewportBounds))
       }
       if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
+      if (provinceSlugsFromUrl && !searchNeighborhood) params.append("provinceSlugs", provinceSlugsFromUrl)
+      if (localitySlugsFromUrl && !searchNeighborhood) params.append("localitySlugs", localitySlugsFromUrl)
       if (freeTextSearch) params.append("search", freeTextSearch)
       if (filters.type && filters.type !== "all") params.append("type", filters.type)
       if (effectiveNeighborhood && effectiveNeighborhood !== "all")
@@ -211,6 +215,8 @@ function MapaContent() {
     }
   }, [
     citySlugsFromUrl,
+    provinceSlugsFromUrl,
+    localitySlugsFromUrl,
     debouncedSearch,
     debouncedViewport,
     filters.type,
@@ -223,12 +229,10 @@ function MapaContent() {
     fetchPlaces()
   }, [fetchPlaces])
 
-  // Sincronizar ?place= con selectedPlaceId
   useEffect(() => {
     if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
   }, [placeIdFromUrl])
 
-  /** Al hacer zoom out (nivel < 8), quitar filtro de ciudad para mostrar todo el país */
   const handleMapMoveEnd = useCallback(
     (zoom: number, bounds: MapViewportBounds) => {
       setViewport({ zoom, bounds })
@@ -250,8 +254,10 @@ function MapaContent() {
         shouldReplaceUrl = true
       }
 
-      if (citySlugsFromUrl && zoom < 8) {
+      if ((citySlugsFromUrl || provinceSlugsFromUrl || localitySlugsFromUrl) && zoom < 8) {
         params.delete("citySlugs")
+        params.delete("provinceSlugs")
+        params.delete("localitySlugs")
         shouldReplaceUrl = true
       }
 
@@ -259,7 +265,7 @@ function MapaContent() {
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [citySlugsFromUrl, debouncedSearch, filters.search, pathname, router, searchParams]
+    [citySlugsFromUrl, provinceSlugsFromUrl, localitySlugsFromUrl, debouncedSearch, filters.search, pathname, router, searchParams]
   )
 
   const handleSheetCollapse = useCallback(() => {

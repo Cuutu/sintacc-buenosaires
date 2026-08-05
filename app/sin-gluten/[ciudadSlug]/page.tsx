@@ -2,9 +2,8 @@ import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getCityBySlug, getTop10CitySlugs } from "@/lib/seo/cities"
 import { getPlacesByCity, getTopNeighborhoods } from "@/lib/seo/places"
-import { getProvinceBySlug, isProvincialSlug, PROVINCES } from "@/lib/seo/provinces"
-import { getPlacesByProvince } from "@/lib/seo/places"
 import { getCityTitle, getCityDescription, getSEOTextBlock } from "@/lib/seo/templates"
+import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
@@ -13,7 +12,6 @@ import { CityMapEmbed } from "@/components/seo/CityMapEmbed"
 import { EmptyCityPage } from "@/components/seo/EmptyCityPage"
 import { Pagination } from "@/components/seo/Pagination"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { ProvincialPage } from "./ProvincialPage"
 
 import { getBaseUrl } from "@/lib/base-url"
 
@@ -24,9 +22,7 @@ export const revalidate = 3600
 
 export async function generateStaticParams() {
   const citySlugs = getTop10CitySlugs()
-  const provinceSlugs = PROVINCES.map((p) => p.slug)
-  const allSlugs = [...new Set([...citySlugs, ...provinceSlugs])]
-  return allSlugs.map((ciudadSlug) => ({ ciudadSlug }))
+  return citySlugs.map((ciudadSlug) => ({ ciudadSlug }))
 }
 
 export async function generateMetadata({
@@ -37,31 +33,6 @@ export async function generateMetadata({
   searchParams: Promise<{ page?: string; barrio?: string }>
 }): Promise<Metadata> {
   const { ciudadSlug } = await params
-
-  if (isProvincialSlug(ciudadSlug)) {
-    const province = getProvinceBySlug(ciudadSlug)
-    if (!province) return { title: "No encontrado" }
-    const { total } = await getPlacesByProvince(ciudadSlug)
-    return {
-      title: province.metaTitle,
-      description: province.metaDescription,
-      ...(total === 0 ? { robots: { index: false, follow: true } } : {}),
-      alternates: { canonical: `${BASE_URL}/sin-gluten/${ciudadSlug}` },
-      openGraph: {
-        title: `Sin gluten en ${province.name} | Celimap`,
-        description: `Mapa de restaurantes y tiendas sin TACC en ${province.name}, Argentina.`,
-        url: `${BASE_URL}/sin-gluten/${ciudadSlug}`,
-        type: "website",
-      },
-      keywords: [
-        `sin gluten ${province.name}`,
-        `restaurantes sin TACC ${province.name}`,
-        `panaderías sin gluten ${province.name}`,
-        `dónde comer sin gluten ${province.name}`,
-        `dietéticas sin TACC ${province.name}`,
-      ],
-    }
-  }
 
   const city = getCityBySlug(ciudadSlug)
   if (!city) return { title: "No encontrado" }
@@ -106,12 +77,10 @@ export default async function SinGlutenCiudadPage({
 }) {
   const { ciudadSlug } = await params
 
-  if (isProvincialSlug(ciudadSlug)) {
-    return <ProvincialPage provinceSlug={ciudadSlug} />
-  }
-
   const city = getCityBySlug(ciudadSlug)
   if (!city) notFound()
+
+  const province = getProvinceBySlug(city.provinceSlug)
 
   const search = await searchParams
   const page = Math.max(1, parseInt(search.page || "1", 10))
@@ -164,6 +133,8 @@ export default async function SinGlutenCiudadPage({
         citySlug={ciudadSlug}
         cityName={city.name}
         topNeighborhoods={topNeighborhoods}
+        provinceSlug={province?.slug}
+        provinceName={province?.name}
       />
       <SEOTextBlock content={getSEOTextBlock(city)} className="mt-12" />
       {pages > 1 && (

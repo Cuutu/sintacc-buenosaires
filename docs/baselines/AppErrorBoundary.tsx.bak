@@ -1,0 +1,60 @@
+"use client"
+
+import React from "react"
+import { AlertTriangle, RefreshCw } from "lucide-react"
+
+interface Props {
+  children: React.ReactNode
+}
+
+interface State {
+  hasError: boolean
+}
+
+/** Evita pantalla negra Next.js; permite reintentar sin matar la app. */
+export class AppErrorBoundary extends React.Component<Props, State> {
+  state: State = { hasError: false }
+
+  static getDerivedStateFromError(): State {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("[AppErrorBoundary]", error)
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false })
+    if (typeof window !== "undefined") {
+      window.location.href = "/"
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#0a0f0c] px-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-amber-300">
+            <AlertTriangle className="h-7 w-7" aria-hidden />
+          </div>
+          <div className="max-w-sm space-y-2">
+            <p className="text-base font-semibold text-white">Algo falló</p>
+            <p className="text-sm leading-relaxed text-white/60">
+              Hubo un error al cambiar de pantalla. Tocá reintentar para volver al inicio.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden />
+            Reintentar
+          </button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}

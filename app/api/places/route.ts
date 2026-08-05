@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     })
     
     await place.save()
-    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
     
     return NextResponse.json(place, { status: 201 })
   } catch (error: any) {

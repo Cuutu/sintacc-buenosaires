@@ -2,6 +2,9 @@ import Link from "next/link"
 import { Metadata } from "next"
 import { getArgentinaLandingTitle, getArgentinaLandingDescription } from "@/lib/seo/templates"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
+import { PROVINCES } from "@/lib/seo/provinces"
+import { getPlacesByProvinceSlug } from "@/lib/seo/places"
+import { isProvincePageIndexable } from "@/lib/seo/indexing-rules"
 import { ArgentinaLandingJsonLd } from "@/components/seo/ArgentinaLandingJsonLd"
 import { getBaseUrl } from "@/lib/base-url"
 
@@ -28,7 +31,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function SinGlutenArgentinaPage() {
+export default async function SinGlutenArgentinaPage() {
+  // Provincias indexables (≥5 lugares y ≥2 localidades)
+  const indexableProvinces: { slug: string; name: string; total: number }[] = []
+  for (const province of PROVINCES) {
+    const { total } = await getPlacesByProvinceSlug(province.slug, { limit: 1 })
+    const localities = await getProvinceLocalitiesCount(province.slug)
+    if (isProvincePageIndexable(total, localities)) {
+      indexableProvinces.push({ slug: province.slug, name: province.name, total })
+    }
+  }
+
   return (
     <div className="container py-8">
       <ArgentinaLandingJsonLd cities={CITIES} />
@@ -50,6 +63,24 @@ export default function SinGlutenArgentinaPage() {
           Donde comer sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más. Restaurantes sin TACC, panaderías sin gluten y cafés aptos celíacos verificados por la comunidad.
         </p>
       </section>
+
+      {indexableProvinces.length > 0 && (
+        <section className="mb-12">
+          <h2 className="text-xl font-semibold mb-4">Lugares sin TACC por provincia</h2>
+          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {indexableProvinces.map((province) => (
+              <Link
+                key={province.slug}
+                href={`/sin-gluten/provincia/${province.slug}`}
+                className="block p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
+              >
+                <span className="font-medium">{province.name}</span>
+                <span className="text-muted-foreground text-sm block">{province.total} lugares</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mb-12">
         <h2 className="text-xl font-semibold mb-4">Por ciudad</h2>
@@ -105,4 +136,10 @@ export default function SinGlutenArgentinaPage() {
       </section>
     </div>
   )
+}
+
+async function getProvinceLocalitiesCount(provinceSlug: string): Promise<number> {
+  const { getProvinceLocalities } = await import("@/lib/seo/places")
+  const localities = await getProvinceLocalities(provinceSlug)
+  return localities.length
 }

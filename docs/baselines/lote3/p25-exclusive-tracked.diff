@@ -1,0 +1,265 @@
+﻿diff --git a/android/app/capacitor.build.gradle b/android/app/capacitor.build.gradle
+index d17ceef..1b6e7b7 100644
+--- a/android/app/capacitor.build.gradle
++++ b/android/app/capacitor.build.gradle
+@@ -10,6 +10,7 @@ android {
+ apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
+ dependencies {
+     implementation project(':capacitor-app')
++    implementation project(':capacitor-browser')
+     implementation project(':capacitor-splash-screen')
+     implementation project(':capacitor-status-bar')
+ 
+diff --git a/android/app/src/main/assets/capacitor.config.json b/android/app/src/main/assets/capacitor.config.json
+index 45a1544..ef02483 100644
+--- a/android/app/src/main/assets/capacitor.config.json
++++ b/android/app/src/main/assets/capacitor.config.json
+@@ -11,6 +11,10 @@
+ 		"backgroundColor": "#0b1220",
+ 		"allowMixedContent": false
+ 	},
++	"ios": {
++		"appendUserAgent": " CelimapNative/1",
++		"backgroundColor": "#0b1220"
++	},
+ 	"plugins": {
+ 		"SplashScreen": {
+ 			"launchShowDuration": 0,
+@@ -20,7 +24,8 @@
+ 		},
+ 		"StatusBar": {
+ 			"style": "DARK",
+-			"backgroundColor": "#0b1220"
++			"backgroundColor": "#0b1220",
++			"overlaysWebView": true
+ 		}
+ 	}
+ }
+diff --git a/android/app/src/main/assets/capacitor.plugins.json b/android/app/src/main/assets/capacitor.plugins.json
+index 1a508ac..4e4b16e 100644
+--- a/android/app/src/main/assets/capacitor.plugins.json
++++ b/android/app/src/main/assets/capacitor.plugins.json
+@@ -3,6 +3,10 @@
+ 		"pkg": "@capacitor/app",
+ 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
+ 	},
++	{
++		"pkg": "@capacitor/browser",
++		"classpath": "com.capacitorjs.plugins.browser.BrowserPlugin"
++	},
+ 	{
+ 		"pkg": "@capacitor/splash-screen",
+ 		"classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin"
+diff --git a/android/capacitor.settings.gradle b/android/capacitor.settings.gradle
+index df38bc9..23ba03c 100644
+--- a/android/capacitor.settings.gradle
++++ b/android/capacitor.settings.gradle
+@@ -5,6 +5,9 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
+ include ':capacitor-app'
+ project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
+ 
++include ':capacitor-browser'
++project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
++
+ include ':capacitor-splash-screen'
+ project(':capacitor-splash-screen').projectDir = new File('../node_modules/@capacitor/splash-screen/android')
+ 
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 80518b9..6644233 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -8,8 +8,11 @@ import { MobileShell } from "@/components/layout/MobileShell";
+ import { JsonLdScript } from "@/components/seo/JsonLdScript";
+ import { Toaster } from "sonner";
+ import { NativeAppBridge } from "@/components/native/NativeAppBridge";
++import { NativeStatusBar } from "@/components/native/NativeStatusBar";
++import { NativeLayoutDebug } from "@/components/native/NativeLayoutDebug";
+ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+ import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
++import { ClientErrorListeners } from "@/components/ClientErrorListeners";
+ import { getBaseUrl } from "@/lib/base-url";
+ 
+ const jakarta = Plus_Jakarta_Sans({
+@@ -71,7 +74,8 @@ export const metadata: Metadata = {
+   },
+   robots: { index: true, follow: true },
+   manifest: "/manifest.webmanifest",
+-  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "default" },
++  // black-translucent + viewportFit cover ÔåÆ PWA edge-to-edge; env(safe-area-*) activos
++  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "black-translucent" },
+   icons: {
+     icon: [
+       { url: "/favicon.ico" },
+@@ -84,6 +88,9 @@ export const metadata: Metadata = {
+ 
+ export const viewport: Viewport = {
+   themeColor: "#0b1220",
++  width: "device-width",
++  initialScale: 1,
++  viewportFit: "cover",
+ };
+ 
+ export default function RootLayout({
+@@ -96,11 +103,14 @@ export default function RootLayout({
+       <body className="font-sans antialiased">
+         <JsonLdScript />
+         <Providers>
++          <ClientErrorListeners />
+           <MobileShell>
+             <LayoutChrome>{children}</LayoutChrome>
+           </MobileShell>
+           <Toaster position="top-center" richColors closeButton />
+           <NativeAppBridge />
++          <NativeStatusBar />
++          <NativeLayoutDebug />
+           <InstallPrompt />
+           <OnboardingModal />
+         </Providers>
+diff --git a/app/lugar/[id]/page.tsx b/app/lugar/[id]/page.tsx
+index efdc0ef..a537333 100644
+--- a/app/lugar/[id]/page.tsx
++++ b/app/lugar/[id]/page.tsx
+@@ -464,7 +464,7 @@ export default function LugarPage() {
+       {/* Mobile sticky bar ÔÇö sin cambios, igual que antes */}
+       <StickyActionBarMobile place={place} shareUrl={shareUrl} />
+ 
+-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-10">
++      <div className="container mx-auto px-4 py-6 pb-[var(--lugar-bottom-clearance)] md:pb-10">
+ 
+         {/* Back link */}
+         <Link
+diff --git a/capacitor.config.ts b/capacitor.config.ts
+index 1a1b36a..51e02ce 100644
+--- a/capacitor.config.ts
++++ b/capacitor.config.ts
+@@ -1,12 +1,61 @@
+ import type { CapacitorConfig } from "@capacitor/cli"
+ 
++/**
++ * server.url se resuelve en sync-time (m├íquina del developer / CI), no en runtime WebView.
++ *
++ * Producci├│n (default):
++ *   npx cap sync
++ *   ÔåÆ siempre https://www.celimap.com.ar
++ *
++ * Preview / staging (expl├¡cito, nunca accidental):
++ *   CAPACITOR_SERVER_MODE=preview CAPACITOR_SERVER_URL=https://<host> npx cap sync
++ *
++ * Guardas:
++ * - URL sola sin MODE=preview ÔåÆ throw (bloquea override accidental)
++ * - MODE=preview sin URL ÔåÆ throw
++ * - Release CI: no definir CAPACITOR_SERVER_* ÔåÆ prod garantizado
++ */
++
++const PROD_SERVER_URL = "https://www.celimap.com.ar"
++
++function resolveServer(): { url: string; cleartext: boolean } {
++  const mode = process.env.CAPACITOR_SERVER_MODE?.trim()
++  const previewUrl = process.env.CAPACITOR_SERVER_URL?.trim()
++
++  if (previewUrl && mode !== "preview") {
++    throw new Error(
++      "[capacitor] CAPACITOR_SERVER_URL definido sin CAPACITOR_SERVER_MODE=preview. " +
++        "Abortando para no apuntar Release a staging por error."
++    )
++  }
++
++  if (mode === "preview") {
++    if (!previewUrl) {
++      throw new Error(
++        "[capacitor] CAPACITOR_SERVER_MODE=preview requiere CAPACITOR_SERVER_URL."
++      )
++    }
++    if (previewUrl === PROD_SERVER_URL) {
++      throw new Error(
++        "[capacitor] preview no puede usar URL de producci├│n. Quit├í MODE=preview."
++      )
++    }
++    const cleartext = previewUrl.startsWith("http://")
++    return { url: previewUrl, cleartext }
++  }
++
++  return { url: PROD_SERVER_URL, cleartext: false }
++}
++
++const server = resolveServer()
++
+ const config: CapacitorConfig = {
+   appId: "com.celimap.app",
+   appName: "Celimap",
+   webDir: "www",
+   server: {
+-    url: "https://www.celimap.com.ar",
+-    cleartext: false,
++    url: server.url,
++    cleartext: server.cleartext,
+   },
+   android: {
+     appendUserAgent: " CelimapNative/1",
+@@ -28,6 +77,8 @@ const config: CapacitorConfig = {
+     StatusBar: {
+       style: "DARK",
+       backgroundColor: "#0b1220",
++      // Pol├¡tica B: WebView edge-to-edge; insets v├¡a CSS env(safe-area-*)
++      overlaysWebView: true,
+     },
+   },
+ }
+diff --git a/ios/App/App/capacitor.config.json b/ios/App/App/capacitor.config.json
+index 10b434f..124b7e3 100644
+--- a/ios/App/App/capacitor.config.json
++++ b/ios/App/App/capacitor.config.json
+@@ -6,20 +6,31 @@
+ 		"url": "https://www.celimap.com.ar",
+ 		"cleartext": false
+ 	},
++	"android": {
++		"appendUserAgent": " CelimapNative/1",
++		"backgroundColor": "#0b1220",
++		"allowMixedContent": false
++	},
++	"ios": {
++		"appendUserAgent": " CelimapNative/1",
++		"backgroundColor": "#0b1220"
++	},
+ 	"plugins": {
+ 		"SplashScreen": {
+-			"launchShowDuration": 1500,
++			"launchShowDuration": 0,
+ 			"launchAutoHide": true,
+ 			"backgroundColor": "#0b1220",
+ 			"showSpinner": false
+ 		},
+ 		"StatusBar": {
+ 			"style": "DARK",
+-			"backgroundColor": "#0b1220"
++			"backgroundColor": "#0b1220",
++			"overlaysWebView": true
+ 		}
+ 	},
+ 	"packageClassList": [
+ 		"AppPlugin",
++		"CAPBrowserPlugin",
+ 		"SplashScreenPlugin",
+ 		"StatusBarPlugin"
+ 	]
+diff --git a/ios/App/CapApp-SPM/Package.swift b/ios/App/CapApp-SPM/Package.swift
+index 2df3dd5..bf33a14 100644
+--- a/ios/App/CapApp-SPM/Package.swift
++++ b/ios/App/CapApp-SPM/Package.swift
+@@ -13,6 +13,7 @@ let package = Package(
+     dependencies: [
+         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
+         .package(name: "CapacitorApp", path: "..\..\..\node_modules\@capacitor\app"),
++        .package(name: "CapacitorBrowser", path: "..\..\..\node_modules\@capacitor\browser"),
+         .package(name: "CapacitorSplashScreen", path: "..\..\..\node_modules\@capacitor\splash-screen"),
+         .package(name: "CapacitorStatusBar", path: "..\..\..\node_modules\@capacitor\status-bar")
+     ],
+@@ -23,6 +24,7 @@ let package = Package(
+                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
+                 .product(name: "Cordova", package: "capacitor-swift-pm"),
+                 .product(name: "CapacitorApp", package: "CapacitorApp"),
++                .product(name: "CapacitorBrowser", package: "CapacitorBrowser"),
+                 .product(name: "CapacitorSplashScreen", package: "CapacitorSplashScreen"),
+                 .product(name: "CapacitorStatusBar", package: "CapacitorStatusBar")
+             ]

@@ -1,0 +1,17 @@
+﻿node=v24.14.0
+npm=11.9.0
+capacitor_cli=8.4.2
+capacitor_core=8.4.2
+capacitor_ios=8.4.2
+capacitor_android=8.4.2
+status_bar=8.0.3
+os=Windows_NT_10.0.26200
+xcode=N/A
+cocoapods=N/A
+java=MISSING (JAVA_HOME invalid: C:\Program Files\Eclipse Adoptium\jdk-17.0.x.x-hotspot)
+android_sdk=NOT_SET
+gradle=blocked_by_JAVA_HOME
+ios_versioned_files=34
+android_versioned_files=625
+note_android_build_artifacts_versioned=YES (.gradle, app/build intermediates) — should NOT be versioned
+stash0=KEEP-backup-wip-pre-lote1

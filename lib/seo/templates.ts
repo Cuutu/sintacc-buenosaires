@@ -1,5 +1,6 @@
 import type { City } from "./cities"
 import { getCategoryBySlug } from "./cities"
+import type { ProvinceConfig } from "./provinces"
 
 export function getCityTitle(city: City): string {
   return `Lugares sin gluten en ${city.name} | Celimap`
@@ -88,4 +89,76 @@ export function getTopRankingTitle(city: City): string {
 
 export function getTopRankingDescription(city: City): string {
   return `Los mejores lugares sin gluten en ${city.name} según la comunidad celíaca. Restaurantes, panaderías y cafés recomendados.`
+}
+
+// ── Templates provinciales ──
+
+export function getProvinceTitle(province: ProvinceConfig): string {
+  return `Lugares sin TACC en ${province.name}: restaurantes y cafeterías | CeliMap`
+}
+
+export function getProvinceDescription(
+  province: ProvinceConfig,
+  data: { total: number; dedicatedGf: number; localities: number }
+): string {
+  const parts = [
+    `Encontrá restaurantes, cafeterías, panaderías y tiendas sin TACC en ${province.name}.`,
+  ]
+  if (data.total > 0) {
+    parts.push(`Consultá ${data.total} lugares verificados por la comunidad.`)
+  }
+  if (data.dedicatedGf > 0) {
+    parts.push(`${data.dedicatedGf} lugares 100% sin gluten.`)
+  }
+  if (data.localities > 0) {
+    parts.push(`Opciones en ${data.localities} localidades.`)
+  }
+  return parts.join(" ")
+}
+
+export function getProvinceCategoryTitle(province: ProvinceConfig, categorySlug: string): string {
+  const cat = getCategoryBySlug(categorySlug)
+  const catName = cat?.name ?? categorySlug
+  return `${catName} sin TACC en ${province.name} | CeliMap`
+}
+
+export function getProvinceCategoryDescription(
+  province: ProvinceConfig,
+  categorySlug: string,
+  total: number
+): string {
+  const cat = getCategoryBySlug(categorySlug)
+  const catName = cat?.name ?? categorySlug
+  const count = total > 0 ? `${total} ` : ""
+  return `Descubrí ${count}${catName.toLowerCase()} sin TACC en la provincia de ${province.name}. Consultá lugares 100% sin gluten, opciones aptas y reseñas de la comunidad.`
+}
+
+export function getProvinceSEOTextBlock(
+  province: ProvinceConfig,
+  data: { total: number; dedicatedGf: number; gfOptions: number; localities: number }
+): string {
+  const lines = [
+    `# Lugares sin gluten en ${province.name}`,
+    "",
+    `En ${province.name} la comunidad celíaca comparte en Celimap los lugares donde comer y comprar sin TACC.`,
+  ]
+  if (data.total > 0) {
+    lines.push("", `Actualmente hay ${data.total} lugares verificados en la provincia.`)
+  }
+  if (data.dedicatedGf > 0) {
+    lines.push("", `${data.dedicatedGf} son 100% sin gluten.`)
+  }
+  if (data.gfOptions > 0) {
+    lines.push("", `${data.gfOptions} ofrecen opciones sin TACC.`)
+  }
+  if (data.localities > 0) {
+    lines.push("", `Las opciones se distribuyen en ${data.localities} localidades.`)
+  }
+  lines.push(
+    "",
+    "## ¿Cómo verificar si un lugar es seguro?",
+    "",
+    "Revisá las etiquetas de cada lugar: \"100% sin gluten\" indica que todo el menú es seguro, mientras que \"opciones sin TACC\" requiere que indiques tu condición al pedir. Leé las reseñas de la comunidad y los reportes de contaminación antes de visitar un lugar."
+  )
+  return lines.join("\n\n")
 }

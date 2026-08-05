@@ -92,7 +92,7 @@ export async function PATCH(
       })
       place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
       await place.save()
-      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
 
       suggestion.status = "approved"
       await suggestion.save()
@@ -204,7 +204,7 @@ export async function POST(
     })
     place.slug = await generateUniquePlaceSlug(place.name, place.neighborhood)
     await place.save()
-    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
 
     suggestion.status = "approved"
     await suggestion.save()

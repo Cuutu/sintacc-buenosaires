@@ -1,0 +1,26 @@
+"use client"
+
+import { useEffect } from "react"
+import { isNativeApp } from "@/lib/native-app"
+
+/** Ajusta StatusBar Capacitor para safe-area correcta en iOS. */
+export function NativeStatusBar() {
+  useEffect(() => {
+    if (!isNativeApp()) return
+
+    import("@capacitor/status-bar")
+      .then(async ({ StatusBar, Style }) => {
+        try {
+          await StatusBar.setStyle({ style: Style.Dark })
+          await StatusBar.setBackgroundColor({ color: "#0b1220" })
+          // false = WebView debajo del status bar → safe-area-inset-top > 0
+          await StatusBar.setOverlaysWebView({ overlay: false })
+        } catch {
+          // Plugin no disponible en build viejo
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  return null
+}

@@ -1,0 +1,18 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...version of npm.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+__tests__/api/reviews.test.ts(3,10): error TS2614: Module '"@/lib/mongodb"' has no exported member 'connectDB'. Did you mean to use 'import connectDB from "@/lib/mongodb"' instead?
+__tests__/lib/place-incomplete.test.ts(12,36): error TS2345: Argument of type '{ name: string; address: string; neighborhood: string; type: "other"; photos: never[]; }' is not assignable to parameter of type 'PlaceLike'.
+  Property 'tags' is missing in type '{ name: string; address: string; neighborhood: string; type: "other"; photos: never[]; }' but required in type 'PlaceLike'.
+__tests__/lib/place-incomplete.test.ts(24,36): error TS2345: Argument of type '{ name: string; address: string; neighborhood: string; type: "bakery"; contact: { instagram: string; }; openingHours: string; safetyLevel: "gf_options"; photos: never[]; }' is not assignable to parameter of type 'PlaceLike'.
+  Property 'tags' is missing in type '{ name: string; address: string; neighborhood: string; type: "bakery"; contact: { instagram: string; }; openingHours: string; safetyLevel: "gf_options"; photos: never[]; }' but required in type 'PlaceLike'.
+__tests__/lib/place-incomplete.test.ts(44,45): error TS2345: Argument of type '{ safetyLevel: "gf_options"; }' is not assignable to parameter of type 'PlaceLike'.
+  Type '{ safetyLevel: "gf_options"; }' is missing the following properties from type 'PlaceLike': type, name, address, neighborhood, and 2 more.
+__tests__/lib/place-incomplete.test.ts(65,34): error TS2345: Argument of type '{ name: string; address: string; neighborhood: string; type: "other"; photos: never[]; }' is not assignable to parameter of type 'PlaceLike'.
+  Property 'tags' is missing in type '{ name: string; address: string; neighborhood: string; type: "other"; photos: never[]; }' but required in type 'PlaceLike'.
+__tests__/lib/place-incomplete.test.ts(86,45): error TS2345: Argument of type '{ name: string; address: string; neighborhood: string; type: "cafe"; safetyLevel: "dedicated_gf"; photos: string[]; aiEnrichment: { status: string; }; }' is not assignable to parameter of type 'PlaceWithEnrichment'.
+  Property 'tags' is missing in type '{ name: string; address: string; neighborhood: string; type: "cafe"; safetyLevel: "dedicated_gf"; photos: string[]; aiEnrichment: { status: string; }; }' but required in type 'PlaceLike'.

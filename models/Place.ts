@@ -42,6 +42,10 @@ export interface IPlace extends Document {
   types?: string[]
   address: string
   neighborhood: string
+  /** Slug normalizado de la jurisdicción (ej: "tucuman", "buenos-aires", "caba") */
+  province?: string
+  /** Slug normalizado de la localidad/ciudad (ej: "san-miguel-de-tucuman", "la-plata") */
+  locality?: string
   slug?: string
   location: {
     lat: number
@@ -115,6 +119,14 @@ const PlaceSchema = new Schema<IPlace>(
     neighborhood: {
       type: String,
       required: true,
+      index: true,
+    },
+    province: {
+      type: String,
+      index: true,
+    },
+    locality: {
+      type: String,
       index: true,
     },
     slug: {
@@ -245,6 +257,10 @@ PlaceSchema.index({ status: 1, type: 1 })
 PlaceSchema.index({ status: 1, type: 1, createdAt: -1 })
 PlaceSchema.index({ neighborhood: 1, type: 1 })
 PlaceSchema.index({ status: 1, neighborhood: 1, createdAt: -1 })
+PlaceSchema.index({ status: 1, province: 1 })
+PlaceSchema.index({ status: 1, province: 1, type: 1 })
+PlaceSchema.index({ status: 1, province: 1, locality: 1 })
+PlaceSchema.index({ status: 1, province: 1, locality: 1, type: 1 })
 PlaceSchema.index({ status: 1, slug: 1 })
 PlaceSchema.index({ status: 1, safetyLevel: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })

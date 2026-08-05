@@ -8,6 +8,8 @@ export interface PlaceRouteDoc {
   name: string
   neighborhood: string
   type: string
+  province?: string
+  locality?: string
   address?: string
   location?: { lat: number; lng: number }
   photos?: string[]

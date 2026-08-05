@@ -4,6 +4,8 @@ export interface City {
   slug: string
   name: string
   province: string
+  /** Slug normalizado de la jurisdicción (ej: "caba", "buenos-aires", "cordoba") */
+  provinceSlug: string
   neighborhoods: string[]
 }
 

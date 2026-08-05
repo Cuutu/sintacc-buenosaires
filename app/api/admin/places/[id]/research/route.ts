@@ -94,7 +94,7 @@ export async function PATCH(
     }
 
     await Place.updateOne({ _id: place._id }, { $set })
-    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
 
     const updated = await Place.findById(params.id).lean()
     return NextResponse.json({ message: "Datos aplicados", place: updated })

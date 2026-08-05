@@ -55,7 +55,7 @@ export async function PATCH(request: NextRequest) {
         { _id: { $in: objectIds } },
         { $set: { status: "approved", updatedAt: new Date() } }
       )
-      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
       return NextResponse.json({
         message: `${result.modifiedCount} lugares aprobados`,
         modifiedCount: result.modifiedCount,
@@ -64,7 +64,7 @@ export async function PATCH(request: NextRequest) {
 
     if (action === "delete") {
       const result = await Place.deleteMany({ _id: { $in: objectIds } })
-      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
       return NextResponse.json({
         message: `${result.deletedCount} lugares eliminados`,
         deletedCount: result.deletedCount,
@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest) {
         }
       )
 
-      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
       return NextResponse.json({
         message: `${result.modifiedCount} lugares actualizados`,
         modifiedCount: result.modifiedCount,
@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest) {
           $set: { updatedAt: new Date() },
         }
       )
-      invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
       return NextResponse.json({
         message: `${result.modifiedCount} lugares sin badge`,
         modifiedCount: result.modifiedCount,

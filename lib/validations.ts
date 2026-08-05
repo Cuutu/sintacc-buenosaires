@@ -123,6 +123,8 @@ export const publicPlacesQuerySchema = z.object({
   type: z.enum(placeTypeValues).optional(),
   neighborhood: z.string().optional(),
   citySlugs: z.array(z.string().min(1)).optional(),
+  provinceSlugs: z.array(z.string().min(1)).optional(),
+  localitySlugs: z.array(z.string().min(1)).optional(),
   tags: z.array(z.string().min(1)).optional(),
   safetyLevel: z.enum(safetyLevelValues).optional(),
   featured: z
@@ -153,6 +155,8 @@ export function parsePublicPlacesSearchParams(
     type: searchParams.get("type") ?? undefined,
     neighborhood: searchParams.get("neighborhood") ?? undefined,
     citySlugs: searchParams.get("citySlugs")?.split(",").filter(Boolean),
+    provinceSlugs: searchParams.get("provinceSlugs")?.split(",").filter(Boolean),
+    localitySlugs: searchParams.get("localitySlugs")?.split(",").filter(Boolean),
     tags: searchParams.get("tags")?.split(",").filter(Boolean),
     safetyLevel: searchParams.get("safetyLevel") ?? undefined,
     featured: searchParams.get("featured") ?? undefined,

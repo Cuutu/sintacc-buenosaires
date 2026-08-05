@@ -32,7 +32,7 @@ export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMap
     try {
       const params = new URLSearchParams()
       params.append("limit", "999")
-      params.append("citySlugs", provinceSlug)
+      params.append("provinceSlugs", provinceSlug)
       const data = await fetchApi<{ places: IPlace[] }>(`/api/places?${params.toString()}`)
       setPlaces(data.places || [])
     } catch (err: unknown) {
@@ -69,8 +69,8 @@ export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMap
         <Link
           href={
             province
-              ? `/mapa?citySlugs=${provinceSlug}&lng=${province.center[0]}&lat=${province.center[1]}&zoom=${province.zoom}`
-              : `/mapa?citySlugs=${provinceSlug}`
+              ? `/mapa?provinceSlugs=${provinceSlug}&lng=${province.center?.[0] ?? -64.1888}&lat=${province.center?.[1] ?? -31.4201}&zoom=${province.zoom ?? 7}`
+              : `/mapa?provinceSlugs=${provinceSlug}`
           }
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >

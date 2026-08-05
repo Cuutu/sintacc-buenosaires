@@ -141,7 +141,7 @@ export async function PATCH(
       )
     }
 
-    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
     return NextResponse.json(place)
   } catch (error: any) {
     if (error.name === "ZodError") {
@@ -184,7 +184,7 @@ export async function DELETE(
       )
     }
 
-    invalidateApiCache(["public:places:", "admin:places:", "admin:counts"])
+    invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
     return NextResponse.json({ message: "Lugar eliminado correctamente" })
   } catch (error) {
     logApiError("/api/places/[id]", error, { request })

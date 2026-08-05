@@ -1,5 +1,7 @@
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
+import { getProvinceBySlug } from "@/lib/seo/provinces"
+import { getCityBySlug } from "@/lib/seo/cities"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -34,6 +36,8 @@ interface PlaceJsonLdProps {
     name: string
     type: string
     neighborhood: string
+    province?: string
+    locality?: string
     address?: string
     location?: { lat: number; lng: number }
     photos?: string[]
@@ -96,11 +100,49 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     ;(schema as any).openingHours = place.openingHours
   }
 
+  // BreadcrumbList: Argentina → Provincia → Ciudad → Lugar
+  const breadcrumbItems: { name: string; item: string }[] = [
+    { name: "Inicio", item: BASE_URL },
+    { name: "Sin gluten Argentina", item: `${BASE_URL}/sin-gluten-argentina` },
+  ]
+  const province = place.province ? getProvinceBySlug(place.province) : undefined
+  if (province) {
+    breadcrumbItems.push({
+      name: province.name,
+      item: `${BASE_URL}/sin-gluten/provincia/${province.slug}`,
+    })
+  }
+  const city = place.locality ? getCityBySlug(place.locality) : undefined
+  if (city) {
+    breadcrumbItems.push({
+      name: city.name,
+      item: `${BASE_URL}/sin-gluten/${city.slug}`,
+    })
+  }
+  breadcrumbItems.push({ name: place.name, item: placeUrl })
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.item,
+    })),
+  }
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+    </>
   )
 }
 
