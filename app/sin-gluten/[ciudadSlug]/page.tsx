@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getCityBySlug, getTop10CitySlugs } from "@/lib/seo/cities"
 import { getPlacesByCity, getTopNeighborhoods } from "@/lib/seo/places"
-import { getCityTitle, getCityDescription, getSEOTextBlock } from "@/lib/seo/templates"
+import { getCityDescription, getSEOTextBlock } from "@/lib/seo/templates"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
@@ -45,7 +45,8 @@ export async function generateMetadata({
   const canonical = page === 1 ? baseCanonical : `${baseCanonical}?page=${page}`
 
   return {
-    title: `Lugares sin TACC en ${city.name} | Celimap`,
+    // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
+    title: `Lugares sin TACC en ${city.name}`,
     description:
       total === 0
         ? `Mapa colaborativo de restaurantes, panaderías y dietéticas sin gluten en ${city.name}. Reseñas de la comunidad celíaca. Agregá lugares y ayudá a otros celíacos.`
@@ -57,7 +58,7 @@ export async function generateMetadata({
       canonical,
     },
     openGraph: {
-      title: `Sin gluten en ${city.name} — Celimap`,
+      title: `Sin gluten en ${city.name} | CeliMap`,
       description:
         total === 0
           ? `Encontrá opciones sin TACC en ${city.name}. Celimap es el mapa colaborativo de la comunidad celíaca.`

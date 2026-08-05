@@ -3,7 +3,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { ProvincialPlaceCard } from "@/components/seo/ProvincialPlaceCard"
 import { ProvinceCategoryPageJsonLd } from "@/components/seo/ProvinceCategoryPageJsonLd"
 import type { ProvinceCategoryPageData } from "@/lib/seo/province-pages"
-import { getProvinceCategoryTitle, getProvinceCategoryDescription } from "@/lib/seo/templates"
+import { getProvinceCategoryH1, getProvinceCategoryDescription } from "@/lib/seo/templates"
 import { getCategoryBySlug } from "@/lib/seo/cities"
 
 interface ProvinceCategoryPageContentProps {
@@ -26,7 +26,7 @@ export function ProvinceCategoryPageContent({ data }: ProvinceCategoryPageConten
         ]}
       />
       <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-4">
-        {getProvinceCategoryTitle(province, categorySlug)}
+        {getProvinceCategoryH1(province, categorySlug)}
       </h1>
       <p className="text-muted-foreground mb-8 max-w-2xl">
         {getProvinceCategoryDescription(province, categorySlug, total)}

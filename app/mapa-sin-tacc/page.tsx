@@ -24,7 +24,7 @@ const FAQ = [
 ]
 
 export const metadata: Metadata = {
-  title: "Mapa sin tacc | Lugares aptos celíacos - Celimap",
+  title: "Mapa sin tacc | Lugares aptos celíacos ",
   description:
     "¿Buscás un mapa sin tacc? Celimap tiene restaurantes, cafés y panaderías sin gluten en Argentina, verificados por la comunidad celíaca.",
   keywords: [
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {
-    title: "Mapa sin tacc | Celimap",
+    title: "Mapa sin tacc ",
     description:
       "Mapa sin tacc con lugares aptos para celíacos en Argentina. Restaurantes, cafés y panaderías verificados.",
     url: CANONICAL,
@@ -49,7 +49,7 @@ export default function MapaSinTaccPage() {
       h1="Mapa sin tacc de Argentina"
       intro="Si buscás un mapa sin tacc, acá está: restaurantes, cafés y panaderías seguros para celíacos, con reseñas reales y filtros por ciudad."
       canonicalPath="/mapa-sin-tacc"
-      metaTitle="Mapa sin tacc | Celimap"
+      metaTitle="Mapa sin tacc "
       metaDescription={metadata.description as string}
       faq={FAQ}
       keywordParagraphs={[

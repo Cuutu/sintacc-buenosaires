@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getProvincePageData } from "@/lib/seo/province-pages"
-import { getProvinceTitle, getProvinceDescription } from "@/lib/seo/templates"
+import { getProvincePageTitle, getProvinceDescription } from "@/lib/seo/templates"
 import { decideProvincePageIndexing } from "@/lib/seo/indexing-rules"
 import { ProvincePageContent } from "@/components/seo/ProvincePageContent"
 import { getBaseUrl } from "@/lib/base-url"
@@ -35,12 +35,13 @@ export async function generateMetadata({
   }
 
   return {
-    title: getProvinceTitle(province),
+    // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
+    title: getProvincePageTitle(province),
     description: getProvinceDescription(province, { total: data.total, dedicatedGf: data.dedicatedGfCount, localities: data.localities.length }),
     ...(decision === "noindex" ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical },
     openGraph: {
-      title: getProvinceTitle(province),
+      title: `${getProvincePageTitle(province)} | CeliMap`,
       description: getProvinceDescription(province, { total: data.total, dedicatedGf: data.dedicatedGfCount, localities: data.localities.length }),
       url: canonical,
       type: "website",

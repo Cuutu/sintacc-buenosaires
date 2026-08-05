@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (mongoose.Types.ObjectId.isValid(slug)) {
     const venture = await getVentureById(slug)
-    if (!venture) return { title: "Emprendimiento no encontrado | Celimap", robots: { index: false } }
+    if (!venture) return { title: "Emprendimiento no encontrado", robots: { index: false } }
     return buildVentureMetadata({
       name: venture.name,
       category: venture.category,
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const venture = await getVentureBySlug(slug)
-  if (!venture) return { title: "Emprendimiento no encontrado | Celimap", robots: { index: false } }
+  if (!venture) return { title: "Emprendimiento no encontrado", robots: { index: false } }
 
   return buildVentureMetadata({
     name: venture.name,

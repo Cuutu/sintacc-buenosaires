@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "Cómo Celimap trata datos personales: cuenta Google, ubicación, reseñas, mapas y la app móvil.",
   alternates: { canonical: `${BASE_URL}/privacidad` },
   openGraph: {
-    title: "Política de privacidad | Celimap",
+    title: "Política de privacidad ",
     description:
       "Información sobre datos personales, Google OAuth, ubicación, Mapbox y proveedores de Celimap.",
     url: `${BASE_URL}/privacidad`,

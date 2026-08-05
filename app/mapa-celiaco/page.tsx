@@ -24,7 +24,7 @@ const FAQ = [
 ]
 
 export const metadata: Metadata = {
-  title: "Mapa celíaco | Lugares sin gluten - Celimap",
+  title: "Mapa celíaco | Lugares sin gluten ",
   description:
     "Mapa celíaco de Argentina: restaurantes, cafés y panaderías sin gluten verificados por la comunidad. Gratis y actualizado.",
   keywords: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {
-    title: "Mapa celíaco | Celimap",
+    title: "Mapa celíaco ",
     description:
       "Mapa celíaco con lugares sin gluten en Argentina. Reseñas de la comunidad y filtros por ciudad.",
     url: CANONICAL,
@@ -51,7 +51,7 @@ export default function MapaCeliacoPage() {
       h1="Mapa celíaco de Argentina"
       intro="El mapa para celíacos que usa la comunidad: restaurantes, panaderías y cafés sin gluten, con reseñas reales en todo el país."
       canonicalPath="/mapa-celiaco"
-      metaTitle="Mapa celíaco | Celimap"
+      metaTitle="Mapa celíaco "
       metaDescription={metadata.description as string}
       faq={FAQ}
       keywordParagraphs={[

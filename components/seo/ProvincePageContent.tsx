@@ -4,9 +4,7 @@ import { ProvincialMapEmbed } from "@/components/seo/ProvincialMapEmbed"
 import { ProvincialPlaceCard } from "@/components/seo/ProvincialPlaceCard"
 import { ProvincePageJsonLd } from "@/components/seo/ProvincePageJsonLd"
 import type { ProvincePageData } from "@/lib/seo/province-pages"
-import { getProvinceTitle, getProvinceDescription, getProvinceSEOTextBlock } from "@/lib/seo/templates"
-import { decideProvincePageIndexing } from "@/lib/seo/indexing-rules"
-import { CATEGORIES } from "@/lib/seo/cities"
+import { getProvincePageH1, getProvinceDescription } from "@/lib/seo/templates"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 interface ProvincePageContentProps {
@@ -49,7 +47,7 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
         ]}
       />
       <h1 className="text-2xl md:text-4xl font-bold mt-4 mb-4">
-        {getProvinceTitle(province)}
+        {getProvincePageH1(province)}
       </h1>
       <p className="text-muted-foreground mb-6 max-w-2xl">
         {getProvinceDescription(province, { total, dedicatedGf: dedicatedGfCount, localities: localities.length })}

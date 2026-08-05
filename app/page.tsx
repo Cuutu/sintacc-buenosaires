@@ -17,11 +17,12 @@ import { getBaseUrl } from "@/lib/base-url"
 const BASE_URL = getBaseUrl()
 
 export const metadata = {
-  title: "Mapa para celíacos en Argentina | Celimap",
+  // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
+  title: "Mapa para celíacos en Argentina",
   description:
     "Mapa para celíacos de Argentina. Encontrá restaurantes, cafés y panaderías sin tacc en Buenos Aires, La Plata, Tucumán y más. Verificados por la comunidad.",
   openGraph: {
-    title: "Mapa para celíacos en Argentina | Celimap",
+    title: "Mapa para celíacos en Argentina | CeliMap",
     description:
       "El mapa colaborativo para celíacos. Restaurantes, cafés y panaderías sin tacc con reseñas reales.",
     url: BASE_URL,
@@ -32,21 +33,11 @@ export const metadata = {
 export default function HomePage() {
   return (
     <div className="min-h-screen">
-
-      {/* ════════════════════════════════════════════════════
-          HERO — full viewport desktop, compacto mobile
-      ════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden min-h-[92vh] flex flex-col justify-center">
-
-        {/* Background atmosférico en capas (noise solo acá, no en body) */}
         <div className="absolute inset-0 -z-10 pointer-events-none" data-overflow-allowed="decoration">
-          {/* Blob principal top-right */}
           <div className="celimap-hero-blob absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-primary/15 blur-[120px]" />
-          {/* Blob secundario bottom-left */}
           <div className="celimap-hero-blob absolute bottom-0 -left-32 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
-          {/* Blob accent centro */}
-          <div className="celimap-hero-blob absolute top-1/3 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-emerald-500/5 blur-[80px]" />
-          {/* Grid de puntos sutil */}
+          <div className="celimap-hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-emerald-500/5 blur-[80px]" />
           <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
@@ -58,8 +49,6 @@ export default function HomePage() {
         </div>
 
         <div className="container mx-auto px-4 pt-8 pb-12 md:pt-24 md:pb-20 max-w-5xl">
-
-          {/* Badge de apertura */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
               <Sparkles className="h-3.5 w-3.5" />
@@ -67,14 +56,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* H1 — la pieza más importante de la página */}
           <h1 className="mb-6 text-center text-[1.75rem] font-extrabold leading-[1.12] tracking-tight sm:text-4xl sm:leading-[1.05] md:text-5xl lg:text-6xl xl:text-7xl">
             El mapa para celíacos
             <br />
             de{" "}
             <span className="relative inline-block max-w-full">
               <span className="text-primary">Argentina</span>
-              {/* Línea decorativa bajo "sin gluten" */}
               <svg
                 className="absolute -bottom-1 left-0 w-full"
                 height="6"
@@ -93,18 +80,15 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Subtítulo */}
           <p className="text-center text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             Restaurantes, cafés y panaderías sin tacc en La Plata, Tucumán, Buenos Aires y más.
             Lugares verificados por la comunidad celíaca.
           </p>
 
-          {/* Search bar prominente */}
           <div className="max-w-xl mx-auto mb-8">
             <SearchBar />
           </div>
 
-          {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
             <Button
               asChild
@@ -129,10 +113,8 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {/* Stats */}
           <StatsRow />
 
-          {/* Trust pills — debajo de stats */}
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {[
               { icon: "🟢", text: "100% sin TACC verificados" },
@@ -149,23 +131,17 @@ export default function HomePage() {
               </span>
             ))}
           </div>
-
         </div>
 
-        {/* Indicador de scroll — solo desktop */}
         <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-1 text-muted-foreground/40 animate-bounce">
           <span className="text-[10px] font-mono uppercase tracking-widest">scroll</span>
           <ChevronRight className="h-4 w-4 rotate-90" />
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════════════
-          CÓMO FUNCIONA — 3 pasos simples
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-16 md:py-20 max-w-5xl">
-
             <div className="text-center mb-12">
               <h2 className="text-2xl md:text-3xl font-bold mb-3">
                 Tan fácil como abrir el mapa
@@ -174,14 +150,13 @@ export default function HomePage() {
                 Diseñado para celíacos que quieren comer tranquilos, no buscar tranquilos
               </p>
             </div>
-
             <div className="grid md:grid-cols-3 gap-6 md:gap-8">
               {[
                 {
                   step: "01",
                   icon: <MapPin className="h-6 w-6 text-primary" />,
                   title: "Abrí el mapa",
-                  desc: "Buscá por barrio, ciudad o activá tu ubicación. Más de 800 lugares sin TACC en Argentina.",
+                  desc: "Buscá por barrio, ciudad o activá tu ubicación. Lugares sin TACC en Argentina.",
                   href: "/mapa",
                   cta: "Ir al mapa →",
                 },
@@ -206,7 +181,6 @@ export default function HomePage() {
                   key={item.step}
                   className="relative rounded-2xl border border-white/8 bg-white/[0.025] p-6 hover:border-white/15 hover:bg-white/[0.04] transition-all duration-300"
                 >
-                  {/* Número de paso */}
                   <div className="absolute top-5 right-5 font-mono text-[11px] font-bold text-muted-foreground/30 select-none">
                     {item.step}
                   </div>
@@ -232,9 +206,6 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          LUGARES DESTACADOS
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section id="lugares" className="border-t border-border/40 scroll-mt-20">
           <div className="container mx-auto px-4 py-16 md:py-20 max-w-5xl">
@@ -243,9 +214,6 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          TIPOS DE LUGARES — pills de categoría
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-12 md:py-16 max-w-5xl">
@@ -279,9 +247,6 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          EMPRENDIMIENTOS
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-12 md:py-16 max-w-5xl">
@@ -290,9 +255,6 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          LISTAS DESTACADAS
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section id="listas" className="border-t border-border/40 scroll-mt-20">
           <div className="container mx-auto px-4 py-16 md:py-20 max-w-5xl">
@@ -301,14 +263,10 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          CTA COMUNIDAD — sugerir lugar
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-16 md:py-20 max-w-5xl">
             <div className="relative rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent overflow-hidden px-8 py-12 text-center">
-              {/* Glow decorativo */}
               <div
                 data-overflow-allowed="decoration"
                 className="pointer-events-none absolute inset-0"
@@ -317,7 +275,6 @@ export default function HomePage() {
                 <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/15 blur-[60px]" />
                 <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-primary/10 blur-[60px]" />
               </div>
-
               <div className="relative">
                 <div className="inline-flex items-center gap-2 text-primary mb-4">
                   <Users className="h-5 w-5" />
@@ -346,31 +303,12 @@ export default function HomePage() {
                     <Link href="/mapa">Ver el mapa</Link>
                   </Button>
                 </div>
-
-                {/* Mini trust signals */}
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-8 text-xs text-muted-foreground/60">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary/60" />
-                    Sin registro requerido
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary/60" />
-                    Revisado por el equipo
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary/60" />
-                    Aparece en el mapa en minutos
-                  </span>
-                </div>
               </div>
             </div>
           </div>
         </section>
       </ScrollReveal>
 
-      {/* ════════════════════════════════════════════════════
-          SEO: texto + ciudades + categorías (sin cambios)
-      ════════════════════════════════════════════════════ */}
       <ScrollReveal>
         <section className="border-t border-border/40">
           <div className="container mx-auto px-4 py-12 md:py-16 max-w-3xl text-center">
@@ -422,11 +360,7 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* FAQ */}
-      <ScrollReveal>
-        <FaqSection />
-      </ScrollReveal>
-
+      <FaqSection />
     </div>
   )
 }

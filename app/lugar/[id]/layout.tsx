@@ -48,11 +48,12 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
   }Resenas, datos de contacto y nivel de seguridad en Celimap.`
 
   return {
-    title: `${place.name} | Celimap`,
+    // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
+    title: `${place.name}`,
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${place.name} | Celimap`,
+      title: `${place.name} | CeliMap`,
       description,
       url: canonical,
       type: "website",
@@ -60,7 +61,7 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${place.name} | Celimap`,
+      title: `${place.name} | CeliMap`,
       description,
       images: [ogImage],
     },
@@ -74,7 +75,7 @@ export async function generateMetadata({ params }: LugarLayoutProps): Promise<Me
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       const place = await Place.findOne({ slug: id, status: "approved" }).lean()
-      if (!place) return { title: "Lugar no encontrado | Celimap", robots: { index: false } }
+      if (!place) return { title: "Lugar no encontrado", robots: { index: false } }
       return buildPlaceMetadata(place as PlaceMetadataInput)
     }
 
@@ -85,13 +86,13 @@ export async function generateMetadata({ params }: LugarLayoutProps): Promise<Me
 
     if (!place) {
       console.error(`[lugar/[id]] No se encontro lugar con id: ${id}`)
-      return { title: "Lugar no encontrado | Celimap", robots: { index: false } }
+      return { title: "Lugar no encontrado", robots: { index: false } }
     }
 
     return buildPlaceMetadata(place as PlaceMetadataInput)
   } catch (error) {
     console.error("[lugar/[id]] Error en generateMetadata:", error)
-    return { title: "Lugar | Celimap" }
+    return { title: "Lugar" }
   }
 }
 

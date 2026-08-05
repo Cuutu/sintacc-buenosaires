@@ -2,8 +2,13 @@ import type { City } from "./cities"
 import { getCategoryBySlug } from "./cities"
 import type { ProvinceConfig } from "./provinces"
 
+/**
+ * Los titles NO incluyen la marca "CeliMap": el layout raíz la agrega una sola vez
+ * vía `title: { template: "%s | CeliMap" }`. Así se evita "| CeliMap | CeliMap".
+ */
+
 export function getCityTitle(city: City): string {
-  return `Lugares sin gluten en ${city.name} | Celimap`
+  return `Lugares sin gluten en ${city.name}`
 }
 
 export function getCityDescription(city: City, total?: number): string {
@@ -15,9 +20,9 @@ export function getCategoryTitle(city: City | null, categorySlug: string): strin
   const cat = getCategoryBySlug(categorySlug)
   const catName = cat?.name ?? categorySlug
   if (city) {
-    return `${catName} sin gluten en ${city.name} | Celimap`
+    return `${catName} sin gluten en ${city.name}`
   }
-  return `${catName} sin gluten en Argentina | Celimap`
+  return `${catName} sin gluten en Argentina`
 }
 
 export function getCategoryDescription(city: City | null, categorySlug: string, total?: number): string {
@@ -76,7 +81,7 @@ export function getSEOTextBlock(city: City, categorySlug?: string): string {
 }
 
 export function getArgentinaLandingTitle(): string {
-  return "Lugares sin gluten en Argentina | Celimap"
+  return "Lugares sin gluten en Argentina"
 }
 
 export function getArgentinaLandingDescription(): string {
@@ -84,7 +89,7 @@ export function getArgentinaLandingDescription(): string {
 }
 
 export function getTopRankingTitle(city: City): string {
-  return `Top lugares sin gluten en ${city.name} | Celimap`
+  return `Top lugares sin gluten en ${city.name}`
 }
 
 export function getTopRankingDescription(city: City): string {
@@ -92,9 +97,21 @@ export function getTopRankingDescription(city: City): string {
 }
 
 // ── Templates provinciales ──
+// La marca la agrega el layout raíz. H1 y title son separados.
 
-export function getProvinceTitle(province: ProvinceConfig): string {
-  return `Lugares sin TACC en ${province.name}: restaurantes y cafeterías | CeliMap`
+/** Nombre legible de la jurisdicción para el H1 (CABA y PBA tienen textos especiales). */
+function provinceDisplayName(province: ProvinceConfig): string {
+  if (province.slug === "caba") return "la Ciudad de Buenos Aires"
+  if (province.slug === "buenos-aires") return "la provincia de Buenos Aires"
+  return `la provincia de ${province.name}`
+}
+
+export function getProvincePageTitle(province: ProvinceConfig): string {
+  return `Lugares sin TACC en ${province.name}`
+}
+
+export function getProvincePageH1(province: ProvinceConfig): string {
+  return `Lugares sin TACC en ${provinceDisplayName(province)}`
 }
 
 export function getProvinceDescription(
@@ -119,7 +136,13 @@ export function getProvinceDescription(
 export function getProvinceCategoryTitle(province: ProvinceConfig, categorySlug: string): string {
   const cat = getCategoryBySlug(categorySlug)
   const catName = cat?.name ?? categorySlug
-  return `${catName} sin TACC en ${province.name} | CeliMap`
+  return `${catName} sin TACC en ${province.name}`
+}
+
+export function getProvinceCategoryH1(province: ProvinceConfig, categorySlug: string): string {
+  const cat = getCategoryBySlug(categorySlug)
+  const catName = cat?.name ?? categorySlug
+  return `${catName} sin TACC en ${provinceDisplayName(province)}`
 }
 
 export function getProvinceCategoryDescription(
@@ -162,3 +185,6 @@ export function getProvinceSEOTextBlock(
   )
   return lines.join("\n\n")
 }
+
+// Re-export por compatibilidad (deprecated)
+export const getProvinceTitle = getProvincePageTitle

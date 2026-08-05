@@ -13,18 +13,18 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
   try {
     const { id } = await params
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return { title: "Lista | Celimap", robots: { index: false } }
+      return { title: "Lista", robots: { index: false } }
     }
 
     await connectDB()
     const list = await List.findById(id).select("name description isPublic").lean()
     if (!list || !list.isPublic) {
-      return { title: "Lista | Celimap", robots: { index: false } }
+      return { title: "Lista", robots: { index: false } }
     }
 
     const baseUrl = getBaseUrl()
     const canonical = `${baseUrl}/listas/${id}`
-    const title = `${list.name} | Celimap`
+    const title = `${list.name}`
     const description =
       list.description ||
       `Lista de lugares sin gluten: ${list.name}. Restaurantes, cafes y panaderias aptas para celiacos.`
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
       },
     }
   } catch {
-    return { title: "Lista | Celimap", robots: { index: false } }
+    return { title: "Lista", robots: { index: false } }
   }
 }
 

@@ -26,9 +26,10 @@ const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  // title.template agrega la marca UNA sola vez. Las funciones de pagina devuelven el titulo SIN marca.
   title: {
-    default: "Mapa para celíacos en Argentina | Celimap",
-    template: "%s | Celimap",
+    default: "Mapa para celíacos en Argentina | CeliMap",
+    template: "%s | CeliMap",
   },
   description:
     "Mapa para celíacos de Argentina. Restaurantes, cafés y panaderías sin tacc verificados por la comunidad. Gratis y actualizado.",
@@ -76,7 +77,6 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
-  // black-translucent + viewportFit cover → PWA edge-to-edge; env(safe-area-*) activos
   appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "black-translucent" },
   icons: {
     icon: [

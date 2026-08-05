@@ -16,7 +16,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   if (sp.search?.trim() || sp.category) {
     return {
-      title: "Emprendimientos sin gluten | Celimap",
+title: "Emprendimientos sin gluten",
       robots: { index: false, follow: true },
       alternates: { canonical },
     }
