@@ -104,10 +104,11 @@ export function normalizeDestination(value: unknown): string | undefined {
   return normalizeOptionalText(value, DESTINATION_MAX_LENGTH)
 }
 
-export function normalizeCoverImage(value: unknown): string | undefined {
+export function normalizeCoverImage(value: unknown): string | undefined | null {
+  if (value === null || value === "") return null
   if (typeof value !== "string") return undefined
   const trimmed = value.trim().slice(0, 500)
-  if (!trimmed) return undefined
+  if (!trimmed) return null
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
     return trimmed
   }

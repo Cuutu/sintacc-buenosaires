@@ -27,8 +27,15 @@ async function connectDB() {
   }
 
   if (!cached.promise) {
+    // Vercel serverless: muchas lambdas × pool default (~100) = Atlas al límite.
+    // Pool chico + min 0 deja caer idle y evita picos 500/500.
     const opts = {
       bufferCommands: false,
+      maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 5),
+      minPoolSize: 0,
+      maxIdleTimeMS: 10_000,
+      serverSelectionTimeoutMS: 8_000,
+      socketTimeoutMS: 45_000,
     }
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {

@@ -130,7 +130,12 @@ export async function PATCH(
       list.destination = normalizeDestination(body.destination)
     }
     if (body.coverImage !== undefined) {
-      list.coverImage = normalizeCoverImage(body.coverImage)
+      const nextCover = normalizeCoverImage(body.coverImage)
+      if (nextCover === null) {
+        list.coverImage = undefined
+      } else if (nextCover !== undefined) {
+        list.coverImage = nextCover
+      }
     }
     if (Array.isArray(body.placeIds)) {
       list.placeIds = normalizePlaceIdStrings(body.placeIds).map(

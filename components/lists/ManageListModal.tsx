@@ -30,6 +30,7 @@ import type { ListWithDetails } from "@/components/lists/ListCard"
 import { LIST_LINK_STATUS, LIST_VISIBILITY } from "@/lib/lists/constants"
 import { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
+import { ImageUpload } from "@/components/image-upload"
 
 interface ManageListModalProps {
   open: boolean
@@ -58,6 +59,7 @@ export function ManageListModal({
   const [visibility, setVisibility] = useState<string>(LIST_VISIBILITY.PUBLIC)
   const [orderedIds, setOrderedIds] = useState<string[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [coverUrls, setCoverUrls] = useState<string[]>([])
 
   const placeById = useMemo(() => {
     const map = new Map<string, IPlace | { _id: string; name: string; neighborhood?: string; photos?: string[] }>()
@@ -91,6 +93,7 @@ export function ManageListModal({
       if (pid && n.note) noteMap[pid] = n.note
     }
     setNotes(noteMap)
+    setCoverUrls(list.coverImage ? [list.coverImage] : [])
   }, [list, open])
 
   const allPlaceOptions = useMemo(() => {
@@ -183,7 +186,10 @@ export function ManageListModal({
           placeIds: orderedIds,
           placeNotes,
           visibility,
-          coverImage: placeById.get(orderedIds[0])?.photos?.[0],
+          coverImage:
+            coverUrls[0] ||
+            placeById.get(orderedIds[0])?.photos?.[0] ||
+            "",
         }),
       })
       toast.success("Lista actualizada")
@@ -255,6 +261,17 @@ export function ManageListModal({
                 maxLength={80}
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label>Foto de portada</Label>
+              <div className="mt-1.5">
+                <ImageUpload
+                  value={coverUrls}
+                  onChange={setCoverUrls}
+                  maxCount={1}
+                  folder="lists"
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="edit-desc">Descripción</Label>

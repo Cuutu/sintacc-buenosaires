@@ -16,9 +16,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { toast } from "sonner"
-import { ArrowDown, ArrowUp, Lock, Globe } from "lucide-react"
+import { ArrowDown, ArrowUp, Lock, Globe, Search } from "lucide-react"
 import { LIST_VISIBILITY, type ListVisibility } from "@/lib/lists/constants"
 import { cn } from "@/lib/utils"
+import { ImageUpload } from "@/components/image-upload"
+import Link from "next/link"
 
 interface CreateListModalProps {
   open: boolean
@@ -26,6 +28,19 @@ interface CreateListModalProps {
   favorites: IPlace[]
   canUsePrivateLists?: boolean
   onCreated?: (list?: { visibility?: string; privateSharePath?: string | null }) => void
+}
+
+type PlaceLite = {
+  _id: string
+  name: string
+  neighborhood?: string
+  photos?: string[]
+  type?: string
+  slug?: string
+}
+
+function placeKey(p: { _id: string | { toString(): string } }) {
+  return typeof p._id === "string" ? p._id : p._id.toString()
 }
 
 export function CreateListModal({
@@ -43,20 +58,101 @@ export function CreateListModal({
   )
   const [orderedIds, setOrderedIds] = useState<string[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [coverUrls, setCoverUrls] = useState<string[]>([])
+  const [extraPlaces, setExtraPlaces] = useState<PlaceLite[]>([])
+  const [search, setSearch] = useState("")
+  const [searchResults, setSearchResults] = useState<PlaceLite[]>([])
+  const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setOrderedIds(favorites.map((p) => p._id.toString()))
+    setOrderedIds([])
     setNotes({})
+    setCoverUrls([])
+    setExtraPlaces([])
+    setSearch("")
+    setSearchResults([])
     setVisibility(LIST_VISIBILITY.PUBLIC)
-  }, [open, favorites])
+    setName("")
+    setDescription("")
+    setDestination("")
+  }, [open])
 
-  const placeById = useMemo(() => {
-    const map = new Map<string, IPlace>()
-    for (const p of favorites) map.set(p._id.toString(), p)
+  useEffect(() => {
+    if (!open) return
+    const q = search.trim()
+    if (q.length < 2) {
+      setSearchResults([])
+      return
+    }
+    let alive = true
+    const t = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const data = await fetchApi<{ places: PlaceLite[] }>(
+          `/api/places?search=${encodeURIComponent(q)}&limit=8`
+        )
+        if (!alive) return
+        setSearchResults(
+          (data.places ?? []).map((p) => ({
+            ...p,
+            _id: typeof p._id === "string" ? p._id : String(p._id),
+          }))
+        )
+      } catch {
+        if (alive) setSearchResults([])
+      } finally {
+        if (alive) setSearching(false)
+      }
+    }, 300)
+    return () => {
+      alive = false
+      clearTimeout(t)
+    }
+  }, [search, open])
+
+  const placePool = useMemo(() => {
+    const map = new Map<string, PlaceLite>()
+    for (const p of favorites) {
+      map.set(placeKey(p), {
+        _id: placeKey(p),
+        name: p.name,
+        neighborhood: p.neighborhood,
+        photos: p.photos,
+        type: p.type,
+        slug: p.slug,
+      })
+    }
+    for (const p of extraPlaces) map.set(p._id, p)
     return map
-  }, [favorites])
+  }, [favorites, extraPlaces])
+
+  const selectablePlaces = useMemo(() => {
+    const ids = new Set<string>()
+    const items: PlaceLite[] = []
+    for (const id of orderedIds) {
+      const p = placePool.get(id)
+      if (p && !ids.has(id)) {
+        ids.add(id)
+        items.push(p)
+      }
+    }
+    for (const p of favorites) {
+      const id = placeKey(p)
+      if (!ids.has(id)) {
+        ids.add(id)
+        items.push(placePool.get(id)!)
+      }
+    }
+    for (const p of extraPlaces) {
+      if (!ids.has(p._id)) {
+        ids.add(p._id)
+        items.push(p)
+      }
+    }
+    return items
+  }, [orderedIds, favorites, extraPlaces, placePool])
 
   const togglePlace = (id: string) => {
     setOrderedIds((prev) => {
@@ -70,6 +166,16 @@ export function CreateListModal({
       }
       return [...prev, id]
     })
+  }
+
+  const addFromSearch = (place: PlaceLite) => {
+    const id = place._id
+    setExtraPlaces((prev) =>
+      prev.some((p) => p._id === id) ? prev : [...prev, place]
+    )
+    setOrderedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    setSearch("")
+    setSearchResults([])
   }
 
   const move = (id: string, dir: -1 | 1) => {
@@ -102,7 +208,9 @@ export function CreateListModal({
         .map((id) => ({ placeId: id, note: notes[id].trim() }))
 
       const coverImage =
-        placeById.get(orderedIds[0])?.photos?.[0] || undefined
+        coverUrls[0] ||
+        placePool.get(orderedIds[0])?.photos?.[0] ||
+        undefined
 
       const created = await fetchApi<{
         visibility?: string
@@ -135,12 +243,6 @@ export function CreateListModal({
       } else {
         toast.success("Lista creada")
       }
-      setName("")
-      setDescription("")
-      setDestination("")
-      setOrderedIds(favorites.map((p) => p._id.toString()))
-      setNotes({})
-      setVisibility(LIST_VISIBILITY.PUBLIC)
       onOpenChange(false)
       onCreated?.(created)
     } catch (err: any) {
@@ -171,8 +273,20 @@ export function CreateListModal({
               maxLength={80}
               className="mt-1"
             />
+          </div>
+
+          <div>
+            <Label>Foto de portada (opcional)</Label>
+            <div className="mt-1.5">
+              <ImageUpload
+                value={coverUrls}
+                onChange={setCoverUrls}
+                maxCount={1}
+                folder="lists"
+              />
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Preferí un alias o nombre de viaje, no datos personales sensibles.
+              Si no subís foto, usamos la del primer lugar.
             </p>
           </div>
 
@@ -247,95 +361,142 @@ export function CreateListModal({
             </fieldset>
           ) : null}
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label>Lugares ({orderedIds.length} seleccionados)</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  setOrderedIds(favorites.map((p) => p._id.toString()))
-                }
-              >
-                Seleccionar todos
-              </Button>
+          <div className="space-y-2">
+            <Label>Buscar lugares para agregar</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nombre o barrio..."
+                className="pl-9"
+              />
             </div>
-            <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-2">
-              {favorites.map((place) => {
-                const id = place._id.toString()
-                const selected = orderedIds.includes(id)
-                const orderIdx = orderedIds.indexOf(id)
-                return (
-                  <div
-                    key={id}
-                    className={cn(
-                      "rounded-lg p-2",
-                      selected ? "bg-muted/40" : "hover:bg-muted/30"
-                    )}
-                  >
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => togglePlace(id)}
-                        className="rounded"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-sm">
-                        {place.name}
-                      </span>
+            {searching ? (
+              <p className="text-xs text-muted-foreground">Buscando...</p>
+            ) : null}
+            {searchResults.length > 0 ? (
+              <ul className="max-h-36 space-y-1 overflow-y-auto rounded-lg border p-1">
+                {searchResults.map((place) => (
+                  <li key={place._id}>
+                    <button
+                      type="button"
+                      onClick={() => addFromSearch(place)}
+                      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted/50"
+                    >
+                      <span className="truncate font-medium">{place.name}</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {place.neighborhood}
                       </span>
-                    </label>
-                    {selected ? (
-                      <div className="mt-2 space-y-2 pl-6">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] text-muted-foreground">
-                            #{orderIdx + 1}
-                          </span>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => move(id, -1)}
-                            disabled={orderIdx <= 0}
-                            aria-label="Subir"
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => move(id, 1)}
-                            disabled={orderIdx >= orderedIds.length - 1}
-                            aria-label="Bajar"
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                        <Textarea
-                          value={notes[id] || ""}
-                          onChange={(e) =>
-                            setNotes((prev) => ({
-                              ...prev,
-                              [id]: e.target.value,
-                            }))
-                          }
-                          placeholder="Nota personalizada para tu cliente (opcional)"
-                          maxLength={500}
-                          rows={2}
-                          className="text-sm"
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label>Lugares ({orderedIds.length} seleccionados)</Label>
+              {favorites.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setOrderedIds(favorites.map((p) => placeKey(p)))
+                  }
+                >
+                  Usar favoritos
+                </Button>
+              ) : null}
             </div>
+
+            {selectablePlaces.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                Buscá lugares arriba o{" "}
+                <Link href="/mapa" className="text-primary underline">
+                  guardá favoritos en el mapa
+                </Link>
+                .
+              </div>
+            ) : (
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-2">
+                {selectablePlaces.map((place) => {
+                  const id = place._id
+                  const selected = orderedIds.includes(id)
+                  const orderIdx = orderedIds.indexOf(id)
+                  return (
+                    <div
+                      key={id}
+                      className={cn(
+                        "rounded-lg p-2",
+                        selected ? "bg-muted/40" : "hover:bg-muted/30"
+                      )}
+                    >
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => togglePlace(id)}
+                          className="rounded"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm">
+                          {place.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {place.neighborhood}
+                        </span>
+                      </label>
+                      {selected ? (
+                        <div className="mt-2 space-y-2 pl-6">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] text-muted-foreground">
+                              #{orderIdx + 1}
+                            </span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => move(id, -1)}
+                              disabled={orderIdx <= 0}
+                              aria-label="Subir"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => move(id, 1)}
+                              disabled={orderIdx >= orderedIds.length - 1}
+                              aria-label="Bajar"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={notes[id] || ""}
+                            onChange={(e) =>
+                              setNotes((prev) => ({
+                                ...prev,
+                                [id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Nota personalizada (opcional)"
+                            maxLength={500}
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
