@@ -15,8 +15,8 @@ import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { resolveFavoritosAuthView } from "@/lib/favoritos-auth-view"
 import { toast } from "sonner"
-import { MapPin, ListPlus, Trash2, Settings2, Lock } from "lucide-react"
-import { LIST_VISIBILITY } from "@/lib/lists/constants"
+import { MapPin, ListPlus, Trash2, Settings2, Copy, ExternalLink, Lock } from "lucide-react"
+import { LIST_LINK_STATUS, LIST_VISIBILITY } from "@/lib/lists/constants"
 
 function FavoritosSkeleton({ state }: { state: string }) {
   return (
@@ -133,6 +133,29 @@ export default function FavoritosPage() {
     } catch (error: any) {
       toast.error(error?.message || "Error al eliminar")
     }
+  }
+
+  const copyPrivateLink = async (list: ListWithDetails) => {
+    if (!list.privateSharePath) {
+      toast.error("Esta lista todavía no tiene enlace. Abrí Gestionar y guardá.")
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}${list.privateSharePath}`
+      )
+      toast.success("Enlace copiado — ya podés enviarlo")
+    } catch {
+      toast.error("No se pudo copiar. Abrí Gestionar y copiá desde ahí.")
+    }
+  }
+
+  const openClientView = (list: ListWithDetails) => {
+    if (!list.privateSharePath) {
+      toast.error("Sin enlace activo")
+      return
+    }
+    window.open(list.privateSharePath, "_blank", "noopener,noreferrer")
   }
 
   if (authView.kind === "loading" || authView.kind === "unauthenticated") {
@@ -263,41 +286,85 @@ export default function FavoritosPage() {
                 const isPrivate =
                   list.visibility === LIST_VISIBILITY.PRIVATE_LINK ||
                   list.isPublic === false
+                const linkActive =
+                  isPrivate &&
+                  list.linkStatus !== LIST_LINK_STATUS.REVOKED &&
+                  Boolean(list.privateSharePath)
+
                 return (
-                  <div key={list._id} className="group relative">
-                    <ListCard
-                      list={list}
-                      disableLink
-                      href={
-                        isPrivate
-                          ? list.privateSharePath || undefined
-                          : `/listas/${list._id}`
-                      }
-                    />
-                    <div className="absolute right-2 top-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                  <div key={list._id} className="space-y-2">
+                    <button
+                      type="button"
+                      className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                      onClick={() => setManageList(list)}
+                    >
+                      <ListCard list={list} disableLink />
+                    </button>
+
+                    <div className="flex flex-wrap gap-2">
                       <Button
-                        size="icon"
+                        type="button"
+                        size="sm"
                         variant="secondary"
-                        className="h-8 w-8"
+                        className="gap-1.5"
                         onClick={() => setManageList(list)}
-                        aria-label="Gestionar lista"
                       >
-                        {isPrivate ? (
-                          <Lock className="h-3.5 w-3.5" />
-                        ) : (
-                          <Settings2 className="h-3.5 w-3.5" />
-                        )}
+                        <Settings2 className="h-3.5 w-3.5" />
+                        Gestionar
                       </Button>
+
+                      {isPrivate ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="default"
+                            className="gap-1.5"
+                            disabled={!linkActive}
+                            onClick={() => copyPrivateLink(list)}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Copiar enlace
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            disabled={!linkActive}
+                            onClick={() => openClientView(list)}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Ver como cliente
+                          </Button>
+                        </>
+                      ) : (
+                        <Button type="button" size="sm" variant="outline" asChild>
+                          <Link href={`/listas/${list._id}`} className="gap-1.5">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Ver pública
+                          </Link>
+                        </Button>
+                      )}
+
                       <Button
-                        size="icon"
+                        type="button"
+                        size="sm"
                         variant="destructive"
-                        className="h-8 w-8"
+                        className="gap-1.5"
                         onClick={() => handleDeleteList(list._id)}
-                        aria-label="Eliminar lista"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
+                        Eliminar
                       </Button>
                     </div>
+
+                    {isPrivate && !linkActive ? (
+                      <p className="flex items-center gap-1.5 text-xs text-amber-400/90">
+                        <Lock className="h-3 w-3" />
+                        Enlace revocado o pendiente — abrí Gestionar para rehabilitar.
+                      </p>
+                    ) : null}
                   </div>
                 )
               })}
