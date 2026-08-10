@@ -11,6 +11,7 @@ import {
   VENTURE_ZONE_LANDINGS,
 } from "@/lib/venture-seo"
 import { getAllApprovedVentureSlugs, countApprovedVentures } from "@/lib/ventures-server"
+import { publicListsQuery } from "@/lib/lists/access"
 
 export const revalidate = 86400 // 24 horas
 
@@ -60,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
 
     try {
-      const lists = await List.find({ isPublic: true }, { _id: 1, updatedAt: 1 }).lean()
+      const lists = await List.find(publicListsQuery(), { _id: 1, updatedAt: 1 }).lean()
       listUrls = lists.map((l: { _id: unknown; updatedAt?: Date }) => ({
         url: `${base}/listas/${l._id}`,
         lastModified: l.updatedAt ? new Date(l.updatedAt) : lastModDate,

@@ -1,3 +1,5 @@
+import { redactPrivateListTokenDeep } from "@/lib/lists/private-token"
+
 /**
  * Logger estructurado JSON para APIs.
  * Campos: route, userId?, ip?, status?, durationMs?, error?, message
@@ -16,10 +18,11 @@ export interface LogContext {
 }
 
 function log(level: LogLevel, context: LogContext) {
+  const safeContext = redactPrivateListTokenDeep(context)
   const payload = {
     level,
     timestamp: new Date().toISOString(),
-    ...context,
+    ...safeContext,
   }
   const line = JSON.stringify(payload)
   if (level === "error") {

@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button"
 import { PlaceCard } from "@/components/place-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CreateListModal } from "@/components/lists/CreateListModal"
+import { ManageListModal } from "@/components/lists/ManageListModal"
 import { ListCard, type ListWithDetails } from "@/components/lists/ListCard"
 import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { resolveFavoritosAuthView } from "@/lib/favoritos-auth-view"
 import { toast } from "sonner"
-import { MapPin, ListPlus, Trash2 } from "lucide-react"
+import { MapPin, ListPlus, Trash2, Settings2, Lock } from "lucide-react"
+import { LIST_VISIBILITY } from "@/lib/lists/constants"
 
 function FavoritosSkeleton({ state }: { state: string }) {
   return (
@@ -33,9 +35,11 @@ export default function FavoritosPage() {
   const redirectedRef = useRef(false)
   const [favorites, setFavorites] = useState<IPlace[]>([])
   const [lists, setLists] = useState<ListWithDetails[]>([])
+  const [canUsePrivateLists, setCanUsePrivateLists] = useState(false)
   const [loading, setLoading] = useState(true)
   const [listsLoading, setListsLoading] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [manageList, setManageList] = useState<ListWithDetails | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sessionHttpStatus, setSessionHttpStatus] = useState<number | null>(null)
 
@@ -103,19 +107,22 @@ export default function FavoritosPage() {
       fetchFavorites()
     }
   }, [authView.kind, router, fetchFavorites])
-  const fetchLists = async () => {
+
+  const fetchLists = useCallback(async () => {
     setListsLoading(true)
     try {
-      const data = await fetchApi<{ lists: ListWithDetails[] }>(
-        "/api/lists?mine=1"
-      )
+      const data = await fetchApi<{
+        lists: ListWithDetails[]
+        canUsePrivateLists?: boolean
+      }>("/api/lists?mine=1")
       setLists(data.lists ?? [])
+      setCanUsePrivateLists(Boolean(data.canUsePrivateLists))
     } catch (error: any) {
       toast.error(error?.message || "Error al cargar listas")
     } finally {
       setListsLoading(false)
     }
-  }
+  }, [])
 
   const handleDeleteList = async (id: string) => {
     if (!confirm("¿Eliminar esta lista?")) return
@@ -170,19 +177,19 @@ export default function FavoritosPage() {
 
   return (
     <div className="container mx-auto px-4 py-8" data-auth-state="ready">
-      <h1 className="text-3xl font-bold mb-6">Guardados</h1>
+      <h1 className="mb-6 text-3xl font-bold">Guardados</h1>
 
       <Tabs defaultValue="favoritos" className="space-y-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="favoritos">Favoritos</TabsTrigger>
-          <TabsTrigger value="listas" onClick={fetchLists}>
+          <TabsTrigger value="listas" onClick={() => fetchLists()}>
             Mis listas
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="favoritos">
           {loading ? (
-            <div className="text-center py-8">Cargando...</div>
+            <div className="py-8 text-center">Cargando...</div>
           ) : favorites.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
@@ -192,16 +199,16 @@ export default function FavoritosPage() {
             </Card>
           ) : (
             <>
-              <div className="flex justify-end mb-4">
+              <div className="mb-4 flex justify-end">
                 <Button
                   onClick={() => setCreateModalOpen(true)}
                   className="gap-2"
                 >
                   <ListPlus className="h-4 w-4" />
-                  Crear lista pública
+                  Crear lista
                 </Button>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {favorites.map((place) => (
                   <div key={place._id.toString()} className="space-y-2">
                     <PlaceCard place={place} />
@@ -224,14 +231,17 @@ export default function FavoritosPage() {
 
         <TabsContent value="listas">
           {listsLoading ? (
-            <div className="text-center py-8">Cargando...</div>
+            <div className="py-8 text-center">Cargando...</div>
           ) : lists.length === 0 ? (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground space-y-4">
-                <p>No tenés listas públicas todavía.</p>
+              <CardContent className="space-y-4 py-8 text-center text-muted-foreground">
+                <p>No tenés listas todavía.</p>
                 <p className="text-sm">
                   Creá una lista desde tus favoritos para compartirla con la
-                  comunidad. Otros usuarios podrán darle like.
+                  comunidad
+                  {canUsePrivateLists
+                    ? " o enviarla en privado a un cliente."
+                    : "."}
                 </p>
                 {favorites.length > 0 && (
                   <Button
@@ -239,7 +249,7 @@ export default function FavoritosPage() {
                       setCreateModalOpen(true)
                       fetchLists()
                     }}
-                    className="gap-2 mt-2"
+                    className="mt-2 gap-2"
                   >
                     <ListPlus className="h-4 w-4" />
                     Crear mi primera lista
@@ -248,22 +258,49 @@ export default function FavoritosPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lists.map((list) => (
-                <div key={list._id} className="relative group">
-                  <ListCard list={list} />
-                  <div className="absolute top-2 right-2">
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleDeleteList(list._id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {lists.map((list) => {
+                const isPrivate =
+                  list.visibility === LIST_VISIBILITY.PRIVATE_LINK ||
+                  list.isPublic === false
+                return (
+                  <div key={list._id} className="group relative">
+                    <ListCard
+                      list={list}
+                      disableLink
+                      href={
+                        isPrivate
+                          ? list.privateSharePath || undefined
+                          : `/listas/${list._id}`
+                      }
+                    />
+                    <div className="absolute right-2 top-2 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8"
+                        onClick={() => setManageList(list)}
+                        aria-label="Gestionar lista"
+                      >
+                        {isPrivate ? (
+                          <Lock className="h-3.5 w-3.5" />
+                        ) : (
+                          <Settings2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteList(list._id)}
+                        aria-label="Eliminar lista"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </TabsContent>
@@ -273,7 +310,17 @@ export default function FavoritosPage() {
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         favorites={favorites}
-        onCreated={fetchLists}
+        canUsePrivateLists={canUsePrivateLists}
+        onCreated={() => fetchLists()}
+      />
+
+      <ManageListModal
+        open={Boolean(manageList)}
+        onOpenChange={(open) => !open && setManageList(null)}
+        list={manageList}
+        favorites={favorites}
+        canUsePrivateLists={canUsePrivateLists}
+        onUpdated={fetchLists}
       />
     </div>
   )

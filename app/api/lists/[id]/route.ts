@@ -8,8 +8,28 @@ import { requireAuth } from "@/lib/middleware"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { LIST_VISIBILITY } from "@/lib/lists/constants"
+import {
+  canUsePrivateLists,
+  isPublicListVisibility,
+  ownerIdEquals,
+} from "@/lib/lists/access"
+import {
+  applyVisibilityFields,
+  normalizeCoverImage,
+  normalizeDestination,
+  normalizePlaceIdStrings,
+  normalizePlaceNotes,
+  parseVisibility,
+} from "@/lib/lists/normalize"
+import {
+  serializeListForCommunity,
+  serializeListForOwner,
+} from "@/lib/lists/serialize"
 
-/** GET: Obtener una lista por ID (pública) */
+/** GET: pública por ID, o owner (incluye privadas) */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -22,10 +42,9 @@ export async function GET(
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const list = await List.findOne({
-      _id: new mongoose.Types.ObjectId(id),
-      isPublic: true,
-    })
+    const session = await getServerSession(authOptions)
+    const list = await List.findById(id)
+      .select("+privateAccessToken")
       .populate("createdBy", "name image")
       .populate("placeIds")
       .lean()
@@ -34,7 +53,24 @@ export async function GET(
       return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
     }
 
-    return NextResponse.json(list)
+    const isOwner = ownerIdEquals(list.createdBy, session?.user?.id)
+
+    if (isOwner) {
+      return NextResponse.json(serializeListForOwner(list as never), {
+        headers: { "Cache-Control": "private, no-store" },
+      })
+    }
+
+    if (!isPublicListVisibility(list.visibility, list.isPublic)) {
+      // Misma respuesta que inexistente: no filtrar existencia de privadas
+      return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
+    }
+
+    return NextResponse.json(serializeListForCommunity(list as never), {
+      headers: {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
+      },
+    })
   } catch (error) {
     logApiError("/api/lists/[id] GET", error, { request })
     return NextResponse.json(
@@ -60,7 +96,7 @@ export async function PATCH(
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const list = await List.findById(id)
+    const list = await List.findById(id).select("+privateAccessToken")
     if (!list) {
       return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
     }
@@ -90,17 +126,60 @@ export async function PATCH(
           ? body.description.trim().slice(0, 300)
           : body.description
     }
+    if (body.destination !== undefined) {
+      list.destination = normalizeDestination(body.destination)
+    }
+    if (body.coverImage !== undefined) {
+      list.coverImage = normalizeCoverImage(body.coverImage)
+    }
     if (Array.isArray(body.placeIds)) {
-      list.placeIds = body.placeIds
-        .filter((pid: string) => mongoose.Types.ObjectId.isValid(pid))
-        .map((pid: string) => new mongoose.Types.ObjectId(pid))
+      list.placeIds = normalizePlaceIdStrings(body.placeIds).map(
+        (id) => new mongoose.Types.ObjectId(id)
+      )
+    }
+    if (body.placeNotes !== undefined || Array.isArray(body.placeIds)) {
+      const idStrings = list.placeIds.map((id) => id.toString())
+      list.placeNotes = normalizePlaceNotes(
+        body.placeNotes !== undefined ? body.placeNotes : list.placeNotes,
+        idStrings
+      ).map((n) => ({
+        placeId: new mongoose.Types.ObjectId(n.placeId),
+        note: n.note,
+      }))
+    }
+
+    if (body.visibility !== undefined) {
+      const nextVisibility = parseVisibility(body.visibility, list.visibility)
+      if (nextVisibility === LIST_VISIBILITY.PRIVATE_LINK) {
+        if (
+          !canUsePrivateLists({
+            email: session.user.email,
+            role: session.user.role,
+          })
+        ) {
+          return NextResponse.json(
+            { error: "Listas privadas no disponibles para tu cuenta" },
+            { status: 403 }
+          )
+        }
+      }
+      const fields = applyVisibilityFields({
+        visibility: nextVisibility,
+        existingToken: list.privateAccessToken,
+        existingStatus: list.linkStatus,
+      })
+      list.visibility = fields.visibility
+      list.isPublic = fields.isPublic
+      list.privateAccessToken = fields.privateAccessToken
+      list.linkStatus = fields.linkStatus
     }
 
     await list.save()
     await list.populate("placeIds", "name neighborhood photos type slug")
     await list.populate("createdBy", "name image")
 
-    return NextResponse.json(list)
+    const lean = list.toObject()
+    return NextResponse.json(serializeListForOwner(lean as never))
   } catch (error) {
     logApiError("/api/lists/[id] PATCH", error, { request })
     return NextResponse.json(

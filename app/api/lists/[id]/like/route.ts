@@ -38,8 +38,8 @@ export async function POST(
       return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
     }
 
-    if (!list.isPublic) {
-      return NextResponse.json({ error: "Lista no pública" }, { status: 400 })
+    if (!list.isPublic || list.visibility === "PRIVATE_LINK") {
+      return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
     }
 
     const userId = new mongoose.Types.ObjectId(session.user.id)

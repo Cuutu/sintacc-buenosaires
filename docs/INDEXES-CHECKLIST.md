@@ -17,6 +17,8 @@
 | RateLimitIp | `{ windowStart: 1 }` (TTL 8 días) | Limpieza automática |
 | List | `{ isPublic: 1, likesCount: -1, createdAt: -1 }` | Top listas públicas |
 | List | `{ createdBy: 1, updatedAt: -1 }` | Mis listas |
+| List | `{ privateAccessToken: 1 }` (unique sparse) | Lookup enlace privado |
+| List | `{ visibility: 1, linkStatus: 1, updatedAt: -1 }` | Filtrado privado / estado |
 | ListLike | `{ listId: 1, userId: 1 }` (unique) | Un like por usuario por lista |
 
 ## Verificación

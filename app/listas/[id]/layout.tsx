@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
 
     await connectDB()
     const list = await List.findById(id).select("name description isPublic").lean()
-    if (!list || !list.isPublic) {
+    if (!list || !list.isPublic || list.visibility === "PRIVATE_LINK") {
       return { title: "Lista", robots: { index: false } }
     }
 
