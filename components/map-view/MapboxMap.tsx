@@ -16,7 +16,10 @@ import {
   getNeighborhoodSearchValues,
   normalizeSearchValue,
 } from "@/lib/map-search"
-import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import {
+  getSafetyBadge,
+  inferSafetyLevel,
+} from "@/components/featured/featured-utils"
 import {
   mapboxLifecycleTrackDestroy,
   mapboxLifecycleTrackInit,
@@ -228,7 +231,11 @@ export interface MapboxMapRef {
   /** Solicita permisos de ubicación y muestra al usuario en el mapa (punto azul) */
   triggerGeolocate: () => void
   showUserLocation: (lng: number, lat: number) => void
+  /** Encadra todos los lugares visibles (guía privada / reset viewport). */
+  fitAllPlaces: (opts?: { maxZoom?: number; padding?: number }) => void
 }
+
+export type MapInteractionMode = "default" | "private-guide"
 
 export interface MapViewportBounds {
   west: number
@@ -286,6 +293,13 @@ interface MapboxMapProps {
   colorBySafety?: boolean
   /** Si false, no muestra popup Mapbox (mobile usa card inferior) */
   showPopup?: boolean
+  /**
+   * Modo de interacción. `private-guide`: sin popup público, marcadores numerados,
+   * solo notifica selección vía onPlaceSelect. No leer URL — pasar por props.
+   */
+  interactionMode?: MapInteractionMode
+  /** Marcadores con número de orden (1..n según orden de `places`). */
+  numberedMarkers?: boolean
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -307,9 +321,15 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       clusterMarkers = false,
       colorBySafety = false,
       showPopup = true,
+      interactionMode = "default",
+      numberedMarkers = false,
     },
     ref
   ) => {
+    const isPrivateGuide = interactionMode === "private-guide"
+    const useNumberedMarkers = numberedMarkers || isPrivateGuide
+    const effectiveShowPopup = isPrivateGuide ? false : showPopup
+    const effectiveCluster = isPrivateGuide ? false : clusterMarkers
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
     const disposedRef = useRef(false)
@@ -324,14 +344,31 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     selectedPlaceIdRef.current = selectedPlaceId
     const onPlaceSelectRef = useRef(onPlaceSelect)
     onPlaceSelectRef.current = onPlaceSelect
-    const showPopupRef = useRef(showPopup)
-    showPopupRef.current = showPopup
+    const showPopupRef = useRef(effectiveShowPopup)
+    showPopupRef.current = effectiveShowPopup
+    const useNumberedMarkersRef = useRef(useNumberedMarkers)
+    useNumberedMarkersRef.current = useNumberedMarkers
+    const isPrivateGuideRef = useRef(isPrivateGuide)
+    isPrivateGuideRef.current = isPrivateGuide
+    const placesRef = useRef(places)
+    placesRef.current = places
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
     onMoveEndRef.current = onMoveEnd
     const [markerLayoutVersion, setMarkerLayoutVersion] = useState(0)
     const [initError, setInitError] = useState<string | null>(null)
+
+    const placeNumberById = useMemo(() => {
+      const mapNums = new Map<string, number>()
+      places.forEach((place, index) => {
+        const id = place._id != null ? String(place._id) : ""
+        if (id) mapNums.set(id, index + 1)
+      })
+      return mapNums
+    }, [places])
+    const placeNumberByIdRef = useRef(placeNumberById)
+    placeNumberByIdRef.current = placeNumberById
 
     const triggerGeolocate = useCallback(() => {
       geolocateControlRef.current?.trigger()
@@ -358,6 +395,39 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       map.current.setCenter([lng, lat])
     }, [])
 
+    const fitAllPlaces = useCallback(
+      (opts?: { maxZoom?: number; padding?: number }) => {
+        if (disposedRef.current || !map.current) return
+        const valid = placesRef.current.filter(
+          (place) =>
+            Number.isFinite(place.location?.lng) &&
+            Number.isFinite(place.location?.lat)
+        )
+        if (valid.length === 0) return
+        try {
+          if (valid.length === 1) {
+            map.current.flyTo({
+              center: [valid[0].location.lng, valid[0].location.lat],
+              zoom: Math.min(opts?.maxZoom ?? 13, 14),
+              duration: reduceMotion ? 0 : 700,
+            })
+            return
+          }
+          const bounds = new mapboxgl.LngLatBounds()
+          valid.forEach((place) => {
+            bounds.extend([place.location.lng, place.location.lat])
+          })
+          map.current.fitBounds(bounds, {
+            padding: opts?.padding ?? 64,
+            maxZoom: opts?.maxZoom ?? 13,
+            duration: reduceMotion ? 0 : 700,
+          })
+        } catch {
+          /* mapa ya destruido */
+        }
+      },
+      [reduceMotion]
+    )
     const showUserLocation = useCallback((lng: number, lat: number) => {
       if (!map.current) return
 
@@ -395,16 +465,36 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       userLocationMarkerRef.current.setLngLat([lng, lat])
     }, [])
 
-    const applyMarkerSelection = useCallback((entry: MarkerEntry, isSelected: boolean) => {
-      entry.element.style.width = `${isSelected ? 48 : 36}px`
-      entry.element.style.height = `${isSelected ? 48 : 36}px`
-      // Popup Mapbox usa z-index alto; marcador nunca por encima del popup
-      entry.element.style.zIndex = isSelected ? "2" : "1"
-      entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid rgba(255,255,255,0.95)`
-      entry.inner.style.boxShadow = isSelected
-        ? "0 8px 24px rgba(0,0,0,0.45), 0 0 0 4px rgba(16,217,138,0.28)"
-        : "0 2px 8px rgba(0,0,0,0.25)"
-      entry.icon.style.fontSize = `${isSelected ? 20 : 16}px`
+    const applyMarkerSelection = useCallback(
+      (entry: MarkerEntry, isSelected: boolean) => {
+        const numbered = useNumberedMarkersRef.current
+        const base = numbered ? 34 : 36
+        const active = numbered ? 42 : 48
+        const motionOk = !reduceMotion
+        entry.element.style.width = `${isSelected ? active : base}px`
+        entry.element.style.height = `${isSelected ? active : base}px`
+        entry.element.style.zIndex = isSelected ? "5" : "1"
+        entry.inner.style.transition = motionOk
+          ? "transform 0.2s ease, box-shadow 0.2s ease"
+          : "none"
+        entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid rgba(255,255,255,0.95)`
+        entry.inner.style.boxShadow = isSelected
+          ? "0 8px 24px rgba(0,0,0,0.45), 0 0 0 4px rgba(16,217,138,0.35)"
+          : "0 2px 8px rgba(0,0,0,0.25)"
+        entry.inner.style.transform = isSelected ? "scale(1.06)" : "scale(1)"
+        entry.icon.style.fontSize = numbered
+          ? `${isSelected ? 15 : 13}px`
+          : `${isSelected ? 20 : 16}px`
+      },
+      [reduceMotion]
+    )
+
+    const getGuideMarkerBg = useCallback((place: IPlace, fallback: string) => {
+      const reports =
+        (place as IPlace & { stats?: { contaminationReportsCount?: number } }).stats
+          ?.contaminationReportsCount ?? 0
+      if (reports > 0) return "#ef4444"
+      return getPlaceMarkerBg(place, true, fallback)
     }, [])
 
     const markerItems = useMemo<MapMarkerItem[]>(() => {
@@ -422,7 +512,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             Boolean(item.id) && Number.isFinite(item.lng) && Number.isFinite(item.lat)
         )
 
-      if (!clusterMarkers || !m || m.getZoom() >= 15) {
+      if (!effectiveCluster || !m || m.getZoom() >= 15) {
         return validPlaces.map(({ place, lng, lat, id }) => ({
           id,
           kind: "place",
@@ -487,12 +577,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           lat: cluster.lat,
         }
       })
-    }, [clusterMarkers, markerLayoutVersion, places])
+    }, [effectiveCluster, markerLayoutVersion, places])
 
     useImperativeHandle(
       ref,
-      () => ({ flyTo, setCenter, triggerGeolocate, showUserLocation }),
-      [flyTo, setCenter, triggerGeolocate, showUserLocation]
+      () => ({ flyTo, setCenter, triggerGeolocate, showUserLocation, fitAllPlaces }),
+      [flyTo, setCenter, triggerGeolocate, showUserLocation, fitAllPlaces]
     )
 
     useEffect(() => {
@@ -590,13 +680,19 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         teardown.bind(instance as unknown as MapboxTeardownMap)
         mapboxLifecycleTrackInit()
         trackedInit = true
-        if (!isE2eMapboxMockEnabled()) {
+        if (!isE2eMapboxMockEnabled() && !isPrivateGuide) {
           sharedPopupRef.current = new mapboxgl.Popup({
             offset: 42,
             className: "celimap-popup",
             closeButton: false,
             closeOnClick: true,
             maxWidth: "none",
+          })
+        }
+        if (isPrivateGuide) {
+          // Encadre inicial de la guía (maxZoom acotado)
+          requestAnimationFrame(() => {
+            if (!disposedRef.current) fitAllPlaces({ maxZoom: 13, padding: 56 })
           })
         }
       } catch (err) {
@@ -758,7 +854,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           : TYPE_MARKERS[item.place.type] || TYPE_MARKERS.other
         const markerBg = isCluster
           ? "linear-gradient(135deg, #06120f, #0f2f27)"
-          : getPlaceMarkerBg(item.place, colorBySafety, config.bg)
+          : useNumberedMarkersRef.current
+            ? getGuideMarkerBg(item.place, config.bg)
+            : getPlaceMarkerBg(item.place, colorBySafety, config.bg)
+        const markerNumber =
+          !isCluster && useNumberedMarkersRef.current
+            ? placeNumberByIdRef.current.get(item.id)
+            : undefined
         const existingEntry = markerEntriesRef.current.get(item.id)
 
         if (existingEntry) {
@@ -772,7 +874,23 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             existingEntry.icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
           } else {
             existingEntry.inner.style.background = markerBg
-            existingEntry.icon.textContent = config.emoji
+            existingEntry.icon.textContent =
+              markerNumber != null ? String(markerNumber) : config.emoji
+            if (markerNumber != null) {
+              const safety = inferSafetyLevel(item.place)
+              const safetyLabel =
+                safety && safety !== "unknown"
+                  ? getSafetyBadge(safety).label
+                  : null
+              const tip = safetyLabel
+                ? `${item.place.name} · ${safetyLabel}`
+                : item.place.name
+              existingEntry.element.title = tip
+              existingEntry.element.setAttribute(
+                "aria-label",
+                `${markerNumber}. ${tip}`
+              )
+            }
             applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === item.id)
           }
           return
@@ -786,6 +904,18 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           justify-content: center;
           cursor: pointer;
         `
+        if (!isCluster && markerNumber != null) {
+          const safety = inferSafetyLevel(item.place)
+          const safetyLabel =
+            safety && safety !== "unknown"
+              ? getSafetyBadge(safety).label
+              : null
+          const tip = safetyLabel
+            ? `${item.place.name} · ${safetyLabel}`
+            : item.place.name
+          el.title = tip
+          el.setAttribute("aria-label", `${markerNumber}. ${tip}`)
+        }
 
         const inner = document.createElement("div")
         inner.style.cssText = `
@@ -797,7 +927,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: transform 0.2s ease;
+          transition: ${reduceMotion ? "none" : "transform 0.2s ease, box-shadow 0.2s ease"};
           transform-origin: center center;
           color: white;
           font-weight: 800;
@@ -806,7 +936,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
         const icon = document.createElement("span")
         icon.style.lineHeight = "1"
-        icon.textContent = isCluster ? String(item.places.length) : config.emoji
+        icon.style.fontFamily = "ui-sans-serif, system-ui, sans-serif"
+        icon.textContent = isCluster
+          ? String(item.places.length)
+          : markerNumber != null
+            ? String(markerNumber)
+            : config.emoji
 
         inner.appendChild(icon)
         el.appendChild(inner)
@@ -833,7 +968,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           const currentPlace = currentItem.place
           onPlaceSelectRef.current?.(currentPlace)
 
-          if (showPopupRef.current && sharedPopupRef.current && map.current) {
+          // private-guide / showPopup=false: nunca montar popup público
+          if (
+            !isPrivateGuideRef.current &&
+            showPopupRef.current &&
+            sharedPopupRef.current &&
+            map.current
+          ) {
             const lng = (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0]
             const lat = (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1]
             const html = buildPlacePopupHtml(currentPlace, isCompactMapPopup())
@@ -868,21 +1009,21 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         entry.marker.remove()
         markerEntriesRef.current.delete(markerId)
       })
-    }, [applyMarkerSelection, colorBySafety, markerItems, reduceMotion])
+    }, [applyMarkerSelection, colorBySafety, getGuideMarkerBg, markerItems, reduceMotion])
 
     useEffect(() => {
       markerEntriesRef.current.forEach((entry, placeId) => {
         if (entry.item.kind !== "place") return
         applyMarkerSelection(entry, placeId === selectedPlaceId)
       })
-      if (!showPopup) {
+      if (!effectiveShowPopup) {
         try {
           sharedPopupRef.current?.remove()
         } catch {
           /* ignore */
         }
       }
-    }, [selectedPlaceId, applyMarkerSelection, showPopup])
+    }, [selectedPlaceId, applyMarkerSelection, effectiveShowPopup])
 
     useEffect(() => {
       const markerEntries = markerEntriesRef.current
@@ -907,16 +1048,20 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       if (place && Number.isFinite(lng) && Number.isFinite(lat)) {
         lastFocusedPlaceIdRef.current = selectedPlaceId
         try {
-          map.current.flyTo({
+          const currentZoom = map.current.getZoom()
+          const zoom = isPrivateGuide
+            ? Math.min(Math.max(currentZoom, 12), 14)
+            : 15
+          map.current.easeTo({
             center: [lng as number, lat as number],
-            zoom: 15,
-            duration: reduceMotion ? 0 : 1000,
+            zoom,
+            duration: reduceMotion ? 0 : 700,
           })
         } catch {
           /* mapa destruido */
         }
       }
-    }, [selectedPlaceId, places, reduceMotion])
+    }, [selectedPlaceId, places, reduceMotion, isPrivateGuide])
 
     if (initError) {
       return (

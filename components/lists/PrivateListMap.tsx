@@ -1,23 +1,27 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { MapboxMap, type MapboxMapRef } from "@/components/map-view/MapboxMap"
 import { IPlace } from "@/models/Place"
 
 interface PrivateListMapProps {
   places: IPlace[]
-  selectedPlaceId?: string
+  activePlaceId?: string
   onPlaceSelect?: (place: IPlace) => void
   className?: string
+  /** Ref opcional para fitAllPlaces desde el padre */
+  mapRefOuter?: React.MutableRefObject<MapboxMapRef | null>
 }
 
 export function PrivateListMap({
   places,
-  selectedPlaceId,
+  activePlaceId,
   onPlaceSelect,
   className,
+  mapRefOuter,
 }: PrivateListMapProps) {
   const mapRef = useRef<MapboxMapRef>(null)
+  const [reduceMotion, setReduceMotion] = useState(false)
 
   const withCoords = useMemo(
     () =>
@@ -29,11 +33,24 @@ export function PrivateListMap({
   )
 
   useEffect(() => {
-    if (!selectedPlaceId) return
-    const place = withCoords.find((p) => p._id.toString() === selectedPlaceId)
-    if (!place) return
-    mapRef.current?.flyTo(place.location.lng, place.location.lat, 15)
-  }, [selectedPlaceId, withCoords])
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const sync = () => setReduceMotion(mq.matches)
+    sync()
+    mq.addEventListener?.("change", sync)
+    return () => mq.removeEventListener?.("change", sync)
+  }, [])
+
+  useEffect(() => {
+    if (!mapRefOuter) return
+    const api = mapRef.current
+    mapRefOuter.current = api
+    return () => {
+      if (mapRefOuter.current === api) {
+        mapRefOuter.current = null
+      }
+    }
+  })
 
   if (withCoords.length === 0) {
     return (
@@ -46,17 +63,22 @@ export function PrivateListMap({
   }
 
   return (
-    <div className={`relative h-full min-h-[280px] overflow-hidden rounded-2xl border border-white/10 ${className || ""}`}>
+    <div
+      className={`relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-white/10 ${className || ""}`}
+    >
       <MapboxMap
         ref={mapRef}
         places={withCoords}
-        selectedPlaceId={selectedPlaceId}
+        selectedPlaceId={activePlaceId}
         onPlaceSelect={onPlaceSelect}
+        interactionMode="private-guide"
+        numberedMarkers
+        showPopup={false}
         darkStyle
         colorBySafety
-        clusterMarkers={withCoords.length > 12}
-        showPopup
+        clusterMarkers={false}
         enableGeolocate={false}
+        reduceMotion={reduceMotion}
       />
     </div>
   )
