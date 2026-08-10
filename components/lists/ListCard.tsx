@@ -33,6 +33,7 @@ export interface ListWithDetails {
   linkStatus?: string | null
   privateSharePath?: string | null
   privateAccessToken?: string | null
+  updatedAt?: string | Date
 }
 
 interface ListCardProps {

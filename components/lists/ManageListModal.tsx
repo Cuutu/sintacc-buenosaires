@@ -375,7 +375,7 @@ export function ManageListModal({
                     onClick={openClientView}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    Vista del cliente
+                    Vista previa
                   </Button>
                   <Button
                     type="button"

@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { usePathname } from "next/navigation"
 import { Download, ExternalLink, PlusSquare, Share2, Smartphone, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { isNativeApp } from "@/lib/native-app"
+import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>
@@ -66,6 +68,7 @@ function hasSeenIOSGuide() {
 }
 
 export function InstallPrompt() {
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [deferred, setDeferred] = useState<BIPEvent | null>(null)
   const [ready, setReady] = useState(false)
@@ -75,12 +78,17 @@ export function InstallPrompt() {
   const ios = useMemo(() => isIOS(), [])
   const safari = useMemo(() => isSafari(), [])
   const mobile = useMemo(() => isMobileDevice(), [])
+  const onPrivateList = isPrivateListPath(pathname)
 
   useEffect(() => {
+    if (onPrivateList) {
+      setOpen(false)
+      return
+    }
     setDismissedUntil(getDismissedUntil())
     const t = window.setTimeout(() => setReady(true), 2500)
     return () => window.clearTimeout(t)
-  }, [])
+  }, [onPrivateList])
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -101,12 +109,13 @@ export function InstallPrompt() {
   }, [])
 
   const canShow = useMemo(() => {
+    if (onPrivateList) return false
     if (!ready) return false
     if (isNativeApp()) return false
     if (installed || isStandalone()) return false
     if (dismissedUntil > Date.now()) return false
     return Boolean(deferred || ios || mobile)
-  }, [deferred, dismissedUntil, installed, ios, mobile, ready])
+  }, [deferred, dismissedUntil, installed, ios, mobile, onPrivateList, ready])
 
   useEffect(() => {
     if (!canShow) return

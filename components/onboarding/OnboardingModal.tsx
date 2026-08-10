@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
 import { isNativeApp } from "@/lib/native-app"
+import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
+import { usePathname } from "next/navigation"
 
 const STORAGE_KEY = "celimap_onboarded"
 
@@ -246,11 +248,17 @@ function StepVisual({ stepId }: { stepId: StepId }) {
 }
 
 export function OnboardingModal() {
+  const pathname = usePathname()
+  const onPrivateList = isPrivateListPath(pathname)
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "back">("forward")
 
   useEffect(() => {
+    if (onPrivateList) {
+      setOpen(false)
+      return
+    }
     try {
       if (isNativeApp()) {
         localStorage.setItem(STORAGE_KEY, "1")
@@ -262,7 +270,7 @@ export function OnboardingModal() {
     } catch {
       // localStorage bloqueado
     }
-  }, [])
+  }, [onPrivateList])
 
   const finish = useCallback(() => {
     try {
@@ -283,6 +291,8 @@ export function OnboardingModal() {
     setDirection("back")
     setStep((s) => Math.max(s - 1, 0))
   }
+
+  if (onPrivateList) return null
 
   const current = STEPS[step]
   const isFirst = step === 0

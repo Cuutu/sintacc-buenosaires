@@ -9,16 +9,13 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { useIsMobile } from "@/components/map-view/useMediaQuery"
 import { bumpDiag } from "@/lib/celimap-diag"
 import { notePathname } from "@/lib/nav-telemetry"
+import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
 import { cn } from "@/lib/utils"
 
 interface LayoutChromeProps {
   children: React.ReactNode
 }
 
-/**
- * Solo e2e: si window.__CELIMAP_E2E_FORCE_BOUNDARY__ coincide, fuerza throw.
- * Poll corta para re-render cuando el test setea el flag tras mount.
- */
 function E2EBoundaryProbe({ target }: { target: "page" | "chrome" }) {
   const [explode, setExplode] = useState(false)
 
@@ -29,8 +26,6 @@ function E2EBoundaryProbe({ target }: { target: "page" | "chrome" }) {
         __CELIMAP_E2E_FORCE_BOUNDARY__?: string | null
       }
       if (w.__CELIMAP_E2E__ && w.__CELIMAP_E2E_FORCE_BOUNDARY__ === target) {
-        // Limpiar flag al armar: explode en state mantiene el throw hasta unmount.
-        // Si no, Reintentar re-arma al instante vía interval.
         w.__CELIMAP_E2E_FORCE_BOUNDARY__ = null
         setExplode(true)
       }
@@ -43,7 +38,6 @@ function E2EBoundaryProbe({ target }: { target: "page" | "chrome" }) {
     }
   }, [target])
 
-  // explode queda true → cada render tira hasta que el boundary desmonte el child.
   if (explode) {
     throw new Error(`E2E forced ${target} boundary error`)
   }
@@ -52,15 +46,15 @@ function E2EBoundaryProbe({ target }: { target: "page" | "chrome" }) {
 
 /**
  * LayoutChrome: chrome por breakpoint + safe areas.
- * Page boundary: resetKey={pathname} (sin key).
- * BottomNav: boundary chrome estable (sin resetKey por ruta).
+ * /listas/privadas/* → shell enfocado (sin Navbar/Footer/BottomNav).
  */
 export function LayoutChrome({ children }: LayoutChromeProps) {
   const isMobile = useIsMobile()
   const pathname = usePathname()
+  const isPrivateList = isPrivateListPath(pathname)
   const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
-  const showDesktopChrome = isMobile === false
-  const showMobileChrome = isMobile === true
+  const showDesktopChrome = isMobile === false && !isPrivateList
+  const showMobileChrome = isMobile === true && !isPrivateList
   const routeKey = pathname || "/"
 
   useEffect(() => {
@@ -79,8 +73,10 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
         className={cn(
           "min-h-screen",
           showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
-          showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]"
+          showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]",
+          isPrivateList && "pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)]"
         )}
+        data-private-list-shell={isPrivateList ? "true" : undefined}
       >
         <AppErrorBoundary resetKey={routeKey} source="page-boundary">
           <E2EBoundaryProbe target="page" />
