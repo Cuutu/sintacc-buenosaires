@@ -4,7 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { signInWithGoogle } from "@/lib/native-sign-in"
+import {
+  isAppleSignInAvailable,
+  NativeAppleSignInError,
+  signInWithApple,
+  signInWithGoogle,
+} from "@/lib/native-sign-in"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,8 +26,10 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { status } = useSession()
-  const [signingIn, setSigningIn] = useState(false)
+  const [signingGoogle, setSigningGoogle] = useState(false)
+  const [signingApple, setSigningApple] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showApple, setShowApple] = useState(false)
 
   const callbackUrl = useMemo(() => {
     const rawCallbackUrl = searchParams.get("callbackUrl")
@@ -35,6 +42,10 @@ function LoginContent() {
   }, [searchParams])
 
   useEffect(() => {
+    setShowApple(isAppleSignInAvailable())
+  }, [])
+
+  useEffect(() => {
     if (status === "authenticated") {
       router.replace(callbackUrl)
     }
@@ -44,16 +55,36 @@ function LoginContent() {
     return <LoginLoadingState />
   }
 
+  const busy = signingGoogle || signingApple || status === "loading"
+
   async function handleGoogleSignIn() {
     setError(null)
-    setSigningIn(true)
+    setSigningGoogle(true)
     try {
       await signInWithGoogle(callbackUrl)
     } catch {
       setError("No pudimos iniciar sesión con Google. Probá de nuevo.")
     } finally {
-      // Google sheet / browser may be dismissed without navigating away.
-      setSigningIn(false)
+      setSigningGoogle(false)
+    }
+  }
+
+  async function handleAppleSignIn() {
+    setError(null)
+    setSigningApple(true)
+    try {
+      await signInWithApple(callbackUrl)
+    } catch (err) {
+      if (err instanceof NativeAppleSignInError && err.code === "cancelled") {
+        return
+      }
+      if (err instanceof NativeAppleSignInError && err.code === "other_provider") {
+        setError(err.message)
+        return
+      }
+      setError("No pudimos iniciar sesión con Apple. Probá de nuevo.")
+    } finally {
+      setSigningApple(false)
     }
   }
 
@@ -72,21 +103,40 @@ function LoginContent() {
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground mb-6">
-            Inicia sesión con tu cuenta de Google para acceder a todas las funciones
+            {showApple
+              ? "Iniciá sesión con Apple o Google para acceder a favoritos, listas y reseñas"
+              : "Iniciá sesión con tu cuenta de Google para acceder a todas las funciones"}
           </p>
           {error ? (
             <p className="mb-4 text-center text-sm text-destructive" role="alert">
               {error}
             </p>
           ) : null}
-          <Button
-            onClick={() => void handleGoogleSignIn()}
-            className="w-full"
-            disabled={status === "loading" || signingIn}
-            size="lg"
-          >
-            {signingIn ? "Conectando…" : "Continuar con Google"}
-          </Button>
+          <div className="flex flex-col gap-3">
+            {showApple ? (
+              <Button
+                type="button"
+                onClick={() => void handleAppleSignIn()}
+                className="w-full bg-black text-white hover:bg-black/90"
+                disabled={busy}
+                size="lg"
+                aria-label="Continuar con Apple"
+              >
+                {signingApple ? "Conectando…" : "Continuar con Apple"}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => void handleGoogleSignIn()}
+              className="w-full"
+              disabled={busy}
+              size="lg"
+              variant={showApple ? "outline" : "default"}
+              aria-label="Continuar con Google"
+            >
+              {signingGoogle ? "Conectando…" : "Continuar con Google"}
+            </Button>
+          </div>
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Al continuar aceptás nuestra{" "}
             <Link href="/privacidad" className="underline hover:text-foreground">

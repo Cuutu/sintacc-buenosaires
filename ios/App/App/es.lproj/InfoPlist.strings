@@ -1,0 +1,2 @@
+/* Cadena de propósito de cámara — se muestra al elegir Tomar foto en el input file del WKWebView. */
+"NSCameraUsageDescription" = "CeliMap utiliza la cámara únicamente cuando elegís tomar una foto para agregarla a una lista, reseña, lugar o recomendación.";

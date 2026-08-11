@@ -13,6 +13,7 @@ import { IPlace } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
 import { isAllowedAvatarUrl } from "@/lib/avatar-url"
+import { DeleteAccountSection } from "@/components/delete-account-section"
 
 function normalizeFavoritePlace(raw: unknown): IPlace | null {
   if (!raw || typeof raw !== "object") return null
@@ -27,6 +28,7 @@ export default function PerfilPage() {
   const redirectedRef = useRef(false)
   const [savedPlaces, setSavedPlaces] = useState<IPlace[]>([])
   const [loadingSaved, setLoadingSaved] = useState(true)
+  const [needsAppleReauth, setNeedsAppleReauth] = useState(false)
 
   const fetchSavedPlaces = useCallback(async () => {
     try {
@@ -43,6 +45,15 @@ export default function PerfilPage() {
     }
   }, [])
 
+  const fetchAccountFlags = useCallback(async () => {
+    try {
+      const data = await fetchApi<{ hasAppleSub?: boolean }>("/api/account")
+      setNeedsAppleReauth(Boolean(data.hasAppleSub))
+    } catch {
+      setNeedsAppleReauth(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (status === "loading") return
     if (status === "unauthenticated") {
@@ -54,8 +65,9 @@ export default function PerfilPage() {
     redirectedRef.current = false
     if (status === "authenticated") {
       fetchSavedPlaces()
+      fetchAccountFlags()
     }
-  }, [status, router, fetchSavedPlaces])
+  }, [status, router, fetchSavedPlaces, fetchAccountFlags])
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -173,6 +185,8 @@ export default function PerfilPage() {
           )}
         </CardContent>
       </Card>
+
+      <DeleteAccountSection needsAppleReauth={needsAppleReauth} />
     </div>
   )
 }

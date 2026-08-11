@@ -1,15 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import { List } from "@/models/List"
-import { ListLike } from "@/models/ListLike"
-import "@/models/Place"
-import "@/models/User"
-import { requireAuth } from "@/lib/middleware"
+import mongoose from "mongoose"
+import { requireAuth, getOptionalActiveSession } from "@/lib/middleware"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
-import mongoose from "mongoose"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { LIST_VISIBILITY } from "@/lib/lists/constants"
 import {
   canUsePrivateLists,
@@ -28,6 +20,12 @@ import {
   serializeListForCommunity,
   serializeListForOwner,
 } from "@/lib/lists/serialize"
+import connectDB from "@/lib/mongodb"
+import { List } from "@/models/List"
+import { ListLike } from "@/models/ListLike"
+import "@/models/Place"
+import "@/models/User"
+import { NextRequest, NextResponse } from "next/server"
 
 /** GET: pública por ID, o owner (incluye privadas) */
 export async function GET(
@@ -42,7 +40,7 @@ export async function GET(
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const session = await getServerSession(authOptions)
+    const session = await getOptionalActiveSession()
     const list = await List.findById(id)
       .select("+privateAccessToken")
       .populate("createdBy", "name image")
@@ -62,7 +60,6 @@ export async function GET(
     }
 
     if (!isPublicListVisibility(list.visibility, list.isPublic)) {
-      // Misma respuesta que inexistente: no filtrar existencia de privadas
       return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
     }
 

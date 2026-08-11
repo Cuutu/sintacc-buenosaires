@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import connectDB from "@/lib/mongodb"
 import { consumeNativeGoogleGrant } from "@/lib/native-google-auth"
+import { consumeNativeAppleGrant } from "@/lib/native-apple-auth"
 import { User } from "@/models/User"
 
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || []
@@ -28,6 +29,26 @@ export const authOptions: NextAuthOptions = {
         const grant = credentials?.grant
         if (!grant || typeof grant !== "string") return null
         const user = await consumeNativeGoogleGrant(grant)
+        if (!user) return null
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
+      },
+    }),
+    // Opaque one-time grant from POST /api/auth/native/apple (Sign in with Apple → WebView cookie).
+    CredentialsProvider({
+      id: "native-apple",
+      name: "Native Apple",
+      credentials: {
+        grant: { label: "Grant", type: "text" },
+      },
+      async authorize(credentials) {
+        const grant = credentials?.grant
+        if (!grant || typeof grant !== "string") return null
+        const user = await consumeNativeAppleGrant(grant)
         if (!user) return null
         return {
           id: user.id,
@@ -67,15 +88,20 @@ export const authOptions: NextAuthOptions = {
           return false
         }
       }
-      // native-google: user already upserted when grant was created
+      // native-google / native-apple: user already upserted when grant was created
       return true
     },
     async jwt({ token, user: providerUser }) {
+      // Lookup User only at sign-in. Protected APIs use requireAuth (one exists check).
+      // Avoid duplicate Mongo hits on every JWT refresh.
+      if (!providerUser) {
+        return token
+      }
       try {
         await connectDB()
-        const email = providerUser?.email ?? token.email
-        const dbUser = token.id
-          ? await User.findById(token.id)
+        const email = providerUser.email
+        const dbUser = providerUser.id
+          ? await User.findById(providerUser.id)
           : email
             ? await User.findOne({ email })
             : null
@@ -83,6 +109,10 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser._id.toString()
           token.role = dbUser.role
           token.email = dbUser.email
+        } else if (providerUser.id) {
+          token.id = providerUser.id
+          token.email = providerUser.email ?? token.email
+          token.role = (token.role as "user" | "admin") || "user"
         }
       } catch (error) {
         console.error("Error in jwt callback:", error)
@@ -90,6 +120,13 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
+      if (!token.id) {
+        return {
+          ...session,
+          user: undefined as unknown as typeof session.user,
+          expires: new Date(0).toISOString(),
+        }
+      }
       if (session.user && token.id) {
         session.user.id = token.id as string
         session.user.role = (token.role as "user" | "admin") || "user"

@@ -1,0 +1,2 @@
+/* Camera purpose string — shown when user picks Take Photo from WKWebView file input. */
+"NSCameraUsageDescription" = "CeliMap uses the camera only when you choose to take a photo to add to a list, review, place, or recommendation.";

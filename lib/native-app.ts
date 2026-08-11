@@ -27,3 +27,16 @@ export function isNativeApp(): boolean {
   if (typeof window === "undefined") return false
   return hasCapacitorBridge()
 }
+
+/** iOS Capacitor shell only (Sign in with Apple nativo). */
+export function isNativeIosApp(): boolean {
+  if (typeof window === "undefined" || !isNativeApp()) return false
+  try {
+    if (Capacitor.getPlatform() === "ios") return true
+  } catch {
+    // fall through
+  }
+  const root = document.documentElement
+  if (root.classList.contains("plt-ios")) return true
+  return /iPhone|iPad|iPod/i.test(window.navigator.userAgent)
+}

@@ -93,6 +93,15 @@ const config: CapacitorConfig = {
       // Política B: WebView edge-to-edge; insets vía CSS env(safe-area-*)
       overlaysWebView: true,
     },
+    // Capgo SocialLogin: Google + Apple nativos en iOS (Facebook/Twitter off).
+    SocialLogin: {
+      providers: {
+        google: true,
+        apple: true,
+        facebook: false,
+        twitter: false,
+      },
+    },
   },
 }
 

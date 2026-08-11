@@ -1,9 +1,19 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { Upload, X, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
+/** Matches server limit in app/api/upload/route.ts */
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+export const ALLOWED_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const
+
+type AllowedMime = (typeof ALLOWED_IMAGE_MIME_TYPES)[number]
 
 type Props = {
   value: string[]
@@ -11,6 +21,27 @@ type Props = {
   maxCount?: number
   folder?: string
   disabled?: boolean
+}
+
+/** Client-side gate before upload. Returns user-facing Spanish error or null if OK. */
+export function validateImageFile(file: File): string | null {
+  if (!file || file.size <= 0) {
+    return "No se pudo leer el archivo. Probá de nuevo o elegí otra imagen."
+  }
+
+  const mime = (file.type || "").toLowerCase() as AllowedMime | ""
+  if (
+    !mime ||
+    !(ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(mime)
+  ) {
+    return "Formato no permitido. Usá JPEG, PNG o WebP."
+  }
+
+  if (file.size > MAX_IMAGE_BYTES) {
+    return "La imagen no puede superar 5MB"
+  }
+
+  return null
 }
 
 export function ImageUpload({
@@ -21,33 +52,80 @@ export function ImageUpload({
   disabled = false,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const aliveRef = useRef(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
 
+  useEffect(() => {
+    aliveRef.current = true
+    return () => {
+      aliveRef.current = false
+    }
+  }, [])
+
   const remaining = maxCount - value.length
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files?.length || value.length >= maxCount) return
+  const resetInput = (input: HTMLInputElement | null) => {
+    if (input) input.value = ""
+  }
 
-    setError("")
-    setUploading(true)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const fileList = input.files
+
+    // Cancel action sheet / camera / picker → empty list or no onChange on some iOS paths.
+    if (!fileList?.length || value.length >= maxCount || disabled) {
+      resetInput(input)
+      return
+    }
+
+    const toUpload = Array.from(fileList).slice(0, remaining)
+    const invalid = toUpload.map(validateImageFile).find(Boolean)
+    if (invalid) {
+      if (aliveRef.current) setError(invalid)
+      resetInput(input)
+      return
+    }
+
+    if (aliveRef.current) {
+      setError("")
+      setUploading(true)
+    }
+
+    const newUrls: string[] = []
 
     try {
-      const toUpload = Array.from(files).slice(0, remaining)
-      const newUrls: string[] = []
-
       for (const file of toUpload) {
+        if (!aliveRef.current) break
+
         const formData = new FormData()
         formData.append("file", file)
         formData.append("folder", folder)
 
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
+        let res: Response
+        try {
+          res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          })
+        } catch {
+          throw new Error(
+            "No se pudo subir la imagen. Revisá la conexión e intentá de nuevo."
+          )
+        }
 
-        const data = await res.json()
+        if (!aliveRef.current) break
+
+        let data: { url?: string; error?: string } = {}
+        try {
+          data = (await res.json()) as { url?: string; error?: string }
+        } catch {
+          throw new Error(
+            res.ok
+              ? "Respuesta inválida del servidor al subir la imagen."
+              : "Error al subir"
+          )
+        }
 
         if (!res.ok) {
           throw new Error(data.error || "Error al subir")
@@ -58,12 +136,16 @@ export function ImageUpload({
         }
       }
 
-      onChange([...value, ...newUrls])
+      if (aliveRef.current && newUrls.length > 0) {
+        onChange([...value, ...newUrls])
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir")
+      if (aliveRef.current) {
+        setError(err instanceof Error ? err.message : "Error al subir")
+      }
     } finally {
-      setUploading(false)
-      e.target.value = ""
+      if (aliveRef.current) setUploading(false)
+      resetInput(input)
     }
   }
 
@@ -117,6 +199,10 @@ export function ImageUpload({
           </button>
         )}
       </div>
+      {/*
+        No `capture` attribute: keep system action sheet (Camera / Photo Library / Files).
+        Camera permission is requested by iOS only when user taps Take Photo — not on modal open.
+      */}
       <input
         ref={inputRef}
         type="file"
@@ -127,7 +213,9 @@ export function ImageUpload({
         disabled={uploading || value.length >= maxCount}
       />
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
       )}
       <p className="text-xs text-muted-foreground">
         Máx. {maxCount} imágenes. JPEG, PNG o WebP. Hasta 5MB cada una.

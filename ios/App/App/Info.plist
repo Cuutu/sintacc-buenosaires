@@ -45,6 +45,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>CeliMap uses the camera only when you choose to take a photo to add to a list, review, place, or recommendation.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Celimap usa tu ubicación para mostrar lugares sin TACC cerca tuyo.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

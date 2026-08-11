@@ -24,6 +24,12 @@ async function main() {
       { keys: { status: 1, type: 1 } },
       { keys: { neighborhood: 1, type: 1 } },
     ],
+    users: [
+      {
+        keys: { appleSub: 1 },
+        options: { unique: true, sparse: true, name: "appleSub_sparse_unique" },
+      },
+    ],
     reviews: [
       { keys: { placeId: 1, status: 1 } },
       { keys: { placeId: 1, createdAt: -1 } },

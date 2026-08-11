@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import connectDB from "@/lib/mongodb"
 import { PushToken } from "@/models/PushToken"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getOptionalActiveSession } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
     }
 
-    const session = await getServerSession(authOptions)
+    const session = await getOptionalActiveSession()
     await connectDB()
 
     const userId = session?.user?.id

@@ -5,6 +5,8 @@ export interface IUser extends Document {
   name: string
   image?: string
   role: "user" | "admin"
+  /** Stable Apple Sign In subject (`sub`). Sparse unique — Google users omit it. */
+  appleSub?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -30,10 +32,21 @@ const UserSchema = new Schema<IUser>(
       enum: ["user", "admin"],
       default: "user",
     },
+    appleSub: {
+      type: String,
+      required: false,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
+)
+
+// Sparse unique: many users have no Apple identity.
+UserSchema.index(
+  { appleSub: 1 },
+  { unique: true, sparse: true, name: "appleSub_sparse_unique" }
 )
 
 export const User: Model<IUser> =
