@@ -54,24 +54,31 @@ export default function PerfilPage() {
     }
   }, [])
 
+  const hasValidUser = Boolean(session?.user?.id)
+  const mustRedirect =
+    status === "unauthenticated" || (status === "authenticated" && !hasValidUser)
+
   useEffect(() => {
     if (status === "loading") return
-    if (status === "unauthenticated") {
+    if (mustRedirect) {
       if (redirectedRef.current) return
       redirectedRef.current = true
-      router.replace("/login")
+      router.replace("/login?callbackUrl=/perfil")
       return
     }
     redirectedRef.current = false
-    if (status === "authenticated") {
+    if (status === "authenticated" && hasValidUser) {
       fetchSavedPlaces()
       fetchAccountFlags()
     }
-  }, [status, router, fetchSavedPlaces, fetchAccountFlags])
+  }, [status, mustRedirect, hasValidUser, router, fetchSavedPlaces, fetchAccountFlags])
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || mustRedirect) {
     return (
-      <div className="container mx-auto px-4 py-8" data-auth-state={status}>
+      <div
+        className="container mx-auto px-4 py-8"
+        data-auth-state={status === "loading" ? "loading" : "redirecting"}
+      >
         <div className="animate-pulse space-y-4">
           <div className="h-12 w-48 bg-muted rounded" />
           <div className="h-32 bg-muted rounded-lg" />
@@ -81,7 +88,7 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-lg">
+    <div className="container mx-auto px-4 py-6 max-w-lg" data-auth-state="authenticated">
       <h1 className="text-2xl font-bold mb-6">Perfil</h1>
 
       <Card className="border-white/10 bg-white/5 backdrop-blur-md">

@@ -4,9 +4,55 @@ import GoogleProvider from "next-auth/providers/google"
 import connectDB from "@/lib/mongodb"
 import { consumeNativeGoogleGrant } from "@/lib/native-google-auth"
 import { consumeNativeAppleGrant } from "@/lib/native-apple-auth"
-import { User } from "@/models/User"
+import { User, type IUser } from "@/models/User"
+import type { JWT } from "next-auth/jwt"
 
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || []
+
+/** Strict 24-hex Mongo ObjectId (rejects Google subs and loose mongoose isValid matches). */
+const MONGO_OBJECT_ID_RE = /^[a-f\d]{24}$/i
+
+export function isMongoObjectIdString(id: unknown): id is string {
+  return typeof id === "string" && MONGO_OBJECT_ID_RE.test(id)
+}
+
+export function normalizeAuthEmail(email: unknown): string | null {
+  if (typeof email !== "string") return null
+  const normalized = email.trim().toLowerCase()
+  return normalized.includes("@") ? normalized : null
+}
+
+function applyDbUserToToken(token: JWT, dbUser: IUser): void {
+  token.id = dbUser._id.toString()
+  token.role = dbUser.role
+  token.email = dbUser.email
+}
+
+async function findUserByEmail(email: string): Promise<IUser | null> {
+  const exact = await User.findOne({ email })
+  if (exact) return exact
+  const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return User.findOne({ email: { $regex: `^${escaped}$`, $options: "i" } })
+}
+
+/**
+ * Sign-in resolution:
+ * - Native grant Mongo id → findById only
+ * - Google OAuth sub → email only (never findById with Google sub)
+ */
+async function resolveDbUserOnSignIn(providerUser: {
+  id?: string
+  email?: string | null
+}): Promise<IUser | null> {
+  if (providerUser.id && isMongoObjectIdString(providerUser.id)) {
+    const byId = await User.findById(providerUser.id)
+    if (byId) return byId
+  }
+
+  const email = normalizeAuthEmail(providerUser.email)
+  if (email) return findUserByEmail(email)
+  return null
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -64,22 +110,23 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google") {
         try {
           await connectDB()
-          
-          const existingUser = await User.findOne({ email: user.email })
-          
+
+          const email = normalizeAuthEmail(user.email)
+          if (!email) return false
+
+          const existingUser = await findUserByEmail(email)
+
           if (existingUser) {
-            // Update role if email is in admin list
-            if (ADMIN_EMAILS.includes(user.email || "")) {
+            if (ADMIN_EMAILS.includes(email)) {
               existingUser.role = "admin"
               await existingUser.save()
             }
           } else {
-            // Create new user
             const newUser = new User({
-              email: user.email,
+              email,
               name: user.name,
               image: user.image,
-              role: ADMIN_EMAILS.includes(user.email || "") ? "admin" : "user",
+              role: ADMIN_EMAILS.includes(email) ? "admin" : "user",
             })
             await newUser.save()
           }
@@ -92,44 +139,59 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user: providerUser }) {
-      // Lookup User only at sign-in. Protected APIs use requireAuth (one exists check).
-      // Avoid duplicate Mongo hits on every JWT refresh.
-      if (!providerUser) {
+      // Drop non-Mongo ids left by the 63fd027 regression (e.g. Google sub).
+      if (token.id && !isMongoObjectIdString(token.id)) {
+        delete token.id
+      }
+
+      // Refresh with a valid Mongo id: keep claims. Existence checks live in requireAuth.
+      if (!providerUser && isMongoObjectIdString(token.id)) {
         return token
       }
+
       try {
         await connectDB()
-        const email = providerUser.email
-        const dbUser = providerUser.id
-          ? await User.findById(providerUser.id)
-          : email
-            ? await User.findOne({ email })
-            : null
-        if (dbUser) {
-          token.id = dbUser._id.toString()
-          token.role = dbUser.role
-          token.email = dbUser.email
-        } else if (providerUser.id) {
-          token.id = providerUser.id
-          token.email = providerUser.email ?? token.email
-          token.role = (token.role as "user" | "admin") || "user"
+
+        if (providerUser) {
+          const dbUser = await resolveDbUserOnSignIn(providerUser)
+          if (dbUser) {
+            applyDbUserToToken(token, dbUser)
+          } else {
+            // Never store Google sub / unknown provider id as token.id.
+            delete token.id
+          }
+          return token
+        }
+
+        // Refresh without valid Mongo id: heal broken cookies via email when safe.
+        const email = normalizeAuthEmail(token.email)
+        if (email) {
+          const dbUser = await findUserByEmail(email)
+          if (dbUser) {
+            applyDbUserToToken(token, dbUser)
+          }
         }
       } catch (error) {
+        // Transient DB failure: do not clear a valid token.id; do not mark deleted.
         console.error("Error in jwt callback:", error)
       }
+
       return token
     },
     async session({ session, token }) {
-      if (!token.id) {
+      // Only propagate a real Mongo _id. Never fabricate expires:1970 empty profiles.
+      if (!isMongoObjectIdString(token.id)) {
         return {
           ...session,
           user: undefined as unknown as typeof session.user,
-          expires: new Date(0).toISOString(),
         }
       }
-      if (session.user && token.id) {
-        session.user.id = token.id as string
+      if (session.user) {
+        session.user.id = token.id
         session.user.role = (token.role as "user" | "admin") || "user"
+        if (typeof token.email === "string") {
+          session.user.email = token.email
+        }
       }
       return session
     },

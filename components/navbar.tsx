@@ -40,7 +40,7 @@ export function Navbar() {
               <Button variant="ghost" size="sm" className="min-h-[44px]">Sugerir lugar</Button>
             </Link>
 
-            {session?.user ? (
+            {session?.user?.id ? (
               <>
                 {features.favorites && (
                   <Link href="/favoritos">

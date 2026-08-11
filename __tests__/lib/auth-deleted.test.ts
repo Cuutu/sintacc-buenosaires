@@ -65,4 +65,17 @@ describe("requireAuth rejects deleted user JWT", () => {
     const s = await getOptionalActiveSession()
     expect(s).toBeNull()
   })
+
+  it("DB outage en requireAuth no marca account_deleted", async () => {
+    mockGetServerSession.mockResolvedValue({
+      user: { id: "507f1f77bcf86cd799439011", email: "x@y.com", role: "user" },
+    })
+    mockExists.mockRejectedValue(new Error("mongo down"))
+    const { requireAuth } = await import("@/lib/middleware")
+    const res = await requireAuth({} as NextRequest)
+    expect(res).not.toBeInstanceOf(NextResponse)
+    expect((res as { user: { id: string } }).user.id).toBe(
+      "507f1f77bcf86cd799439011"
+    )
+  })
 })
