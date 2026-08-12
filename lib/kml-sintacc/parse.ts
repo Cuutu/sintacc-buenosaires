@@ -44,8 +44,14 @@ export function parseSintaccAmbaKml(kmlXml: string): KmlParseResult {
 
       const descriptionHtml = decodeXmlText(pm.description)
       const fields = extractDescriptionFields(descriptionHtml)
-      const type = mapComercioToType(fields.comercioTipo)
-      const { tags, safetyLevel } = mapSafetyAndTags(fields.cocina, fields.materiaPrima)
+      const type = inferTypeFromFreeText(name, descriptionHtml, fields.comercioTipo)
+      const structured = mapSafetyAndTags(fields.cocina, fields.materiaPrima)
+      const inferred =
+        !fields.cocina && !fields.materiaPrima
+          ? inferTagsFromFreeText(descriptionHtml)
+          : null
+      const tags = inferred?.tags ?? structured.tags
+      const safetyLevel = inferred?.safetyLevel ?? structured.safetyLevel
       const instagram = extractInstagram(descriptionHtml)
       const openingHours = extractOpeningHours(descriptionHtml)
       const deliveryAvailable = modalidadHasDelivery(fields.modalidad)
@@ -294,14 +300,160 @@ function geographyFromFolder(folder: string): {
       locality: "buenos-aires",
     }
   }
-  if (n.includes("provincia de buenos aires") || n.includes("amba")) {
+  if (n.includes("provincia de buenos aires") || n === "amba") {
     return {
       neighborhood: "Buenos Aires",
       province: "buenos-aires",
       locality: undefined,
     }
   }
-  return { neighborhood: folder.trim() || "Otro" }
+  if (n.includes("mar del plata")) {
+    return {
+      neighborhood: "Mar del Plata",
+      province: "buenos-aires",
+      locality: "mar-del-plata",
+    }
+  }
+  if (n.includes("pinamar") || n.includes("carilo") || n.includes("ostende") || n.includes("valeria")) {
+    return {
+      neighborhood: folder.trim() || "Pinamar",
+      province: "buenos-aires",
+      locality: "pinamar",
+    }
+  }
+  if (n.includes("villa gesell") || n.includes("mar azul") || n.includes("mar de las pampas")) {
+    return {
+      neighborhood: folder.trim() || "Villa Gesell",
+      province: "buenos-aires",
+      locality: "villa-gesell",
+    }
+  }
+  if (
+    n.includes("mar de ajo") ||
+    n.includes("san bernardo") ||
+    n.includes("la lucila") ||
+    n.includes("aguas verdes") ||
+    n.includes("nueva atlantis")
+  ) {
+    return {
+      neighborhood: folder.trim() || "Partido de La Costa",
+      province: "buenos-aires",
+      locality: "la-costa",
+    }
+  }
+  if (
+    n.includes("costa del este") ||
+    n.includes("mar del tuyu") ||
+    n.includes("teresita") ||
+    n.includes("toninas") ||
+    n.includes("san clemente")
+  ) {
+    return {
+      neighborhood: folder.trim() || "Partido de La Costa",
+      province: "buenos-aires",
+      locality: "la-costa",
+    }
+  }
+  if (n.includes("santa clara") || n.includes("mar chiquita")) {
+    return {
+      neighborhood: folder.trim() || "Mar Chiquita",
+      province: "buenos-aires",
+      locality: "mar-chiquita",
+    }
+  }
+  // Costa Atlántica / BA genérico
+  if (n.includes("costa") || n.includes("atlant")) {
+    return {
+      neighborhood: folder.trim() || "Costa Atlántica",
+      province: "buenos-aires",
+    }
+  }
+  return {
+    neighborhood: folder.trim() || "Otro",
+    province: "buenos-aires",
+  }
+}
+
+/** Si la description no trae campos estructurados, infiere tags desde texto libre. */
+export function inferTagsFromFreeText(descriptionHtml: string): {
+  tags: string[]
+  safetyLevel?: SafetyLevel
+} {
+  const text = normalize(htmlToPlain(descriptionHtml))
+  if (!text) return { tags: ["sin_info"], safetyLevel: "unknown" }
+
+  const tags = new Set<string>()
+  let safetyLevel: SafetyLevel | undefined
+
+  if (
+    text.includes("100% libre de gluten") ||
+    text.includes("100 libre de gluten") ||
+    text.includes("cocina 100%") ||
+    text.includes("100% sin gluten") ||
+    text.includes("100% sin tacc")
+  ) {
+    tags.add("100_gf")
+    safetyLevel = "dedicated_gf"
+  } else if (
+    text.includes("sin tacc") ||
+    text.includes("sin gluten") ||
+    text.includes("celiac") ||
+    text.includes("opciones sin")
+  ) {
+    tags.add("opciones_sin_tacc")
+    safetyLevel = "gf_options"
+  }
+
+  if (
+    text.includes("certificada sin tacc") ||
+    text.includes("certificada sin gluten") ||
+    text.includes("certificado sin tacc") ||
+    text.includes("certificado sin gluten")
+  ) {
+    tags.add("certificado_sin_tacc")
+  }
+
+  if (tags.size === 0) {
+    tags.add("sin_info")
+    safetyLevel = "unknown"
+  }
+
+  return { tags: [...tags], safetyLevel }
+}
+
+export function inferTypeFromFreeText(
+  name: string,
+  descriptionHtml: string,
+  comercioTipo?: string
+): PlaceType {
+  if (comercioTipo) return mapComercioToType(comercioTipo)
+  const blob = normalize(`${name} ${htmlToPlain(descriptionHtml)}`)
+  if (blob.includes("helader")) return "icecream"
+  if (blob.includes("panader") || blob.includes("pasteler") || blob.includes("churrer")) {
+    return "bakery"
+  }
+  if (blob.includes("cafeter") || blob.includes("cafe") || blob.includes("coffee")) {
+    return "cafe"
+  }
+  if (blob.includes("cervecer") || (/\bbar\b/.test(blob) && !blob.includes("restobar"))) {
+    return "bar"
+  }
+  if (
+    blob.includes("restaur") ||
+    blob.includes("pizzer") ||
+    blob.includes("hamburg") ||
+    blob.includes("parrilla") ||
+    blob.includes("parilla") ||
+    blob.includes("bodegon") ||
+    blob.includes("restobar")
+  ) {
+    return "restaurant"
+  }
+  if (blob.includes("despacho") || blob.includes("tienda") || blob.includes("fabrica de pastas")) {
+    return "store"
+  }
+  // Mapa gastronómico: default restaurant mejor que other
+  return "restaurant"
 }
 
 function decodeXmlText(value: string): string {

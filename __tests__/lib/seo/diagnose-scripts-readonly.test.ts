@@ -35,9 +35,16 @@ describe("SEO diagnose scripts are read-only", () => {
     for (const re of WRITE_PATTERNS) {
       expect(src).not.toMatch(re)
     }
-    // Solo find / lean / aggregate / fetch de lectura
     expect(src).not.toMatch(/Place\.(update|create|delete)/)
     expect(src).not.toMatch(/List\.(update|create|delete)/)
+  })
+
+  it("diagnose scripts cargan .env.local vía loadEnvFiles", () => {
+    const geo = read("scripts/diagnose-city-geo.ts")
+    const seo = read("scripts/diagnose-city-seo.ts")
+    expect(geo).toContain("loadEnvFiles")
+    expect(seo).toContain("loadEnvFiles")
+    expect(read("scripts/load-env.ts")).toContain(".env.local")
   })
 
   it("diagnose-city-geo usa proyección limitada (sin dump completo)", () => {

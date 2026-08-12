@@ -8,11 +8,12 @@
  * - No imprime emails, tokens ni documentos completos.
  * - Útil para detectar locality/address/coords inconsistentes (ej. calle "La Plata").
  * - Exit 1 si falla la consulta.
+ *
+ * Nota: `tsx` no carga .env.local solo (Next sí) → usamos loadEnvFiles().
  */
 
 import { getCityBySlug } from "../lib/seo/cities"
-import connectDB from "../lib/mongodb"
-import { Place } from "../models/Place"
+import { loadEnvFiles } from "./load-env"
 
 type LeanPlace = {
   _id: { toString(): string }
@@ -36,7 +37,6 @@ function summarizeAddress(p: LeanPlace): string {
 
 function addressMentionsOtherLocality(address: string, cityName: string): boolean {
   const a = address.toLowerCase()
-  // Heurística suave: "Ingeniero Maschwitz", "Pilar", etc. no son La Plata ciudad
   const foreignHints = [
     "maschwitz",
     "pilar",
@@ -52,7 +52,6 @@ function addressMentionsOtherLocality(address: string, cityName: string): boolea
   if (!a.includes(cityName.toLowerCase()) && foreignHints.some((h) => a.includes(h))) {
     return true
   }
-  // "La Plata 1020" como calle + otra localidad en el mismo string
   if (
     cityName.toLowerCase() === "la plata" &&
     /\bla\s*plata\s+\d+/i.test(address) &&
@@ -64,6 +63,20 @@ function addressMentionsOtherLocality(address: string, cityName: string): boolea
 }
 
 async function main() {
+  loadEnvFiles()
+
+  if (!process.env.MONGODB_URI?.trim()) {
+    console.error(
+      "Falta MONGODB_URI. Revisá .env.local en la raíz del repo, o en PowerShell:\n" +
+        '  $env:MONGODB_URI="mongodb+srv://..."\n' +
+        "  npx tsx scripts/diagnose-city-geo.ts la-plata"
+    )
+    process.exit(1)
+  }
+
+  const { default: connectDB } = await import("../lib/mongodb")
+  const { Place } = await import("../models/Place")
+
   const slug = (process.argv[2] || "la-plata").toLowerCase()
   const city = getCityBySlug(slug)
   if (!city) {

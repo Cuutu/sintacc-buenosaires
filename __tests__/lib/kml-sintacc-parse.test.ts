@@ -1,4 +1,10 @@
-import { parseSintaccAmbaKml, mapComercioToType, mapSafetyAndTags } from "@/lib/kml-sintacc/parse"
+import {
+  parseSintaccAmbaKml,
+  mapComercioToType,
+  mapSafetyAndTags,
+  inferTagsFromFreeText,
+  inferTypeFromFreeText,
+} from "@/lib/kml-sintacc/parse"
 
 describe("parseSintaccAmbaKml", () => {
   const sample = `<?xml version="1.0" encoding="UTF-8"?>
@@ -47,6 +53,19 @@ describe("parseSintaccAmbaKml", () => {
     expect(mix.tags).toContain("opciones_sin_tacc")
     expect(mix.safetyLevel).toBe("gf_options")
   })
+
+  it("geography Costa + texto libre", () => {
+    const xml = `<?xml version="1.0"?><kml><Document><name>Costa</name>
+      <Folder><name>Mar del Plata</name>
+      <Placemark><name>Test MDQ</name>
+      <description><![CDATA[Opciones sin TACC]]></description>
+      <Point><coordinates>-57.54,-38.00,0</coordinates></Point>
+      </Placemark></Folder></Document></kml>`
+    const result = parseSintaccAmbaKml(xml)
+    expect(result.places[0].province).toBe("buenos-aires")
+    expect(result.places[0].locality).toBe("mar-del-plata")
+    expect(result.places[0].tags).toContain("opciones_sin_tacc")
+  })
 })
 
 describe("mapComercioToType / mapSafetyAndTags", () => {
@@ -66,5 +85,16 @@ describe("mapComercioToType / mapSafetyAndTags", () => {
       expect.arrayContaining(["opciones_sin_tacc", "certificado_sin_tacc"])
     )
     expect(r.safetyLevel).toBe("gf_options")
+  })
+
+  it("infiere tipo y tags desde texto libre Costa", () => {
+    expect(
+      inferTypeFromFreeText("2D Cafe", "Cuentan con opciones sin TACC", undefined)
+    ).toBe("cafe")
+    const tags = inferTagsFromFreeText(
+      "Cuentan con opciones sin TACC según informa la web de Turismo"
+    )
+    expect(tags.tags).toContain("opciones_sin_tacc")
+    expect(tags.safetyLevel).toBe("gf_options")
   })
 })

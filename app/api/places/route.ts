@@ -11,12 +11,11 @@ import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 
-const PUBLIC_PLACES_CACHE_TTL_MS = 60 * 1000
+// Lugares casi estáticos: TTL largo. Escrituras invalidan tag `public:places`.
+const PUBLIC_PLACES_CACHE_TTL_MS = 15 * 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB()
-
     const searchParams = request.nextUrl.searchParams
     let parsed
     try {
@@ -35,7 +34,10 @@ export async function GET(request: NextRequest) {
     const query = buildPublicPlacesMongoQuery(parsed)
 
     const cacheKey = `public:places:${searchParams.toString()}`
+    // connectDB solo dentro del loader: hit de cache = 0 Mongo.
     const data = await getOrSetApiCache(cacheKey, PUBLIC_PLACES_CACHE_TTL_MS, async () => {
+      await connectDB()
+
       const sort: Record<string, 1 | -1> =
         parsed.featured === true
           ? { featuredOrder: 1, createdAt: -1 }
@@ -100,7 +102,9 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(data, {
-      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" },
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+      },
     })
   } catch (error) {
     logApiError("/api/places", error, { request })
