@@ -83,12 +83,7 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
         changeFrequency: "weekly",
         priority: 0.85,
       })
-      pages.push({
-        url: `${base}/top-sin-gluten-${city.slug}`,
-        lastModified: maxUpdatedAt(cityPlaces) ?? undefined,
-        changeFrequency: "weekly",
-        priority: 0.8,
-      })
+      // /top-sin-gluten-* redirige 301 a /sin-gluten/[ciudad] — no entra al sitemap
     }
     for (const cat of CATEGORIES) {
       const type = CATEGORY_SLUG_TO_TYPE[cat.slug]

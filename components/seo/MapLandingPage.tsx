@@ -117,7 +117,7 @@ export function MapLandingPage({
           {[
             "Mapa interactivo con filtros por tipo, barrio y nivel de seguridad",
             "Reseñas reales de la comunidad celíaca",
-            "Lugares verificados en Buenos Aires, La Plata, Tucumán, Córdoba y más",
+            "Lugares en Buenos Aires, La Plata, Tucumán, Córdoba y más",
             "Gratis, sin registro para explorar",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">

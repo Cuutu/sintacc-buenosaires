@@ -14,7 +14,7 @@ const FAQ = [
   {
     question: "¿Qué muestra el mapa?",
     answer:
-      "Lugares donde personas con celiaquía pueden comer con más tranquilidad: locales sin tacc, con cocina separada o con opciones verificadas por otros celíacos.",
+      "Lugares donde personas con celiaquía buscan opciones: locales sin tacc, con cocina separada o con opciones según datos aportados por la comunidad.",
   },
   {
     question: "¿Cómo lo uso?",
@@ -26,7 +26,7 @@ const FAQ = [
 export const metadata: Metadata = {
   title: "Mapa celíaco | Lugares sin gluten ",
   description:
-    "Mapa celíaco de Argentina: restaurantes, cafés y panaderías sin gluten verificados por la comunidad. Gratis y actualizado.",
+    "Mapa celíaco de Argentina: restaurantes, cafés y panaderías sin gluten con datos aportados por la comunidad. Gratis y actualizado.",
   keywords: [
     "mapa celiaco",
     "mapa celíaco",
@@ -55,8 +55,8 @@ export default function MapaCeliacoPage() {
       metaDescription={metadata.description as string}
       faq={FAQ}
       keywordParagraphs={[
-        "Si buscás un mapa celíaco confiable, Celimap te muestra lugares con reseñas, nivel de seguridad y datos para llegar.",
-        "Podés filtrar por 100% sin tacc, opciones sin gluten o lugares con certificación. La Plata, Tucumán, Córdoba y Buenos Aires tienen buena cobertura.",
+        "Si buscás un mapa celíaco, Celimap te muestra lugares con reseñas cuando existen, clasificación cargada y datos para llegar.",
+        "Podés filtrar por 100% libre de gluten u opciones sin TACC. La Plata, Tucumán, Córdoba y Buenos Aires tienen cobertura variable según lo cargado.",
         "Es el mismo mapa de Celimap — solo otra forma de buscarlo si venís de Google.",
       ]}
       crossLink={{ href: "/mapa-sin-tacc", label: "también buscado como mapa sin tacc" }}

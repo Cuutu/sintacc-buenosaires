@@ -232,7 +232,7 @@ export default function LugarPage() {
             <p className="text-sm font-bold text-red-300">
               {reportCount} {reportCount === 1 ? "reporte" : "reportes"} de contaminación
             </p>
-            <p className="text-xs text-red-400/70 mt-0.5">Verificá antes de visitar</p>
+            <p className="text-xs text-red-400/70 mt-0.5">Confirmá antes de visitar</p>
           </div>
         </div>
       )
@@ -244,8 +244,10 @@ export default function LugarPage() {
             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-bold text-emerald-300">VERIFICADO SIN TACC</p>
-            <p className="text-xs text-emerald-400/70 mt-0.5">Sin reportes de contaminación</p>
+            <p className="text-sm font-bold text-emerald-300">100% libre de gluten</p>
+            <p className="text-xs text-emerald-400/70 mt-0.5">
+              Clasificación cargada · sin reportes de contaminación visibles
+            </p>
           </div>
         </div>
       )
@@ -267,7 +269,7 @@ export default function LugarPage() {
   // Solo se agregan si el dato existe en place
   const infoChips: { label: string; icon: string; highlight: boolean }[] = []
   if (place.tags?.includes("certificado_sin_tacc"))
-    infoChips.push({ label: "Certificado ACELA", icon: "🛡", highlight: true })
+    infoChips.push({ label: "Marcado certificado sin TACC", icon: "🛡", highlight: true })
   if (place.tags?.includes("cocina_separada"))
     infoChips.push({ label: "Cocina separada", icon: "🍳", highlight: true })
   if (place.delivery?.available)
@@ -416,6 +418,12 @@ export default function LugarPage() {
             })()}
           </div>
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+            Cómo trabajamos la información
+          </Link>
+        </p>
 
         {/* Lugares cercanos — solo si hay */}
         {nearbyPlaces.length > 0 && (

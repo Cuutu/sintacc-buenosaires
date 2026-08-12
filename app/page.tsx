@@ -102,7 +102,7 @@ export default async function HomePage() {
 
           <p className="text-center text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             Restaurantes, cafés y panaderías sin tacc en La Plata, Tucumán, Buenos Aires y más.
-            Lugares verificados por la comunidad celíaca.
+            Lugares aportados y actualizados por la comunidad.
           </p>
 
           <div className="max-w-xl mx-auto mb-8">
@@ -169,7 +169,7 @@ export default async function HomePage() {
                 Tan fácil como abrir el mapa
               </h2>
               <p className="text-sm text-muted-foreground">
-                Diseñado para celíacos que quieren comer tranquilos, no buscar tranquilos
+                Diseñado para celíacos que quieren encontrar opciones con más contexto
               </p>
             </div>
             <div className="grid md:grid-cols-3 gap-6 md:gap-8">
@@ -185,16 +185,16 @@ export default async function HomePage() {
                 {
                   step: "02",
                   icon: <Shield className="h-6 w-6 text-primary" />,
-                  title: "Verificá el nivel de seguridad",
-                  desc: "Cada lugar muestra si es 100% sin gluten, si tiene opciones o si hay reportes de contaminación.",
-                  href: null,
-                  cta: null,
+                  title: "Consultá la clasificación del lugar",
+                  desc: "Revisá si figura como 100% libre de gluten o con opciones sin TACC, y las experiencias disponibles. Confirmá siempre en el local.",
+                  href: "/como-verificamos-los-lugares",
+                  cta: "Cómo trabajamos la información →",
                 },
                 {
                   step: "03",
                   icon: <Star className="h-6 w-6 text-primary" />,
-                  title: "Leé las reseñas reales",
-                  desc: "La comunidad celíaca califica y cuenta su experiencia. Información actualizada por usuarios.",
+                  title: "Revisá la información y las experiencias",
+                  desc: "Cuando hay reseñas de la comunidad o datos de Google en la ficha, usalos como guía — no como garantía.",
                   href: null,
                   cta: null,
                 },
@@ -383,6 +383,15 @@ export default async function HomePage() {
       </ScrollReveal>
 
       <FaqSection />
+      <p className="container mx-auto max-w-2xl px-4 pb-10 text-center text-sm text-muted-foreground">
+        <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+          Cómo trabajamos la información de los lugares
+        </Link>
+        {" · "}
+        <Link href="/que-es-celimap" className="text-primary hover:underline">
+          Qué es CeliMap
+        </Link>
+      </p>
     </div>
   )
 }

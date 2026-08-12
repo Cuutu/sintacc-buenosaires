@@ -64,6 +64,15 @@ export function CityPageExtras({
           </p>
         )}
         <p className="mt-3 text-sm text-muted-foreground">{CELIMAP_SAFETY_DISCLAIMER}</p>
+        <p className="mt-2 text-sm">
+          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+            Cómo trabajamos la información
+          </Link>
+          {" · "}
+          <Link href="/guias" className="text-primary hover:underline">
+            Guías para celíacos
+          </Link>
+        </p>
       </section>
 
       {stats.categories.length > 0 && (

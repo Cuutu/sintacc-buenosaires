@@ -28,6 +28,16 @@ const FOOTER_SECTIONS: FooterSection[] = [
       { href: "/restaurantes-sin-gluten", label: "Restaurantes sin gluten" },
     ],
   },
+  {
+    title: "Sobre CeliMap",
+    links: [
+      { href: "/que-es-celimap", label: "Qué es CeliMap" },
+      { href: "/como-funciona", label: "Cómo funciona" },
+      { href: "/como-verificamos-los-lugares", label: "Cómo trabajamos la información" },
+      { href: "/mapa-para-celiacos", label: "Mapa para celíacos (guía)" },
+      { href: "/guias", label: "Guías para celíacos" },
+    ],
+  },
 ]
 
 function FooterColumn({ title, links }: FooterSection) {
@@ -56,7 +66,7 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-border/50 bg-card/30">
       <div className="container mx-auto px-4 py-10 md:py-12">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center">
               <Image
@@ -122,8 +132,12 @@ export function Footer() {
 
         <div className="mt-10 border-t border-border/40 pt-6 space-y-3">
           <p className="text-center text-xs leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-            Las reseñas y sugerencias son compartidas por la comunidad. Siempre verificá con el
-            establecimiento antes de consumir.
+            Las reseñas y sugerencias son compartidas por la comunidad. Confirmá siempre con el
+            establecimiento antes de consumir.{" "}
+            <Link href="/como-verificamos-los-lugares" className="hover:text-foreground transition-colors">
+              Cómo trabajamos la información
+            </Link>
+            .
           </p>
           <p className="text-center text-xs text-muted-foreground/80">
             © {new Date().getFullYear()} Celimap ·{" "}

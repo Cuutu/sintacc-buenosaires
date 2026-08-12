@@ -3,8 +3,16 @@ import { getCityBySlug } from "@/lib/seo/cities"
 import { getBaseUrl } from "@/lib/base-url"
 
 describe("canonical y geo", () => {
-  it("getBaseUrl no termina en slash", () => {
+  it("getBaseUrl no termina en slash y en prod fuerza www", () => {
     expect(getBaseUrl().endsWith("/")).toBe(false)
+  })
+
+  it("getBaseUrl normaliza apex si NEXT_PUBLIC_BASE_URL viene sin www", () => {
+    const prev = process.env.NEXT_PUBLIC_BASE_URL
+    process.env.NEXT_PUBLIC_BASE_URL = "https://celimap.com.ar"
+    expect(getBaseUrl()).toBe("https://www.celimap.com.ar")
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_URL
+    else process.env.NEXT_PUBLIC_BASE_URL = prev
   })
 
   it("San Miguel de Tucumán ≠ Yerba Buena en seed", () => {

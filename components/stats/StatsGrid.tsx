@@ -49,7 +49,7 @@ export function StatsGrid() {
   const cards = [
     {
       icon: MapPin,
-      title: "Lugares verificados",
+      title: "Lugares en el mapa",
       value: stats.places,
       valueLabel: stats.places != null ? pluralizeLocales(stats.places) : "",
       displayValue: stats.places != null ? stats.places.toLocaleString("es-AR") : undefined,

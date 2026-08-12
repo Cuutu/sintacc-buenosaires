@@ -35,4 +35,14 @@ describe("Home stats copy + structure", () => {
     expect(src).not.toContain("Sin reportes de contaminación")
     expect(src).not.toMatch(/Reseñas de la comunidad/)
   })
+
+  it("home copy sin 'Lugares verificados' ni 'Verificá el nivel'", () => {
+    const src = read("app/page.tsx")
+    expect(src).toContain("Lugares aportados y actualizados por la comunidad")
+    expect(src).toContain("Consultá la clasificación del lugar")
+    expect(src).toContain("Revisá la información y las experiencias")
+    expect(src).not.toContain("Lugares verificados por la comunidad")
+    expect(src).not.toContain("Verificá el nivel de seguridad")
+    expect(src).toContain("/como-verificamos-los-lugares")
+  })
 })

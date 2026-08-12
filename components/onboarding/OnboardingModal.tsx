@@ -41,7 +41,7 @@ const STEPS: OnboardingStep[] = [
     label: "Bienvenida",
     title: "Comer sin tacc, sin vueltas",
     description:
-      "Celimap es el mapa colaborativo para celíacos. Lugares verificados por la comunidad, con reseñas reales.",
+      "Celimap es el mapa colaborativo para celíacos. Lugares aportados por la comunidad, con reseñas cuando existen.",
     tips: [
       "+400 lugares en Argentina",
       "Gratis para explorar el mapa",

@@ -1,6 +1,6 @@
 import { buildSeoPages, dedupeUrls, type SitemapPlace } from "@/lib/seo/sitemap-pages"
 
-const BASE = "https://celimap.com.ar"
+const BASE = "https://www.celimap.com.ar"
 
 function makePlace(overrides: Partial<SitemapPlace> & { _id: string }): SitemapPlace {
   const type = overrides.type ?? "restaurant"
@@ -92,13 +92,15 @@ describe("lib/seo/sitemap-pages", () => {
     expect(cordobaPage?.lastModified).toEqual(new Date("2024-06-01"))
   })
 
-  it("mantiene URLs de ciudades y fichas", () => {
+  it("incluye ciudades indexables y excluye top-sin-gluten (redirige a ciudad)", () => {
     const places: SitemapPlace[] = [
       makePlace({ _id: "1", province: "buenos-aires", locality: "la-plata", type: "restaurant" }),
+      makePlace({ _id: "2", province: "buenos-aires", locality: "la-plata", type: "cafe" }),
+      makePlace({ _id: "3", province: "buenos-aires", locality: "la-plata", type: "bakery" }),
     ]
     const pages = buildSeoPages(BASE, places)
     expect(pages.some((p) => p.url === `${BASE}/sin-gluten/la-plata`)).toBe(true)
-    expect(pages.some((p) => p.url === `${BASE}/top-sin-gluten-la-plata`)).toBe(true)
+    expect(pages.some((p) => p.url === `${BASE}/top-sin-gluten-la-plata`)).toBe(false)
   })
 
   it("dedupeUrls elimina duplicados", () => {

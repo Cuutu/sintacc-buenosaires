@@ -60,7 +60,7 @@ export default async function SinGlutenArgentinaPage() {
       <section className="mb-12 max-w-2xl">
         <h2 className="text-lg font-semibold mb-3">Restaurantes y lugares aptos celíacos</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          Donde comer sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más. Restaurantes sin TACC, panaderías sin gluten y cafés aptos celíacos verificados por la comunidad.
+          Donde comer sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más. Restaurantes sin TACC, panaderías sin gluten y cafés con datos aportados por la comunidad.
         </p>
       </section>
 
@@ -117,22 +117,38 @@ export default async function SinGlutenArgentinaPage() {
         <h2 className="text-lg font-semibold mb-4">Preguntas frecuentes</h2>
         <div className="space-y-4 text-sm text-muted-foreground">
           <div>
-            <h3 className="font-medium text-foreground mb-1">¿Hay un mapa para celíacos en Argentina?</h3>
-            <p>Sí, Celimap es un mapa colaborativo con lugares en Buenos Aires, La Plata, Tucumán y más ciudades.</p>
-          </div>
-          <div>
             <h3 className="font-medium text-foreground mb-1">¿Dónde comer sin gluten en Argentina?</h3>
-            <p>En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más ciudades.</p>
+            <p>
+              En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario,
+              Mendoza y más ciudades. Restaurantes, panaderías y cafés con datos aportados por la
+              comunidad.
+            </p>
           </div>
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Hay restaurantes sin TACC en Buenos Aires?</h3>
-            <p>Sí, hay muchos restaurantes sin gluten en Buenos Aires verificados por la comunidad celíaca.</p>
+            <p>
+              Sí, hay muchos restaurantes sin gluten en Buenos Aires. Celimap reúne opciones 100%
+              libres de gluten y locales con menú adaptado según la información cargada. Confirmá
+              siempre en el local.
+            </p>
           </div>
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Cómo encontrar panaderías sin gluten?</h3>
-            <p>Usá el mapa de Celimap para filtrar por tipo de establecimiento en tu ciudad.</p>
+            <p>
+              Usá el mapa de Celimap para filtrar por tipo de establecimiento. Hay panaderías
+              dedicadas y otras con opciones sin TACC en las principales ciudades de Argentina.
+            </p>
           </div>
         </div>
+        <p className="mt-6 text-sm">
+          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+            Cómo trabajamos la información
+          </Link>
+          {" · "}
+          <Link href="/guias" className="text-primary hover:underline">
+            Guías para celíacos
+          </Link>
+        </p>
       </section>
     </div>
   )

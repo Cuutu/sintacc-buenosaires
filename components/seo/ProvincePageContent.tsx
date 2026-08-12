@@ -22,18 +22,19 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
     {
       question: `¿Hay restaurantes 100% sin gluten en ${province.name}?`,
       answer: dedicatedGfCount > 0
-        ? `Sí, hay al menos ${dedicatedGfCount} lugares 100% sin gluten en ${province.name}. Buscá el sello "100% sin gluten" en cada ficha.`
-        : `Actualmente no hay lugares 100% sin gluten registrados en ${province.name}. Siempre verificá con el local antes de consumir.`,
+        ? `Hay al menos ${dedicatedGfCount} lugares marcados como 100% libres de gluten en ${province.name} según la clasificación cargada. Confirmá siempre en el local.`
+        : `Actualmente no hay lugares marcados como 100% libres de gluten en ${province.name}. Confirmá con el local antes de consumir.`,
     },
     {
       question: `¿Qué localidades de ${province.name} tienen opciones para celíacos?`,
       answer: localities.length > 0
-        ? `Las localidades con opciones verificadas son: ${localities.map((l) => l.name).join(", ")}.`
+        ? `Las localidades con lugares cargados son: ${localities.map((l) => l.name).join(", ")}.`
         : `Aún no hay localidades registradas con opciones en ${province.name}.`,
     },
     {
-      question: "¿Cómo verificar si un lugar es seguro?",
-      answer: "Revisá las etiquetas de cada lugar: \"100% sin gluten\" indica que todo el menú es seguro. \"Opciones sin TACC\" requiere que indiques tu condición al pedir. Leé las reseñas de la comunidad y los reportes de contaminación.",
+      question: "¿Cómo leer las clasificaciones?",
+      answer:
+        "\"100% libre de gluten\" refleja la clasificación cargada. \"Opciones sin TACC\" indica oferta parcial. Ninguna etiqueta garantiza seguridad: confirmá protocolo y contaminación cruzada en el local.",
     },
   ]
 
@@ -57,7 +58,7 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
           <div className="text-2xl font-bold">{total}</div>
-          <div className="text-xs text-muted-foreground">Lugares verificados</div>
+          <div className="text-xs text-muted-foreground">Lugares en el mapa</div>
         </div>
         {dedicatedGfCount > 0 && (
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">

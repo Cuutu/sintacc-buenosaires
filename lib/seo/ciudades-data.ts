@@ -23,7 +23,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "Córdoba",
     provincia: "Córdoba",
     descripcion:
-      "Córdoba tiene una de las comunidades celíacas más organizadas del país. La ciudad cuenta con panaderías, restaurantes y almacenes especializados en productos sin TACC distribuidos en todos sus barrios. Este mapa colaborativo reúne las opciones verificadas por la comunidad celíaca cordobesa.",
+      "Córdoba tiene una de las comunidades celíacas más organizadas del país. La ciudad cuenta con panaderías, restaurantes y almacenes especializados en productos sin TACC distribuidos en todos sus barrios. Este mapa colaborativo reúne opciones aportadas por la comunidad celíaca cordobesa.",
     poblacion: "~1.5 millones de habitantes",
     zonasTipicas: ["Nueva Córdoba", "General Paz", "Cerro", "Villa Belgrano", "Argüello", "Centro"],
   },
@@ -31,7 +31,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "Rosario",
     provincia: "Santa Fe",
     descripcion:
-      "Rosario es la tercera ciudad más grande de Argentina y cuenta con una comunidad celíaca activa. Si sos celíaco y vivís o visitás Rosario, este mapa colaborativo te ayuda a encontrar opciones seguras sin TACC en el centro, Pichincha, Fisherton y todos los barrios.",
+      "Rosario es la tercera ciudad más grande de Argentina y cuenta con una comunidad celíaca activa. Si sos celíaco y vivís o visitás Rosario, este mapa colaborativo te ayuda a encontrar opciones sin TACC en el centro, Pichincha, Fisherton y todos los barrios.",
     poblacion: "~1.2 millones de habitantes",
     zonasTipicas: ["Centro", "Pichincha", "Fisherton", "Echesortu", "Belgrano"],
   },
@@ -63,9 +63,9 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "San Miguel de Tucumán",
     provincia: "Tucumán",
     descripcion:
-      "San Miguel de Tucumán es el corazón del Norte argentino. La comunidad celíaca tucumana está en crecimiento. En este mapa encontrás lugares cargados para la ciudad; localidades vecinas como Yerba Buena pueden tener páginas propias si hay datos separados.",
-    poblacion: "~548 mil habitantes",
-    zonasTipicas: ["Centro", "Sur", "Norte", "Yerba Buena (localidad cercana)"],
+      "San Miguel de Tucumán es la capital de la provincia de Tucumán. En CeliMap esta página lista solo lugares cargados para esta localidad. Yerba Buena y Banda del Río Salí son localidades distintas y, si hay datos, tienen (o pueden tener) páginas propias.",
+    poblacion: "",
+    zonasTipicas: ["Centro", "Barrio Sur", "Barrio Norte"],
   },
   salta: {
     nombre: "Salta",
@@ -119,7 +119,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "Paraná",
     provincia: "Entre Ríos",
     descripcion:
-      "Paraná es la capital entrerriana y hermana de Santa Fe. La Costanera y el centro ofrecen opciones gastronómicas en crecimiento. Este mapa colaborativo reúne los lugares sin TACC verificados por la comunidad celíaca.",
+      "Paraná es la capital entrerriana y hermana de Santa Fe. La Costanera y el centro ofrecen opciones gastronómicas en crecimiento. Este mapa colaborativo reúne los lugares sin TACC aportados por la comunidad celíaca.",
     poblacion: "~247 mil habitantes",
     zonasTipicas: ["Centro", "Costanera", "Alberdi"],
   },

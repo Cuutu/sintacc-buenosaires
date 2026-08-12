@@ -29,6 +29,11 @@ Yerba Buena ≠ San Miguel de Tucumán.
 
 Diagnóstico read-only: `npx tsx scripts/diagnose-city-seo.ts la-plata san-miguel-de-tucuman yerba-buena`
 
+## Dominio canónico
+
+Origen único: `https://www.celimap.com.ar` vía `getBaseUrl()` / `normalizeCanonicalOrigin()`.
+Apex `celimap.com.ar` → 301 www (middleware). `NEXT_PUBLIC_BASE_URL` sin www se corrige.
+
 ## API places `limit`
 
 Techo oficial: `PUBLIC_PLACES_MAX_LIMIT` (= 5000) en `lib/validations.ts`.

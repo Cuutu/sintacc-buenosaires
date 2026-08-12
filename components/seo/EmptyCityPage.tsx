@@ -34,13 +34,12 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
   const descripcion =
     data?.descripcion ??
     `Encontrá restaurantes, panaderías, dietéticas y heladerías aptas para celíacos en ${city.name}. Celimap es el mapa colaborativo donde la comunidad celíaca comparte sus experiencias sin TACC.`
-  const poblacion = data?.poblacion ?? ""
   const zonasTipicas = data?.zonasTipicas ?? city.neighborhoods?.slice(0, 6) ?? []
 
   const faqs = [
     {
       q: `¿Hay lugares sin TACC en ${nombre}?`,
-      a: `Todavía no hay lugares aprobados cargados para ${nombre} en CeliMap, o aún no alcanzan para mostrar un listado. Podés ser de las primeras personas en sugerir un lugar.`,
+      a: `Todavía no hay lugares aprobados cargados para ${nombre} en CeliMap, o aún no alcanzan para mostrar un listado. Podés sugerir un lugar desde el formulario de recomendación.`,
     },
     {
       q: "¿Cómo sé si un lugar es seguro para celíacos?",
@@ -147,9 +146,9 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
       <section className="mb-12 p-6 rounded-xl bg-primary/10 border border-primary/20">
         <h2 className="text-lg font-semibold mb-2">Ayudá a la comunidad celíaca</h2>
         <p className="text-muted-foreground mb-4 max-w-2xl">
-          ¿Conocés un lugar sin TACC en {nombre}? Agregalo al mapa y ayudá a otros
-          celíacos a encontrar opciones seguras. Solo tomá unos minutos para
-          compartir la información.
+          ¿Conocés un lugar sin TACC en {nombre}? Agregalo al mapa y ayudá a otras
+          personas celíacas a encontrarlo. Solo tomá unos minutos para compartir la
+          información.
         </p>
         <Button asChild>
           <Link href="/sugerir" className="gap-2">
@@ -165,19 +164,27 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
         <p className="text-muted-foreground max-w-3xl leading-relaxed mb-4">
           {descripcion}
         </p>
-        {poblacion && (
-          <p className="text-sm text-muted-foreground mb-4">
-            {nombre} ({provincia}) — {poblacion}
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground mb-4">
+          {nombre}
+          {provincia ? ` · ${provincia}` : ""}
+        </p>
         {zonasTipicas.length > 0 && (
           <div>
-            <p className="text-sm font-medium mb-2">Zonas típicas:</p>
+            <p className="text-sm font-medium mb-2">Zonas de referencia en la ciudad:</p>
             <p className="text-sm text-muted-foreground">
               {zonasTipicas.join(", ")}
             </p>
           </div>
         )}
+        <p className="mt-4 text-sm">
+          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+            Cómo trabajamos la información
+          </Link>
+          {" · "}
+          <Link href="/guias" className="text-primary hover:underline">
+            Guías para celíacos
+          </Link>
+        </p>
       </section>
 
       {/* FAQ */}
