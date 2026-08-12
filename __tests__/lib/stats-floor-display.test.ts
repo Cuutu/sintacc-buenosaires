@@ -2,19 +2,19 @@ import {
   aggregateReviewCounts,
   sanitizeGoogleUserRatingCount,
 } from "@/lib/stats/aggregate-reviews"
-import { floorDisplayCount } from "@/lib/stats/floor-display-count"
+import { floorDisplayCount, floorGoogleReviewsDisplay } from "@/lib/stats/floor-display-count"
 
 describe("floorDisplayCount", () => {
-  it("964 → +900", () => {
-    expect(floorDisplayCount(964)?.formatted).toBe("+900")
+  it("964 → 900+", () => {
+    expect(floorDisplayCount(964)?.formatted).toBe("900+")
   })
 
-  it("1243 → +1.200", () => {
-    expect(floorDisplayCount(1243)?.formatted).toBe("+1.200")
+  it("1243 → 1.200+", () => {
+    expect(floorDisplayCount(1243)?.formatted).toBe("1.200+")
   })
 
-  it("137 → +100", () => {
-    expect(floorDisplayCount(137)?.formatted).toBe("+100")
+  it("137 → 100+", () => {
+    expect(floorDisplayCount(137)?.formatted).toBe("100+")
   })
 
   it("valores < 100 exactos sin +", () => {
@@ -23,10 +23,26 @@ describe("floorDisplayCount", () => {
     expect(floorDisplayCount(0)?.formatted).toBe("0")
   })
 
-  it("reseñas grandes", () => {
-    expect(floorDisplayCount(1286)?.formatted).toBe("+1.200")
-    expect(floorDisplayCount(18430)?.formatted).toBe("+18.000")
-    expect(floorDisplayCount(125700)?.formatted).toBe("+125.000")
+  it("miles y cientos de miles", () => {
+    expect(floorDisplayCount(1286)?.formatted).toBe("1.200+")
+    expect(floorDisplayCount(18430)?.formatted).toBe("18.000+")
+    expect(floorDisplayCount(125700)?.formatted).toBe("125.000+")
+  })
+
+  it("millones compactos sin redondear arriba", () => {
+    expect(floorDisplayCount(2_008_153)?.formatted).toBe("2 M+")
+    expect(floorDisplayCount(2_999_999)?.formatted).toBe("2 M+")
+    expect(floorDisplayCount(1_000_000)?.formatted).toBe("1 M+")
+  })
+
+  it("reseñas Google UI: piso conservador 1000+", () => {
+    expect(floorGoogleReviewsDisplay(2_008_153)?.formatted).toBe("1000+")
+    expect(floorGoogleReviewsDisplay(1000)?.formatted).toBe("1000+")
+    expect(floorGoogleReviewsDisplay(999)?.formatted).toBe("900+")
+    expect(floorGoogleReviewsDisplay(87)?.formatted).toBe("87")
+    expect(floorGoogleReviewsDisplay(2_008_153)!.displayValue).toBeLessThanOrEqual(
+      2_008_153
+    )
   })
 
   it("nulos e inválidos → null", () => {

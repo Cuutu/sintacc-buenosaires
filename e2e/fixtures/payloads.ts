@@ -8,7 +8,7 @@ export const E2E_STATS = {
   reviewsCount: 17,
   usersCount: 9,
   reviewsCountCelimap: 17,
-  reviewsCountGoogle: 0,
+  reviewsCountGoogle: 17,
 } as const
 
 /** ObjectId-shaped id (24 hex) — no es dato real. */

@@ -27,10 +27,13 @@ test.describe("home carrusel y buscador @hermetic @mobile", () => {
 
     await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible()
     await expect(stats.getByText("lugares en el mapa")).toBeVisible()
-    await expect(stats.getByText(String(E2E_STATS.reviewsCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("reseñas de CeliMap y Google")).toBeVisible()
+    await expect(stats.getByText(String(E2E_STATS.reviewsCountGoogle), { exact: true })).toBeVisible()
+    await expect(stats.getByText("reseñas en Google")).toBeVisible()
+    await expect(
+      stats.getByText("Acumuladas por los lugares disponibles en CeliMap")
+    ).toBeVisible()
     await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("usuarios en la comunidad")).toBeVisible()
+    await expect(stats.getByText("usuarios registrados")).toBeVisible()
     await expect(stats.locator(".animate-pulse")).toHaveCount(0)
 
     const box = await stats.boundingBox()

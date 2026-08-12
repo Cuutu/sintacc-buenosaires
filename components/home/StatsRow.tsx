@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import { MapPin, MessageSquare, Users, type LucideIcon } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
-import { floorDisplayCount } from "@/lib/stats/floor-display-count"
+import { floorDisplayCount, floorGoogleReviewsDisplay } from "@/lib/stats/floor-display-count"
 import { usePrefersReducedMotion } from "@/components/map-view/usePrefersReducedMotion"
 
 export type Stats = {
   places: number | null
+  /** Solo reseñas Google acumuladas (userRatingCount). */
   reviews: number | null
   users: number | null
 }
@@ -15,13 +16,20 @@ export type Stats = {
 type StatsApi = {
   placesCount?: number
   reviewsCount?: number
+  reviewsCountGoogle?: number
   usersCount?: number
 }
 
 function mapApiResponse(data: StatsApi): Stats {
+  const google =
+    typeof data.reviewsCountGoogle === "number"
+      ? data.reviewsCountGoogle
+      : typeof data.reviewsCount === "number"
+        ? data.reviewsCount
+        : null
   return {
     places: typeof data.placesCount === "number" ? data.placesCount : null,
-    reviews: typeof data.reviewsCount === "number" ? data.reviewsCount : null,
+    reviews: google,
     users: typeof data.usersCount === "number" ? data.usersCount : null,
   }
 }
@@ -30,6 +38,7 @@ const METRICS: Array<{
   key: keyof Stats
   Icon: LucideIcon
   description: string
+  note?: string
 }> = [
   {
     key: "places",
@@ -39,32 +48,49 @@ const METRICS: Array<{
   {
     key: "reviews",
     Icon: MessageSquare,
-    description: "reseñas de CeliMap y Google",
+    description: "reseñas en Google",
+    note: "Acumuladas por los lugares disponibles en CeliMap",
   },
   {
     key: "users",
     Icon: Users,
-    description: "usuarios en la comunidad",
+    description: "usuarios registrados",
   },
 ]
 
 function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: boolean }) {
+  // formatted ya trae sufijo "+" o " M+" cuando corresponde
   if (!showPlus) {
     return (
-      <span className="text-[2.25rem] font-semibold leading-none tracking-tight text-primary tabular-nums sm:text-[2.5rem] md:text-[2.75rem]">
+      <span className="text-[2.1rem] font-semibold leading-none tracking-tight text-primary tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
         {formatted}
       </span>
     )
   }
 
-  const digits = formatted.replace(/^\+/, "")
+  const isMillions = / M\+$/.test(formatted)
+  if (isMillions) {
+    const core = formatted.replace(/ M\+$/, "")
+    return (
+      <span className="inline-flex items-baseline gap-1 leading-none text-primary">
+        <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
+          {core}
+        </span>
+        <span className="text-[1.15rem] font-semibold tracking-tight opacity-85 sm:text-[1.25rem]" aria-hidden>
+          M+
+        </span>
+      </span>
+    )
+  }
+
+  const digits = formatted.replace(/\+$/, "")
   return (
     <span className="inline-flex items-baseline gap-0.5 leading-none text-primary">
-      <span className="text-[1.55rem] font-semibold opacity-80 sm:text-[1.7rem] md:text-[1.85rem]" aria-hidden>
-        +
-      </span>
-      <span className="text-[2.25rem] font-semibold tracking-tight tabular-nums sm:text-[2.5rem] md:text-[2.75rem]">
+      <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
         {digits}
+      </span>
+      <span className="text-[1.35rem] font-semibold opacity-80 sm:text-[1.45rem]" aria-hidden>
+        +
       </span>
     </span>
   )
@@ -98,7 +124,6 @@ export function StatsRow() {
       setVisible(true)
       return
     }
-    // Hero above-the-fold: reveal en el próximo frame (sin depender de IO).
     const id = window.requestAnimationFrame(() => setVisible(true))
     return () => window.cancelAnimationFrame(id)
   }, [prefersReducedMotion])
@@ -109,22 +134,30 @@ export function StatsRow() {
       data-testid="home-stats"
       aria-label="Estadísticas de CeliMap"
       className={`relative transition-all duration-700 ease-out motion-reduce:transition-none ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
       }`}
     >
-      <div className="pointer-events-none absolute -inset-px rounded-2xl bg-primary/10 opacity-60 blur-xl" aria-hidden />
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c1210]/90 shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] backdrop-blur-md">
+      <div
+        className="pointer-events-none absolute -inset-px rounded-2xl bg-primary/15 opacity-70 blur-2xl"
+        aria-hidden
+      />
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c1210]/90 shadow-[0_16px_44px_-26px_rgba(0,0,0,0.85)] backdrop-blur-md">
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74_222_128/0.08),transparent_55%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74_222_128/0.12),transparent_52%)]"
           aria-hidden
         />
         <ul className="relative grid divide-y divide-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
-          {METRICS.map(({ key, Icon, description }) => {
+          {METRICS.map(({ key, Icon, description, note }) => {
             const raw = stats[key]
-            const floored = raw != null ? floorDisplayCount(raw) : null
+            const floored =
+              raw != null
+                ? key === "reviews"
+                  ? floorGoogleReviewsDisplay(raw)
+                  : floorDisplayCount(raw)
+                : null
             const ariaValue =
               floored != null
-                ? `${floored.formatted} ${description}`
+                ? `${floored.formatted} ${description}${note ? `. ${note}` : ""}`
                 : isLoading
                   ? `Cargando ${description}`
                   : `Sin dato de ${description}`
@@ -132,16 +165,16 @@ export function StatsRow() {
             return (
               <li
                 key={key}
-                className="flex min-w-0 flex-col items-center px-5 py-7 text-center sm:px-6 md:py-8"
+                className="flex min-w-0 flex-col items-center px-4 py-5 text-center sm:px-5 md:py-6"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
-                  <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
                 </div>
 
-                <p className="mt-3.5 min-h-[2.75rem]" aria-label={ariaValue}>
+                <p className="mt-2 min-h-[2.4rem]" aria-label={ariaValue}>
                   {isLoading ? (
                     <span
-                      className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/10"
+                      className="inline-block h-9 w-20 animate-pulse rounded-md bg-white/10"
                       aria-hidden
                     />
                   ) : floored ? (
@@ -154,9 +187,16 @@ export function StatsRow() {
                   )}
                 </p>
 
-                <p className="mt-2 max-w-[16rem] text-sm leading-snug text-white/60">
+                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-snug text-white/72 sm:text-sm">
                   {description}
                 </p>
+                {note ? (
+                  <p className="mt-1 max-w-[15.5rem] text-[11px] leading-snug text-white/45 sm:text-xs">
+                    {note}
+                  </p>
+                ) : (
+                  <p className="mt-1 hidden min-h-[1.1rem] md:block" aria-hidden />
+                )}
               </li>
             )
           })}
