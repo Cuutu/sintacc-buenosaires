@@ -31,14 +31,16 @@ test.describe("suite crítica @hermetic @critical", () => {
     const cancels: string[] = []
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page.waitForSelector('[data-carousel="stats"]', { timeout: 10_000 })
-    const carousel = page.locator('[data-carousel="stats"]')
-    await expect(carousel.getByText(`${E2E_STATS.placesCount} locales`)).toBeVisible({
+    await page.waitForSelector('[data-testid="home-stats"]', { timeout: 10_000 })
+    const stats = page.getByTestId("home-stats")
+    await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible({
       timeout: 8_000,
     })
-    await expect(carousel.getByText(`${E2E_STATS.reviewsCount} experiencias`)).toBeVisible()
-    await expect(carousel.getByText(`${E2E_STATS.usersCount} usuarios`)).toBeVisible()
-    await expect(carousel.locator("article")).toHaveCount(3)
+    await expect(stats.getByText("lugares en el mapa")).toBeVisible()
+    await expect(stats.getByText(String(E2E_STATS.reviewsCount), { exact: true })).toBeVisible()
+    await expect(stats.getByText("reseñas de CeliMap y Google")).toBeVisible()
+    await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
+    await expect(stats.locator("li")).toHaveCount(3)
     await assertNoAppCrash(page)
     await assertBodyHasVisibleContent(page)
     await expect(page.getByTestId("home-search-bar")).toBeVisible()

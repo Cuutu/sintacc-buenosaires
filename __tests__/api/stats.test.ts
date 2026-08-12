@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { GET } from "@/app/api/stats/route"
 import { NextRequest } from "next/server"
 
@@ -15,11 +18,14 @@ describe("GET /api/stats", () => {
       remaining: 119,
     })
     require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(10)
+    require("@/models/Place").Place.aggregate = jest
+      .fn()
+      .mockResolvedValue([{ total: 40 }])
     require("@/models/Review").Review.countDocuments = jest.fn().mockResolvedValue(50)
     require("@/models/User").User.countDocuments = jest.fn().mockResolvedValue(25)
   })
 
-  it("returns stats when under rate limit", async () => {
+  it("returns stats with CeliMap + Google review totals", async () => {
     const request = new NextRequest("http://localhost:3000/api/stats")
     const response = await GET(request)
     const data = await response.json()
@@ -27,8 +33,10 @@ describe("GET /api/stats", () => {
     expect(response.status).toBe(200)
     expect(data).toEqual({
       placesCount: 10,
-      reviewsCount: 50,
       usersCount: 25,
+      reviewsCountCelimap: 50,
+      reviewsCountGoogle: 40,
+      reviewsCount: 90,
     })
   })
 

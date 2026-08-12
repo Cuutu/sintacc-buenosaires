@@ -28,12 +28,12 @@ test.describe("resiliencia negativa @hermetic @resilience", () => {
     const guards = attachPageErrorGuards(page)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page.waitForSelector('[data-carousel="stats"]', { timeout: 10_000 })
-    await expect(page.locator('[data-carousel="stats"] article')).toHaveCount(3)
+    await page.waitForSelector('[data-testid="home-stats"]', { timeout: 10_000 })
+    await expect(page.getByTestId("home-stats").locator("li")).toHaveCount(3)
     await expect(page.getByTestId("home-search-bar")).toBeVisible()
-    // Fallback: em-dash, no números fixture
+    // Fallback: em-dash, no numbers fixture
     await expect(page.getByText(String(E2E_STATS.placesCount))).toHaveCount(0)
-    await expect(page.locator('[data-carousel="stats"]')).toContainText("—")
+    await expect(page.getByTestId("home-stats")).toContainText("—")
     await assertNoAppCrash(page)
     expect(guards.responses500.some((r) => r.url.includes("/api/stats"))).toBeTruthy()
   })

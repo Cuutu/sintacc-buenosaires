@@ -48,17 +48,16 @@ describe("overflow-audit helpers", () => {
 })
 
 describe("Lote 3 responsive contracts", () => {
-  it("StatsRow: carrusel marcado + padding final + sin 100vw card", () => {
+  it("StatsRow: bloque único responsive (sin carrusel overflow)", () => {
     const src = read("components/home/StatsRow.tsx")
-    expect(src).toContain('data-overflow-allowed="stats-carousel"')
-    expect(src).toContain("data-carousel=\"stats\"")
-    expect(src).toContain("snap-x")
-    expect(src).toContain("snap-start")
-    expect(src).toContain("pr-4")
-    expect(src).toContain("statsCarouselCardWidthCss")
+    expect(src).toContain('data-testid="home-stats"')
+    expect(src).toContain("md:grid-cols-3")
+    expect(src).toContain("divide-y")
+    expect(src).toContain("md:divide-x")
+    expect(src).not.toContain("snap-x")
+    expect(src).not.toContain("statsCarouselCardWidthCss")
     expect(src).not.toMatch(/100vw/)
     expect(src).not.toMatch(/-mx-4/)
-    expect(src).toContain("md:grid-cols-3")
   })
 
   it("SearchBar: apila en mobile, targets 48px", () => {

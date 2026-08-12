@@ -12,40 +12,32 @@ import {
 import { E2E_STATS } from "./fixtures/payloads"
 
 test.describe("home carrusel y buscador @hermetic @mobile", () => {
-  test("stats carousel: fixture 200 visible, 3 cards, sin overflow", async ({ page }) => {
+  test("stats block: fixture 200 visible, 3 métricas, sin overflow", async ({ page }) => {
     await installHappyPathMocks(page)
     const guards = attachPageErrorGuards(page)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page.waitForSelector('[data-carousel="stats"]', { timeout: 10_000 })
+    await page.waitForSelector('[data-testid="home-stats"]', { timeout: 10_000 })
     await assertNoAppCrash(page)
     await assertDocumentNoHorizontalScroll(page)
 
-    const carousel = page.locator('[data-carousel="stats"]')
-    await expect(carousel).toBeVisible()
-    const cards = carousel.locator("article")
-    await expect(cards).toHaveCount(3)
+    const stats = page.getByTestId("home-stats")
+    await expect(stats).toBeVisible()
+    await expect(stats.locator("li")).toHaveCount(3)
 
-    // Números del fixture — no solo skeleton/fallback "—"
-    await expect(carousel.getByText(`${E2E_STATS.placesCount} locales`)).toBeVisible()
-    await expect(carousel.getByText(`${E2E_STATS.reviewsCount} experiencias`)).toBeVisible()
-    await expect(carousel.getByText(`${E2E_STATS.usersCount} usuarios`)).toBeVisible()
-    await expect(carousel.locator(".animate-pulse")).toHaveCount(0)
+    await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible()
+    await expect(stats.getByText("lugares en el mapa")).toBeVisible()
+    await expect(stats.getByText(String(E2E_STATS.reviewsCount), { exact: true })).toBeVisible()
+    await expect(stats.getByText("reseñas de CeliMap y Google")).toBeVisible()
+    await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
+    await expect(stats.getByText("usuarios en la comunidad")).toBeVisible()
+    await expect(stats.locator(".animate-pulse")).toHaveCount(0)
 
-    const firstBox = await cards.nth(0).boundingBox()
-    expect(firstBox).toBeTruthy()
-    expect(firstBox!.x).toBeGreaterThanOrEqual(-2)
-    expect(firstBox!.x + firstBox!.width).toBeLessThanOrEqual(390 + 2)
+    const box = await stats.boundingBox()
+    expect(box).toBeTruthy()
+    expect(box!.x).toBeGreaterThanOrEqual(-2)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390 + 2)
 
-    await carousel.evaluate((el) => {
-      el.scrollLeft = el.scrollWidth
-    })
-    await page.waitForTimeout(300)
-
-    const lastBox = await cards.nth(2).boundingBox()
-    expect(lastBox).toBeTruthy()
-    expect(lastBox!.x).toBeGreaterThanOrEqual(-2)
-    expect(lastBox!.x + lastBox!.width).toBeLessThanOrEqual(390 + 4)
     assertHappyPathNetwork(guards.responses500, guards.networkFailures)
   })
 

@@ -34,6 +34,12 @@ yarn-error.log*
 .env*.local
 .env
 
+# KML import artifacts
+/data/kml-geocode-cache.json
+/data/kml-dry-run-report.json
+/data/kml-import-report.json
+/data/kml-google-enrich-report.json
+
 # vercel
 .vercel
 

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import {
   MapPin, ArrowRight, Sparkles, Shield, Users,
-  Star, ChevronRight, CheckCircle2,
+  Star, ChevronRight,
 } from "lucide-react"
 import { StatsRow } from "@/components/home/StatsRow"
 import { FeaturedSection } from "@/components/featured/FeaturedSection"
@@ -115,18 +115,20 @@ export default function HomePage() {
 
           <StatsRow />
 
-          <div className="flex flex-wrap justify-center gap-3 mt-8">
+          <div className="mt-8 flex flex-wrap justify-center gap-2.5 sm:gap-3">
             {[
-              { icon: "🟢", text: "100% sin TACC verificados" },
-              { icon: "🛡️", text: "Sin reportes de contaminación" },
-              { icon: "⭐", text: "Reseñas de la comunidad" },
-              { icon: "📍", text: "Buenos Aires, Córdoba y más" },
+              { dot: "bg-emerald-400", text: "Lugares 100% sin gluten" },
+              { dot: "bg-amber-400", text: "Opciones aptas" },
+              { dot: "bg-sky-400", text: "Buenos Aires, Córdoba y más" },
             ].map((pill) => (
               <span
                 key={pill.text}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-white/[0.04] border border-white/8 px-3 py-1.5 rounded-full"
+                className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-3.5 py-2 text-xs font-medium text-white/75 sm:text-[13px]"
               >
-                <span>{pill.icon}</span>
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot}`}
+                  aria-hidden
+                />
                 {pill.text}
               </span>
             ))}

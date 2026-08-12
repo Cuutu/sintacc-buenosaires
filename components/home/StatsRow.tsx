@@ -1,14 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { MapPin, Star, Users, LucideIcon } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { MapPin, MessageSquare, Users, type LucideIcon } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
-import {
-  pluralizeLocales,
-  pluralizeExperiences,
-  pluralizeUsers,
-} from "@/components/stats/utils"
-import { statsCarouselCardWidthCss } from "@/lib/overflow-audit"
+import { floorDisplayCount } from "@/lib/stats/floor-display-count"
+import { usePrefersReducedMotion } from "@/components/map-view/usePrefersReducedMotion"
 
 export type Stats = {
   places: number | null
@@ -16,7 +12,13 @@ export type Stats = {
   users: number | null
 }
 
-function mapApiResponse(data: Record<string, unknown>): Stats {
+type StatsApi = {
+  placesCount?: number
+  reviewsCount?: number
+  usersCount?: number
+}
+
+function mapApiResponse(data: StatsApi): Stats {
   return {
     places: typeof data.placesCount === "number" ? data.placesCount : null,
     reviews: typeof data.reviewsCount === "number" ? data.reviewsCount : null,
@@ -24,71 +26,54 @@ function mapApiResponse(data: Record<string, unknown>): Stats {
   }
 }
 
-const CARDS = [
+const METRICS: Array<{
+  key: keyof Stats
+  Icon: LucideIcon
+  description: string
+}> = [
   {
-    icon: MapPin,
-    title: "Lugares",
-    valueKey: "places" as const,
-    pluralize: pluralizeLocales,
-    subtext: "verificados",
+    key: "places",
+    Icon: MapPin,
+    description: "lugares en el mapa",
   },
   {
-    icon: Star,
-    title: "Reseñas",
-    valueKey: "reviews" as const,
-    pluralize: pluralizeExperiences,
-    subtext: "de la comunidad",
+    key: "reviews",
+    Icon: MessageSquare,
+    description: "reseñas de CeliMap y Google",
   },
   {
-    icon: Users,
-    title: "Usuarios",
-    valueKey: "users" as const,
-    pluralize: pluralizeUsers,
-    subtext: "activos",
+    key: "users",
+    Icon: Users,
+    description: "usuarios en la comunidad",
   },
 ]
 
-function StatCardContent({
-  Icon,
-  title,
-  subtext,
-  displayValue,
-  valueLabel,
-  isLoading,
-}: {
-  Icon: LucideIcon
-  title: string
-  subtext: string
-  displayValue?: string
-  valueLabel: string
-  isLoading: boolean
-}) {
+function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: boolean }) {
+  if (!showPlus) {
+    return (
+      <span className="text-[2.25rem] font-semibold leading-none tracking-tight text-primary tabular-nums sm:text-[2.5rem] md:text-[2.75rem]">
+        {formatted}
+      </span>
+    )
+  }
+
+  const digits = formatted.replace(/^\+/, "")
   return (
-    <article className="flex min-h-[120px] min-w-0 flex-col rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md transition-all duration-300">
-      <header className="mb-3 flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-        </div>
-        <div className="min-w-0">
-          <h3 className="truncate text-base font-medium text-white/90">{title}</h3>
-          <p className="truncate text-xs text-white/60">{subtext}</p>
-        </div>
-      </header>
-      {isLoading ? (
-        <div className="h-10 w-20 animate-pulse rounded bg-white/10" />
-      ) : (
-        <p className="break-words text-xl font-semibold tabular-nums text-primary sm:text-2xl">
-          {displayValue ?? "—"} {valueLabel}
-        </p>
-      )}
-    </article>
+    <span className="inline-flex items-baseline gap-0.5 leading-none text-primary">
+      <span className="text-[1.55rem] font-semibold opacity-80 sm:text-[1.7rem] md:text-[1.85rem]" aria-hidden>
+        +
+      </span>
+      <span className="text-[2.25rem] font-semibold tracking-tight tabular-nums sm:text-[2.5rem] md:text-[2.75rem]">
+        {digits}
+      </span>
+    </span>
   )
 }
 
 /**
- * Mobile: carrusel horizontal intencional (snap + peek).
- * Marcador data-overflow-allowed="stats-carousel" = overflow legítimo.
- * Desktop/tablet md+: grid 3 cols.
+ * Bloque premium de social proof (un contenedor, 3 métricas).
+ * Mobile: filas + separadores horizontales.
+ * Desktop: columnas + separadores verticales.
  */
 export function StatsRow() {
   const [stats, setStats] = useState<Stats>({
@@ -97,79 +82,86 @@ export function StatsRow() {
     users: null,
   })
   const [isLoading, setIsLoading] = useState(true)
-  const cardWidth = statsCarouselCardWidthCss()
+  const [visible, setVisible] = useState(false)
+  const rootRef = useRef<HTMLElement>(null)
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   useEffect(() => {
-    fetchApi<{ placesCount?: number; reviewsCount?: number; usersCount?: number }>(
-      "/api/stats",
-      { cache: "no-store" }
-    )
+    fetchApi<StatsApi>("/api/stats", { cache: "no-store" })
       .then((data) => setStats(mapApiResponse(data)))
       .catch(() => setStats({ places: null, reviews: null, users: null }))
       .finally(() => setIsLoading(false))
   }, [])
 
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVisible(true)
+      return
+    }
+    // Hero above-the-fold: reveal en el próximo frame (sin depender de IO).
+    const id = window.requestAnimationFrame(() => setVisible(true))
+    return () => window.cancelAnimationFrame(id)
+  }, [prefersReducedMotion])
+
   return (
-    <>
-      <div
-        role="region"
-        aria-label="Estadísticas de Celimap"
-        data-overflow-allowed="stats-carousel"
-        data-carousel="stats"
-        className="scrollbar-hide max-w-full touch-pan-x snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:hidden"
-        style={{ scrollPaddingInline: "1rem" }}
-      >
-        <div className="flex w-max gap-3 pb-2 pl-1 pr-4">
-          {CARDS.map(({ icon: Icon, title, valueKey, pluralize, subtext }, index) => {
-            const value = stats[valueKey]
-            const displayValue =
-              value != null ? value.toLocaleString("es-AR") : undefined
-            const valueLabel = value != null ? pluralize(value) : ""
-            const isLast = index === CARDS.length - 1
+    <section
+      ref={rootRef}
+      data-testid="home-stats"
+      aria-label="Estadísticas de CeliMap"
+      className={`relative transition-all duration-700 ease-out motion-reduce:transition-none ${
+        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      }`}
+    >
+      <div className="pointer-events-none absolute -inset-px rounded-2xl bg-primary/10 opacity-60 blur-xl" aria-hidden />
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c1210]/90 shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] backdrop-blur-md">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74_222_128/0.08),transparent_55%)]"
+          aria-hidden
+        />
+        <ul className="relative grid divide-y divide-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+          {METRICS.map(({ key, Icon, description }) => {
+            const raw = stats[key]
+            const floored = raw != null ? floorDisplayCount(raw) : null
+            const ariaValue =
+              floored != null
+                ? `${floored.formatted} ${description}`
+                : isLoading
+                  ? `Cargando ${description}`
+                  : `Sin dato de ${description}`
+
             return (
-              <div
-                key={valueKey}
-                className="shrink-0 snap-start"
-                style={{
-                  width: cardWidth,
-                  // Padding final extra: última tarjeta scrollea completa
-                  marginRight: isLast ? "0.25rem" : undefined,
-                }}
+              <li
+                key={key}
+                className="flex min-w-0 flex-col items-center px-5 py-7 text-center sm:px-6 md:py-8"
               >
-                <StatCardContent
-                  Icon={Icon}
-                  title={title}
-                  subtext={subtext}
-                  displayValue={displayValue}
-                  valueLabel={valueLabel}
-                  isLoading={isLoading}
-                />
-              </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                </div>
+
+                <p className="mt-3.5 min-h-[2.75rem]" aria-label={ariaValue}>
+                  {isLoading ? (
+                    <span
+                      className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/10"
+                      aria-hidden
+                    />
+                  ) : floored ? (
+                    <MetricNumber
+                      formatted={floored.formatted}
+                      showPlus={floored.showPlus}
+                    />
+                  ) : (
+                    <span className="text-3xl font-semibold text-white/35">—</span>
+                  )}
+                </p>
+
+                <p className="mt-2 max-w-[16rem] text-sm leading-snug text-white/60">
+                  {description}
+                </p>
+              </li>
             )
           })}
-        </div>
+        </ul>
       </div>
-
-      <div className="mx-auto hidden max-w-4xl md:grid md:grid-cols-3 md:gap-6">
-        {CARDS.map(({ icon: Icon, title, valueKey, pluralize, subtext }) => {
-          const value = stats[valueKey]
-          const displayValue =
-            value != null ? value.toLocaleString("es-AR") : undefined
-          const valueLabel = value != null ? pluralize(value) : ""
-          return (
-            <div key={valueKey} className="min-w-0">
-              <StatCardContent
-                Icon={Icon}
-                title={title}
-                subtext={subtext}
-                displayValue={displayValue}
-                valueLabel={valueLabel}
-                isLoading={isLoading}
-              />
-            </div>
-          )
-        })}
-      </div>
-    </>
+    </section>
   )
 }

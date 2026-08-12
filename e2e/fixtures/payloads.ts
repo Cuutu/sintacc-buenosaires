@@ -7,6 +7,8 @@ export const E2E_STATS = {
   placesCount: 42,
   reviewsCount: 17,
   usersCount: 9,
+  reviewsCountCelimap: 17,
+  reviewsCountGoogle: 0,
 } as const
 
 /** ObjectId-shaped id (24 hex) — no es dato real. */
