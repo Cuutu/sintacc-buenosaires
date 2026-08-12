@@ -20,6 +20,11 @@ type StatsApi = {
   usersCount?: number
 }
 
+export type StatsRowProps = {
+  /** Stats SSR: evita skeleton/`—` si /api/stats falla en client. */
+  initialStats?: StatsApi | null
+}
+
 function mapApiResponse(data: StatsApi): Stats {
   const google =
     typeof data.reviewsCountGoogle === "number"
@@ -59,7 +64,6 @@ const METRICS: Array<{
 ]
 
 function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: boolean }) {
-  // formatted ya trae sufijo "+" o " M+" cuando corresponde
   if (!showPlus) {
     return (
       <span className="text-[2.1rem] font-semibold leading-none tracking-tight text-primary tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
@@ -76,7 +80,10 @@ function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: bo
         <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
           {core}
         </span>
-        <span className="text-[1.15rem] font-semibold tracking-tight opacity-85 sm:text-[1.25rem]" aria-hidden>
+        <span
+          className="text-[1.15rem] font-semibold tracking-tight opacity-85 sm:text-[1.25rem]"
+          aria-hidden
+        >
           M+
         </span>
       </span>
@@ -98,25 +105,41 @@ function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: bo
 
 /**
  * Bloque premium de social proof (un contenedor, 3 métricas).
- * Mobile: filas + separadores horizontales.
- * Desktop: columnas + separadores verticales.
+ * Prefiere initialStats (SSR); client refetch es best-effort.
  */
-export function StatsRow() {
-  const [stats, setStats] = useState<Stats>({
-    places: null,
-    reviews: null,
-    users: null,
-  })
-  const [isLoading, setIsLoading] = useState(true)
+export function StatsRow({ initialStats = null }: StatsRowProps) {
+  const seeded = initialStats ? mapApiResponse(initialStats) : null
+  const [stats, setStats] = useState<Stats>(
+    seeded ?? { places: null, reviews: null, users: null }
+  )
+  const [isLoading, setIsLoading] = useState(!seeded)
   const [visible, setVisible] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
 
   useEffect(() => {
+    let cancelled = false
     fetchApi<StatsApi>("/api/stats", { cache: "no-store" })
-      .then((data) => setStats(mapApiResponse(data)))
-      .catch(() => setStats({ places: null, reviews: null, users: null }))
-      .finally(() => setIsLoading(false))
+      .then((data) => {
+        if (!cancelled) {
+          setStats(mapApiResponse(data))
+          setIsLoading(false)
+        }
+      })
+      .catch(() => {
+        // Si ya hay SSR, no pisar con vacío.
+        if (!cancelled && !seeded) {
+          setStats({ places: null, reviews: null, users: null })
+          setIsLoading(false)
+        } else if (!cancelled) {
+          setIsLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+    // Solo montaje: initialStats ya seedó el state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

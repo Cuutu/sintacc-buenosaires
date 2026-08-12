@@ -29,6 +29,7 @@ async function connectDB() {
   if (!cached.promise) {
     // Vercel serverless: muchas lambdas × pool default (~100) = Atlas al límite.
     // Pool chico + min 0 deja caer idle y evita picos 500/500.
+    // family:4 evita rarezas SRV/IPv6 → TLS alert internal error en algunos runtimes.
     const opts = {
       bufferCommands: false,
       maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 5),
@@ -36,6 +37,7 @@ async function connectDB() {
       maxIdleTimeMS: 10_000,
       serverSelectionTimeoutMS: 8_000,
       socketTimeoutMS: 45_000,
+      family: 4 as const,
     }
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {

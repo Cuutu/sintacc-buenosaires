@@ -2,6 +2,7 @@ import { unstable_cache, revalidateTag } from "next/cache"
 
 const TAG_BY_PREFIX: Record<string, string> = {
   "public:places:": "public:places",
+  "public:stats": "public:stats",
   "admin:places:": "admin:places",
   "admin:counts": "admin:counts",
   "seo:province:": "seo:province",

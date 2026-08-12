@@ -17,6 +17,7 @@ describe("Home stats copy + structure", () => {
     expect(src).toContain("usuarios registrados")
     expect(src).toContain("reviewsCountGoogle")
     expect(src).toContain("floorDisplayCount")
+    expect(src).toContain("initialStats")
     expect(src).not.toContain("reseñas de CeliMap y Google")
     expect(src).not.toContain("usuarios en la comunidad")
     expect(src).not.toContain("stats-carousel")

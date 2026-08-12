@@ -13,6 +13,7 @@ import { FaqSection } from "@/components/home/FaqSection"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { getBaseUrl } from "@/lib/base-url"
+import { getPublicStatsSafe } from "@/lib/stats/get-public-stats"
 
 const BASE_URL = getBaseUrl()
 
@@ -30,7 +31,9 @@ export const metadata = {
   alternates: { canonical: BASE_URL },
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const initialStats = await getPublicStatsSafe()
+
   return (
     <div className="min-h-screen">
       <section className="relative overflow-hidden min-h-[92vh] flex flex-col justify-center">
@@ -113,7 +116,7 @@ export default function HomePage() {
             </Button>
           </div>
 
-          <StatsRow />
+          <StatsRow initialStats={initialStats} />
 
           <div className="mt-8 flex flex-wrap justify-center gap-2.5 sm:gap-3">
             {[

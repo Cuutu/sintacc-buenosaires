@@ -4,11 +4,16 @@
 import { GET } from "@/app/api/stats/route"
 import { NextRequest } from "next/server"
 
-jest.mock("@/lib/mongodb")
 jest.mock("@/lib/rate-limit")
-jest.mock("@/models/Place")
-jest.mock("@/models/Review")
-jest.mock("@/models/User")
+jest.mock("@/lib/stats/get-public-stats", () => ({
+  getPublicStats: jest.fn().mockResolvedValue({
+    placesCount: 10,
+    usersCount: 25,
+    reviewsCountCelimap: 50,
+    reviewsCountGoogle: 40,
+    reviewsCount: 90,
+  }),
+}))
 
 describe("GET /api/stats", () => {
   beforeEach(() => {
@@ -17,12 +22,6 @@ describe("GET /api/stats", () => {
       allowed: true,
       remaining: 119,
     })
-    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(10)
-    require("@/models/Place").Place.aggregate = jest
-      .fn()
-      .mockResolvedValue([{ total: 40 }])
-    require("@/models/Review").Review.countDocuments = jest.fn().mockResolvedValue(50)
-    require("@/models/User").User.countDocuments = jest.fn().mockResolvedValue(25)
   })
 
   it("returns stats with CeliMap + Google review totals", async () => {
