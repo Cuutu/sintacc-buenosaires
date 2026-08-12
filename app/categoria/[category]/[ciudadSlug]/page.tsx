@@ -1,18 +1,19 @@
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getCityBySlug, getTop10CitySlugs, isValidCategorySlug, CATEGORIES } from "@/lib/seo/cities"
-import { getPlacesByCategoryAndCity, getTopNeighborhoods } from "@/lib/seo/places"
+import { getPlacesByCategoryAndCity, getTopNeighborhoods, getCityPageStats } from "@/lib/seo/places"
 import {
   getCategoryTitle,
   getCategoryDescription,
   getSEOTextBlock,
+  buildCityFaqs,
 } from "@/lib/seo/templates"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
 import { Pagination } from "@/components/seo/Pagination"
-
+import { decideCityCategoryIndexing, decisionToRobots } from "@/lib/seo/indexing-rules"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
@@ -47,17 +48,19 @@ export async function generateMetadata({
   const { total, pages } = await getPlacesByCategoryAndCity(category, ciudadSlug, page)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}/${category}`
-  const canonical = page === 1 ? baseCanonical : `${baseCanonical}?page=${page}`
+  const canonical = baseCanonical
+
+  const decision = decideCityCategoryIndexing(total, ciudadSlug)
+  const robots =
+    decisionToRobots(decision) ||
+    (pages > 0 && page > pages ? { index: false, follow: true } : undefined) ||
+    (page > 1 ? { index: false, follow: true } : undefined)
 
   return {
     title: getCategoryTitle(city, category),
     description: getCategoryDescription(city, category, total),
-    ...(total === 0 || (pages > 0 && page > pages)
-      ? { robots: { index: false, follow: true } }
-      : {}),
-    alternates: {
-      canonical,
-    },
+    ...(robots ? { robots } : {}),
+    alternates: { canonical },
     openGraph: {
       title: getCategoryTitle(city, category),
       description: getCategoryDescription(city, category, total),
@@ -79,35 +82,20 @@ export default async function CategoryCityPage({
   if (!city || !isValidCategorySlug(category)) notFound()
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { places, total, pages } = await getPlacesByCategoryAndCity(
-    category,
-    ciudadSlug,
-    page
-  )
-  const topNeighborhoods = await getTopNeighborhoods(ciudadSlug)
+  const [{ places, total, pages }, stats, topNeighborhoods] = await Promise.all([
+    getPlacesByCategoryAndCity(category, ciudadSlug, page),
+    getCityPageStats(ciudadSlug),
+    getTopNeighborhoods(ciudadSlug),
+  ])
 
   const catName = CATEGORIES.find((c) => c.slug === category)?.name ?? category
-
-  const faqs = [
-    {
-      question: `Hay restaurantes 100% sin gluten en ${city.name}?`,
-      answer: `Si, varios establecimientos en ${city.name} estan certificados o son exclusivamente sin gluten. Busca el sello "100% sin gluten" en Celimap.`,
-    },
-    {
-      question: `Donde comer sin TACC en ${city.name}?`,
-      answer: `Podes usar el mapa de Celimap para ver todos los lugares verificados en ${city.name}. Filtra por barrio o tipo de local segun tu preferencia.`,
-    },
-    {
-      question: `Hay ${catName.toLowerCase()} sin gluten en ${city.name}?`,
-      answer: `Si, hay ${catName.toLowerCase()} dedicadas y otras con opciones sin TACC en ${city.name}. Revisa las resenas de la comunidad para mas detalles.`,
-    },
-  ]
+  const faqs = buildCityFaqs(city, stats)
 
   if (total === 0) {
     return (
       <div className="container py-12">
         <p className="text-muted-foreground">
-          No hay {catName.toLowerCase()} registradas aun en {city.name}.
+          No hay {catName.toLowerCase()} registradas aún en {city.name}.
         </p>
       </div>
     )
@@ -126,9 +114,10 @@ export default async function CategoryCityPage({
         city={city}
         categorySlug={category}
         places={places}
+        totalPlaces={total}
         faqs={faqs}
       />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
+      <h1 className="mb-6 mt-4 text-2xl font-bold md:text-3xl">
         {catName} sin gluten en {city.name}
       </h1>
       <PlaceListWithFilters
@@ -137,12 +126,21 @@ export default async function CategoryCityPage({
         cityName={city.name}
         currentCategory={category}
         topNeighborhoods={topNeighborhoods}
-        basePath="/sin-gluten"
       />
-      <SEOTextBlock
-        content={getSEOTextBlock(city, category)}
-        className="mt-12"
-      />
+      <section className="mt-10" aria-labelledby="cat-faq">
+        <h2 id="cat-faq" className="mb-4 text-xl font-semibold">
+          Preguntas frecuentes
+        </h2>
+        <dl className="space-y-4">
+          {faqs.map((faq) => (
+            <div key={faq.question} className="rounded-xl border border-border bg-card p-4">
+              <dt className="font-medium">{faq.question}</dt>
+              <dd className="mt-2 text-sm text-muted-foreground">{faq.answer}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <SEOTextBlock content={getSEOTextBlock(city, category, stats)} className="mt-12" />
       {pages > 1 && (
         <Pagination
           currentPage={page}

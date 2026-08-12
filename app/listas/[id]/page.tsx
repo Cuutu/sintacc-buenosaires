@@ -13,6 +13,7 @@ import { Heart, User, ArrowLeft } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/lib/analytics"
 
 export default function ListaDetailPage() {
   const params = useParams()
@@ -38,6 +39,13 @@ export default function ListaDetailPage() {
     if (!id) return
     fetchList()
   }, [id, fetchList])
+
+  useEffect(() => {
+    if (!list) return
+    const visibility =
+      list.visibility === "PRIVATE_LINK" || list.isPublic === false ? "private" : "public"
+    trackEvent("list_open", { listId: id, visibility })
+  }, [list, id])
 
   useEffect(() => {
     if (!id || !session) return
@@ -78,9 +86,30 @@ export default function ListaDetailPage() {
 
   const places = (list.placeIds ?? []) as IPlace[]
   const placesLabel = `${places.length} lugar${places.length !== 1 ? "es" : ""}`
+  const isPublicList =
+    list.visibility !== "PRIVATE_LINK" && list.isPublic !== false
+  const updatedLabel = list.updatedAt
+    ? new Intl.DateTimeFormat("es-AR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(list.updatedAt))
+    : null
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
+      <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-white/55">
+        <Link href="/" className="hover:text-white">
+          Inicio
+        </Link>
+        <span aria-hidden>/</span>
+        <Link href="/listas" className="hover:text-white">
+          Listas
+        </Link>
+        <span aria-hidden>/</span>
+        <span className="text-white/80">{list.name}</span>
+      </nav>
+
       <Link
         href={session ? "/favoritos" : "/listas"}
         className="mb-5 inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
@@ -92,6 +121,21 @@ export default function ListaDetailPage() {
       <header className="mb-6 rounded-2xl border border-white/10 bg-[#0c100e]/80 p-4 md:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-md px-2 py-0.5 text-xs font-medium",
+                  isPublicList
+                    ? "bg-primary/15 text-primary"
+                    : "bg-white/10 text-white/70"
+                )}
+              >
+                {isPublicList ? "Lista pública" : "Lista privada (accesible con enlace)"}
+              </span>
+              {list.destination ? (
+                <span className="text-xs text-white/50">{list.destination}</span>
+              ) : null}
+            </div>
             <h1 className="text-2xl font-bold tracking-tight text-white md:text-[1.75rem]">
               {list.name}
             </h1>
@@ -130,6 +174,14 @@ export default function ListaDetailPage() {
                 <Heart className="h-3.5 w-3.5 text-primary/80" aria-hidden />
                 {list.likesCount} like{list.likesCount !== 1 ? "s" : ""}
               </span>
+              {updatedLabel ? (
+                <>
+                  <span className="text-white/25" aria-hidden>
+                    ·
+                  </span>
+                  <span className="text-white/50">Actualizada {updatedLabel}</span>
+                </>
+              ) : null}
             </div>
           </div>
 

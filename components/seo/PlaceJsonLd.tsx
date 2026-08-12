@@ -82,7 +82,6 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
       name: place.neighborhood,
     },
     servesCuisine: "Comida sin gluten",
-    priceRange: "$$",
     telephone: place.contact?.phone || undefined,
     ...(sameAs.length ? { sameAs } : {}),
   }

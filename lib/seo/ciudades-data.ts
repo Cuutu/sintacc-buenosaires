@@ -63,9 +63,9 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "San Miguel de Tucumán",
     provincia: "Tucumán",
     descripcion:
-      "San Miguel de Tucumán es el corazón del Norte argentino. La comunidad celíaca tucumana está en crecimiento y cada vez hay más opciones sin TACC. Encontrá restaurantes, panaderías y dietéticas aptas en el centro, Yerba Buena y alrededores.",
+      "San Miguel de Tucumán es el corazón del Norte argentino. La comunidad celíaca tucumana está en crecimiento. En este mapa encontrás lugares cargados para la ciudad; localidades vecinas como Yerba Buena pueden tener páginas propias si hay datos separados.",
     poblacion: "~548 mil habitantes",
-    zonasTipicas: ["Centro", "Yerba Buena", "Banda del Río Salí"],
+    zonasTipicas: ["Centro", "Sur", "Norte", "Yerba Buena (localidad cercana)"],
   },
   salta: {
     nombre: "Salta",

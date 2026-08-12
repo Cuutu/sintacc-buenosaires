@@ -14,18 +14,18 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPublicStatsSafe } from "@/lib/stats/get-public-stats"
+import { CELIMAP_DESCRIPTION_SHORT } from "@/lib/seo/brand"
+import { FAQ_ITEMS } from "@/components/home/FaqSection"
 
 const BASE_URL = getBaseUrl()
 
 export const metadata = {
   // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
   title: "Mapa para celíacos en Argentina",
-  description:
-    "Mapa para celíacos de Argentina. Encontrá restaurantes, cafés y panaderías sin tacc en Buenos Aires, La Plata, Tucumán y más. Verificados por la comunidad.",
+  description: CELIMAP_DESCRIPTION_SHORT,
   openGraph: {
     title: "Mapa para celíacos en Argentina | CeliMap",
-    description:
-      "El mapa colaborativo para celíacos. Restaurantes, cafés y panaderías sin tacc con reseñas reales.",
+    description: CELIMAP_DESCRIPTION_SHORT,
     url: BASE_URL,
   },
   alternates: { canonical: BASE_URL },
@@ -34,8 +34,25 @@ export const metadata = {
 export default async function HomePage() {
   const initialStats = await getPublicStatsSafe()
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  }
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <section className="relative overflow-hidden min-h-[92vh] flex flex-col justify-center">
         <div className="absolute inset-0 -z-10 pointer-events-none" data-overflow-allowed="decoration">
           <div className="celimap-hero-blob absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-primary/15 blur-[120px]" />

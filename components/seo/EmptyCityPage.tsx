@@ -40,15 +40,15 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
   const faqs = [
     {
       q: `¿Hay lugares sin TACC en ${nombre}?`,
-      a: `Celimap está construyendo el mapa colaborativo de lugares sin gluten en ${nombre}. Podés ser el primero en agregar un lugar desde el botón "Sugerir lugar".`,
+      a: `Todavía no hay lugares aprobados cargados para ${nombre} en CeliMap, o aún no alcanzan para mostrar un listado. Podés ser de las primeras personas en sugerir un lugar.`,
     },
     {
       q: "¿Cómo sé si un lugar es seguro para celíacos?",
-      a: "En Celimap cada lugar tiene reseñas de la comunidad celíaca que indican si tiene cocina separada, si el personal está capacitado y si los productos están certificados sin TACC.",
+      a: "CeliMap muestra clasificaciones y reseñas cuando existen, pero no garantiza seguridad. Confirmá siempre protocolos y contaminación cruzada en el local.",
     },
     {
       q: `¿Cómo agrego un lugar sin TACC en ${nombre}?`,
-      a: "Podés sugerir un lugar desde el botón \"Sugerir lugar\". El equipo de Celimap verifica la información antes de publicarlo en el mapa.",
+      a: "Usá el botón \"Sugerir lugar\". El lugar pasa a revisión antes de publicarse en el mapa. No hay una certificación médica automática.",
     },
   ]
 
@@ -108,9 +108,9 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
           Lugares sin TACC en {nombre} — Guía para celíacos
         </h1>
         <p className="text-muted-foreground text-lg max-w-3xl leading-relaxed mb-6">
-          Encontrá restaurantes, panaderías, dietéticas y heladerías aptas para
-          celíacos en {nombre}. Celimap es el mapa colaborativo donde la comunidad
-          celíaca comparte sus experiencias y recomendaciones sin TACC.
+          Todavía no hay lugares aprobados para mostrar en {nombre}. CeliMap es un mapa
+          colaborativo: cuando la comunidad cargue opciones sin TACC, van a aparecer acá y en el
+          mapa. Mientras tanto, podés sugerir un lugar o explorar otras ciudades.
         </p>
         <Button asChild size="lg" className="gap-2">
           <Link href="/sugerir">

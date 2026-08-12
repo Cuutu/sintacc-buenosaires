@@ -16,6 +16,11 @@ import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
 import { getBaseUrl } from "@/lib/base-url";
+import {
+  CELIMAP_DESCRIPTION,
+  CELIMAP_DESCRIPTION_SHORT,
+  CELIMAP_NAME,
+} from "@/lib/seo/brand";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -31,23 +36,21 @@ export const metadata: Metadata = {
     default: "Mapa para celíacos en Argentina | CeliMap",
     template: "%s | CeliMap",
   },
-  description:
-    "Mapa para celíacos de Argentina. Restaurantes, cafés y panaderías sin tacc verificados por la comunidad. Gratis y actualizado.",
+  description: CELIMAP_DESCRIPTION,
   keywords: [
     "mapa sin tacc",
     "mapa celiaco",
     "mapa celíaco",
     "mapa para celiacos",
     "mapa para celíacos",
+    "CeliMap",
     "Celimap",
-    "mapa celíacos mundial",
     "lugares sin gluten",
     "sin TACC",
     "restaurantes celíacos",
     "comida sin gluten",
     "apto celíacos",
     "donde comer sin gluten",
-    "mapa celíaco",
     "restaurantes sin TACC",
     "panaderías sin gluten",
     "cafés aptos celíacos",
@@ -56,28 +59,27 @@ export const metadata: Metadata = {
     "lugares aptos celíacos",
     "restaurantes sin gluten",
   ],
-  authors: [{ name: "Celimap" }],
+  authors: [{ name: CELIMAP_NAME }],
   openGraph: {
     type: "website",
     locale: "es_AR",
     url: BASE_URL,
-    siteName: "Celimap",
-    title: "Mapa para celíacos | Celimap - Lugares sin gluten en todo el mundo",
-    description:
-      "El mapa para celíacos sin fronteras. Restaurantes, cafés y panaderías sin TACC. Reseñas de la comunidad.",
+    siteName: CELIMAP_NAME,
+    title: "Mapa para celíacos en Argentina | CeliMap",
+    description: CELIMAP_DESCRIPTION_SHORT,
     images: [
-      { url: "/CelimapLOGO.png", width: 512, height: 512, alt: "Celimap - Mapa para celíacos en todo el mundo" },
-      { url: "/CelimapLOGO.png", width: 1200, height: 630, alt: "Celimap - Lugares sin gluten en Argentina" },
+      { url: "/CelimapLOGO.png", width: 512, height: 512, alt: "CeliMap - Mapa para celíacos" },
+      { url: "/CelimapLOGO.png", width: 1200, height: 630, alt: "CeliMap - Lugares sin gluten en Argentina" },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mapa para celíacos | Celimap - Lugares sin gluten en todo el mundo",
-    description: "El mapa para celíacos sin restricciones. Lugares sin TACC verificados por la comunidad.",
+    title: "Mapa para celíacos en Argentina | CeliMap",
+    description: CELIMAP_DESCRIPTION_SHORT,
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Celimap", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: CELIMAP_NAME, statusBarStyle: "black-translucent" },
   icons: {
     icon: [
       { url: "/favicon.ico" },

@@ -5,6 +5,8 @@ import { ContaminationReport } from "@/models/ContaminationReport"
 import {
   getCityBySlug,
   CATEGORY_SLUG_TO_TYPE,
+  TYPE_TO_CATEGORY_SLUG,
+  CATEGORIES,
   CITIES,
 } from "./cities"
 import { getProvinceBySlug } from "./provinces"
@@ -287,6 +289,153 @@ export async function getLastPlaceUpdated(): Promise<Date | null> {
     .select("updatedAt")
     .lean()
   return last?.updatedAt ? new Date(last.updatedAt) : null
+}
+
+export type CityPageStats = {
+  total: number
+  dedicatedGf: number
+  gfOptions: number
+  categories: { slug: string; name: string; count: number }[]
+  neighborhoods: { name: string; count: number }[]
+  lastUpdated: Date | null
+}
+
+/**
+ * Agregados reales por ciudad (province + locality).
+ * Clasificación: tags 100_gf / certificado_sin_tacc → dedicated;
+ * opciones_sin_tacc o safetyLevel gf_options → opciones;
+ * safetyLevel dedicated_gf sin tag también cuenta.
+ */
+export async function getCityPageStats(citySlug: string): Promise<CityPageStats> {
+  const empty: CityPageStats = {
+    total: 0,
+    dedicatedGf: 0,
+    gfOptions: 0,
+    categories: [],
+    neighborhoods: [],
+    lastUpdated: null,
+  }
+  const city = getCityBySlug(citySlug)
+  if (!city) return empty
+
+  await connectDB()
+  const match = {
+    status: "approved",
+    province: city.provinceSlug,
+    locality: city.slug,
+  }
+
+  const [total, dedicatedGf, gfOptions, typeAgg, neighborhoods, last] = await Promise.all([
+    Place.countDocuments(match),
+    Place.countDocuments({
+      ...match,
+      $or: [
+        { tags: { $in: ["100_gf", "certificado_sin_tacc"] } },
+        { safetyLevel: "dedicated_gf" },
+      ],
+    }),
+    Place.countDocuments({
+      ...match,
+      $and: [
+        {
+          $or: [{ tags: "opciones_sin_tacc" }, { safetyLevel: "gf_options" }],
+        },
+        {
+          tags: { $nin: ["100_gf", "certificado_sin_tacc"] },
+        },
+        { safetyLevel: { $ne: "dedicated_gf" } },
+      ],
+    }),
+    Place.aggregate([
+      { $match: match },
+      {
+        $project: {
+          type: {
+            $cond: [
+              { $and: [{ $isArray: "$types" }, { $gt: [{ $size: "$types" }, 0] }] },
+              { $arrayElemAt: ["$types", 0] },
+              "$type",
+            ],
+          },
+        },
+      },
+      { $group: { _id: "$type", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    getTopNeighborhoods(citySlug),
+    Place.findOne(match).sort({ updatedAt: -1 }).select("updatedAt").lean(),
+  ])
+
+  const categories = typeAgg
+    .map((row: { _id: string; count: number }) => {
+      const slug = TYPE_TO_CATEGORY_SLUG[row._id]
+      const cat = CATEGORIES.find((c) => c.slug === slug)
+      if (!cat) return null
+      return { slug: cat.slug, name: cat.name, count: row.count }
+    })
+    .filter(Boolean) as { slug: string; name: string; count: number }[]
+
+  return {
+    total,
+    dedicatedGf,
+    gfOptions,
+    categories,
+    neighborhoods,
+    lastUpdated: last?.updatedAt ? new Date(last.updatedAt) : null,
+  }
+}
+
+export type CityRecentReview = {
+  rating: number
+  comment?: string
+  placeName: string
+  placePath: string
+  createdAt?: Date
+}
+
+export async function getRecentReviewsForCity(
+  citySlug: string,
+  limit = 5
+): Promise<CityRecentReview[]> {
+  const city = getCityBySlug(citySlug)
+  if (!city) return []
+
+  await connectDB()
+  const places = await Place.find(
+    { status: "approved", province: city.provinceSlug, locality: city.slug },
+    { _id: 1, name: 1, slug: 1 }
+  ).lean()
+  if (places.length === 0) return []
+
+  const placeMap = new Map(
+    places.map((p: { _id: { toString(): string }; name: string; slug?: string }) => [
+      p._id.toString(),
+      p,
+    ])
+  )
+  const placeIds = places.map((p: { _id: unknown }) => p._id)
+
+  const reviews = await Review.find({ placeId: { $in: placeIds }, status: "visible" })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .select("rating comment placeId createdAt")
+    .lean()
+
+  const { getPlacePath } = await import("@/lib/place-url")
+
+  return reviews
+    .map((r: { rating: number; comment?: string; placeId: { toString(): string }; createdAt?: Date }) => {
+      const place = placeMap.get(r.placeId.toString())
+      if (!place) return null
+      return {
+        rating: r.rating,
+        comment: r.comment,
+        placeName: place.name,
+        placePath: getPlacePath(place),
+        createdAt: r.createdAt,
+      }
+    })
+    .filter(Boolean) as CityRecentReview[]
 }
 
 function normalizePlace(p: any): PlaceSEO {

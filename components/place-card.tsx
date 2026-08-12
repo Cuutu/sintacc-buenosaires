@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TagBadge } from "@/components/TagBadge"
@@ -9,12 +11,19 @@ import { IPlace } from "@/models/Place"
 import { isOpenNow } from "@/lib/opening-hours"
 import { getPlacePath } from "@/lib/place-url"
 import { GoogleRatingBadge } from "@/components/google-rating-badge"
+import { trackEvent } from "@/lib/analytics"
 
 interface PlaceCardProps {
   place: IPlace & {
     stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
   }
   onMapClick?: (place: IPlace) => void
+  /** Clic desde listado de ciudad (distinto de place_view en la ficha). */
+  cityClickAnalytics?: {
+    city_slug: string
+    position: number
+    source: string
+  }
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -27,9 +36,19 @@ const TYPE_ICONS: Record<string, string> = {
   other: "📍",
 }
 
-export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
+export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardProps) {
   const primaryType = place.types?.[0] ?? place.type
   const typeIcon = TYPE_ICONS[primaryType] || "📍"
+
+  const trackCityClick = () => {
+    if (!cityClickAnalytics) return
+    trackEvent("city_to_place_click", {
+      city_slug: cityClickAnalytics.city_slug,
+      place_id: String(place._id),
+      position: cityClickAnalytics.position,
+      source: cityClickAnalytics.source,
+    })
+  }
 
   const cardContent = (
       <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-border/50 hover:border-primary/50 rounded-xl group bg-card/50">
@@ -120,5 +139,9 @@ export function PlaceCard({ place, onMapClick }: PlaceCardProps) {
     )
   }
 
-  return <Link href={getPlacePath(place)}>{cardContent}</Link>
+  return (
+    <Link href={getPlacePath(place)} onClick={trackCityClick}>
+      {cardContent}
+    </Link>
+  )
 }

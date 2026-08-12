@@ -1,41 +1,48 @@
 import { getBaseUrl } from "@/lib/base-url"
-import { FAQ_ITEMS } from "@/components/home/FaqSection"
+import {
+  CELIMAP_DESCRIPTION,
+  CELIMAP_NAME,
+  CELIMAP_SAME_AS,
+} from "@/lib/seo/brand"
 
 /**
- * JSON-LD structured data para SEO.
- * Se inyecta en el layout raíz.
+ * JSON-LD global: Organization + WebSite.
+ * FAQPage NO va acá (solo donde las FAQ son visibles, p. ej. home).
  */
 export function JsonLdScript() {
   const BASE_URL = getBaseUrl()
 
-  const organizationSchema = {
+  const organizationSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Celimap",
+    name: CELIMAP_NAME,
     alternateName: [
+      "Celimap",
       "Mapa para celíacos",
       "Mapa sin tacc",
       "Mapa celíaco",
-      "Mapa celiacos",
     ],
     url: BASE_URL,
     logo: `${BASE_URL}/CelimapLOGO.png`,
-    description:
-      "Celimap - Mapa para celíacos de Argentina. Restaurantes, cafés y panaderías sin tacc verificados por la comunidad.",
+    description: CELIMAP_DESCRIPTION,
     areaServed: {
       "@type": "Country",
       name: "Argentina",
     },
   }
 
+  if (CELIMAP_SAME_AS.length > 0) {
+    organizationSchema.sameAs = CELIMAP_SAME_AS
+  }
+
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Celimap",
-    alternateName: ["Mapa para celíacos", "Mapa sin tacc", "Mapa celíaco"],
+    name: CELIMAP_NAME,
+    alternateName: ["Celimap", "Mapa para celíacos", "Mapa sin tacc", "Mapa celíaco"],
     url: BASE_URL,
-    description:
-      "Mapa para celíacos de Argentina. Lugares sin tacc verificados por la comunidad.",
+    description: CELIMAP_DESCRIPTION,
+    inLanguage: "es-AR",
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -44,19 +51,6 @@ export function JsonLdScript() {
       },
       "query-input": "required name=search_term_string",
     },
-  }
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ_ITEMS.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
   }
 
   return (
@@ -71,12 +65,6 @@ export function JsonLdScript() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(websiteSchema),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
         }}
       />
     </>

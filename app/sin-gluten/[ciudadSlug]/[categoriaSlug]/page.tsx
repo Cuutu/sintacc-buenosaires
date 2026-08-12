@@ -6,6 +6,7 @@ import {
   getCategoryTitle,
   getCategoryDescription,
   getSEOTextBlock,
+  buildCityFaqs,
 } from "@/lib/seo/templates"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
@@ -13,8 +14,10 @@ import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
 import { Pagination } from "@/components/seo/Pagination"
 import { CATEGORIES } from "@/lib/seo/cities"
+import { getCityPageStats } from "@/lib/seo/places"
 
 import { getBaseUrl } from "@/lib/base-url"
+import { decideCityCategoryIndexing, decisionToRobots } from "@/lib/seo/indexing-rules"
 
 const BASE_URL = getBaseUrl()
 
@@ -48,14 +51,18 @@ export async function generateMetadata({
   const { total, pages } = await getPlacesByCityAndCategory(ciudadSlug, categoriaSlug, page)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}/${categoriaSlug}`
-  const canonical = page === 1 ? baseCanonical : `${baseCanonical}?page=${page}`
+  const canonical = baseCanonical
+
+  const decision = decideCityCategoryIndexing(total, ciudadSlug)
+  const robots =
+    decisionToRobots(decision) ||
+    (pages > 0 && page > pages ? { index: false, follow: true } : undefined) ||
+    (page > 1 ? { index: false, follow: true } : undefined)
 
   return {
     title: getCategoryTitle(city, categoriaSlug),
     description: getCategoryDescription(city, categoriaSlug, total),
-    ...(total === 0 || (pages > 0 && page > pages)
-      ? { robots: { index: false, follow: true } }
-      : {}),
+    ...(robots ? { robots } : {}),
     alternates: {
       canonical,
     },
@@ -80,29 +87,14 @@ export default async function SinGlutenCiudadCategoriaPage({
   if (!city || !isValidCategorySlug(categoriaSlug)) notFound()
 
   const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { places, total, pages } = await getPlacesByCityAndCategory(
-    ciudadSlug,
-    categoriaSlug,
-    page
-  )
-  const topNeighborhoods = await getTopNeighborhoods(ciudadSlug)
+  const [{ places, total, pages }, stats, topNeighborhoods] = await Promise.all([
+    getPlacesByCityAndCategory(ciudadSlug, categoriaSlug, page),
+    getCityPageStats(ciudadSlug),
+    getTopNeighborhoods(ciudadSlug),
+  ])
 
   const catName = CATEGORIES.find((c) => c.slug === categoriaSlug)?.name ?? categoriaSlug
-
-  const faqs = [
-    {
-      question: `¿Hay restaurantes 100% sin gluten en ${city.name}?`,
-      answer: `Sí, varios establecimientos en ${city.name} están certificados o son exclusivamente sin gluten. Buscá el sello "100% sin gluten" en Celimap.`,
-    },
-    {
-      question: `¿Dónde comer sin TACC en ${city.name}?`,
-      answer: `Podés usar el mapa de Celimap para ver todos los lugares verificados en ${city.name}. Filtrá por barrio o tipo de local según tu preferencia.`,
-    },
-    {
-      question: `¿Hay ${catName.toLowerCase()} sin gluten en ${city.name}?`,
-      answer: `Sí, hay ${catName.toLowerCase()} dedicadas y otras con opciones sin TACC en ${city.name}. Revisá las reseñas de la comunidad para más detalles.`,
-    },
-  ]
+  const faqs = buildCityFaqs(city, stats)
 
   if (total === 0) {
     return (
@@ -127,11 +119,16 @@ export default async function SinGlutenCiudadCategoriaPage({
         city={city}
         categorySlug={categoriaSlug}
         places={places}
+        totalPlaces={total}
         faqs={faqs}
       />
       <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
         {catName} sin gluten en {city.name}
       </h1>
+      <p className="mb-6 max-w-3xl text-muted-foreground">
+        {total} {catName.toLowerCase()} en {city.name} según datos de CeliMap. Confirmá siempre
+        en el local protocolos y contaminación cruzada.
+      </p>
       <PlaceListWithFilters
         places={places}
         citySlug={ciudadSlug}
@@ -139,8 +136,21 @@ export default async function SinGlutenCiudadCategoriaPage({
         currentCategory={categoriaSlug}
         topNeighborhoods={topNeighborhoods}
       />
+      <section className="mt-10" aria-labelledby="cat-faq">
+        <h2 id="cat-faq" className="mb-4 text-xl font-semibold">
+          Preguntas frecuentes
+        </h2>
+        <dl className="space-y-4">
+          {faqs.map((faq) => (
+            <div key={faq.question} className="rounded-xl border border-border bg-card p-4">
+              <dt className="font-medium">{faq.question}</dt>
+              <dd className="mt-2 text-sm text-muted-foreground">{faq.answer}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
       <SEOTextBlock
-        content={getSEOTextBlock(city, categoriaSlug)}
+        content={getSEOTextBlock(city, categoriaSlug, stats)}
         className="mt-12"
       />
       {pages > 1 && (

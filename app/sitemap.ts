@@ -12,6 +12,8 @@ import {
 } from "@/lib/venture-seo"
 import { getAllApprovedVentureSlugs, countApprovedVentures } from "@/lib/ventures-server"
 import { publicListsQuery } from "@/lib/lists/access"
+import { getPublishedGuides } from "@/lib/seo/guides"
+import { isPublicListIndexable } from "@/lib/seo/indexing-rules"
 
 export const revalidate = 86400 // 24 horas
 
@@ -30,10 +32,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/mapa`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.95 },
     { url: `${base}/mapa-sin-tacc`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.92 },
     { url: `${base}/mapa-celiaco`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.92 },
+    { url: `${base}/mapa-para-celiacos`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/explorar`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/sugerir`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/sin-gluten-argentina`, lastModified: lastModDate, changeFrequency: "daily", priority: 0.9 },
-    { url: `${base}/que-es-celimap`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${base}/que-es-celimap`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/como-funciona`, lastModified: lastModDate, changeFrequency: "monthly", priority: 0.78 },
+    {
+      url: `${base}/como-verificamos-los-lugares`,
+      lastModified: lastModDate,
+      changeFrequency: "monthly",
+      priority: 0.78,
+    },
     { url: `${base}/privacidad`, lastModified: lastModDate, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/listas`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/emprendimientos`, lastModified: lastModDate, changeFrequency: "weekly", priority: 0.8 },
@@ -61,16 +71,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
 
     try {
-      const lists = await List.find(publicListsQuery(), { _id: 1, updatedAt: 1 }).lean()
-      listUrls = lists.map((l: { _id: unknown; updatedAt?: Date }) => ({
-        url: `${base}/listas/${l._id}`,
-        lastModified: l.updatedAt ? new Date(l.updatedAt) : lastModDate,
-        changeFrequency: "weekly" as const,
-        priority: 0.6,
-      }))
+      const lists = await List.find(publicListsQuery(), {
+        _id: 1,
+        updatedAt: 1,
+        placeIds: 1,
+      }).lean()
+      listUrls = lists
+        .filter((l: { placeIds?: unknown[] }) =>
+          isPublicListIndexable(true, l.placeIds?.length ?? 0)
+        )
+        .map((l: { _id: unknown; updatedAt?: Date }) => ({
+          url: `${base}/listas/${l._id}`,
+          lastModified: l.updatedAt ? new Date(l.updatedAt) : lastModDate,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        }))
     } catch {
       // Listas opcionales
     }
+
+    const publishedGuides = getPublishedGuides()
+    const guideUrls: MetadataRoute.Sitemap = publishedGuides.map((g) => ({
+      url: `${base}/guias/${g.slug}`,
+      lastModified: new Date(g.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    }))
 
     const ventureSlugs = await getAllApprovedVentureSlugs()
     ventureUrls = ventureSlugs.map((v) => ({
@@ -103,6 +129,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         })
       }
     }
+
+    return dedupeUrls([
+      ...staticPages,
+      ...seoPages,
+      ...placeUrls,
+      ...listUrls,
+      ...guideUrls,
+      ...ventureUrls,
+    ])
   } catch (error) {
     const { logApiError } = await import("@/lib/logger")
     logApiError("/sitemap", error)

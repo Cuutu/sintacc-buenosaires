@@ -118,6 +118,15 @@ function parseBbox(value: unknown): z.infer<typeof bboxSchema> | undefined {
   return { west, south, east, north }
 }
 
+/**
+ * Máximo oficial de `limit` en GET /api/places.
+ * Motivo comprobable: el mapa nacional (`MAP_PLACES_LIMIT`) y embeds de ciudad
+ * piden hasta ~todos los lugares aprobados en una sola respuesta; el techo
+ * evita requests unbounded (DoS) sin romper el mapa.
+ * No subir “por conveniencia” sin revisar clientes reales.
+ */
+export const PUBLIC_PLACES_MAX_LIMIT = 5000
+
 export const publicPlacesQuerySchema = z.object({
   search: z.string().optional(),
   type: z.enum(placeTypeValues).optional(),
@@ -139,9 +148,9 @@ export const publicPlacesQuerySchema = z.object({
     (value) => {
       const n = Number(value)
       if (!Number.isFinite(n)) return 20
-      return Math.min(5000, Math.max(1, Math.trunc(n)))
+      return Math.min(PUBLIC_PLACES_MAX_LIMIT, Math.max(1, Math.trunc(n)))
     },
-    z.number().int().min(1).max(5000)
+    z.number().int().min(1).max(PUBLIC_PLACES_MAX_LIMIT)
   ).default(20),
 })
 

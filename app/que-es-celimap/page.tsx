@@ -1,123 +1,132 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { MapPin, ShieldCheck, Users, WheatOff } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import {
+  InstitutionalPage,
+  buildWebPageJsonLd,
+} from "@/components/seo/InstitutionalPage"
+import {
+  CELIMAP_DESCRIPTION,
+  CELIMAP_NAME,
+  CELIMAP_SAFETY_DISCLAIMER,
+} from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
+const PATH = "/que-es-celimap"
+const UPDATED_AT = "2026-08-12"
 
-export const metadata: Metadata = {
-  title: "Que es Celimap | Mapa para celiacos y lugares sin gluten",
-  description:
-    "Celimap es un mapa colaborativo para encontrar restaurantes, cafes, panaderias y lugares sin gluten o aptos para celiacos.",
-  alternates: { canonical: `${BASE_URL}/que-es-celimap` },
-  openGraph: {
-    title: "Que es Celimap",
-    description:
-      "Celimap es un mapa colaborativo para encontrar lugares sin gluten y aptos para celiacos.",
-    url: `${BASE_URL}/que-es-celimap`,
-    type: "website",
-  },
-}
+const title = "Qué es CeliMap"
+const description = CELIMAP_DESCRIPTION
 
-const features = [
+const faqs = [
   {
-    icon: MapPin,
-    title: "Mapa de lugares sin gluten",
-    text: "Celimap ayuda a encontrar restaurantes, cafes, panaderias, tiendas, heladerias y bares con opciones sin TACC.",
+    question: "¿Qué es CeliMap?",
+    answer:
+      "CeliMap es un mapa y guía colaborativa para encontrar lugares sin TACC o con opciones aptas para personas celíacas. No es una asociación médica ni un tratamiento.",
   },
   {
-    icon: ShieldCheck,
-    title: "Senales de seguridad",
-    text: "Cada ficha puede incluir nivel de seguridad, resenas, reportes y datos de contacto para decidir con mas confianza.",
+    question: "¿CeliMap garantiza que un lugar sea seguro?",
+    answer:
+      "No. La información puede venir de la comunidad y de datos cargados en el mapa. Cada persona debe confirmar protocolos y riesgo de contaminación cruzada en el local.",
   },
   {
-    icon: Users,
-    title: "Comunidad celiaca",
-    text: "La comunidad puede sugerir nuevos lugares y compartir experiencias para ayudar a otras personas.",
-  },
-  {
-    icon: WheatOff,
-    title: "Pensado para celiacos",
-    text: "El foco esta en personas con celiaquia, intolerancia al gluten, familias y viajeros que buscan comer sin gluten.",
+    question: "¿Cómo aporto un lugar que falta?",
+    answer:
+      "Podés recomendar un lugar desde la página Sugerir. Después, otras personas pueden encontrar esa ficha en el mapa y en las páginas por ciudad.",
   },
 ]
 
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: { canonical: `${BASE_URL}${PATH}` },
+  openGraph: {
+    title: `${title} | ${CELIMAP_NAME}`,
+    description,
+    url: `${BASE_URL}${PATH}`,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${title} | ${CELIMAP_NAME}`,
+    description,
+  },
+}
+
 export default function QueEsCelimapPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "Celimap",
-    url: BASE_URL,
-    applicationCategory: "LifestyleApplication",
-    operatingSystem: "Web",
-    description:
-      "Celimap is a collaborative map and directory for finding gluten-free and celiac-friendly places.",
-    audience: {
-      "@type": "Audience",
-      audienceType: "People with celiac disease and gluten-free diners",
-    },
-    about: [
-      "gluten-free food",
-      "celiac disease",
-      "sin TACC",
-      "gluten-free restaurants",
-      "gluten-free bakeries",
-    ],
-  }
-
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <div className="mb-10">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
-          Sobre Celimap
+    <InstitutionalPage
+      breadcrumbs={[{ label: "Qué es CeliMap" }]}
+      h1="Qué es CeliMap: mapa y guía colaborativa sin TACC"
+      intro={CELIMAP_DESCRIPTION}
+      updatedAt={UPDATED_AT}
+      faqs={faqs}
+      jsonLd={buildWebPageJsonLd({
+        name: title,
+        description,
+        path: PATH,
+        faqs,
+      })}
+    >
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">Para qué sirve</h2>
+        <p className="text-muted-foreground">
+          Sirve para descubrir restaurantes, cafeterías, panaderías, heladerías, tiendas y
+          emprendimientos con opciones sin TACC; guardar lugares; crear listas; y compartir
+          experiencias con otras personas celíacas o que evitan el gluten.
         </p>
-        <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
-          Celimap es el mapa colaborativo para encontrar lugares sin gluten
-        </h1>
-        <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
-          Celimap ayuda a personas celiacas, familias y viajeros a encontrar donde comer o comprar
-          sin gluten. Reune lugares sugeridos por la comunidad, fichas con datos utiles, resenas y
-          senales de seguridad.
-        </p>
-      </div>
+      </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {features.map((feature) => {
-          const Icon = feature.icon
-          return (
-            <section key={feature.title} className="rounded-xl border border-border bg-card p-5">
-              <Icon className="mb-4 h-6 w-6 text-primary" />
-              <h2 className="mb-2 text-lg font-semibold">{feature.title}</h2>
-              <p className="text-sm leading-6 text-muted-foreground">{feature.text}</p>
-            </section>
-          )
-        })}
-      </div>
-
-      <section className="mt-10 rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-3 text-xl font-semibold">Cuando conviene usar Celimap</h2>
-        <ul className="space-y-2 text-sm leading-6 text-muted-foreground">
-          <li>Para buscar restaurantes sin gluten cerca.</li>
-          <li>Para encontrar panaderias, cafes, heladerias o tiendas aptas para celiacos.</li>
-          <li>Para revisar experiencias de otras personas antes de visitar un lugar.</li>
-          <li>Para sugerir nuevos lugares sin TACC y ayudar a la comunidad.</li>
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">Qué no es CeliMap</h2>
+        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+          <li>No es una enfermedad, diagnóstico ni tratamiento médico.</li>
+          <li>No es una asociación médica ni un organismo de certificación.</li>
+          <li>No es un restaurante ni un delivery propio.</li>
         </ul>
       </section>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button asChild>
-          <Link href="/mapa">Abrir el mapa</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/sin-gluten-argentina">Ver lugares por ciudad</Link>
-        </Button>
-      </div>
-    </main>
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">Cómo se clasifican los lugares</h2>
+        <p className="mb-3 text-muted-foreground">
+          En las fichas podés ver, cuando hay datos, si un lugar figura como{" "}
+          <strong className="text-foreground">100% libre de gluten</strong> o como lugar que{" "}
+          <strong className="text-foreground">ofrece opciones sin TACC</strong>. Esa clasificación
+          refleja la información cargada en CeliMap, no una auditoría independiente.
+        </p>
+        <p className="text-sm text-muted-foreground">{CELIMAP_SAFETY_DISCLAIMER}</p>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">Dónde empezar</h2>
+        <ul className="space-y-2 text-muted-foreground">
+          <li>
+            <Link href="/mapa" className="text-primary hover:underline">
+              Abrí el mapa interactivo
+            </Link>
+          </li>
+          <li>
+            <Link href="/sin-gluten/la-plata" className="text-primary hover:underline">
+              Lugares sin TACC en La Plata
+            </Link>
+          </li>
+          <li>
+            <Link href="/sin-gluten/san-miguel-de-tucuman" className="text-primary hover:underline">
+              Lugares sin TACC en San Miguel de Tucumán
+            </Link>
+          </li>
+          <li>
+            <Link href="/como-funciona" className="text-primary hover:underline">
+              Cómo funciona CeliMap
+            </Link>
+          </li>
+          <li>
+            <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+              Cómo trabajamos la información de los lugares
+            </Link>
+          </li>
+        </ul>
+      </section>
+    </InstitutionalPage>
   )
 }

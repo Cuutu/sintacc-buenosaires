@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { v2 as cloudinary } from "cloudinary"
 import { requireAuth, requireAdmin } from "@/lib/middleware"
+import {
+  UPLOAD_MAX_BYTES,
+  UPLOAD_MAX_LABEL,
+  isUploadAllowedMime,
+} from "@/lib/upload-limits"
 
-const MAX_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"] as const
 const MAGIC_BYTES: Record<string, (buf: Buffer) => boolean> = {
   "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8,
   "image/png": (b) =>
@@ -38,14 +41,8 @@ export async function POST(request: NextRequest) {
         : await requireAuth(request)
     if (session instanceof NextResponse) return session
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-    if (!cloudName || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      return NextResponse.json(
-        { error: "Cloudinary no configurado. Revisá las variables de entorno." },
-        { status: 500 }
-      )
-    }
-
+    // Validar archivo ANTES de exigir Cloudinary: input inválido → 400,
+    // no 500 por env faltante en tests / misconfig.
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
         { error: "No se envió ningún archivo" },
@@ -54,17 +51,26 @@ export async function POST(request: NextRequest) {
     }
 
     const mime = file.type?.toLowerCase()
-    if (!mime || !ALLOWED_MIMES.includes(mime as any)) {
+    if (!mime || !isUploadAllowedMime(mime)) {
       return NextResponse.json(
         { error: "Tipo de archivo no permitido. Usá JPEG, PNG o WebP" },
         { status: 400 }
       )
     }
 
-    if (file.size > MAX_SIZE) {
+    // Exactamente UPLOAD_MAX_BYTES permitido; por encima → 400.
+    if (file.size > UPLOAD_MAX_BYTES) {
       return NextResponse.json(
-        { error: "La imagen no puede superar 5MB" },
+        { error: `La imagen no puede superar ${UPLOAD_MAX_LABEL}` },
         { status: 400 }
+      )
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    if (!cloudName || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return NextResponse.json(
+        { error: "Cloudinary no configurado. Revisá las variables de entorno." },
+        { status: 500 }
       )
     }
 

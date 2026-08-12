@@ -114,7 +114,7 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
           CeliMap
         </span>
         <span className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] text-white/55">
-          Lista privada
+          Lista privada (enlace)
         </span>
       </header>
 

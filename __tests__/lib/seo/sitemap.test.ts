@@ -84,7 +84,8 @@ describe("lib/seo/sitemap-pages", () => {
     const places: SitemapPlace[] = [
       makePlace({ _id: "1", province: "cordoba", locality: "cordoba", updatedAt: new Date("2024-01-01") }),
       makePlace({ _id: "2", province: "cordoba", locality: "cordoba", updatedAt: new Date("2024-06-01") }),
-      makePlace({ _id: "3", province: "tucuman", locality: "san-miguel-de-tucuman", updatedAt: new Date("2024-12-01") }),
+      makePlace({ _id: "3", province: "cordoba", locality: "cordoba", updatedAt: new Date("2024-03-01") }),
+      makePlace({ _id: "4", province: "tucuman", locality: "san-miguel-de-tucuman", updatedAt: new Date("2024-12-01") }),
     ]
     const pages = buildSeoPages(BASE, places)
     const cordobaPage = pages.find((p) => p.url === `${BASE}/sin-gluten/cordoba`)

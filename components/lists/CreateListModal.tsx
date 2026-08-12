@@ -21,6 +21,7 @@ import { LIST_VISIBILITY, type ListVisibility } from "@/lib/lists/constants"
 import { cn } from "@/lib/utils"
 import { ImageUpload } from "@/components/image-upload"
 import Link from "next/link"
+import { trackEvent } from "@/lib/analytics"
 
 interface CreateListModalProps {
   open: boolean
@@ -228,6 +229,11 @@ export function CreateListModal({
           visibility,
         }),
       })
+      trackEvent("list_create", {
+        visibility:
+          visibility === LIST_VISIBILITY.PRIVATE_LINK ? "private_link" : "public",
+        placeCount: orderedIds.length,
+      })
       if (
         visibility === LIST_VISIBILITY.PRIVATE_LINK &&
         created.privateSharePath
@@ -237,6 +243,7 @@ export function CreateListModal({
             `${window.location.origin}${created.privateSharePath}`
           )
           toast.success("Lista privada creada — enlace copiado")
+          trackEvent("list_share", { visibility: "private_link" })
         } catch {
           toast.success("Lista privada creada")
         }

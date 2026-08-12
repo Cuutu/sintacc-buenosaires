@@ -94,8 +94,18 @@ export function PlaceListWithFilters({
             : `Lugares en ${cityName}`}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {places.map((p) => (
-            <PlaceCard key={p._id} place={placeForCard(p)} />
+          {places.map((p, index) => (
+            <PlaceCard
+              key={p._id}
+              place={placeForCard(p)}
+              cityClickAnalytics={{
+                city_slug: citySlug,
+                position: index + 1,
+                source: currentCategory
+                  ? `city_category:${currentCategory}`
+                  : "city_page",
+              }}
+            />
           ))}
         </div>
       </section>

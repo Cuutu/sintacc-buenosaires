@@ -1,7 +1,12 @@
 import type { MetadataRoute } from "next"
 import { CITIES, CATEGORIES, CATEGORY_SLUG_TO_TYPE } from "./cities"
 import { PROVINCES } from "./provinces"
-import { isProvincePageIndexable, isProvinceCategoryIndexable } from "./indexing-rules"
+import {
+  isProvincePageIndexable,
+  isProvinceCategoryIndexable,
+  isCityPageIndexable,
+  isCityCategoryIndexable,
+} from "./indexing-rules"
 
 export interface SitemapPlace {
   _id: { toString(): string }
@@ -33,7 +38,6 @@ function placeHasType(place: SitemapPlace, type: string | undefined): boolean {
 export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = []
 
-  // Agrupar por provincia
   const placesByProvince = new Map<string, SitemapPlace[]>()
   for (const p of places) {
     if (p.province) {
@@ -43,7 +47,6 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
     }
   }
 
-  // Provincias (solo indexables)
   for (const province of PROVINCES) {
     const provincePlaces = placesByProvince.get(province.slug) ?? []
     const distinctLocalities = new Set(provincePlaces.map((p) => p.locality).filter(Boolean)).size
@@ -54,7 +57,6 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
         changeFrequency: "weekly",
         priority: 0.84,
       })
-      // Categorías provinciales indexables
       for (const cat of CATEGORIES) {
         const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
         const catPlaces = provincePlaces.filter((p) => placeHasType(p, type))
@@ -70,12 +72,11 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
     }
   }
 
-  // Ciudades (por province + locality normalizados)
   for (const city of CITIES) {
     const cityPlaces = places.filter(
       (p) => p.province === city.provinceSlug && p.locality === city.slug
     )
-    if (cityPlaces.length > 0) {
+    if (isCityPageIndexable(cityPlaces.length, city.slug)) {
       pages.push({
         url: `${base}/sin-gluten/${city.slug}`,
         lastModified: maxUpdatedAt(cityPlaces) ?? undefined,
@@ -92,7 +93,7 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
     for (const cat of CATEGORIES) {
       const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
       const catPlaces = cityPlaces.filter((p) => placeHasType(p, type))
-      if (catPlaces.length > 0) {
+      if (isCityCategoryIndexable(catPlaces.length, city.slug)) {
         pages.push({
           url: `${base}/sin-gluten/${city.slug}/${cat.slug}`,
           lastModified: maxUpdatedAt(catPlaces) ?? undefined,
@@ -103,11 +104,10 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
     }
   }
 
-  // Categorías nacionales
   for (const cat of CATEGORIES) {
     const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
     const catPlaces = places.filter((p) => placeHasType(p, type))
-    if (catPlaces.length > 0) {
+    if (isCityCategoryIndexable(catPlaces.length)) {
       pages.push({
         url: `${base}/${cat.slug}-sin-gluten`,
         lastModified: maxUpdatedAt(catPlaces) ?? undefined,

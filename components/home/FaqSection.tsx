@@ -2,24 +2,24 @@ import { HelpCircle, ChevronDown } from "lucide-react"
 
 export const FAQ_ITEMS = [
   {
-    question: "¿Qué es Celimap?",
+    question: "¿Qué es CeliMap?",
     answer:
-      "Celimap es un mapa colaborativo para celíacos. Encontrá restaurantes, cafés y panaderías sin tacc en Argentina, con reseñas de la comunidad y filtros por ciudad y barrio.",
+      "CeliMap es un mapa y guía colaborativa para encontrar lugares sin TACC o con opciones aptas para personas celíacas. Permite descubrir restaurantes, cafeterías, panaderías, heladerías, tiendas y emprendimientos, guardar lugares, crear listas y compartir experiencias.",
   },
   {
     question: "¿Hay un mapa para celíacos en Argentina?",
     answer:
-      "Sí. Celimap cubre Buenos Aires, La Plata, Tucumán, Córdoba y más ciudades. Cada lugar tiene reseñas y nivel de seguridad.",
+      "Sí. CeliMap tiene un mapa interactivo y páginas por ciudad (Buenos Aires, La Plata, Córdoba, Rosario, San Miguel de Tucumán y más). La cobertura depende de los lugares cargados y aportados por la comunidad.",
   },
   {
     question: "¿Dónde comer sin gluten?",
     answer:
-      "En el mapa de Celimap hay restaurantes 100% sin tacc, cafés con opciones aptas y panaderías certificadas en todo el país.",
+      "Podés abrir el mapa o las guías por ciudad. Cuando hay datos, las fichas distinguen lugares 100% libres de gluten de lugares con opciones sin TACC. Siempre confirmá en el local protocolos y contaminación cruzada.",
   },
   {
-    question: "¿Cómo saber si un lugar es seguro para celíacos?",
+    question: "¿CeliMap garantiza que un lugar sea seguro?",
     answer:
-      "Cada lugar muestra su nivel de seguridad: 100% sin gluten, opciones sin tacc, etc. Las reseñas de la comunidad te ayudan a decidir.",
+      "No. La información puede venir de la comunidad y de datos cargados en el mapa. Usá reseñas y clasificaciones como guía, y confirmá siempre en el local antes de comer.",
   },
 ] as const
 

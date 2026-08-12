@@ -8,6 +8,15 @@ const TOP_CITY_PATTERN = /^\/top-sin-gluten-([a-z0-9-]+)$/i
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  const host = request.headers.get("host")?.toLowerCase()
+
+  // Apex → www (canonical https://www.celimap.com.ar)
+  if (host === "celimap.com.ar") {
+    const url = request.nextUrl.clone()
+    url.hostname = "www.celimap.com.ar"
+    url.protocol = "https:"
+    return NextResponse.redirect(url, 301)
+  }
 
   if (pathname.startsWith("/admin")) {
     const token = await getToken({

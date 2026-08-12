@@ -3,6 +3,7 @@
  */
 import { GET } from "@/app/api/places/route"
 import { NextRequest } from "next/server"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 
 jest.mock("next/cache", () => ({
   unstable_cache: (loader: () => Promise<unknown>) => () => loader(),
@@ -27,7 +28,7 @@ describe("GET /api/places", () => {
       .mockResolvedValue([])
   })
 
-  it("clamps limit to 100", async () => {
+  it(`clamps limit above max to PUBLIC_PLACES_MAX_LIMIT (${PUBLIC_PLACES_MAX_LIMIT})`, async () => {
     let capturedLimit = 0
     require("@/models/Place").Place.find = jest.fn().mockReturnValue({
       sort: jest.fn().mockReturnValue({
@@ -41,11 +42,38 @@ describe("GET /api/places", () => {
     })
     require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(0)
 
-    const request = new NextRequest("http://localhost:3000/api/places?limit=500")
+    const overMax = PUBLIC_PLACES_MAX_LIMIT + 2500
+    const request = new NextRequest(
+      `http://localhost:3000/api/places?limit=${overMax}`
+    )
     const response = await GET(request)
 
     expect(response.status).toBe(200)
-    expect(capturedLimit).toBe(100)
+    expect(capturedLimit).toBe(PUBLIC_PLACES_MAX_LIMIT)
+  })
+
+  it("allows limit within max (map uses up to PUBLIC_PLACES_MAX_LIMIT)", async () => {
+    let capturedLimit = 0
+    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockImplementation((n: number) => {
+            capturedLimit = n
+            return { lean: jest.fn().mockResolvedValue([]) }
+          }),
+        }),
+      }),
+    })
+    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(0)
+
+    const within = Math.min(500, PUBLIC_PLACES_MAX_LIMIT)
+    const request = new NextRequest(
+      `http://localhost:3000/api/places?limit=${within}`
+    )
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(capturedLimit).toBe(within)
   })
 
   it("should return places with filters", async () => {

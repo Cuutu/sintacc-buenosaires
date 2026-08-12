@@ -17,8 +17,10 @@ type PlaceLike = Pick<
   | "photos"
   | "safetyLevel"
   | "type"
-  | "tags"
->
+> & {
+  /** Opcional: muchos callers/fixtures solo envían safetyLevel. */
+  tags?: string[]
+}
 
 type PlaceWithEnrichment = PlaceLike & {
   aiEnrichment?: { status?: string } | null
@@ -85,7 +87,10 @@ export function isPlaceInformationIncomplete(place: PlaceLike): boolean {
   return enrichmentSignals < 2
 }
 
-export function isPlaceMissingTaccClassification(place: PlaceLike): boolean {
+export function isPlaceMissingTaccClassification(place: {
+  safetyLevel?: IPlace["safetyLevel"]
+  tags?: string[]
+}): boolean {
   return !hasTaccClassification(place)
 }
 

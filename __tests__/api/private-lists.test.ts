@@ -7,6 +7,7 @@ import { LIST_LINK_STATUS, LIST_VISIBILITY } from "@/lib/lists/constants"
 const mockRequireAuth = jest.fn()
 const mockCheckRateLimit = jest.fn()
 const mockGetServerSession = jest.fn()
+const mockGetOptionalActiveSession = jest.fn()
 
 jest.mock("@/lib/mongodb", () => ({
   __esModule: true,
@@ -14,6 +15,8 @@ jest.mock("@/lib/mongodb", () => ({
 }))
 jest.mock("@/lib/middleware", () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  getOptionalActiveSession: (...args: unknown[]) =>
+    mockGetOptionalActiveSession(...args),
 }))
 jest.mock("@/lib/rate-limit", () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
@@ -270,7 +273,7 @@ describe("API listas privadas", () => {
   })
 
   it("8. GET por id de privada sin ser owner → 404", async () => {
-    mockGetServerSession.mockResolvedValue(null)
+    mockGetOptionalActiveSession.mockResolvedValue(null)
     ListMock.findById.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       populate: jest.fn().mockReturnThis(),
@@ -279,6 +282,7 @@ describe("API listas privadas", () => {
         name: "Secreta",
         visibility: LIST_VISIBILITY.PRIVATE_LINK,
         isPublic: false,
+        privateAccessToken: "secret-token-should-not-leak",
         createdBy: { _id: ownerSession.user.id },
       }),
     })
@@ -287,11 +291,15 @@ describe("API listas privadas", () => {
       new NextRequest("http://localhost/api/lists/507f1f77bcf86cd799439011"),
       { params: { id: "507f1f77bcf86cd799439011" } }
     )
+    const data = await res.json()
     expect(res.status).toBe(404)
+    expect(data.error).toBe("Lista no encontrada")
+    expect(JSON.stringify(data)).not.toContain("secret-token")
+    expect(data.stack).toBeUndefined()
   })
 
   it("9. lista pública sigue accesible por id", async () => {
-    mockGetServerSession.mockResolvedValue(null)
+    mockGetOptionalActiveSession.mockResolvedValue(null)
     ListMock.findById.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       populate: jest.fn().mockReturnThis(),
@@ -313,6 +321,23 @@ describe("API listas privadas", () => {
     expect(res.status).toBe(200)
     expect(data.name).toBe("Pública")
     expect(data.isPublic).toBe(true)
+    expect(data.privateAccessToken).toBeUndefined()
+  })
+
+  it("8b. GET por id: session helper null no produce 500", async () => {
+    mockGetOptionalActiveSession.mockResolvedValue(null)
+    ListMock.findById.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue(null),
+    })
+
+    const res = await getListById(
+      new NextRequest("http://localhost/api/lists/507f1f77bcf86cd799439011"),
+      { params: { id: "507f1f77bcf86cd799439011" } }
+    )
+    expect(res.status).toBe(404)
+    expect(res.status).not.toBe(500)
   })
 
   it("10. owner puede editar notas y orden", async () => {

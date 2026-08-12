@@ -1,11 +1,18 @@
+/**
+ * @jest-environment node
+ */
 import { GET, POST } from "@/app/api/reviews/route"
 import { NextRequest } from "next/server"
-import { connectDB } from "@/lib/mongodb"
+import connectDB from "@/lib/mongodb"
 import { Review } from "@/models/Review"
 import { Place } from "@/models/Place"
 import { User } from "@/models/User"
 
-// Mock dependencies
+/** ObjectIds válidos (24 hex) — la API valida con mongoose.Types.ObjectId.isValid */
+const PLACE_ID = "507f1f77bcf86cd799439011"
+const USER_ID = "507f1f77bcf86cd799439012"
+const REVIEW_ID = "507f1f77bcf86cd799439013"
+
 jest.mock("@/lib/mongodb")
 jest.mock("@/lib/middleware")
 jest.mock("@/lib/rate-limit")
@@ -21,7 +28,7 @@ describe("POST /api/reviews", () => {
   it("should create a review successfully", async () => {
     const mockSession = {
       user: {
-        id: "user123",
+        id: USER_ID,
         email: "test@example.com",
         role: "user",
       },
@@ -33,20 +40,20 @@ describe("POST /api/reviews", () => {
       remaining: 2,
     })
     require("@/models/Place").Place.findById = jest.fn().mockResolvedValue({
-      _id: "place123",
+      _id: PLACE_ID,
       name: "Test Place",
     })
 
     const mockReview = {
       save: jest.fn().mockResolvedValue(true),
-      _id: "review123",
+      _id: REVIEW_ID,
     }
     require("@/models/Review").Review = jest.fn().mockReturnValue(mockReview)
 
     const request = new NextRequest("http://localhost:3000/api/reviews", {
       method: "POST",
       body: JSON.stringify({
-        placeId: "place123",
+        placeId: PLACE_ID,
         rating: 5,
         safeFeeling: true,
         separateKitchen: "yes",
@@ -64,7 +71,7 @@ describe("POST /api/reviews", () => {
   it("should return 429 when rate limit exceeded", async () => {
     const mockSession = {
       user: {
-        id: "user123",
+        id: USER_ID,
         email: "test@example.com",
         role: "user",
       },
@@ -79,7 +86,7 @@ describe("POST /api/reviews", () => {
     const request = new NextRequest("http://localhost:3000/api/reviews", {
       method: "POST",
       body: JSON.stringify({
-        placeId: "place123",
+        placeId: PLACE_ID,
         rating: 5,
         safeFeeling: true,
         separateKitchen: "yes",
@@ -97,8 +104,8 @@ describe("GET /api/reviews", () => {
     jest.clearAllMocks()
     const mockReviews = [
       {
-        _id: "r1",
-        placeId: "place123",
+        _id: REVIEW_ID,
+        placeId: PLACE_ID,
         rating: 5,
         comment: "Excelente",
         userId: { name: "Test User" },
@@ -119,7 +126,9 @@ describe("GET /api/reviews", () => {
   })
 
   it("returns reviews with pagination", async () => {
-    const request = new NextRequest("http://localhost:3000/api/reviews?placeId=place123")
+    const request = new NextRequest(
+      `http://localhost:3000/api/reviews?placeId=${PLACE_ID}`
+    )
     const response = await GET(request)
     const data = await response.json()
 

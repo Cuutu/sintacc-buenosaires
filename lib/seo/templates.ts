@@ -8,12 +8,12 @@ import type { ProvinceConfig } from "./provinces"
  */
 
 export function getCityTitle(city: City): string {
-  return `Lugares sin gluten en ${city.name}`
+  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones`
 }
 
 export function getCityDescription(city: City, total?: number): string {
   const count = total != null ? `${total} lugares` : "lugares"
-  return `Donde comer sin gluten en ${city.name}. Encontrá ${count} aptos celíacos: restaurantes, panaderías y cafés sin TACC verificados por la comunidad.`
+  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones. Encontrá ${count} aptos para personas celíacas: restaurantes, panaderías y cafés según datos de CeliMap.`
 }
 
 export function getCategoryTitle(city: City | null, categorySlug: string): string {
@@ -30,32 +30,78 @@ export function getCategoryDescription(city: City | null, categorySlug: string, 
   const catName = cat?.name ?? categorySlug
   const count = total != null ? `${total} ` : ""
   if (city) {
-    return `Donde comer sin gluten en ${city.name}. ${count}${catName.toLowerCase()} aptos celíacos verificados por la comunidad.`
+    return `Donde comer sin gluten en ${city.name}. ${count}${catName.toLowerCase()} con información de la comunidad en CeliMap.`
   }
-  return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina. Lugares aptos celíacos verificados por la comunidad.`
+  return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina en el mapa colaborativo CeliMap.`
 }
 
-export function getSEOTextBlock(city: City, categorySlug?: string): string {
+type CityStatsLike = {
+  total: number
+  dedicatedGf: number
+  gfOptions: number
+}
+
+export function buildCityFaqs(city: City, stats: CityStatsLike) {
+  const dedicatedAnswer =
+    stats.dedicatedGf > 0
+      ? `En CeliMap hay ${stats.dedicatedGf} lugar${stats.dedicatedGf === 1 ? "" : "es"} en ${city.name} marcados como 100% libres de gluten según la información cargada. Eso no es una certificación médica: confirmá siempre en el local.`
+      : `Por ahora no hay lugares en ${city.name} marcados como 100% libres de gluten en CeliMap, o la clasificación aún no está cargada. Revisá opciones sin TACC y preguntá en cada local.`
+
+  const whereAnswer =
+    stats.total > 0
+      ? `Hay ${stats.total} lugares cargados en ${city.name}. Usá el mapa de esta página o el mapa interactivo, filtrá por categoría y leé reseñas cuando existan.`
+      : `Todavía no hay lugares cargados para ${city.name} en CeliMap. Podés sugerir el primero desde Recomendar un lugar.`
+
+  return [
+    {
+      question: `¿Hay restaurantes 100% sin gluten en ${city.name}?`,
+      answer: dedicatedAnswer,
+    },
+    {
+      question: `¿Dónde comer sin TACC en ${city.name}?`,
+      answer: whereAnswer,
+    },
+    {
+      question: `¿CeliMap garantiza que un lugar en ${city.name} sea seguro?`,
+      answer:
+        "No. La información puede provenir de la comunidad y de datos cargados en el mapa. Confirmá protocolos, manipulación y contaminación cruzada antes de comer.",
+    },
+  ]
+}
+
+export function getSEOTextBlock(
+  city: City,
+  categorySlug?: string,
+  stats?: CityStatsLike
+): string {
   const cat = categorySlug ? getCategoryBySlug(categorySlug) : null
   const catName = cat?.name ?? "lugares"
   const catLower = catName.toLowerCase()
 
   const h1 = categorySlug
     ? `${catName} sin gluten en ${city.name}`
-    : `Lugares sin gluten en ${city.name}`
+    : `Lugares sin TACC en ${city.name}`
 
-  const intro = `Si sos celíaco o tenés intolerancia al gluten, encontrar opciones seguras para comer puede ser un desafío. En ${city.name} cada vez hay más ${catLower} que ofrecen opciones sin TACC, desde locales 100% dedicados hasta establecimientos con menú adaptado. Celimap reúne los lugares verificados por la comunidad celíaca para que puedas disfrutar sin preocupaciones.`
+  const intro =
+    stats && stats.total > 0
+      ? `Si buscás opciones sin TACC en ${city.name}, CeliMap lista ${stats.total} ${catLower} con datos de la comunidad. ${
+          stats.dedicatedGf > 0
+            ? `${stats.dedicatedGf} figuran como 100% libres de gluten`
+            : "Todavía hay pocos o ningún lugar marcado como 100% libre de gluten"
+        }${
+          stats.gfOptions > 0
+            ? ` y ${stats.gfOptions} aparecen con opciones sin TACC`
+            : ""
+        }. Usá el mapa y las fichas como punto de partida.`
+      : `Si sos celíaco o evitás el gluten, encontrar opciones en ${city.name} puede llevar tiempo. CeliMap reúne ${catLower} aportados por la comunidad para explorar el mapa con más contexto.`
 
   const h2Lugares = `Lugares sin gluten en ${city.name}`
-  const pLugares = `La comunidad de Celimap ha identificado y verificado múltiples opciones en ${city.name}. Podés filtrar por tipo de establecimiento: restaurantes, panaderías, cafés, heladerías y tiendas. Cada lugar incluye información sobre si es 100% sin gluten o si ofrece opciones sin TACC, además de reseñas y reportes de la comunidad.`
+  const pLugares = `Podés filtrar por tipo de establecimiento: restaurantes, panaderías, cafés, heladerías y tiendas. Cada ficha puede indicar si es 100% libre de gluten o si ofrece opciones sin TACC, además de reseñas cuando existen.`
 
-  const h2Restaurantes = `Restaurantes recomendados`
-  const pRestaurantes = `Los restaurantes sin gluten en ${city.name} van desde locales exclusivos para celíacos hasta cocinas que preparan platos especiales. Revisá las etiquetas de cada lugar: "100% sin gluten" indica que todo el menú es seguro, mientras que "opciones sin TACC" requiere que indiques tu condición al pedir.`
+  const h2Restaurantes = `Cómo leer las clasificaciones`
+  const pRestaurantes = `"100% libre de gluten" refleja la información cargada en CeliMap; "opciones sin TACC" indica oferta parcial. Ninguna etiqueta reemplaza preguntar en el local por contaminación cruzada.`
 
-  const h2Faq = `Preguntas frecuentes`
-  const faq1 = `¿Hay restaurantes 100% sin gluten en ${city.name}? Sí, varios establecimientos en ${city.name} están certificados o son exclusivamente sin gluten. Buscá el sello "100% sin gluten" en Celimap.`
-  const faq2 = `¿Dónde comer sin TACC en ${city.name}? Podés usar el mapa de Celimap para ver todos los lugares verificados. Filtrá por barrio o tipo de local según tu preferencia.`
-  const faq3 = `¿Hay panaderías sin gluten en ${city.name}? Sí, hay panaderías dedicadas y otras con opciones sin TACC. Revisá las reseñas de la comunidad para más detalles.`
+  const faqs = buildCityFaqs(city, stats ?? { total: 0, dedicatedGf: 0, gfOptions: 0 })
 
   return [
     `# ${h1}`,
@@ -70,13 +116,9 @@ export function getSEOTextBlock(city: City, categorySlug?: string): string {
     "",
     pRestaurantes,
     "",
-    `## ${h2Faq}`,
+    `## Preguntas frecuentes`,
     "",
-    faq1,
-    "",
-    faq2,
-    "",
-    faq3,
+    ...faqs.flatMap((f) => [`${f.question} ${f.answer}`, ""]),
   ].join("\n\n")
 }
 

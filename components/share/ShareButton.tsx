@@ -9,7 +9,7 @@ import { trackEvent } from "@/lib/analytics"
 type ShareButtonProps = {
   title: string
   shareUrl: string
-  eventName?: "place_share"
+  eventName?: "place_share" | "list_share"
   eventProps?: Record<string, string | number | boolean>
   variant?: "default" | "outline" | "ghost"
   className?: string

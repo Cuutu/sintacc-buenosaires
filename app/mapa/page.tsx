@@ -8,13 +8,16 @@ import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
+import { trackEvent } from "@/lib/analytics"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
 const VIEWPORT_DEBOUNCE_MS = 250
 const CHUNK_ZOOM_THRESHOLD = 7
 const CLEAR_NEIGHBORHOOD_SEARCH_ZOOM = 12
-const MAP_PLACES_LIMIT = 5000
+/** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
+const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
 const BBOX_PADDING_RATIO = 0.2
 
 interface MapViewport {
@@ -98,6 +101,34 @@ function MapaContent() {
     bounds: MapViewportBounds | null
     filterKey: string
   } | null>(null)
+  const mapOpenTracked = useRef(false)
+  const lastFilterTrackKey = useRef("")
+
+  useEffect(() => {
+    if (mapOpenTracked.current) return
+    mapOpenTracked.current = true
+    trackEvent("map_open", { source: "mapa_page" })
+  }, [])
+
+  const handleFiltersChange = useCallback((next: MapFilters) => {
+    setFilters(next)
+    const key = JSON.stringify({
+      type: next.type ?? "",
+      tags: [...(next.tags ?? [])].sort(),
+      neighborhood: next.neighborhood ?? "",
+      safetyLevel: next.safetyLevel ?? "",
+      hasSearch: Boolean(next.search?.trim()),
+    })
+    if (key === lastFilterTrackKey.current) return
+    lastFilterTrackKey.current = key
+    trackEvent("map_filter", {
+      hasType: Boolean(next.type),
+      tagCount: next.tags?.length ?? 0,
+      hasNeighborhood: Boolean(next.neighborhood),
+      hasSafety: Boolean(next.safetyLevel),
+      hasSearch: Boolean(next.search?.trim()),
+    })
+  }, [])
 
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
@@ -292,7 +323,7 @@ function MapaContent() {
         fetchPlaces()
       }}
       filters={filters}
-      onFiltersChange={setFilters}
+      onFiltersChange={handleFiltersChange}
       onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
       searchQuery={debouncedSearch}
       selectedPlaceId={selectedPlaceId}
