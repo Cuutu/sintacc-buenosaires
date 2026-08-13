@@ -216,7 +216,7 @@ export default function ListaDetailPage() {
           Esta lista no tiene lugares todavía.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {places.map((place) => (
             <ListPlaceCard key={place._id.toString()} place={place} />
           ))}

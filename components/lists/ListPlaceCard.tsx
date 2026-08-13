@@ -80,7 +80,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
   return (
     <article
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c100e]",
+        "group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c100e]",
         "transition-[transform,box-shadow,border-color] duration-200",
         "hover:border-primary/40 hover:shadow-[0_12px_32px_rgba(0,0,0,0.35)]",
         "motion-safe:hover:-translate-y-0.5",
