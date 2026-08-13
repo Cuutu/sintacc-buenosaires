@@ -10,10 +10,14 @@ export function isPlaceholderCabaLocation(loc?: {
   lat?: number
   lng?: number
 } | null): boolean {
-  if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return true
+  const lat = loc?.lat
+  const lng = loc?.lng
+  if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return true
+  }
   return (
-    Math.abs(loc.lat - PLACEHOLDER_CABA_LOCATION.lat) < EPS &&
-    Math.abs(loc.lng - PLACEHOLDER_CABA_LOCATION.lng) < EPS
+    Math.abs(lat - PLACEHOLDER_CABA_LOCATION.lat) < EPS &&
+    Math.abs(lng - PLACEHOLDER_CABA_LOCATION.lng) < EPS
   )
 }
 
