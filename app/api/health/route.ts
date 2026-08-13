@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
 
 const CRITICAL_ENV = [
   "MONGODB_URI",
@@ -18,14 +17,6 @@ export async function GET() {
   for (const key of CRITICAL_ENV) {
     checks[`env_${key}`] = !!process.env[key]
     if (!process.env[key]) healthy = false
-  }
-
-  try {
-    await connectDB()
-    checks.db = true
-  } catch (error) {
-    checks.db = false
-    healthy = false
   }
 
   return NextResponse.json(

@@ -118,8 +118,9 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
 
   useEffect(() => {
+    if (seeded) return
     let cancelled = false
-    fetchApi<StatsApi>("/api/stats", { cache: "no-store" })
+    fetchApi<StatsApi>("/api/stats")
       .then((data) => {
         if (!cancelled) {
           setStats(mapApiResponse(data))

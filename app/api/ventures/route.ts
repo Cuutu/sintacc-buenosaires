@@ -8,12 +8,10 @@ import { getOrSetApiCache } from "@/lib/api-cache"
 import { getVentureReviewStatsMap } from "@/lib/venture-review-stats"
 import mongoose from "mongoose"
 
-const CACHE_TTL_MS = 60 * 1000
+const CACHE_TTL_MS = 15 * 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB()
-
     const searchParams = request.nextUrl.searchParams
     let parsed
     try {
@@ -37,6 +35,7 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `public:ventures:${searchParams.toString()}`
     const data = await getOrSetApiCache(cacheKey, CACHE_TTL_MS, async () => {
+      await connectDB()
       const ventures = await Venture.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -55,7 +54,11 @@ export async function GET(request: NextRequest) {
       return { ventures: venturesWithStats, total, page, pages: Math.ceil(total / limit) }
     })
 
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+      },
+    })
   } catch (error) {
     logApiError("/api/ventures", error, { request })
     return NextResponse.json({ error: "Error al obtener emprendimientos" }, { status: 500 })

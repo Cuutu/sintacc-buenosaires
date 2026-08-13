@@ -14,7 +14,7 @@ export type PublicStatsPayload = {
   reviewsCountGoogle: number
 }
 
-const STATS_CACHE_TTL_MS = 60 * 1000
+const STATS_CACHE_TTL_MS = 15 * 60 * 1000
 
 async function sumGoogleReviewCounts(): Promise<number> {
   const rows = await Place.aggregate<{ total: number }>([
