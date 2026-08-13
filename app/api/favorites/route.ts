@@ -24,10 +24,16 @@ export async function GET(request: NextRequest) {
     const favorites = await Favorite.find({
       userId: new mongoose.Types.ObjectId(session.user.id),
     })
-      .populate("placeId")
+      .populate(
+        "placeId",
+        "name types type neighborhood slug location tags safetyLevel photos googleSnapshot.rating googleSnapshot.userRatingCount status"
+      )
       .lean()
 
-    return NextResponse.json({ favorites })
+    return NextResponse.json(
+      { favorites },
+      { headers: { "Cache-Control": "private, max-age=15" } }
+    )
   } catch (error) {
     logApiError("/api/favorites", error, { request })
     return NextResponse.json(

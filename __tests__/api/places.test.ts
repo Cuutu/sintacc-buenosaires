@@ -19,6 +19,21 @@ jest.mock("@/models/Place")
 jest.mock("@/models/Review")
 jest.mock("@/models/ContaminationReport")
 
+function mockFind(places: unknown[], onLimit?: (n: number) => void) {
+  require("@/models/Place").Place.find = jest.fn().mockReturnValue({
+    select: jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockImplementation((n: number) => {
+            onLimit?.(n)
+            return { lean: jest.fn().mockResolvedValue(places) }
+          }),
+        }),
+      }),
+    }),
+  })
+}
+
 describe("GET /api/places", () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -30,15 +45,8 @@ describe("GET /api/places", () => {
 
   it(`clamps limit above max to PUBLIC_PLACES_MAX_LIMIT (${PUBLIC_PLACES_MAX_LIMIT})`, async () => {
     let capturedLimit = 0
-    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
-      sort: jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnValue({
-          limit: jest.fn().mockImplementation((n: number) => {
-            capturedLimit = n
-            return { lean: jest.fn().mockResolvedValue([]) }
-          }),
-        }),
-      }),
+    mockFind([], (n) => {
+      capturedLimit = n
     })
     require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(0)
 
@@ -54,15 +62,8 @@ describe("GET /api/places", () => {
 
   it("allows limit within max (map uses up to PUBLIC_PLACES_MAX_LIMIT)", async () => {
     let capturedLimit = 0
-    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
-      sort: jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnValue({
-          limit: jest.fn().mockImplementation((n: number) => {
-            capturedLimit = n
-            return { lean: jest.fn().mockResolvedValue([]) }
-          }),
-        }),
-      }),
+    mockFind([], (n) => {
+      capturedLimit = n
     })
     require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(0)
 
@@ -94,16 +95,7 @@ describe("GET /api/places", () => {
       },
     ]
 
-    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
-      sort: jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            lean: jest.fn().mockResolvedValue(mockPlaces),
-          }),
-        }),
-      }),
-    })
-
+    mockFind(mockPlaces)
     require("@/models/Place").Place.countDocuments = jest
       .fn()
       .mockResolvedValue(2)
@@ -126,16 +118,7 @@ describe("GET /api/places", () => {
       },
     ]
 
-    require("@/models/Place").Place.find = jest.fn().mockReturnValue({
-      sort: jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            lean: jest.fn().mockResolvedValue(mockPlaces),
-          }),
-        }),
-      }),
-    })
-
+    mockFind(mockPlaces)
     require("@/models/Place").Place.countDocuments = jest
       .fn()
       .mockResolvedValue(1)
@@ -147,5 +130,39 @@ describe("GET /api/places", () => {
 
     expect(response.status).toBe(200)
     expect(data.places).toHaveLength(1)
+  })
+
+  it("does not send bbox to Mongo and filters in memory", async () => {
+    const mockPlaces = [
+      { _id: "in", name: "In", location: { lat: -34.6, lng: -58.4 } },
+      { _id: "out", name: "Out", location: { lat: -38.4, lng: -63.6 } },
+    ]
+    let capturedQuery: Record<string, unknown> = {}
+    require("@/models/Place").Place.find = jest.fn().mockImplementation((q) => {
+      capturedQuery = q
+      return {
+        select: jest.fn().mockReturnValue({
+          sort: jest.fn().mockReturnValue({
+            skip: jest.fn().mockReturnValue({
+              limit: jest.fn().mockReturnValue({
+                lean: jest.fn().mockResolvedValue(mockPlaces),
+              }),
+            }),
+          }),
+        }),
+      }
+    })
+    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(2)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/places?limit=5000&bbox=-58.5,-34.8,-58.3,-34.4"
+    )
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(capturedQuery["location.lat"]).toBeUndefined()
+    expect(capturedQuery["location.lng"]).toBeUndefined()
+    expect(data.places.map((p: { _id: string }) => p._id)).toEqual(["in"])
   })
 })

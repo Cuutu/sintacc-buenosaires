@@ -44,6 +44,23 @@ function appendAnd(query: FilterQuery<IPlace>, condition: FilterQuery<IPlace>): 
   query.$and = [...(query.$and ?? []), condition]
 }
 
+export function filterPlacesByBbox<T extends { location?: { lat?: number; lng?: number } }>(
+  places: T[],
+  bbox: { west: number; south: number; east: number; north: number }
+): T[] {
+  const wrapsAntimeridian = bbox.west > bbox.east
+  return places.filter((place) => {
+    const lat = place.location?.lat
+    const lng = place.location?.lng
+    if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return false
+    }
+    if (lat < bbox.south || lat > bbox.north) return false
+    if (wrapsAntimeridian) return lng >= bbox.west || lng <= bbox.east
+    return lng >= bbox.west && lng <= bbox.east
+  })
+}
+
 export function buildPublicPlacesMongoQuery(
   params: PublicPlacesQuery
 ): FilterQuery<IPlace> {
@@ -101,20 +118,6 @@ export function buildPublicPlacesMongoQuery(
 
   if (params.featured === true) {
     query.featured = true
-  }
-
-  if (params.bbox) {
-    const lngCondition =
-      params.bbox.west <= params.bbox.east
-        ? { $gte: params.bbox.west, $lte: params.bbox.east }
-        : { $or: [{ "location.lng": { $gte: params.bbox.west } }, { "location.lng": { $lte: params.bbox.east } }] }
-
-    query["location.lat"] = { $gte: params.bbox.south, $lte: params.bbox.north }
-    if ("$or" in lngCondition) {
-      appendAnd(query, { $or: lngCondition.$or })
-    } else {
-      query["location.lng"] = lngCondition
-    }
   }
 
   return query

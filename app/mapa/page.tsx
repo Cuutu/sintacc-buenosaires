@@ -13,48 +13,9 @@ import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
-const VIEWPORT_DEBOUNCE_MS = 250
-const CHUNK_ZOOM_THRESHOLD = 7
 const CLEAR_NEIGHBORHOOD_SEARCH_ZOOM = 12
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
-const BBOX_PADDING_RATIO = 0.2
-
-interface MapViewport {
-  zoom: number
-  bounds: MapViewportBounds
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-function expandBounds(bounds: MapViewportBounds): MapViewportBounds {
-  const lngPadding = Math.abs(bounds.east - bounds.west) * BBOX_PADDING_RATIO
-  const latPadding = Math.abs(bounds.north - bounds.south) * BBOX_PADDING_RATIO
-
-  return {
-    west: clamp(bounds.west - lngPadding, -180, 180),
-    south: clamp(bounds.south - latPadding, -90, 90),
-    east: clamp(bounds.east + lngPadding, -180, 180),
-    north: clamp(bounds.north + latPadding, -90, 90),
-  }
-}
-
-function formatBbox(bounds: MapViewportBounds): string {
-  return [bounds.west, bounds.south, bounds.east, bounds.north]
-    .map((value) => value.toFixed(6))
-    .join(",")
-}
-
-function boundsContain(outer: MapViewportBounds, inner: MapViewportBounds): boolean {
-  return (
-    outer.west <= inner.west &&
-    outer.south <= inner.south &&
-    outer.east >= inner.east &&
-    outer.north >= inner.north
-  )
-}
 
 function MapaContent() {
   const searchParams = useSearchParams()
@@ -82,8 +43,6 @@ function MapaContent() {
   const [places, setPlaces] = useState<IPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [placesError, setPlacesError] = useState<string | null>(null)
-  const [viewport, setViewport] = useState<MapViewport | null>(null)
-  const [debouncedViewport, setDebouncedViewport] = useState<MapViewport | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
   const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
@@ -97,10 +56,7 @@ function MapaContent() {
   )
   const lastSyncedUrlSearchRef = useRef(searchParams.get("search") || "")
   const fetchRequestSeqRef = useRef(0)
-  const lastFetchedViewportRef = useRef<{
-    bounds: MapViewportBounds | null
-    filterKey: string
-  } | null>(null)
+  const lastFetchedFilterKeyRef = useRef<string | null>(null)
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
 
@@ -155,11 +111,6 @@ function MapaContent() {
   }, [debouncedSearch, placeIdFromUrl])
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedViewport(viewport), VIEWPORT_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [viewport])
-
-  useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
     if (debouncedSearch === urlSearch) return
     const params = new URLSearchParams(searchParams.toString())
@@ -171,8 +122,6 @@ function MapaContent() {
   }, [debouncedSearch, pathname, router, searchParams])
 
   const fetchPlaces = useCallback(async () => {
-    if (!debouncedViewport) return
-
     const search = debouncedSearch.trim()
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
     const freeTextSearch = searchNeighborhood ? "" : search
@@ -187,23 +136,8 @@ function MapaContent() {
       tags: [...(filters.tags ?? [])].sort(),
       safetyLevel: filters.safetyLevel ?? "",
     })
-    const shouldUseBbox = !searchNeighborhood && !freeTextSearch && debouncedViewport.zoom >= CHUNK_ZOOM_THRESHOLD
-    const expandedViewportBounds = shouldUseBbox
-      ? expandBounds(debouncedViewport.bounds)
-      : null
-    const lastFetch = lastFetchedViewportRef.current
 
-    if (lastFetch?.filterKey === filterKey) {
-      if (searchNeighborhood || freeTextSearch) return
-      if (!expandedViewportBounds && lastFetch.bounds === null) return
-      if (
-        expandedViewportBounds &&
-        lastFetch.bounds &&
-        boundsContain(lastFetch.bounds, debouncedViewport.bounds)
-      ) {
-        return
-      }
-    }
+    if (lastFetchedFilterKeyRef.current === filterKey) return
 
     const requestSeq = fetchRequestSeqRef.current + 1
     fetchRequestSeqRef.current = requestSeq
@@ -212,9 +146,6 @@ function MapaContent() {
     try {
       const params = new URLSearchParams()
       params.append("limit", String(MAP_PLACES_LIMIT))
-      if (expandedViewportBounds) {
-        params.append("bbox", formatBbox(expandedViewportBounds))
-      }
       if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
       if (provinceSlugsFromUrl && !searchNeighborhood) params.append("provinceSlugs", provinceSlugsFromUrl)
       if (localitySlugsFromUrl && !searchNeighborhood) params.append("localitySlugs", localitySlugsFromUrl)
@@ -229,10 +160,7 @@ function MapaContent() {
         `/api/places?${params.toString()}`
       )
       if (requestSeq !== fetchRequestSeqRef.current) return
-      lastFetchedViewportRef.current = {
-        bounds: expandedViewportBounds,
-        filterKey,
-      }
+      lastFetchedFilterKeyRef.current = filterKey
       setPlaces(data.places || [])
       setPlacesError(null)
     } catch (error: any) {
@@ -249,7 +177,6 @@ function MapaContent() {
     provinceSlugsFromUrl,
     localitySlugsFromUrl,
     debouncedSearch,
-    debouncedViewport,
     filters.type,
     filters.neighborhood,
     filters.tags,
@@ -265,8 +192,7 @@ function MapaContent() {
   }, [placeIdFromUrl])
 
   const handleMapMoveEnd = useCallback(
-    (zoom: number, bounds: MapViewportBounds) => {
-      setViewport({ zoom, bounds })
+    (zoom: number, _bounds: MapViewportBounds) => {
       const params = new URLSearchParams(searchParams.toString())
       let shouldReplaceUrl = false
 
@@ -319,7 +245,7 @@ function MapaContent() {
       loading={loading}
       loadError={placesError}
       onRetryLoad={() => {
-        lastFetchedViewportRef.current = null
+        lastFetchedFilterKeyRef.current = null
         fetchPlaces()
       }}
       filters={filters}

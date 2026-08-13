@@ -1,4 +1,4 @@
-import { buildPublicPlacesMongoQuery } from "@/lib/places-public-query"
+import { buildPublicPlacesMongoQuery, filterPlacesByBbox } from "@/lib/places-public-query"
 
 describe("buildPublicPlacesMongoQuery", () => {
   it("keeps text search when a city filter is present", () => {
@@ -85,5 +85,29 @@ describe("buildPublicPlacesMongoQuery", () => {
     })
     expect(query.status).toBe("approved")
     expect(query.featured).toBe(true)
+  })
+
+  it("does not put bbox into the Mongo query", () => {
+    const query = buildPublicPlacesMongoQuery({
+      bbox: { west: -58.5, south: -34.8, east: -58.3, north: -34.4 },
+      page: 1,
+      limit: 5000,
+    })
+    expect(query["location.lat"]).toBeUndefined()
+    expect(query["location.lng"]).toBeUndefined()
+  })
+
+  it("filters places by bbox in memory", () => {
+    const places = [
+      { id: "in", location: { lat: -34.6, lng: -58.4 } },
+      { id: "out", location: { lat: -22.75, lng: -41.89 } },
+    ]
+    const filtered = filterPlacesByBbox(places, {
+      west: -58.5,
+      south: -34.8,
+      east: -58.3,
+      north: -34.4,
+    })
+    expect(filtered.map((p) => p.id)).toEqual(["in"])
   })
 })
