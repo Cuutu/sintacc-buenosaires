@@ -26,7 +26,7 @@ describe("Apple client helpers", () => {
     )
   })
 
-  it("Apple disponible solo en iOS nativo con plugin", () => {
+  it("Apple disponible en iOS nativo (sin exigir plugin para mostrarlo)", () => {
     const { isNativeApp, isNativeIosApp } = jest.requireMock("@/lib/native-app") as {
       isNativeApp: jest.Mock
       isNativeIosApp: jest.Mock
@@ -37,10 +37,6 @@ describe("Apple client helpers", () => {
 
     isNativeApp.mockReturnValue(true)
     isNativeIosApp.mockReturnValue(true)
-    ;(window as unknown as { Capacitor?: unknown }).Capacitor = {
-      isPluginAvailable: () => true,
-      Plugins: { SocialLogin: {} },
-    }
     expect(isAppleSignInAvailable()).toBe(true)
   })
 

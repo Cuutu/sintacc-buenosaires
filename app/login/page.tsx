@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
@@ -11,6 +11,7 @@ import {
   signInWithGoogle,
 } from "@/lib/native-sign-in"
 import { useRouter, useSearchParams } from "next/navigation"
+import { AppleSignInButton } from "@/components/auth/AppleSignInButton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -30,6 +31,8 @@ function LoginContent() {
   const [signingApple, setSigningApple] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showApple, setShowApple] = useState(false)
+  const appleLock = useRef(false)
+  const googleLock = useRef(false)
 
   const callbackUrl = useMemo(() => {
     const rawCallbackUrl = searchParams.get("callbackUrl")
@@ -42,7 +45,25 @@ function LoginContent() {
   }, [searchParams])
 
   useEffect(() => {
-    setShowApple(isAppleSignInAvailable())
+    let cancelled = false
+    const reveal = () => {
+      if (cancelled) return false
+      if (isAppleSignInAvailable()) {
+        setShowApple(true)
+        return true
+      }
+      return false
+    }
+    if (reveal()) return
+    const interval = window.setInterval(() => {
+      if (reveal()) window.clearInterval(interval)
+    }, 50)
+    const timeout = window.setTimeout(() => window.clearInterval(interval), 2500)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      window.clearTimeout(timeout)
+    }
   }, [])
 
   useEffect(() => {
@@ -58,6 +79,8 @@ function LoginContent() {
   const busy = signingGoogle || signingApple || status === "loading"
 
   async function handleGoogleSignIn() {
+    if (googleLock.current || busy) return
+    googleLock.current = true
     setError(null)
     setSigningGoogle(true)
     try {
@@ -65,11 +88,14 @@ function LoginContent() {
     } catch {
       setError("No pudimos iniciar sesión con Google. Probá de nuevo.")
     } finally {
+      googleLock.current = false
       setSigningGoogle(false)
     }
   }
 
   async function handleAppleSignIn() {
+    if (appleLock.current || busy) return
+    appleLock.current = true
     setError(null)
     setSigningApple(true)
     try {
@@ -84,25 +110,29 @@ function LoginContent() {
       }
       setError("No pudimos iniciar sesión con Apple. Probá de nuevo.")
     } finally {
+      appleLock.current = false
       setSigningApple(false)
     }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
+    <div
+      data-testid="login-screen"
+      className="mx-auto flex w-full max-w-full flex-col items-center justify-center overflow-x-hidden px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] min-h-[calc(100dvh-8rem)] [@media(max-height:700px)]:min-h-0 [@media(max-height:700px)]:justify-start"
+    >
       <Image
         src="/celimaplogocompleto.png"
         alt="Celimap"
         width={160}
         height={42}
-        className="h-10 w-auto mb-8"
+        className="mb-6 h-10 w-auto [@media(max-height:700px)]:mb-3"
       />
-      <Card className="w-full max-w-md">
+      <Card data-testid="login-card" className="mx-auto w-full max-w-[400px]">
         <CardHeader>
           <CardTitle className="text-center">Iniciar sesión</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center text-muted-foreground mb-6">
+          <p className="mb-6 text-center text-muted-foreground">
             {showApple
               ? "Iniciá sesión con Apple o Google para acceder a favoritos, listas y reseñas"
               : "Iniciá sesión con tu cuenta de Google para acceder a todas las funciones"}
@@ -112,27 +142,24 @@ function LoginContent() {
               {error}
             </p>
           ) : null}
-          <div className="flex flex-col gap-3">
+          <div data-testid="login-oauth-row" className="flex flex-col gap-3">
             {showApple ? (
-              <Button
-                type="button"
+              <AppleSignInButton
                 onClick={() => void handleAppleSignIn()}
-                className="w-full bg-black text-white hover:bg-black/90"
                 disabled={busy}
-                size="lg"
-                aria-label="Continuar con Apple"
-              >
-                {signingApple ? "Conectando…" : "Continuar con Apple"}
-              </Button>
+                loading={signingApple}
+              />
             ) : null}
             <Button
               type="button"
               onClick={() => void handleGoogleSignIn()}
-              className="w-full"
+              className="login-oauth-btn h-12 min-h-[48px] w-full rounded-lg"
               disabled={busy}
               size="lg"
               variant={showApple ? "outline" : "default"}
               aria-label="Continuar con Google"
+              data-testid="google-signin-button"
+              data-provider="google"
             >
               {signingGoogle ? "Conectando…" : "Continuar con Google"}
             </Button>
@@ -152,7 +179,7 @@ function LoginContent() {
 
 function LoginLoadingState() {
   return (
-    <div className="container mx-auto px-4 py-8 flex min-h-[calc(100vh-8rem)] items-center justify-center">
+    <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4 py-8">
       <p className="text-sm text-muted-foreground">Redirigiendo...</p>
     </div>
   )

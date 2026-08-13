@@ -1,0 +1,71 @@
+/* Sign in with Apple — Apple HIG values for a custom HTML button.
+   ASAuthorizationAppleIDButton is not available inside the Capacitor WebView.
+   Do not hide this control with media queries. */
+
+.button {
+  --apple-signin-height: 48px;
+  --apple-signin-logo: 18px;
+  --apple-signin-gap: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--apple-signin-height);
+  min-height: 44px;
+  min-width: 140px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.022em;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #f5f5f7;
+}
+
+.button:active:not(:disabled) {
+  background-color: #e8e8ed;
+}
+
+.button:disabled,
+.button[aria-busy="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--apple-signin-gap);
+}
+
+.logo {
+  display: block;
+  height: var(--apple-signin-logo);
+  width: auto;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.title {
+  font: inherit;
+  color: inherit;
+}

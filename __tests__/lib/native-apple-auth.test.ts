@@ -435,6 +435,37 @@ describe("upsertUserFromAppleIdentity", () => {
     expect(again.name).toBe("Bob")
   })
 
+  it("Hide My Email (privaterelay) crea y recupera por appleSub", async () => {
+    const first = await upsertUserFromAppleIdentity({
+      sub: "relay-sub",
+      email: "hidden@privaterelay.appleid.com",
+      emailVerified: true,
+    })
+    expect(first.email).toBe("hidden@privaterelay.appleid.com")
+    const again = await upsertUserFromAppleIdentity({
+      sub: "relay-sub",
+      emailVerified: false,
+    })
+    expect(again.appleSub).toBe("relay-sub")
+    expect(again.email).toBe("hidden@privaterelay.appleid.com")
+  })
+
+  it("primer acceso sin email usa appleSub y email sintético estable", async () => {
+    const user = await upsertUserFromAppleIdentity({
+      sub: "sub-no-email",
+      emailVerified: false,
+    })
+    expect(user.appleSub).toBe("sub-no-email")
+    expect(user.email).toMatch(
+      /^apple-[a-f0-9]+@privaterelay\.celimap\.internal$/
+    )
+    const again = await upsertUserFromAppleIdentity({
+      sub: "sub-no-email",
+      emailVerified: false,
+    })
+    expect(again.email).toBe(user.email)
+  })
+
   it("colisión de email con cuenta sin appleSub → rechazo", async () => {
     mockUserStore.push({
       email: "shared@example.com",

@@ -95,6 +95,25 @@ describe("auth callbacks", () => {
       expect(result.role).toBe("admin")
     })
 
+    it("3b. native-apple grant keeps Mongo _id (no JWT regression)", async () => {
+      mockUserFindById.mockResolvedValue({
+        _id: { toString: () => MONGO_ID },
+        role: "user",
+        email: "apple@privaterelay.appleid.com",
+      })
+      const result = await (authOptions.callbacks as any).jwt({
+        token: {},
+        user: {
+          id: MONGO_ID,
+          email: "apple@privaterelay.appleid.com",
+          name: "Usuario Apple",
+        },
+      })
+      expect(mockUserFindById).toHaveBeenCalledWith(MONGO_ID)
+      expect(result.id).toBe(MONGO_ID)
+      expect(result.email).toBe("apple@privaterelay.appleid.com")
+    })
+
     it("4. refresh without providerUser keeps Mongo token.id (no DB)", async () => {
       const token = { id: MONGO_ID, role: "user" as const, email: "a@b.com" }
       const result = await (authOptions.callbacks as any).jwt({

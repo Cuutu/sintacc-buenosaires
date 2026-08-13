@@ -15,6 +15,11 @@ const DEFAULT_IOS_CLIENT_ID =
 
 let socialLoginInit: Promise<void> | null = null
 
+/** Test helper — reset Capgo init between suites. */
+export function __resetNativeSocialLoginForTests() {
+  socialLoginInit = null
+}
+
 export class NativeAppleSignInError extends Error {
   constructor(
     message: string,
@@ -242,8 +247,13 @@ function isUserCancellation(error: unknown): boolean {
   return CANCEL_PATTERNS.some((p) => message.includes(p))
 }
 
+/**
+ * Sign in with Apple is offered on the iOS Capacitor shell (iPhone and iPad).
+ * Visibility must not depend on plugin detection: a missed plugin check hid
+ * Apple while Google still rendered via browser OAuth (App Store 4.8).
+ */
 export function isAppleSignInAvailable(): boolean {
-  return isNativeIosApp() && hasNativeGoogleSignInPlugin()
+  return isNativeIosApp()
 }
 
 export { extractAppleAuthorizationCode, extractAppleAuthorizationCodeString } from "@/lib/apple-authorization-code"
