@@ -15,6 +15,7 @@ import {
 } from "@/lib/place-research/collect-sources"
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { isCountryOnlyAddress, shouldReplaceDraftLocation } from "@/lib/place-research/maps-location"
+import { withGeoSearchSuffix } from "@/lib/geo-search-region"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import {
   aiResearchAnalysisSchema,
@@ -60,8 +61,7 @@ function buildSearchQuery(draft: Record<string, unknown>): string {
     return parts.join(" ")
   }
 
-  parts.push("Buenos Aires")
-  return parts.join(" ")
+  return withGeoSearchSuffix(parts)
 }
 
 function buildGapFillPatch(input: {

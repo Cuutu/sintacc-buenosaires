@@ -1,5 +1,6 @@
 import {
   isGoogleMapsUrl,
+  normalizeGoogleMapsUrl,
   parseGoogleMapsUrl,
 } from "@/lib/place-research/resolve-maps-url"
 
@@ -7,6 +8,13 @@ describe("resolve Google Maps URLs", () => {
   it("detects maps short links", () => {
     expect(isGoogleMapsUrl("https://maps.app.goo.gl/ccf6jcdqfFHm77mP7")).toBe(true)
     expect(isGoogleMapsUrl("https://example.com/maps")).toBe(false)
+  })
+
+  it("normalizes maps URLs without protocol", () => {
+    expect(normalizeGoogleMapsUrl("maps.app.goo.gl/ccf6jcdqfFHm77mP7")).toBe(
+      "https://maps.app.goo.gl/ccf6jcdqfFHm77mP7"
+    )
+    expect(normalizeGoogleMapsUrl("https://example.com")).toBeNull()
   })
 
   it("parses place name and coordinates from a maps place URL", () => {

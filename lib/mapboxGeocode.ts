@@ -9,8 +9,9 @@
  * https://docs.mapbox.com/api/search/geocoding/
  */
 
+import { mapboxProximityParam } from "@/lib/geo-search-region"
+
 const MAPBOX_BASE = "https://api.mapbox.com/geocoding/v5/mapbox.places"
-const CABA_PROXIMITY = "-58.3816,-34.6037"
 
 export interface ForwardGeocodeResult {
   address: string
@@ -65,15 +66,15 @@ export async function forwardGeocode(
 
   const params = new URLSearchParams({
     access_token: token,
-    country: opts.country ?? "AR",
     limit: String(opts.limit ?? 5),
     types: "address,poi,place,locality,neighborhood",
     language: "es",
   })
+  if (opts.country) params.set("country", opts.country)
   if (opts.proximity) {
     params.set("proximity", `${opts.proximity[0]},${opts.proximity[1]}`)
   } else {
-    params.set("proximity", CABA_PROXIMITY)
+    params.set("proximity", mapboxProximityParam(query))
   }
 
   const res = await fetch(

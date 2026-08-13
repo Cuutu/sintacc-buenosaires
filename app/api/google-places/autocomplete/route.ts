@@ -4,8 +4,9 @@ import {
   normalizeGooglePredictions,
 } from "@/lib/google-places"
 
+import { googleAutocompleteLocationOptions } from "@/lib/geo-search-region"
+
 const GOOGLE_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete"
-const CABA_CENTER = { latitude: -34.6037, longitude: -58.3816 }
 
 export const dynamic = "force-dynamic"
 
@@ -37,14 +38,8 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         input,
         languageCode: "es-419",
-        includedRegionCodes: ["ar"],
         sessionToken,
-        locationBias: {
-          circle: {
-            center: CABA_CENTER,
-            radius: 50000,
-          },
-        },
+        ...googleAutocompleteLocationOptions(input),
       }),
     })
 

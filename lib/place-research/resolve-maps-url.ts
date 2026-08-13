@@ -27,6 +27,16 @@ export function isGoogleMapsUrl(raw: string): boolean {
   }
 }
 
+export function normalizeGoogleMapsUrl(raw: string): string | null {
+  const text = raw.trim()
+  if (!text) return null
+  const candidates = /^https?:\/\//i.test(text) ? [text] : [`https://${text}`]
+  for (const candidate of candidates) {
+    if (isGoogleMapsUrl(candidate)) return candidate
+  }
+  return null
+}
+
 function isAllowedGoogleMapsHost(hostname: string): boolean {
   const host = hostname.toLowerCase()
   return (

@@ -1,4 +1,7 @@
 import { LOCALITIES } from "./constants"
+import { mapboxProximityParam } from "./geo-search-region"
+import { normalizeGoogleMapsUrl } from "./place-research/resolve-maps-url"
+import { parseFormCoords } from "./place-research/maps-location"
 
 export interface GeocodeResult {
   address: string
@@ -36,6 +39,12 @@ export function extractLocality(
 }
 
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+  const mapsUrl = normalizeGoogleMapsUrl(address)
+  if (mapsUrl) {
+    const fromMaps = await geocodeMapsUrl(mapsUrl)
+    if (fromMaps) return fromMaps
+  }
+
   const googleResult = await geocodeAddressWithGoogle(address)
   if (googleResult) return googleResult
 
@@ -46,9 +55,8 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     const encoded = encodeURIComponent(address.trim())
     const params = new URLSearchParams({
       access_token: token,
-      country: "AR",
       limit: "1",
-      proximity: "-58.3816,-34.6037",
+      proximity: mapboxProximityParam(address),
       types: "address,place,locality,neighborhood",
       language: "es",
     })
@@ -75,6 +83,19 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
   }
 }
 
+async function geocodeMapsUrl(url: string): Promise<GeocodeResult | null> {
+  if (typeof window === "undefined") return null
+  try {
+    const params = new URLSearchParams({ url })
+    const res = await fetch(`/api/google-places/resolve-maps?${params}`)
+    if (!res.ok) return null
+    const data: { result?: GeocodeResult | null } = await res.json()
+    return data.result ?? null
+  } catch {
+    return null
+  }
+}
+
 async function geocodeAddressWithGoogle(address: string): Promise<GeocodeResult | null> {
   if (typeof window === "undefined" || !address.trim()) return null
 
@@ -87,6 +108,53 @@ async function geocodeAddressWithGoogle(address: string): Promise<GeocodeResult 
     return data.result ?? null
   } catch {
     return null
+  }
+}
+
+export async function resolveFormLocation(input: {
+  address: string
+  lat?: string
+  lng?: string
+  neighborhood?: string
+  mapsUrl?: string
+}): Promise<GeocodeResult | null> {
+  const mapsSource = normalizeGoogleMapsUrl(input.address) || normalizeGoogleMapsUrl(input.mapsUrl ?? "")
+  if (mapsSource) {
+    const fromMaps = await geocodeAddress(mapsSource)
+    if (fromMaps) return fromMaps
+  }
+
+  const existing = parseFormCoords(input.lat, input.lng)
+  if (existing) {
+    return {
+      address: input.address.trim(),
+      lat: existing.lat,
+      lng: existing.lng,
+      neighborhood: input.neighborhood?.trim() || undefined,
+    }
+  }
+
+  return geocodeAddress(input.address)
+}
+
+export function applyGeoToForm<T extends {
+  address: string
+  lat: string
+  lng: string
+  neighborhood: string
+}>(prev: T, geo: GeocodeResult): T {
+  const addressIncomplete =
+    !prev.address.trim() || /a completar/i.test(prev.address)
+  const neighborhoodIncomplete =
+    !prev.neighborhood.trim() || /a completar/i.test(prev.neighborhood)
+  return {
+    ...prev,
+    lat: String(geo.lat),
+    lng: String(geo.lng),
+    address: addressIncomplete ? geo.address : prev.address,
+    neighborhood: neighborhoodIncomplete
+      ? geo.neighborhood || prev.neighborhood || "Otro"
+      : prev.neighborhood,
   }
 }
 

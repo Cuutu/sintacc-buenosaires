@@ -23,6 +23,8 @@ import { Loader2, MapPin, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NEIGHBORHOODS } from "@/lib/constants"
+import { geocodeAddress } from "@/lib/geocode"
+import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 
 interface GooglePrediction {
   placeId: string
@@ -64,15 +66,39 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelect: (result: MapPickerResult) => void
+  initialLocation?: {
+    lat: number
+    lng: number
+    address?: string
+    neighborhood?: string
+  } | null
 }
 
 const DEBOUNCE_MS = 350
+const PIN_HTML =
+  '<div style="width:32px;height:32px;background:#10b981;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><span style="font-size:16px">📍</span></div>'
+
+function dropMarker(
+  mapInstance: mapboxgl.Map,
+  markerRef: { current: mapboxgl.Marker | null },
+  lat: number,
+  lng: number,
+  fly = true
+) {
+  if (markerRef.current) markerRef.current.remove()
+  if (fly) mapInstance.flyTo({ center: [lng, lat], zoom: 16 })
+  const el = document.createElement("div")
+  el.innerHTML = PIN_HTML
+  markerRef.current = new mapboxgl.Marker({ element: el })
+    .setLngLat([lng, lat])
+    .addTo(mapInstance)
+}
 
 function createSessionToken(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
 }
 
-export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
+export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
@@ -147,6 +173,23 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       try {
         if (abortRef.current) abortRef.current.abort()
         abortRef.current = new AbortController()
+
+        const mapsUrl = normalizeGoogleMapsUrl(searchQuery)
+        if (mapsUrl) {
+          const resolved = await geocodeAddress(mapsUrl)
+          if (resolved && map.current) {
+            setSearchQuery(resolved.address)
+            setShowSearchDropdown(false)
+            setSearchSuggestions([])
+            setPicked({ lat: resolved.lat, lng: resolved.lng })
+            dropMarker(map.current, markerRef, resolved.lat, resolved.lng)
+            setAddressText(resolved.address)
+            setNeighborhood(resolved.neighborhood)
+            setNeedsUserInput(false)
+            return
+          }
+        }
+
         const googleSuggestions = await fetchGoogleSuggestions(
           searchQuery,
           googleSessionTokenRef.current
@@ -194,13 +237,19 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     }
 
     mapboxgl.accessToken = token
-    setPicked(null)
-    setAddressText("")
-    setNeighborhood(undefined)
-    setNeedsUserInput(false)
+    const hasStart =
+      Number.isFinite(initialLocation?.lat) && Number.isFinite(initialLocation?.lng)
+    const startLat = initialLocation?.lat as number
+    const startLng = initialLocation?.lng as number
+
+    setPicked(hasStart ? { lat: startLat, lng: startLng } : null)
+    setAddressText(hasStart ? initialLocation?.address || "" : "")
+    setNeighborhood(hasStart ? initialLocation?.neighborhood : undefined)
+    setNeedsUserInput(hasStart ? !initialLocation?.address : false)
     setUserNeighborhood("")
     setUserReference("")
     setError("")
+    setSearchQuery(hasStart ? initialLocation?.address || "" : "")
     if (markerRef.current) {
       markerRef.current.remove()
       markerRef.current = null
@@ -210,12 +259,15 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     const mapInstance = new mapboxgl.Map({
       container,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: CABA_CENTER,
-      zoom: CABA_ZOOM,
+      center: hasStart ? [startLng, startLat] : CABA_CENTER,
+      zoom: hasStart ? 16 : CABA_ZOOM,
     })
     map.current = mapInstance
 
-    mapInstance.on("load", () => mapInstance.resize())
+    mapInstance.on("load", () => {
+      mapInstance.resize()
+      if (hasStart) dropMarker(mapInstance, markerRef, startLat, startLng, false)
+    })
     mapInstance.on("error", (ev: unknown) => {
       const e = ev as { error?: { message?: string } }
       setError(`Mapbox: ${e?.error?.message || "Error"}. Revisá el token en Mapbox Studio.`)
@@ -225,14 +277,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
       const { lng, lat } = e.lngLat
       setPicked({ lat, lng })
-
-      if (markerRef.current) markerRef.current.remove()
-      const el = document.createElement("div")
-      el.innerHTML = `<div style="width:32px;height:32px;background:#10b981;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><span style="font-size:16px">📍</span></div>`
-      markerRef.current = new mapboxgl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .addTo(mapInstance)
-
+      dropMarker(mapInstance, markerRef, lat, lng, false)
       runReverseGeocode(lat, lng)
     }
 
@@ -242,7 +287,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
       mapInstance.remove()
       map.current = null
     }
-  }, [open, mounted, runReverseGeocode])
+  }, [open, mounted, runReverseGeocode, initialLocation?.lat, initialLocation?.lng, initialLocation?.address, initialLocation?.neighborhood])
 
   const handleSearchSelect = async (item: SearchSuggestion) => {
     if (item.provider === "google" && item.googlePlaceId) {
@@ -256,7 +301,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
           setSearchQuery(place.address)
           setShowSearchDropdown(false)
           setPicked({ lat: place.lat, lng: place.lng })
-          placeMarker(place.lat, place.lng)
+          if (map.current) dropMarker(map.current, markerRef, place.lat, place.lng)
           setAddressText(place.address)
           setNeighborhood(place.neighborhood)
           setNeedsUserInput(false)
@@ -274,24 +319,11 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
     setSearchQuery(result.place_name)
     setShowSearchDropdown(false)
     setPicked({ lat: result.lat, lng: result.lng })
-    placeMarker(result.lat, result.lng)
+    if (map.current) dropMarker(map.current, markerRef, result.lat, result.lng)
 
     setAddressText(result.address)
     setNeighborhood(result.neighborhood)
     setNeedsUserInput(false)
-  }
-
-  const placeMarker = (lat: number, lng: number) => {
-    if (markerRef.current) markerRef.current.remove()
-    if (map.current) {
-      map.current.flyTo({ center: [lng, lat], zoom: 16 })
-      const el = document.createElement("div")
-      el.innerHTML = `<div style="width:32px;height:32px;background:#10b981;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><span style="font-size:16px">📍</span></div>`
-      markerRef.current = new mapboxgl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .addTo(map.current)
-    }
-
   }
 
   const handleConfirm = () => {
@@ -365,7 +397,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect }: Props) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar dirección o lugar..."
+                placeholder="Dirección, lugar o link de Google Maps..."
                 className="pl-10"
                 autoComplete="off"
               />

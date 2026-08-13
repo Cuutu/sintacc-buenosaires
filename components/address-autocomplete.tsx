@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { MapPin, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { extractLocality } from "@/lib/geocode"
+import { extractLocality, geocodeAddress } from "@/lib/geocode"
+import { mapboxProximityParam } from "@/lib/geo-search-region"
+import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 
 interface MapboxFeature {
   id: string
@@ -68,7 +70,7 @@ export function AddressAutocomplete({
   value,
   onChange,
   onSelect,
-  placeholder = "Buscar dirección en Argentina...",
+  placeholder = "Buscar dirección o link de Google Maps...",
   className,
   required,
 }: AddressAutocompleteProps) {
@@ -106,6 +108,18 @@ export function AddressAutocomplete({
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
       try {
+        const mapsUrl = normalizeGoogleMapsUrl(value)
+        if (mapsUrl) {
+          const resolved = await geocodeAddress(mapsUrl)
+          if (resolved) {
+            onSelect(resolved)
+            onChange(resolved.address)
+            setSuggestions([])
+            setShowDropdown(false)
+            return
+          }
+        }
+
         const googleSuggestions = await fetchGoogleSuggestions(value.trim(), googleSessionTokenRef.current)
         if (googleSuggestions.length > 0) {
           setSuggestions(googleSuggestions)
@@ -123,9 +137,8 @@ export function AddressAutocomplete({
         const encoded = encodeURIComponent(value.trim())
         const params = new URLSearchParams({
           access_token: token,
-          country: "AR",
           limit: "5",
-          proximity: "-58.3816,-34.6037", // Centro de Buenos Aires
+          proximity: mapboxProximityParam(value),
           types: "address,place,locality,neighborhood",
           language: "es",
         })

@@ -3,6 +3,7 @@ import {
   extractLocalityFromGoogle,
   getGoogleMapsApiKey,
 } from "@/lib/google-places"
+import { googleGeocodeQueryOptions } from "@/lib/geo-search-region"
 
 const GOOGLE_GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 
@@ -34,13 +35,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ result: null, configured: true }, { status: 200 })
   }
 
+  const geoOpts = googleGeocodeQueryOptions(address)
   const params = new URLSearchParams({
     address,
-    components: "country:AR",
     language: "es",
-    region: "ar",
     key: apiKey,
   })
+  if (geoOpts.region) params.set("region", geoOpts.region)
 
   try {
     const response = await fetch(`${GOOGLE_GEOCODING_URL}?${params}`)

@@ -17,6 +17,7 @@ import {
   isCountryOnlyAddress,
   shouldReplaceDraftLocation,
 } from "@/lib/place-research/maps-location"
+import { withGeoSearchSuffix } from "@/lib/geo-search-region"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import { logApiError } from "@/lib/logger"
 import {
@@ -88,8 +89,7 @@ function buildSearchQuery(draft: Record<string, unknown>): string {
     return parts.join(" ")
   }
 
-  parts.push("Buenos Aires")
-  return parts.join(" ")
+  return withGeoSearchSuffix(parts)
 }
 
 function isResearchStale(ai?: AiResearch | null, updatedAt?: Date): boolean {

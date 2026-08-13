@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
-import { geocodeAddress } from "@/lib/geocode"
+import { MapPickerModal } from "@/components/map-picker-modal"
+import { LocationPinPreview } from "@/components/location-pin-preview"
+import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geocode"
+import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { ImageUpload } from "@/components/image-upload"
 import { toast } from "sonner"
@@ -61,6 +64,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState("")
+  const [mapPickerOpen, setMapPickerOpen] = useState(false)
 
   const inferSafetyFromTags = (tags: string[]) => {
     if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) return "dedicated_gf"
@@ -184,8 +188,14 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       setError("El barrio es obligatorio")
       return
     }
-    // Siempre geocodificar la dirección al guardar para que las coordenadas coincidan con la dirección
-    const geo = await geocodeAddress(formData.address)
+    // Link de Maps o coords ya pineadas ganan. No re-geocodificar a Argentina.
+    const geo = await resolveFormLocation({
+      address: formData.address,
+      lat: formData.lat,
+      lng: formData.lng,
+      neighborhood: formData.neighborhood,
+      mapsUrl: formData.contact.url,
+    })
     if (!geo) {
       setError("No se pudo geocodificar la dirección. Probá seleccionando una sugerencia del autocompletado.")
       return
@@ -292,7 +302,50 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                     neighborhood: r.neighborhood || "Otro",
                   })
                 }
-                placeholder="Dirección en Argentina..."
+                placeholder="Dirección, lugar o link de Google Maps..."
+              />
+              {Number.isFinite(Number(formData.lat)) && Number.isFinite(Number(formData.lng)) && (
+                <div className="mt-2">
+                  <LocationPinPreview
+                    lat={Number(formData.lat)}
+                    lng={Number(formData.lng)}
+                    address={formData.address}
+                    onAdjust={() => setMapPickerOpen(true)}
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                ¿No aparece?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMapPickerOpen(true)}
+                  className="text-primary hover:underline"
+                >
+                  Ubicar en el mapa
+                </button>
+              </p>
+              <MapPickerModal
+                open={mapPickerOpen}
+                onOpenChange={setMapPickerOpen}
+                initialLocation={
+                  Number.isFinite(Number(formData.lat)) && Number.isFinite(Number(formData.lng))
+                    ? {
+                        lat: Number(formData.lat),
+                        lng: Number(formData.lng),
+                        address: formData.address,
+                        neighborhood: formData.neighborhood,
+                      }
+                    : null
+                }
+                onSelect={(result) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address: result.address,
+                    lat: String(result.lat),
+                    lng: String(result.lng),
+                    neighborhood: result.neighborhood || prev.neighborhood || "Otro",
+                  }))
+                }
               />
             </div>
             <div>
@@ -436,7 +489,17 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                     contact: { ...formData.contact, url: e.target.value },
                   })
                 }
-                placeholder="https://..."
+                placeholder="https://maps.app.goo.gl/... o web"
+                onBlur={async (e) => {
+                  const raw = e.target.value.trim()
+                  if (!normalizeGoogleMapsUrl(raw)) return
+                  const geo = await geocodeAddress(raw)
+                  if (!geo) return
+                  setFormData((prev) => ({
+                    ...applyGeoToForm(prev, geo),
+                    contact: { ...prev.contact, url: raw },
+                  }))
+                }}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

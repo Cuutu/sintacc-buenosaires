@@ -44,3 +44,17 @@ export function shouldReplaceDraftLocation(current?: {
 } | null): boolean {
   return isPlaceholderCabaLocation(current)
 }
+
+export function parseFormCoords(
+  lat?: string | number | null,
+  lng?: string | number | null
+): { lat: number; lng: number } | null {
+  if (lat == null || lng == null) return null
+  if (typeof lat === "string" && !lat.trim()) return null
+  if (typeof lng === "string" && !lng.trim()) return null
+  const parsedLat = typeof lat === "number" ? lat : Number(String(lat).trim())
+  const parsedLng = typeof lng === "number" ? lng : Number(String(lng).trim())
+  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) return null
+  if (isPlaceholderCabaLocation({ lat: parsedLat, lng: parsedLng })) return null
+  return { lat: parsedLat, lng: parsedLng }
+}

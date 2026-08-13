@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { MapPickerModal } from "@/components/map-picker-modal"
-import { geocodeAddress } from "@/lib/geocode"
+import { LocationPinPreview } from "@/components/location-pin-preview"
+import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geocode"
 import { toast } from "sonner"
 import { TYPES, PLACE_TAGS } from "@/lib/constants"
 import { MapPin, Link2, ChevronDown, ChevronUp, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -137,7 +139,13 @@ export default function SugerirPage() {
     let dataToSubmit = formData
 
     if ((!formData.lat || !formData.lng) && formData.address.trim()) {
-      const geo = await geocodeAddress(formData.address)
+      const geo = await resolveFormLocation({
+        address: formData.address,
+        lat: formData.lat,
+        lng: formData.lng,
+        neighborhood: formData.neighborhood,
+        mapsUrl: formData.contact.url,
+      })
       if (geo) {
         dataToSubmit = {
           ...formData,
@@ -524,8 +532,16 @@ export default function SugerirPage() {
                 neighborhood: result.neighborhood || "Otro",
               })
             }
-            placeholder="Escribí y seleccioná de la lista..."
+            placeholder="Escribí dirección o pegá un link de Google Maps..."
           />
+          {Number.isFinite(Number(formData.lat)) && Number.isFinite(Number(formData.lng)) && (
+            <LocationPinPreview
+              lat={Number(formData.lat)}
+              lng={Number(formData.lng)}
+              address={formData.address}
+              onAdjust={() => setMapPickerOpen(true)}
+            />
+          )}
           <p className="text-xs text-muted-foreground">
             ¿No encontrás la dirección?{" "}
             <button
@@ -541,6 +557,16 @@ export default function SugerirPage() {
         <MapPickerModal
           open={mapPickerOpen}
           onOpenChange={setMapPickerOpen}
+          initialLocation={
+            Number.isFinite(Number(formData.lat)) && Number.isFinite(Number(formData.lng))
+              ? {
+                  lat: Number(formData.lat),
+                  lng: Number(formData.lng),
+                  address: formData.address,
+                  neighborhood: formData.neighborhood,
+                }
+              : null
+          }
           onSelect={(result) =>
             setFormData((prev) => ({
               ...prev,
@@ -704,11 +730,21 @@ export default function SugerirPage() {
                 <Label className="text-xs">Sitio web</Label>
                 <Input
                   type="url"
-                  placeholder="https://..."
+                  placeholder="https://maps.app.goo.gl/... o web"
                   value={formData.contact.url}
                   onChange={(e) =>
                     setFormData({ ...formData, contact: { ...formData.contact, url: e.target.value } })
                   }
+                  onBlur={async (e) => {
+                    const raw = e.target.value.trim()
+                    if (!normalizeGoogleMapsUrl(raw)) return
+                    const geo = await geocodeAddress(raw)
+                    if (!geo) return
+                    setFormData((prev) => ({
+                      ...applyGeoToForm(prev, geo),
+                      contact: { ...prev.contact, url: raw },
+                    }))
+                  }}
                 />
               </div>
 

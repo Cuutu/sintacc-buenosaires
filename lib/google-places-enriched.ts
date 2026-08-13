@@ -5,6 +5,10 @@ import {
 } from "@/lib/google-places"
 import { resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { isLikelyArgentinaCoords } from "@/lib/place-research/maps-location"
+import {
+  googleTextSearchCenter,
+  googleTextSearchRegionCode,
+} from "@/lib/geo-search-region"
 
 const GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1/places"
 
@@ -168,12 +172,13 @@ export async function searchGooglePlaceByText(
 
   const hasCoords =
     Number.isFinite(opts?.lat) && Number.isFinite(opts?.lng)
+  const inferredRegion = googleTextSearchRegionCode(textQuery)
   const center = hasCoords
     ? { latitude: opts!.lat as number, longitude: opts!.lng as number }
-    : { latitude: -34.6037, longitude: -58.3816 }
-  const radius = hasCoords ? (opts?.radius ?? 300) : 50000
+    : googleTextSearchCenter(textQuery)
+  const radius = hasCoords ? (opts?.radius ?? 300) : inferredRegion ? 600_000 : 50_000
   const biasInArgentina =
-    !hasCoords || isLikelyArgentinaCoords(opts!.lat as number, opts!.lng as number)
+    hasCoords && isLikelyArgentinaCoords(opts!.lat as number, opts!.lng as number)
 
   const body: Record<string, unknown> = {
     textQuery: textQuery.trim(),
@@ -187,7 +192,8 @@ export async function searchGooglePlaceByText(
     maxResultCount: 3,
   }
   // regionCode AR + bias CABA tira lugares de Brasil/Uruguay a cualquier lado.
-  if (biasInArgentina) body.regionCode = "AR"
+  if (inferredRegion) body.regionCode = inferredRegion
+  else if (biasInArgentina) body.regionCode = "AR"
 
   const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
     method: "POST",
@@ -242,28 +248,51 @@ export async function fetchGooglePlaceEnriched(
   return normalizeGooglePlaceEnriched(data)
 }
 
+function approxKm(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
+): number {
+  return Math.hypot(a.lat - b.lat, a.lng - b.lng) * 111
+}
+
 export async function findGooglePlaceFromMapsUrl(
-  mapsUrl: string
+  mapsUrl: string,
+  alreadyResolved?: Awaited<ReturnType<typeof resolveGoogleMapsUrl>>
 ): Promise<GooglePlaceEnriched | null> {
-  const resolved = await resolveGoogleMapsUrl(mapsUrl)
+  const resolved = alreadyResolved ?? (await resolveGoogleMapsUrl(mapsUrl))
   if (!resolved) return null
 
+  let enriched: GooglePlaceEnriched | null = null
+
   if (resolved.placeId?.startsWith("ChIJ")) {
-    return fetchGooglePlaceEnriched(resolved.placeId)
+    enriched = await fetchGooglePlaceEnriched(resolved.placeId)
+  } else {
+    const query = resolved.placeName?.trim()
+    if (query) {
+      const hit = await searchGooglePlaceByText(
+        query,
+        Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)
+          ? { lat: resolved.lat, lng: resolved.lng, radius: 1500 }
+          : undefined
+      )
+      if (hit?.placeId) enriched = await fetchGooglePlaceEnriched(hit.placeId)
+    }
   }
 
-  const query = resolved.placeName?.trim()
-  if (!query) return null
+  if (
+    enriched &&
+    Number.isFinite(resolved.lat) &&
+    Number.isFinite(resolved.lng) &&
+    approxKm(enriched, { lat: resolved.lat as number, lng: resolved.lng as number }) > 25
+  ) {
+    return {
+      ...enriched,
+      lat: resolved.lat as number,
+      lng: resolved.lng as number,
+    }
+  }
 
-  const hit = await searchGooglePlaceByText(
-    query,
-    Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)
-      ? { lat: resolved.lat, lng: resolved.lng, radius: 1500 }
-      : undefined
-  )
-  if (!hit?.placeId) return null
-
-  return fetchGooglePlaceEnriched(hit.placeId)
+  return enriched
 }
 
 /** Búsqueda extra orientada a sin TACC / celíaco (resumen Gemini de Google). */
@@ -281,9 +310,29 @@ export async function fetchGoogleGlutenContextSearch(input: {
   const textQuery = [input.name, cityHint, "sin TACC celíaco"].filter(Boolean).join(" ")
 
   const hasCoords = Number.isFinite(input.lat) && Number.isFinite(input.lng)
+  const inferredRegion = googleTextSearchRegionCode(textQuery)
   const center = hasCoords
     ? { latitude: input.lat as number, longitude: input.lng as number }
-    : { latitude: -34.6037, longitude: -58.3816 }
+    : googleTextSearchCenter(textQuery)
+
+  const glutenBody: Record<string, unknown> = {
+    textQuery,
+    languageCode: "es-419",
+    locationBias: {
+      circle: {
+        center,
+        radius: hasCoords ? 8000 : inferredRegion ? 600_000 : 50_000,
+      },
+    },
+    maxResultCount: 3,
+  }
+  if (inferredRegion) glutenBody.regionCode = inferredRegion
+  else if (
+    hasCoords &&
+    isLikelyArgentinaCoords(input.lat as number, input.lng as number)
+  ) {
+    glutenBody.regionCode = "AR"
+  }
 
   const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
     method: "POST",
@@ -293,18 +342,7 @@ export async function fetchGoogleGlutenContextSearch(input: {
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.generativeSummary",
     },
-    body: JSON.stringify({
-      textQuery,
-      languageCode: "es-419",
-      regionCode: "AR",
-      locationBias: {
-        circle: {
-          center,
-          radius: hasCoords ? 8000 : 50000,
-        },
-      },
-      maxResultCount: 3,
-    }),
+    body: JSON.stringify(glutenBody),
   })
 
   if (!res.ok) return null
