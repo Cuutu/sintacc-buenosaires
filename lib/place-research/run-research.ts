@@ -12,7 +12,11 @@ import {
   buildResearchUserPrompt,
   collectResearchSources,
 } from "@/lib/place-research/collect-sources"
-import { isGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import {
+  isCountryOnlyAddress,
+  shouldReplaceDraftLocation,
+} from "@/lib/place-research/maps-location"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import { logApiError } from "@/lib/logger"
 import {
@@ -43,6 +47,7 @@ function isDraftIncomplete(draft: Record<string, unknown>): boolean {
     name.includes("A completar") ||
     address.includes("A completar") ||
     neighborhood.includes("A completar") ||
+    isCountryOnlyAddress(address) ||
     !name.trim() ||
     !address.trim()
   )
@@ -79,6 +84,10 @@ function buildSearchQuery(draft: Record<string, unknown>): string {
     }
   }
 
+  if (contact.url && isGoogleMapsUrl(contact.url)) {
+    return parts.join(" ")
+  }
+
   parts.push("Buenos Aires")
   return parts.join(" ")
 }
@@ -106,6 +115,14 @@ function buildSuggestedPatch(input: {
     patch.address = googlePlace.address
     if (googlePlace.neighborhood) patch.neighborhood = googlePlace.neighborhood
     patch.location = { lat: googlePlace.lat, lng: googlePlace.lng }
+  } else if (
+    googlePlace &&
+    shouldReplaceDraftLocation(draft.location as { lat?: number; lng?: number })
+  ) {
+    patch.location = { lat: googlePlace.lat, lng: googlePlace.lng }
+    if (isCountryOnlyAddress(String(draft.address ?? "")) && googlePlace.address) {
+      patch.address = googlePlace.address
+    }
   }
 
   if (googlePlace?.primaryType) {
@@ -230,9 +247,18 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
     let googlePlace = null
     let matchConfidence = 0
     let mapsLinkResolved = false
+    let mapsCoords: { lat: number; lng: number } | null = null
 
     if (getGoogleMapsApiKey()) {
       if (userUrl && isGoogleMapsUrl(userUrl)) {
+        const resolvedMaps = await resolveGoogleMapsUrl(userUrl)
+        if (
+          resolvedMaps &&
+          Number.isFinite(resolvedMaps.lat) &&
+          Number.isFinite(resolvedMaps.lng)
+        ) {
+          mapsCoords = { lat: resolvedMaps.lat as number, lng: resolvedMaps.lng as number }
+        }
         googlePlace = await findGooglePlaceFromMapsUrl(userUrl)
         if (googlePlace) {
           mapsLinkResolved = true
@@ -278,6 +304,15 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
       googlePlace,
       analysis: { ...analysis, matchConfidence: analysis.matchConfidence || matchConfidence },
     })
+
+    if (
+      mapsCoords &&
+      shouldReplaceDraftLocation(draft.location as { lat?: number; lng?: number })
+    ) {
+      suggestedDraftPatch.location = googlePlace
+        ? { lat: googlePlace.lat, lng: googlePlace.lng }
+        : mapsCoords
+    }
 
     const draftAutoFilled =
       isDraftIncomplete(draft) && Object.keys(suggestedDraftPatch).length > 0

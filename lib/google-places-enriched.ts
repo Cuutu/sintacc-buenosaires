@@ -4,6 +4,7 @@ import {
   type GooglePlaceDetails,
 } from "@/lib/google-places"
 import { resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { isLikelyArgentinaCoords } from "@/lib/place-research/maps-location"
 
 const GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1/places"
 
@@ -171,6 +172,22 @@ export async function searchGooglePlaceByText(
     ? { latitude: opts!.lat as number, longitude: opts!.lng as number }
     : { latitude: -34.6037, longitude: -58.3816 }
   const radius = hasCoords ? (opts?.radius ?? 300) : 50000
+  const biasInArgentina =
+    !hasCoords || isLikelyArgentinaCoords(opts!.lat as number, opts!.lng as number)
+
+  const body: Record<string, unknown> = {
+    textQuery: textQuery.trim(),
+    languageCode: "es-419",
+    locationBias: {
+      circle: {
+        center,
+        radius,
+      },
+    },
+    maxResultCount: 3,
+  }
+  // regionCode AR + bias CABA tira lugares de Brasil/Uruguay a cualquier lado.
+  if (biasInArgentina) body.regionCode = "AR"
 
   const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
     method: "POST",
@@ -179,18 +196,7 @@ export async function searchGooglePlaceByText(
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress",
     },
-    body: JSON.stringify({
-      textQuery: textQuery.trim(),
-      languageCode: "es-419",
-      regionCode: "AR",
-      locationBias: {
-        circle: {
-          center,
-          radius,
-        },
-      },
-      maxResultCount: 3,
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!res.ok) return null
@@ -252,7 +258,7 @@ export async function findGooglePlaceFromMapsUrl(
   const hit = await searchGooglePlaceByText(
     query,
     Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)
-      ? { lat: resolved.lat, lng: resolved.lng, radius: 250 }
+      ? { lat: resolved.lat, lng: resolved.lng, radius: 1500 }
       : undefined
   )
   if (!hit?.placeId) return null

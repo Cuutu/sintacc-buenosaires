@@ -13,7 +13,8 @@ import {
   buildResearchUserPrompt,
   collectResearchSources,
 } from "@/lib/place-research/collect-sources"
-import { isGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { isCountryOnlyAddress, shouldReplaceDraftLocation } from "@/lib/place-research/maps-location"
 import { isPlaceResearchEnabled } from "@/lib/place-research/config"
 import {
   aiResearchAnalysisSchema,
@@ -82,8 +83,7 @@ function buildGapFillPatch(input: {
     patch.neighborhood = googlePlace.neighborhood
   }
   const loc = draft.location as { lat?: number; lng?: number } | undefined
-  const hasLocation = Number.isFinite(loc?.lat) && Number.isFinite(loc?.lng)
-  if (googlePlace && !hasLocation) {
+  if (googlePlace && shouldReplaceDraftLocation(loc)) {
     patch.location = { lat: googlePlace.lat, lng: googlePlace.lng }
   }
 
@@ -203,7 +203,12 @@ async function persistPlaceResearchUpdate(
 function isMissingField(value: unknown): boolean {
   if (value == null) return true
   const text = String(value).trim().toLowerCase()
-  return !text || text.includes("a completar") || text.includes("sin direccion")
+  return (
+    !text ||
+    text.includes("a completar") ||
+    text.includes("sin direccion") ||
+    isCountryOnlyAddress(text)
+  )
 }
 
 function mergePlacePatch(place: Record<string, unknown>, patch: Partial<IPlace>) {
@@ -265,9 +270,18 @@ export async function runPlaceResearch(
     let googlePlace = null
     let matchConfidence = 0
     let mapsLinkResolved = false
+    let mapsCoords: { lat: number; lng: number } | null = null
 
     if (getGoogleMapsApiKey()) {
       if (userUrl && isGoogleMapsUrl(userUrl)) {
+        const resolvedMaps = await resolveGoogleMapsUrl(userUrl)
+        if (
+          resolvedMaps &&
+          Number.isFinite(resolvedMaps.lat) &&
+          Number.isFinite(resolvedMaps.lng)
+        ) {
+          mapsCoords = { lat: resolvedMaps.lat as number, lng: resolvedMaps.lng as number }
+        }
         googlePlace = await findGooglePlaceFromMapsUrl(userUrl)
         if (googlePlace) {
           mapsLinkResolved = true
@@ -278,12 +292,15 @@ export async function runPlaceResearch(
       if (!googlePlace) {
         const query = buildSearchQuery(draft)
         const coords = draft.location as { lat?: number; lng?: number } | undefined
-        const hit = await searchGooglePlaceByText(
-          query,
-          Number.isFinite(coords?.lat) && Number.isFinite(coords?.lng)
-            ? { lat: coords!.lat, lng: coords!.lng, radius: 400 }
-            : undefined
-        )
+        const usableCoords =
+          Number.isFinite(coords?.lat) &&
+          Number.isFinite(coords?.lng) &&
+          !shouldReplaceDraftLocation(coords)
+            ? { lat: coords!.lat as number, lng: coords!.lng as number, radius: 400 }
+            : mapsCoords
+              ? { ...mapsCoords, radius: 1500 }
+              : undefined
+        const hit = await searchGooglePlaceByText(query, usableCoords)
         if (hit?.placeId) {
           googlePlace = await fetchGooglePlaceEnriched(hit.placeId)
           if (googlePlace) matchConfidence = 80
@@ -311,6 +328,12 @@ export async function runPlaceResearch(
       googlePlace,
       analysis: { ...analysis, matchConfidence: analysis.matchConfidence || matchConfidence },
     })
+
+    if (mapsCoords && shouldReplaceDraftLocation(draft.location as { lat?: number; lng?: number })) {
+      suggestedDraftPatch.location = googlePlace
+        ? { lat: googlePlace.lat, lng: googlePlace.lng }
+        : mapsCoords
+    }
 
     const draftAutoFilled = Object.keys(suggestedDraftPatch).length > 0
     const nextDraft = draftAutoFilled ? mergePlacePatch(draft, suggestedDraftPatch) : draft

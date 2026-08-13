@@ -15,8 +15,7 @@ import { triggerSuggestionResearchAsync } from "@/lib/place-research/run-researc
 import mongoose from "mongoose"
 import { ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
-
-const CABA_CENTER = { lat: -34.6037, lng: -58.3816 }
+import { PLACEHOLDER_CABA_LOCATION } from "@/lib/place-research/maps-location"
 
 function buildPlaceDraftFromQuick(data: { sourceLink: string; safetyLevel: string; name?: string }) {
   const isInstagram = /instagram\.com|instagr\.am/.test(data.sourceLink)
@@ -30,7 +29,7 @@ function buildPlaceDraftFromQuick(data: { sourceLink: string; safetyLevel: strin
     types: ["other"] as const,
     address: "A completar - ver link",
     neighborhood: "A completar",
-    location: CABA_CENTER,
+    location: { ...PLACEHOLDER_CABA_LOCATION },
     tags: [data.safetyLevel === "dedicated_gf" ? "100_gf" : "opciones_sin_tacc"],
     safetyLevel: data.safetyLevel as "dedicated_gf" | "gf_options",
     contact,
