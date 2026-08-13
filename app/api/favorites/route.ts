@@ -21,8 +21,19 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
+    const userId = new mongoose.Types.ObjectId(session.user.id)
+    const idsOnly = request.nextUrl.searchParams.get("ids") === "1"
+
+    if (idsOnly) {
+      const rows = await Favorite.find({ userId }).select("placeId").lean()
+      return NextResponse.json(
+        { placeIds: rows.map((row) => String(row.placeId)) },
+        { headers: { "Cache-Control": "private, max-age=15" } }
+      )
+    }
+
     const favorites = await Favorite.find({
-      userId: new mongoose.Types.ObjectId(session.user.id),
+      userId,
     })
       .populate(
         "placeId",

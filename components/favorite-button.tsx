@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
 import { features } from "@/lib/features"
 import { trackEvent } from "@/lib/analytics"
+import { useFavorites } from "@/components/favorites-provider"
 
 interface FavoriteButtonProps {
   placeId: string
@@ -15,51 +16,31 @@ interface FavoriteButtonProps {
 
 export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
   const { data: session } = useSession()
-  const [isFavorite, setIsFavorite] = useState(false)
+  const { isFavorite, add, remove } = useFavorites()
   const [loading, setLoading] = useState(false)
-
-  const checkFavorite = useCallback(async () => {
-    try {
-      const res = await fetch("/api/favorites")
-      const data = await res.json()
-      const favoriteIds =
-        data.favorites
-          ?.map((f: { placeId?: { _id?: { toString(): string } } | string | null }) => {
-            const place = f?.placeId
-            if (!place) return null
-            if (typeof place === "string") return place
-            return place._id?.toString?.() ?? null
-          })
-          .filter(Boolean) || []
-      setIsFavorite(favoriteIds.includes(placeId))
-    } catch (error) {
-      console.error("Error checking favorite:", error)
-    }
-  }, [placeId])
-
-  useEffect(() => {
-    if (!features.favorites || !session) return
-
-    checkFavorite()
-  }, [placeId, session, checkFavorite])
+  const favorited = isFavorite(placeId)
 
   const toggleFavorite = async () => {
     if (!session) return
 
     setLoading(true)
     try {
-      if (isFavorite) {
-        await fetch(`/api/favorites?placeId=${placeId}`, { method: "DELETE" })
-        setIsFavorite(false)
-        trackEvent("favorite_remove", { placeId })
+      if (favorited) {
+        const res = await fetch(`/api/favorites?placeId=${placeId}`, { method: "DELETE" })
+        if (res.ok) {
+          remove(placeId)
+          trackEvent("favorite_remove", { placeId })
+        }
       } else {
-        await fetch("/api/favorites", {
+        const res = await fetch("/api/favorites", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ placeId }),
         })
-        setIsFavorite(true)
-        trackEvent("favorite_add", { placeId })
+        if (res.ok || res.status === 400) {
+          add(placeId)
+          trackEvent("favorite_add", { placeId })
+        }
       }
     } catch (error) {
       console.error("Error toggling favorite:", error)
@@ -79,12 +60,12 @@ export function FavoriteButton({ placeId, showLabel }: FavoriteButtonProps) {
       className={showLabel ? "min-h-[48px]" : undefined}
       onClick={toggleFavorite}
       disabled={loading}
-      aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
-      aria-pressed={isFavorite}
+      aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
+      aria-pressed={favorited}
     >
       <Heart
         className={`h-5 w-5 ${showLabel ? "mr-2" : ""} ${
-          isFavorite ? "fill-red-500 text-red-500" : ""
+          favorited ? "fill-red-500 text-red-500" : ""
         }`}
       />
       {showLabel && "Guardar"}
