@@ -72,7 +72,7 @@ function FilterChip({
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
         active && tone === "amber" && "border-amber-400 bg-amber-400 text-amber-950",
         active && tone === "neutral" && "border-primary bg-primary text-primary-foreground",
-        !active && "border-white/12 bg-white/[0.04] text-white/70 hover:border-white/20 hover:text-white"
+        !active && "border-olive/15 bg-cream text-olive/70 hover:border-olive/30 hover:text-olive"
       )}
     >
       <span>{label}</span>
@@ -188,15 +188,15 @@ export function MapTopBar({
 
   if (isSidebar) {
     return (
-      <div className="shrink-0 space-y-3 border-b border-white/10 px-4 pb-3 pt-4">
+      <div className="shrink-0 space-y-3 border-b border-olive/10 px-4 pb-3 pt-4">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/38" aria-hidden />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Buscar lugar o zona"
-            className="h-11 rounded-2xl border-white/10 bg-white/[0.04] pl-10 text-sm text-white placeholder:text-white/34 focus-visible:ring-primary/60"
+            className="h-11 rounded-2xl border-olive/10 bg-olive/5 pl-10 text-sm text-olive placeholder:text-muted-foreground focus-visible:ring-primary/60"
           />
         </div>
 
@@ -236,7 +236,7 @@ export function MapTopBar({
                 "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
                 moreActiveCount > 0 || moreOpen
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "border-white/12 bg-white/[0.04] text-white/70 hover:border-white/20 hover:text-white"
+                  : "border-olive/15 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-olive"
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
@@ -253,16 +253,16 @@ export function MapTopBar({
               id="mapa-more-filters"
               role="region"
               aria-label="Más filtros"
-              className="max-h-[min(50vh,360px)] overflow-y-auto rounded-2xl border border-white/12 bg-[#0c1014] p-4"
+              className="max-h-[min(50vh,360px)] overflow-y-auto rounded-2xl border border-olive/15 bg-card p-4"
             >
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Tipo de lugar
                 </p>
                 <button
                   type="button"
                   onClick={() => setMoreOpen(false)}
-                  className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
+                  className="rounded-full p-1 text-muted-foreground hover:bg-olive/10 hover:text-olive"
                   aria-label="Cerrar filtros"
                 >
                   <X className="h-4 w-4" />
@@ -279,7 +279,7 @@ export function MapTopBar({
                       "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                       filters.type === type.value
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
+                        : "border-olive/10 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-muted-foreground"
                     )}
                   >
                     {TYPE_LABELS[type.value] ?? type.label}
@@ -287,7 +287,7 @@ export function MapTopBar({
                 ))}
               </div>
 
-              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-white/45">
+              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Características
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -301,7 +301,7 @@ export function MapTopBar({
                       "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                       filters.tags.includes(chip.id)
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:text-white/78"
+                        : "border-olive/10 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-muted-foreground"
                     )}
                   >
                     {chip.label}
@@ -314,7 +314,7 @@ export function MapTopBar({
 
         {(resultCountLabel || onSortChange || hasActiveFilters) && (
           <div className="flex items-center justify-between gap-3 pt-1">
-            <p className="min-w-0 truncate text-sm text-white/62">
+            <p className="min-w-0 truncate text-sm text-muted-foreground">
               {resultCountLabel}
             </p>
             <div className="flex shrink-0 items-center gap-2">
@@ -322,7 +322,7 @@ export function MapTopBar({
                 <button
                   type="button"
                   onClick={onClearFilters}
-                  className="text-xs font-medium text-white/50 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                  className="text-xs font-medium text-muted-foreground transition hover:text-olive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                 >
                   Limpiar filtros
                 </button>
@@ -333,13 +333,13 @@ export function MapTopBar({
                   <select
                     value={sort}
                     onChange={(e) => onSortChange(e.target.value as SortOption)}
-                    className="h-9 appearance-none rounded-full border border-white/12 bg-white/[0.04] py-1.5 pl-3 pr-8 text-xs font-semibold text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    className="h-9 appearance-none rounded-full border border-olive/15 bg-olive/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-olive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   >
                     <option value="default">Recomendados</option>
                     <option value="rating">Mejor valorados</option>
                     <option value="newest">Más recientes</option>
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-white/45" aria-hidden />
+                  <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 </label>
               )}
             </div>
@@ -356,21 +356,21 @@ export function MapTopBar({
   ]
 
   return (
-    <div className="fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-white/20 bg-[#080c0f]/60 px-2.5 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md">
+    <div className="fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-olive/20 bg-cream/90 px-2.5 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md">
       <div className="mb-2.5 flex min-w-0 gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/50 sm:left-4" aria-hidden />
+          <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground sm:left-4" aria-hidden />
           <input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Buscar lugar o zona"
-            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-[1.25rem] border border-white/10 pl-10 pr-3 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary/70 sm:pl-11 sm:pr-4"
+            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-[1.25rem] border border-olive/10 pl-10 pr-3 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/70 sm:pl-11 sm:pr-4"
             style={{
-              backgroundColor: "rgba(8, 12, 15, 0.78)",
-              color: "#f4fff9",
-              WebkitTextFillColor: "#f4fff9",
-              caretColor: "#10b981",
+              backgroundColor: "rgba(247, 243, 235, 0.92)",
+              color: "#2D4A34",
+              WebkitTextFillColor: "#2D4A34",
+              caretColor: "#D4633A",
             }}
           />
         </div>
@@ -379,7 +379,7 @@ export function MapTopBar({
             type="button"
             onClick={onFiltersOpen}
             aria-label="Más filtros"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.25rem] border border-white/12 bg-white/[0.08] text-white/85"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.25rem] border border-olive/15 bg-olive/8 text-olive/80"
           >
             <SlidersHorizontal className="h-4 w-4" />
           </button>
@@ -407,7 +407,7 @@ export function MapTopBar({
               "min-h-[38px] shrink-0 snap-center rounded-full border px-3.5 py-2 text-sm font-semibold transition-all active:scale-95",
               filters.tags.includes(chip.id)
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-white/10 bg-white/[0.08] text-white/85 hover:bg-white/[0.14] hover:text-white"
+                : "border-olive/10 bg-olive/8 text-olive/80 hover:bg-olive/10 hover:text-olive"
             )}
           >
             {chip.label}

@@ -16,7 +16,7 @@ const PrivateListMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full min-h-[300px] items-center justify-center rounded-2xl border border-white/10 bg-[#0c100e] text-sm text-white/50">
+      <div className="flex h-full min-h-[300px] items-center justify-center rounded-2xl border border-olive/10 bg-card text-sm text-muted-foreground">
         Cargando mapa…
       </div>
     ),
@@ -113,13 +113,13 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
         <span className="text-sm font-semibold tracking-wide text-primary">
           CeliMap
         </span>
-        <span className="rounded-md border border-white/10 px-2 py-0.5 text-[11px] text-white/55">
+        <span className="rounded-md border border-olive/10 px-2 py-0.5 text-[11px] text-muted-foreground">
           Lista privada (enlace)
         </span>
       </header>
 
       {/* Hero compacto */}
-      <section className="mb-4 rounded-2xl border border-white/10 bg-[#0c100e] p-3.5 md:p-4">
+      <section className="mb-4 rounded-2xl border border-olive/10 bg-card p-3.5 md:p-4">
         <div className="flex gap-3">
           {(list.coverImage || places[0]?.photos?.[0]) && (
             <div className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-lg sm:block">
@@ -134,15 +134,15 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
             </div>
           )}
           <div className="min-w-0 flex-1 space-y-1.5">
-            <h1 className="text-xl font-bold tracking-tight text-white md:text-2xl">
+            <h1 className="text-xl font-bold tracking-tight text-olive md:text-2xl">
               {list.name}
             </h1>
             {list.description ? (
-              <p className="line-clamp-2 text-sm text-white/65">
+              <p className="line-clamp-2 text-sm text-muted-foreground">
                 {list.description}
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/60">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               {list.destination ? (
                 <span className="inline-flex items-center gap-1 text-primary/90">
                   <MapPin className="h-3 w-3" />
@@ -162,7 +162,7 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
                   <User className="h-3 w-3" />
                 )}
                 Preparada por{" "}
-                <span className="font-semibold text-white/85">{creatorName}</span>
+                <span className="font-semibold text-olive/80">{creatorName}</span>
               </span>
               <span aria-hidden>·</span>
               <span>{countLabel}</span>
@@ -183,7 +183,7 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
                 Ver todos en el mapa
               </button>
             </div>
-            <p className="text-[10px] text-white/35">
+            <p className="text-[10px] text-muted-foreground">
               Lista privada · Solo pueden acceder quienes tengan este enlace
             </p>
           </div>
@@ -218,7 +218,7 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
 
         {/* Acordeones */}
         <div className="order-2 space-y-2 md:order-1 md:max-h-[calc(100vh-7.5rem)] md:overflow-y-auto md:pr-1">
-          <p className="px-0.5 text-xs font-semibold uppercase tracking-wide text-white/40">
+          <p className="px-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Recomendaciones
           </p>
           {placesWithMeta.map(({ place, order, note }) => {
@@ -240,7 +240,7 @@ export function PrivateListClientView({ list }: PrivateListClientViewProps) {
         </div>
       </section>
 
-      <p className="mt-6 text-center text-xs leading-relaxed text-white/45">
+      <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
         Verificá siempre la información con el establecimiento antes de consumir.
         {updatedLabel ? ` Guía actualizada el ${updatedLabel}.` : ""}
       </p>

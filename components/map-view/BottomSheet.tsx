@@ -102,7 +102,7 @@ export function MapBottomSheet({
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-xl border-t border-white/10 rounded-t-2xl shadow-2xl",
+        "fixed bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-xl border-t border-olive/10 rounded-t-2xl shadow-2xl",
         !reduceMotion && !isDragging && "transition-[height] duration-300 ease-out",
         className
       )}

@@ -59,8 +59,8 @@ export default async function PrivateListaPage({ params }: PageProps) {
   if (!list) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 text-center">
-        <p className="text-lg font-semibold text-white">Contenido no encontrado</p>
-        <p className="mt-2 text-sm text-white/55">
+        <p className="text-lg font-semibold text-olive">Contenido no encontrado</p>
+        <p className="mt-2 text-sm text-muted-foreground">
           El enlace no es válido o ya no está disponible.
         </p>
         <Link href="/" className="mt-6 text-sm font-medium text-primary">

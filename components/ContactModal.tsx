@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import { useSession } from "next-auth/react"
 import { signInWithGoogle } from "@/lib/native-sign-in"
 import {
@@ -15,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { BrandLogo } from "@/components/brand/BrandLogo"
 import { Loader2 } from "lucide-react"
 
 interface ContactModalProps {
@@ -71,13 +71,7 @@ export function ContactModal({ open, onOpenChange }: ContactModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <div className="flex justify-center mb-4">
-          <Image
-            src="/celimaplogocompleto.png"
-            alt="Celimap"
-            width={140}
-            height={36}
-            className="h-9 w-auto"
-          />
+          <BrandLogo size="sm" />
         </div>
         <DialogHeader>
           <DialogTitle>Contacto</DialogTitle>
@@ -100,13 +94,7 @@ export function ContactModal({ open, onOpenChange }: ContactModalProps) {
           </div>
         ) : success ? (
           <div className="py-6 text-center">
-            <Image
-              src="/CelimapLOGO.png"
-              alt="Celimap"
-              width={48}
-              height={48}
-              className="h-12 w-auto mx-auto mb-3 opacity-90"
-            />
+            <BrandLogo markOnly size="md" className="mx-auto mb-3 justify-center" />
             <p className="text-primary font-medium">¡Mensaje enviado!</p>
             <p className="text-sm text-muted-foreground mt-1">
               Te responderemos a la brevedad.

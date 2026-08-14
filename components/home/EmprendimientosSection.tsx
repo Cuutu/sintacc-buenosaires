@@ -34,7 +34,7 @@ export function EmprendimientosSection() {
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         {CARDS.map((card) => (
           <Link key={card.href} href={card.href}>
-            <div className="flex flex-col items-center gap-3 p-6 rounded-xl border border-white/8 bg-white/[0.025] hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 h-full">
+            <div className="flex flex-col items-center gap-3 p-6 rounded-xl border border-olive/10 bg-olive/5 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 h-full">
               <card.icon className="h-8 w-8 text-primary" />
               <span className="text-sm font-medium">{card.title}</span>
             </div>

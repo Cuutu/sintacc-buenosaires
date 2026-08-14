@@ -97,19 +97,19 @@ export const PLACE_TAGS = [
 export const TAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
   "100_gf": {
     label: "100% sin gluten",
-    className: "bg-primary/20 text-primary border-primary/40",
+    className: "bg-olive/10 text-olive border-olive/20",
   },
   opciones_sin_tacc: {
     label: "Opciones sin gluten",
-    className: "bg-amber-500/20 text-amber-400 border-amber-500/40",
+    className: "bg-accent text-accent-foreground border-terracotta/20",
   },
   certificado_sin_tacc: {
     label: "Certificado sin gluten",
-    className: "bg-primary/15 text-primary border-primary/30",
+    className: "bg-terracotta/12 text-[#9a3a1b] border-terracotta/30",
   },
   cocina_separada: {
     label: "Cocina separada",
-    className: "bg-white/10 text-foreground border-white/20",
+    className: "bg-olive/8 text-olive border-olive/15",
   },
   sin_info: {
     label: "Sin info verificada",

@@ -87,13 +87,13 @@ export function OwnerListCard({
         : "Privada"
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c100e]">
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-olive/10 bg-card">
       <button
         type="button"
         onClick={onManage}
         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
-        <div className="relative h-[132px] w-full overflow-hidden bg-[#0a0f0c]">
+        <div className="relative h-[132px] w-full overflow-hidden bg-card">
           {uniquePhotos.length >= 2 ? (
             <div
               className={cn(
@@ -116,7 +116,7 @@ export function OwnerListCard({
               sizes="(max-width: 768px) 100vw, 33vw"
             />
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-emerald-950/60 to-[#0a0f0c] text-white/45">
+            <div className="flex h-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-olive/15 to-card text-muted-foreground">
               <MapPin className="h-7 w-7 text-primary/40" />
               <span className="text-xs font-medium">{placesLabel}</span>
             </div>
@@ -129,7 +129,7 @@ export function OwnerListCard({
                 ? revoked
                   ? "border-amber-500/30 bg-amber-500/15 text-amber-200"
                   : "border-primary/30 bg-black/55 text-primary"
-                : "border-white/15 bg-black/55 text-white/85"
+                : "border-olive/15 bg-black/55 text-white/85"
             )}
           >
             {isPrivate ? <Lock className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
@@ -138,20 +138,20 @@ export function OwnerListCard({
         </div>
 
         <div className="space-y-1 px-3.5 pb-2 pt-3">
-          <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-white">
+          <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-olive">
             {list.name}
           </h3>
           {list.destination ? (
             <p className="truncate text-xs text-primary/85">{list.destination}</p>
           ) : null}
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-muted-foreground">
             {placesLabel}
             {updated ? ` · ${updated}` : ""}
           </p>
         </div>
       </button>
 
-      <div className="mt-auto flex flex-wrap gap-2 border-t border-white/8 p-3">
+      <div className="mt-auto flex flex-wrap gap-2 border-t border-olive/10 p-3">
         {isPrivate ? (
           <Button
             type="button"

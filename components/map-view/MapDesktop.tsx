@@ -221,7 +221,7 @@ export function MapDesktop({
 
         {hasActiveFilters && (
           <div className="pointer-events-auto absolute left-1/2 top-4 z-10 -translate-x-1/2">
-            <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-white/15 bg-[#080c0f]/78 px-3 py-2 text-xs font-medium text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+            <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs font-medium text-olive shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
               <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
               <span className="truncate">
                 {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
@@ -229,7 +229,7 @@ export function MapDesktop({
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="ml-1 shrink-0 text-white/62 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                className="ml-1 shrink-0 text-muted-foreground transition hover:text-olive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                 title="Limpiar filtros"
                 aria-label="Limpiar filtros"
               >
@@ -240,7 +240,7 @@ export function MapDesktop({
         )}
       </div>
 
-      <aside className="flex w-[min(480px,40vw)] min-w-[440px] max-w-[520px] shrink-0 flex-col overflow-hidden border-l border-white/10 bg-[#070909]/96">
+      <aside className="flex w-[min(480px,40vw)] min-w-[440px] max-w-[520px] shrink-0 flex-col overflow-hidden border-l border-olive/10 bg-cream">
         <MapTopBar
           variant="sidebar"
           filters={filters}

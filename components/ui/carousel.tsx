@@ -176,7 +176,7 @@ const CarouselPrevious = React.forwardRef<
       variant="outline"
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
+        "absolute h-8 w-8 rounded-full border-olive/10 bg-olive/5 backdrop-blur-sm hover:bg-olive/10 hover:border-olive/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
         orientation === "horizontal"
           ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -205,7 +205,7 @@ const CarouselNext = React.forwardRef<
       variant="outline"
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
+        "absolute h-8 w-8 rounded-full border-olive/10 bg-olive/5 backdrop-blur-sm hover:bg-olive/10 hover:border-olive/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
         orientation === "horizontal"
           ? "-right-12 top-1/2 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",

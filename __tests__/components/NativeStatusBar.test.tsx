@@ -21,7 +21,7 @@ jest.mock("@capacitor/status-bar", () => ({
     setStyle: (...args: unknown[]) => setStyle(...args),
     setBackgroundColor: (...args: unknown[]) => setBackgroundColor(...args),
   },
-  Style: { Dark: "DARK" },
+  Style: { Dark: "DARK", Light: "LIGHT" },
 }))
 
 import {

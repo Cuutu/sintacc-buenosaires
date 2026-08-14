@@ -306,7 +306,7 @@ export function ManageListModal({
                       "flex items-start gap-3 rounded-xl border p-3 text-left",
                       visibility === LIST_VISIBILITY.PUBLIC
                         ? "border-primary bg-primary/10"
-                        : "border-white/10"
+                        : "border-olive/10"
                     )}
                   >
                     <Globe className="mt-0.5 h-4 w-4 text-primary" />
@@ -324,7 +324,7 @@ export function ManageListModal({
                       "flex items-start gap-3 rounded-xl border p-3 text-left",
                       visibility === LIST_VISIBILITY.PRIVATE_LINK
                         ? "border-primary bg-primary/10"
-                        : "border-white/10"
+                        : "border-olive/10"
                     )}
                   >
                     <Lock className="mt-0.5 h-4 w-4 text-primary" />
@@ -342,7 +342,7 @@ export function ManageListModal({
             ) : null}
 
             {isPrivate ? (
-              <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <div className="space-y-2 rounded-xl border border-olive/10 bg-olive/5 p-3">
                 <p className="text-sm font-medium">Enlace privado</p>
                 <p className="text-xs text-muted-foreground">
                   Estado:{" "}

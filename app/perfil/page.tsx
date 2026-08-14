@@ -91,7 +91,7 @@ export default function PerfilPage() {
     <div className="container mx-auto px-4 py-6 max-w-lg" data-auth-state="authenticated">
       <h1 className="text-2xl font-bold mb-6">Perfil</h1>
 
-      <Card className="border-white/10 bg-white/5 backdrop-blur-md">
+      <Card className="border-olive/10 bg-olive/5 backdrop-blur-md">
         <CardHeader>
           <div className="flex items-center gap-4">
             {session?.user?.image && isAllowedAvatarUrl(session.user.image) ? (
@@ -134,7 +134,7 @@ export default function PerfilPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-white/5 backdrop-blur-md mt-6">
+      <Card className="border-olive/10 bg-olive/5 backdrop-blur-md mt-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function PerfilPage() {
                   typeof place._id === "string" ? place._id : place._id.toString()
                 return (
                   <Link key={id} href={getPlacePath(place)}>
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-white/5 transition-colors">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-olive/5 transition-colors">
                       <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
                         {TYPES.find((t) => t.value === place.type)?.emoji || "📍"}
                       </div>

@@ -25,7 +25,7 @@ export function PlaceHeroGallery({
   const hasPhotos = photos && photos.length > 0
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden border border-white/8 bg-white/5 mb-4">
+    <div className="relative w-full rounded-2xl overflow-hidden border border-olive/10 bg-olive/5 mb-4">
       {hasPhotos ? (
         <div
           className="grid gap-0.5"
@@ -94,14 +94,14 @@ export function PlaceHeroGallery({
       )}
 
       {/* Safety badge flotante — siempre visible */}
-      <div className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-2 bg-black/78 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg">
+      <div className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-2 bg-black/78 backdrop-blur-md border border-olive/15 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg">
         <span className="text-xs leading-none">{safetyDot}</span>
         {safetyLabel}
       </div>
 
       {/* Contador fotos */}
       {hasPhotos && photos.length > 1 && (
-        <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white/60 font-mono">
+        <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur border border-olive/10 rounded-lg px-2 py-1 text-[10px] text-white/60 font-mono">
           📷 {photos.length}
         </div>
       )}

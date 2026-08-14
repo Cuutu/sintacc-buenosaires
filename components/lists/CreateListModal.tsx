@@ -333,7 +333,7 @@ export function CreateListModal({
                     "flex items-start gap-3 rounded-xl border p-3 text-left transition",
                     visibility === LIST_VISIBILITY.PUBLIC
                       ? "border-primary bg-primary/10"
-                      : "border-white/10 hover:border-white/20"
+                      : "border-olive/10 hover:border-olive/20"
                   )}
                 >
                   <Globe className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -351,7 +351,7 @@ export function CreateListModal({
                     "flex items-start gap-3 rounded-xl border p-3 text-left transition",
                     visibility === LIST_VISIBILITY.PRIVATE_LINK
                       ? "border-primary bg-primary/10"
-                      : "border-white/10 hover:border-white/20"
+                      : "border-olive/10 hover:border-olive/20"
                   )}
                 >
                   <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />

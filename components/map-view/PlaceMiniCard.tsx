@@ -90,10 +90,10 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
     <div
       className={cn(
         "group relative flex min-h-[124px] max-h-[150px] gap-3 rounded-2xl border p-3 transition-colors",
-        "bg-[#0c100e] shadow-[0_12px_40px_rgba(0,0,0,0.55)]",
+        "bg-card shadow-soft",
         selected
           ? "border-primary/70 ring-1 ring-primary/30"
-          : "border-white/10 hover:border-white/18 hover:bg-[#101612]"
+          : "border-olive/10 hover:border-olive/25 hover:bg-cream"
       )}
     >
       {selected && (
@@ -134,10 +134,10 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
 
         <div className="min-w-0 flex-1 py-0.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-white">{place.name}</h3>
+            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-olive">{place.name}</h3>
           </div>
 
-          <p className="mt-1 truncate text-xs text-white/55">
+          <p className="mt-1 truncate text-xs text-muted-foreground">
             {typeLabel}
             {place.neighborhood ? ` · ${place.neighborhood}` : ""}
           </p>
@@ -160,11 +160,11 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
             )}
 
             {ratingLabel && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-white/76">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-olive/80">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
                 {ratingLabel}
                 {ratingCount != null && (
-                  <span className="text-white/38">
+                  <span className="text-muted-foreground">
                     ({ratingCount}
                     {ratingSource ? ` ${ratingSource}` : ""})
                   </span>
@@ -184,14 +184,14 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
                 return (
                   <span
                     key={tag}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-white/55"
+                    className="rounded-full border border-olive/10 bg-olive/5 px-2 py-0.5 text-[10px] font-medium text-olive/70"
                   >
                     {cfg.label}
                   </span>
                 )
               })}
               {extraTags > 0 && (
-                <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/45">
+                <span className="rounded-full border border-olive/10 px-2 py-0.5 text-[10px] text-olive/50">
                   +{extraTags}
                 </span>
               )}

@@ -97,7 +97,7 @@ function StepProgress({ current, total }: { current: number; total: number }) {
           key={i}
           className={cn(
             "h-1 flex-1 rounded-full transition-all duration-300",
-            i <= current ? "bg-primary" : "bg-white/10"
+            i <= current ? "bg-primary" : "bg-olive/10"
           )}
         />
       ))}
@@ -121,7 +121,7 @@ function WelcomeVisual() {
           {["🍽️", "☕", "🥐"].map((emoji) => (
             <span
               key={emoji}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-sm"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-olive/5 text-sm"
             >
               {emoji}
             </span>
@@ -134,7 +134,7 @@ function WelcomeVisual() {
 
 function LocationVisual() {
   return (
-    <div className="relative mx-auto h-36 w-full max-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-[#0d1117]">
+    <div className="relative mx-auto h-36 w-full max-w-[280px] overflow-hidden rounded-2xl border border-olive/10 bg-[#0d1117]">
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -167,7 +167,7 @@ function ExploreVisual() {
     { label: "100% sin tacc", active: true, accent: true },
   ]
   return (
-    <div className="mx-auto flex h-36 w-full max-w-[280px] flex-col justify-center gap-3 rounded-2xl border border-white/10 bg-card/50 p-4">
+    <div className="mx-auto flex h-36 w-full max-w-[280px] flex-col justify-center gap-3 rounded-2xl border border-olive/10 bg-card/50 p-4">
       <div className="flex flex-wrap gap-1.5">
         {filters.map((f) => (
           <span
@@ -177,8 +177,8 @@ function ExploreVisual() {
               f.active
                 ? f.accent
                   ? "border-primary/50 bg-primary/15 text-primary"
-                  : "border-white/20 bg-white/10 text-foreground"
-                : "border-white/8 bg-transparent text-muted-foreground"
+                  : "border-olive/20 bg-olive/10 text-foreground"
+                : "border-olive/10 bg-transparent text-muted-foreground"
             )}
           >
             {f.label}
@@ -192,7 +192,7 @@ function ExploreVisual() {
         ].map((place) => (
           <div
             key={place.name}
-            className="flex items-center justify-between rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2"
+            className="flex items-center justify-between rounded-lg border border-olive/10 bg-olive/5 px-2.5 py-2"
           >
             <div className="flex items-center gap-2">
               <MapPin className="h-3 w-3 text-primary shrink-0" />
@@ -213,8 +213,8 @@ function ExploreVisual() {
 
 function SaveVisual() {
   return (
-    <div className="mx-auto flex h-36 w-full max-w-[280px] flex-col justify-center rounded-2xl border border-white/10 bg-card/50 p-4">
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="mx-auto flex h-36 w-full max-w-[280px] flex-col justify-center rounded-2xl border border-olive/10 bg-card/50 p-4">
+      <div className="rounded-xl border border-olive/10 bg-olive/5 p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-semibold">Bröd · Panadería</p>
@@ -310,7 +310,7 @@ export function OnboardingModal() {
         <DialogTitle className="sr-only">Bienvenido a Celimap</DialogTitle>
 
         {/* Header */}
-        <div className="relative overflow-hidden border-b border-white/8 px-5 pb-4 pt-5 pr-12">
+        <div className="relative overflow-hidden border-b border-olive/10 px-5 pb-4 pt-5 pr-12">
           <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
           <div className="relative mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
@@ -347,7 +347,7 @@ export function OnboardingModal() {
             {current.description}
           </p>
 
-          <ul className="space-y-2 rounded-xl border border-white/8 bg-white/[0.02] p-3">
+          <ul className="space-y-2 rounded-xl border border-olive/10 bg-white/[0.02] p-3">
             {current.tips.map((tip) => (
               <li key={tip} className="flex items-start gap-2 text-xs text-muted-foreground">
                 <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
@@ -359,7 +359,7 @@ export function OnboardingModal() {
 
         {/* Footer */}
         {isLast ? (
-          <div className="border-t border-white/8 bg-card/30 p-4">
+          <div className="border-t border-olive/10 bg-card/30 p-4">
             <Button asChild className="min-h-[48px] w-full gap-2 shadow-lg shadow-primary/20">
               <Link href="/mapa" onClick={finish}>
                 <MapPin className="h-4 w-4" />
@@ -368,14 +368,14 @@ export function OnboardingModal() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between border-t border-white/8 bg-card/30 px-5 py-4">
+          <div className="flex items-center justify-between border-t border-olive/10 bg-card/30 px-5 py-4">
             <button
               type="button"
               onClick={goBack}
               disabled={isFirst}
               aria-label="Paso anterior"
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors",
+                "flex h-11 w-11 items-center justify-center rounded-full border border-olive/10 bg-olive/5 transition-colors",
                 isFirst
                   ? "pointer-events-none opacity-0"
                   : "hover:border-primary/30 hover:bg-primary/10"

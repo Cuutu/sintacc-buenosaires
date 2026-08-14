@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -22,9 +22,17 @@ import {
   CELIMAP_NAME,
 } from "@/lib/seo/brand";
 
-const jakarta = Plus_Jakarta_Sans({
+const nunito = Nunito({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-nunito",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  style: ["normal", "italic"],
+  weight: ["400", "500", "600"],
 });
 
 const BASE_URL = getBaseUrl();
@@ -79,7 +87,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: CELIMAP_NAME, statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: CELIMAP_NAME, statusBarStyle: "default" },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -91,7 +99,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b1220",
+  themeColor: "#F7F3EB",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -103,8 +111,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={jakarta.variable}>
-      <body className="font-sans antialiased">
+    <html lang="es" className={`${nunito.variable} ${fraunces.variable}`}>
+      <body className="font-sans antialiased bg-cream text-olive">
         <JsonLdScript />
         <Providers>
           <ClientErrorListeners />

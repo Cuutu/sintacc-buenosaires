@@ -77,7 +77,7 @@ export default function ListaDetailPage() {
   if (loading || !list) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="py-12 text-center text-white/60">
+        <div className="py-12 text-center text-muted-foreground">
           {loading ? "Cargando..." : "Lista no encontrada"}
         </div>
       </div>
@@ -98,27 +98,27 @@ export default function ListaDetailPage() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
-      <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-white/55">
-        <Link href="/" className="hover:text-white">
+      <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+        <Link href="/" className="hover:text-olive">
           Inicio
         </Link>
         <span aria-hidden>/</span>
-        <Link href="/listas" className="hover:text-white">
+        <Link href="/listas" className="hover:text-olive">
           Listas
         </Link>
         <span aria-hidden>/</span>
-        <span className="text-white/80">{list.name}</span>
+        <span className="text-olive/80">{list.name}</span>
       </nav>
 
       <Link
         href={session ? "/favoritos" : "/listas"}
-        className="mb-5 inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-olive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         {session ? "Volver a guardados" : "Volver a listas"}
       </Link>
 
-      <header className="mb-6 rounded-2xl border border-white/10 bg-[#0c100e]/80 p-4 md:p-5">
+      <header className="mb-6 rounded-2xl border border-olive/10 bg-card/80 p-4 md:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -127,26 +127,26 @@ export default function ListaDetailPage() {
                   "rounded-md px-2 py-0.5 text-xs font-medium",
                   isPublicList
                     ? "bg-primary/15 text-primary"
-                    : "bg-white/10 text-white/70"
+                    : "bg-olive/10 text-muted-foreground"
                 )}
               >
                 {isPublicList ? "Lista pública" : "Lista privada (accesible con enlace)"}
               </span>
               {list.destination ? (
-                <span className="text-xs text-white/50">{list.destination}</span>
+                <span className="text-xs text-muted-foreground">{list.destination}</span>
               ) : null}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white md:text-[1.75rem]">
+            <h1 className="text-2xl font-bold tracking-tight text-olive md:text-[1.75rem]">
               {list.name}
             </h1>
 
             {list.description ? (
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {list.description}
               </p>
             ) : null}
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/70">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 {list.createdBy?.image ? (
                   <Image
@@ -157,17 +157,17 @@ export default function ListaDetailPage() {
                     className="h-[22px] w-[22px] shrink-0 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="h-4 w-4 shrink-0 text-white/50" aria-hidden />
+                  <User className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 )}
-                <span className="font-medium text-white/80">
+                <span className="font-medium text-olive/80">
                   {list.createdBy?.name ?? "Usuario"}
                 </span>
               </span>
-              <span className="text-white/25" aria-hidden>
+              <span className="text-olive/25" aria-hidden>
                 ·
               </span>
               <span>{placesLabel}</span>
-              <span className="text-white/25" aria-hidden>
+              <span className="text-olive/25" aria-hidden>
                 ·
               </span>
               <span className="inline-flex items-center gap-1">
@@ -176,10 +176,10 @@ export default function ListaDetailPage() {
               </span>
               {updatedLabel ? (
                 <>
-                  <span className="text-white/25" aria-hidden>
+                  <span className="text-olive/25" aria-hidden>
                     ·
                   </span>
-                  <span className="text-white/50">Actualizada {updatedLabel}</span>
+                  <span className="text-muted-foreground">Actualizada {updatedLabel}</span>
                 </>
               ) : null}
             </div>
@@ -212,7 +212,7 @@ export default function ListaDetailPage() {
       </header>
 
       {places.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0c100e] px-4 py-10 text-center text-sm text-white/55">
+        <div className="rounded-2xl border border-olive/10 bg-card px-4 py-10 text-center text-sm text-muted-foreground">
           Esta lista no tiene lugares todavía.
         </div>
       ) : (

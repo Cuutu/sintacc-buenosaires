@@ -64,9 +64,8 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
     <Link
       href={getPlacePath(place)}
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md",
-        "transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]",
-        "hover:shadow-lg hover:shadow-black/20"
+        "group flex h-full flex-col overflow-hidden rounded-[24px] border border-olive/10 bg-card shadow-soft",
+        "transition-all duration-300 hover:-translate-y-0.5 hover:border-olive/25 hover:shadow-card",
       )}
     >
       {photo ? (
@@ -95,7 +94,7 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
         </div>
       ) : (
         <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
-          <div className="h-full w-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent" />
+          <div className="h-full w-full bg-gradient-to-br from-olive/15 via-cream to-terracotta/10" />
           <MediaOverlays
             place={place}
             safetyLabel={safetyBadge.label}
@@ -146,7 +145,7 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
             )
           )}
           {extraCount > 0 && (
-            <span className="inline-flex rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/65">
+            <span className="inline-flex rounded-full border border-olive/15 bg-olive/5 px-2 py-0.5 text-[11px] font-medium text-olive/70">
               +{extraCount} más
             </span>
           )}
@@ -176,7 +175,7 @@ function MediaOverlays({
         </div>
       )}
       <div className="absolute left-3 top-3 z-10">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-olive/80 px-2.5 py-1 text-[11px] font-medium text-cream backdrop-blur-sm">
           <span aria-hidden>{safetyDot}</span>
           {safetyLabel}
         </span>

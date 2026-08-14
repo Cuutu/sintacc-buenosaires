@@ -162,15 +162,15 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
       }`}
     >
       <div
-        className="pointer-events-none absolute -inset-px rounded-2xl bg-primary/15 opacity-70 blur-2xl"
+        className="pointer-events-none absolute -inset-px rounded-[24px] bg-olive/10 opacity-70 blur-2xl"
         aria-hidden
       />
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c1210]/90 shadow-[0_16px_44px_-26px_rgba(0,0,0,0.85)] backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-[24px] border border-olive/10 bg-card shadow-soft">
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74_222_128/0.12),transparent_52%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(45,74,52,0.08),transparent_52%)]"
           aria-hidden
         />
-        <ul className="relative grid divide-y divide-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+        <ul className="relative grid divide-y divide-olive/10 md:grid-cols-3 md:divide-x md:divide-y-0">
           {METRICS.map(({ key, Icon, description, note }) => {
             const raw = stats[key]
             const floored =
@@ -198,7 +198,7 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
                 <p className="mt-2 min-h-[2.4rem]" aria-label={ariaValue}>
                   {isLoading ? (
                     <span
-                      className="inline-block h-9 w-20 animate-pulse rounded-md bg-white/10"
+                      className="inline-block h-9 w-20 animate-pulse rounded-md bg-olive/10"
                       aria-hidden
                     />
                   ) : floored ? (
@@ -207,15 +207,15 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
                       showPlus={floored.showPlus}
                     />
                   ) : (
-                    <span className="text-3xl font-semibold text-white/35">—</span>
+                    <span className="text-3xl font-semibold text-olive/30">—</span>
                   )}
                 </p>
 
-                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-snug text-white/72 sm:text-sm">
+                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-snug text-muted-foreground sm:text-sm">
                   {description}
                 </p>
                 {note ? (
-                  <p className="mt-1 max-w-[15.5rem] text-[11px] leading-snug text-white/45 sm:text-xs">
+                  <p className="mt-1 max-w-[15.5rem] text-[11px] leading-snug text-muted-foreground/80 sm:text-xs">
                     {note}
                   </p>
                 ) : (

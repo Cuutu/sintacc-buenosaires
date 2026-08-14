@@ -117,7 +117,7 @@ export function GooglePlaceCover({
 
   return (
     <div
-      className={cn("relative w-full bg-[#0a0f0c]", className)}
+      className={cn("relative w-full bg-card", className)}
       // Solo frena el Link padre en controles Google (Maps / atribución).
       // El resto de la card sigue navegando al detalle (= Ver lugar).
       onClick={(e) => {

@@ -153,7 +153,7 @@ export default function SugerirEmprendimientoContent() {
         Ayudanos a sumar marcas y proyectos que le hacen la vida más fácil a la comunidad celíaca.
       </p>
 
-      <div className="flex gap-2 p-4 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-muted-foreground mb-8">
+      <div className="flex gap-2 p-4 rounded-xl border border-olive/10 bg-white/[0.02] text-sm text-muted-foreground mb-8">
         <Info className="h-5 w-5 shrink-0 text-primary/80" />
         <p>
           <strong className="text-foreground">¿Tiene local abierto al público?</strong> Sugerilo en{" "}
@@ -230,7 +230,7 @@ export default function SugerirEmprendimientoContent() {
                   "px-3 py-1.5 rounded-full text-sm border transition-colors",
                   category === cat.id
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 hover:border-primary/30"
+                    : "border-olive/10 hover:border-primary/30"
                 )}
               >
                 {cat.label}
@@ -251,7 +251,7 @@ export default function SugerirEmprendimientoContent() {
                   "px-3 py-1.5 rounded-full text-sm border transition-colors",
                   modalities.includes(m.id)
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 hover:border-primary/30"
+                    : "border-olive/10 hover:border-primary/30"
                 )}
               >
                 {m.label}
@@ -272,7 +272,7 @@ export default function SugerirEmprendimientoContent() {
                   "px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1",
                   safetyLevel === s.id
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 hover:border-primary/30"
+                    : "border-olive/10 hover:border-primary/30"
                 )}
               >
                 <span aria-hidden>{s.dot}</span>

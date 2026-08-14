@@ -253,8 +253,8 @@ export default function LugarPage() {
       )
     }
     return (
-      <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+      <div className="rounded-xl border border-olive/10 bg-olive/5 p-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-olive/5 flex items-center justify-center shrink-0">
           <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
@@ -439,9 +439,9 @@ export default function LugarPage() {
                   <Link
                     key={p._id.toString()}
                     href={getPlacePath(p)}
-                    className="flex items-center gap-2.5 p-2 rounded-lg border border-border/50 hover:border-border bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+                    className="flex items-center gap-2.5 p-2 rounded-lg border border-border/50 hover:border-border bg-white/[0.02] hover:bg-olive/5 transition-all"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-lg bg-olive/5 flex items-center justify-center text-base shrink-0 overflow-hidden">
                       {p.photos?.[0]
                         ? <img src={p.photos[0]} alt={p.name} className="w-full h-full object-cover rounded-lg" />
                         : nt?.emoji ?? "📍"
@@ -505,7 +505,7 @@ export default function LugarPage() {
             {/* Tipo + barrio */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
               {typeConfig && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-olive/5 border border-olive/10 px-2.5 py-1 rounded-full text-muted-foreground">
                   {typeConfig.emoji} {typeConfig.label}
                 </span>
               )}
@@ -657,7 +657,7 @@ export default function LugarPage() {
                 <h2 className="text-base font-bold flex items-center gap-2">
                   Reseñas
                   {totalReviews > 0 && (
-                    <span className="text-[10px] font-mono text-muted-foreground bg-white/5 border border-white/8 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono text-muted-foreground bg-olive/5 border border-olive/10 px-2 py-0.5 rounded">
                       {totalReviews}
                     </span>
                   )}
@@ -675,9 +675,9 @@ export default function LugarPage() {
 
               {/* Rating summary con barras — solo si hay reseñas y no está el form */}
               {totalReviews > 0 && !showReviewForm && (
-                <div className="grid grid-cols-[auto_1fr_auto] gap-0 bg-white/[0.03] border border-white/8 rounded-xl mb-4 overflow-hidden">
+                <div className="grid grid-cols-[auto_1fr_auto] gap-0 bg-olive/5 border border-olive/10 rounded-xl mb-4 overflow-hidden">
                   {/* Número grande */}
-                  <div className="text-center px-5 py-4 border-r border-white/8">
+                  <div className="text-center px-5 py-4 border-r border-olive/10">
                     <p className="text-3xl font-extrabold leading-none">{avgRating.toFixed(1)}</p>
                     <div className="flex justify-center gap-0.5 my-1.5">
                       {[1,2,3,4,5].map((i) => (
@@ -694,7 +694,7 @@ export default function LugarPage() {
                       return (
                         <div key={star} className="flex items-center gap-2">
                           <span className="text-[9px] text-muted-foreground/60 w-2 text-right shrink-0 font-mono">{star}</span>
-                          <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-olive/5 rounded-full overflow-hidden">
                             <div className="h-full bg-amber-400/70 rounded-full" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
@@ -702,7 +702,7 @@ export default function LugarPage() {
                     })}
                   </div>
                   {/* Total */}
-                  <div className="text-center px-5 py-4 border-l border-white/8">
+                  <div className="text-center px-5 py-4 border-l border-olive/10">
                     <p className="text-xl font-bold">{totalReviews}</p>
                     <p className="text-[9px] text-muted-foreground/60 font-mono uppercase mt-1">reseñas</p>
                   </div>
@@ -719,7 +719,7 @@ export default function LugarPage() {
                       className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
                         reviewSort === s
                           ? "border-primary/30 bg-primary/8 text-primary"
-                          : "border-white/8 bg-white/[0.03] text-muted-foreground hover:border-white/15"
+                          : "border-olive/10 bg-olive/5 text-muted-foreground hover:border-olive/15"
                       }`}
                     >
                       {s === "recent" ? "Más recientes" : "Mejor valorados"}
@@ -758,7 +758,7 @@ export default function LugarPage() {
                   className={`rounded-xl border p-4 mb-3 ${
                     review.pinned
                       ? "border-primary/20 bg-primary/[0.025]"
-                      : "border-white/7 bg-white/[0.015]"
+                      : "border-olive/10 bg-olive/5"
                   }`}
                 >
                   <div className="flex items-start gap-3 mb-3">
@@ -766,7 +766,7 @@ export default function LugarPage() {
                       <img src={review.userId.image} alt={review.userId?.name || "U"}
                         className="w-8 h-8 rounded-full object-cover shrink-0" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/8 flex items-center justify-center text-xs font-bold shrink-0 text-muted-foreground">
+                      <div className="w-8 h-8 rounded-full bg-olive/8 flex items-center justify-center text-xs font-bold shrink-0 text-muted-foreground">
                         {(review.userId?.name || "U")[0]}
                       </div>
                     )}
@@ -805,7 +805,7 @@ export default function LugarPage() {
                       </span>
                     )}
                     {review.separateKitchen === "yes" && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-white/4 text-muted-foreground border border-white/8">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-white/4 text-muted-foreground border border-olive/10">
                         Cocina separada
                       </span>
                     )}
@@ -858,7 +858,7 @@ export default function LugarPage() {
 
           {/* ══ SIDEBAR DESKTOP (sticky) ══════════════════════════════ */}
           <aside className="hidden lg:block">
-            <div className="sticky top-20 rounded-2xl border border-white/8 bg-white/[0.025] backdrop-blur p-5">
+            <div className="sticky top-20 rounded-2xl border border-olive/10 bg-olive/5 backdrop-blur p-5">
               <SidebarContent />
             </div>
           </aside>
@@ -867,7 +867,7 @@ export default function LugarPage() {
         {/* /grid */}
 
         {/* Sidebar mobile — debajo del contenido, sin sticky */}
-        <div className="lg:hidden mt-8 rounded-2xl border border-white/8 bg-white/[0.025] p-5">
+        <div className="lg:hidden mt-8 rounded-2xl border border-olive/10 bg-olive/5 p-5">
           <SidebarContent hideContamination />
         </div>
 

@@ -55,7 +55,7 @@ export function PrivateListMap({
   if (withCoords.length === 0) {
     return (
       <div
-        className={`flex items-center justify-center rounded-2xl border border-white/10 bg-[#0c100e] text-sm text-white/55 ${className || ""}`}
+        className={`flex items-center justify-center rounded-2xl border border-olive/10 bg-card text-sm text-muted-foreground ${className || ""}`}
       >
         Sin coordenadas para mostrar el mapa.
       </div>
@@ -64,7 +64,7 @@ export function PrivateListMap({
 
   return (
     <div
-      className={`relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-white/10 ${className || ""}`}
+      className={`relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-olive/10 ${className || ""}`}
     >
       <MapboxMap
         ref={mapRef}

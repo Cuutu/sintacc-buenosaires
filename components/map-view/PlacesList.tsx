@@ -17,14 +17,14 @@ interface PlacesListProps {
 
 function PlaceCardSkeleton() {
   return (
-    <div className="flex min-h-[124px] gap-3 rounded-2xl border border-white/8 bg-[#0c100e] p-3">
-      <div className="h-[100px] w-[100px] shrink-0 animate-pulse rounded-xl bg-white/5" />
+    <div className="flex min-h-[124px] gap-3 rounded-2xl border border-olive/10 bg-card p-3">
+      <div className="h-[100px] w-[100px] shrink-0 animate-pulse rounded-xl bg-olive/5" />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-white/8" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-white/5" />
+        <div className="h-4 w-3/4 animate-pulse rounded bg-olive/8" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-olive/5" />
         <div className="mt-1 flex gap-2">
-          <div className="h-5 w-24 animate-pulse rounded-full bg-white/5" />
-          <div className="h-5 w-14 animate-pulse rounded-full bg-white/5" />
+          <div className="h-5 w-24 animate-pulse rounded-full bg-olive/5" />
+          <div className="h-5 w-14 animate-pulse rounded-full bg-olive/5" />
         </div>
       </div>
     </div>
@@ -69,8 +69,8 @@ export function PlacesList({
   if (loadError) {
     return (
       <div className="px-5 py-12 text-center" data-places-error="1">
-        <p className="text-sm font-medium text-white/80">No pudimos cargar los lugares</p>
-        <p className="mt-2 text-xs text-white/55">{loadError}</p>
+        <p className="text-sm font-medium text-olive/80">No pudimos cargar los lugares</p>
+        <p className="mt-2 text-xs text-muted-foreground">{loadError}</p>
         {onRetryLoad && (
           <button
             type="button"
@@ -87,7 +87,7 @@ export function PlacesList({
   if (places.length === 0) {
     return (
       <div className="px-5 py-12 text-center">
-        <p className="text-sm font-medium text-white/80">
+        <p className="text-sm font-medium text-olive/80">
           No encontramos lugares con estos filtros en esta zona.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -95,7 +95,7 @@ export function PlacesList({
             <button
               type="button"
               onClick={onClearFilters}
-              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              className="rounded-full border border-olive/15 bg-olive/5 px-4 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-olive/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             >
               Limpiar filtros
             </button>

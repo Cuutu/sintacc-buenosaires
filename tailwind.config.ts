@@ -11,7 +11,9 @@ const config = {
   prefix: "",
   theme: {
     fontFamily: {
-      sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+      sans: ["var(--font-nunito)", "system-ui", "sans-serif"],
+      serif: ["var(--font-fraunces)", "Georgia", "serif"],
+      display: ["var(--font-nunito)", "system-ui", "sans-serif"],
     },
     container: {
       center: true,
@@ -27,6 +29,20 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        olive: {
+          DEFAULT: "hsl(var(--olive))",
+          foreground: "hsl(var(--olive-foreground))",
+        },
+        cream: {
+          DEFAULT: "hsl(var(--cream))",
+          card: "var(--color-cream-card)",
+        },
+        terracotta: {
+          DEFAULT: "hsl(var(--terracotta))",
+          foreground: "hsl(var(--terracotta-foreground))",
+          strong: "var(--color-terracotta-strong)",
+          hover: "var(--color-terracotta-hover)",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -57,9 +73,18 @@ const config = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "var(--radius-lg)",
+        md: "calc(var(--radius-lg) - 2px)",
+        sm: "calc(var(--radius-lg) - 4px)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-xl)",
+      },
+      boxShadow: {
+        soft: "var(--shadow-soft)",
+        card: "0 8px 28px -18px rgba(45, 74, 52, 0.28)",
+      },
+      spacing: {
+        18: "4.5rem",
       },
       keyframes: {
         "accordion-down": {

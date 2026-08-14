@@ -50,7 +50,7 @@ function PlaceCoverFallback({ name, type }: { name: string; type: string }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#10d98a,transparent_55%)] opacity-[0.12]" />
       <div className="relative flex flex-col items-center gap-1.5 text-primary/70">
         <UtensilsCrossed className="h-7 w-7" strokeWidth={1.5} />
-        <span className="text-2xl font-bold tracking-tight text-white/55">{initial}</span>
+        <span className="text-2xl font-bold tracking-tight text-olive/40">{initial}</span>
       </div>
       <span className="sr-only">{TYPE_LABELS[type] ?? "Lugar"}</span>
     </div>
@@ -80,7 +80,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
   return (
     <article
       className={cn(
-        "group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c100e]",
+        "group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-olive/10 bg-card",
         "transition-[transform,box-shadow,border-color] duration-200",
         "hover:border-primary/40 hover:shadow-[0_12px_32px_rgba(0,0,0,0.35)]",
         "motion-safe:hover:-translate-y-0.5",
@@ -91,7 +91,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
         href={detailHref}
         className="flex min-h-0 flex-1 flex-col focus-visible:outline-none"
       >
-        <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#0a0f0c]">
+        <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-card">
           {photo ? (
             <Image
               src={photo}
@@ -103,9 +103,9 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
           ) : (
             <PlaceCoverFallback name={place.name} type={primaryType} />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c100e]/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
           {typeLabel ? (
-            <span className="absolute bottom-2 left-2 inline-flex max-w-[calc(100%-1rem)] truncate rounded-md border border-white/15 bg-[#0a0e12]/88 px-2 py-0.5 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+            <span className="absolute bottom-2 left-2 inline-flex max-w-[calc(100%-1rem)] truncate rounded-md border border-olive/15 bg-[#0a0e12]/88 px-2 py-0.5 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
               {typeLabel}
             </span>
           ) : null}
@@ -113,12 +113,12 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
 
         <div className="flex flex-1 flex-col gap-2.5 p-3.5 pt-3">
           <div className="min-h-[2.75rem]">
-            <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-white transition-colors group-hover:text-primary">
+            <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-olive transition-colors group-hover:text-primary">
               {place.name}
             </h3>
           </div>
 
-          <p className="flex items-center gap-1.5 text-sm text-white/70">
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
             <span className="truncate">
               {place.neighborhood || place.address || "Ubicación no disponible"}
@@ -129,26 +129,26 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
             {hasCelimapRating ? (
               <>
                 <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-olive">
                   {place.stats?.avgRating?.toFixed(1)}
                 </span>
-                <span className="text-white/65">({place.stats?.totalReviews})</span>
+                <span className="text-muted-foreground">({place.stats?.totalReviews})</span>
               </>
             ) : googleRating != null && Number.isFinite(googleRating) ? (
               <>
                 <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
-                <span className="font-semibold text-white">{googleRating.toFixed(1)}</span>
+                <span className="font-semibold text-olive">{googleRating.toFixed(1)}</span>
                 {googleCount != null && googleCount > 0 ? (
-                  <span className="text-white/65">
+                  <span className="text-muted-foreground">
                     ({googleCount.toLocaleString("es-AR")})
                   </span>
                 ) : null}
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-white/55">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Google
                 </span>
               </>
             ) : (
-              <span className="text-sm text-white/50">Sin reseñas aún</span>
+              <span className="text-sm text-muted-foreground">Sin reseñas aún</span>
             )}
           </div>
 
@@ -168,7 +168,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
               return (
                 <span
                   key={tag}
-                  className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/70"
+                  className="inline-flex items-center rounded-full border border-olive/15 bg-olive/5 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
                 >
                   {tag === "certificado_sin_tacc" ? "Sin TACC" : config.label}
                 </span>
@@ -184,13 +184,13 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
         </div>
       </Link>
 
-      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-white/8 p-3.5 pt-3">
+      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-olive/10 p-3.5 pt-3">
         <Link
           href={detailHref}
           className={cn(
             "inline-flex h-10 items-center justify-center rounded-xl bg-primary px-2 text-xs font-bold text-primary-foreground",
             "transition hover:bg-primary/90",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c100e]"
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           )}
         >
           Ver detalle
@@ -198,9 +198,9 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
         <Link
           href={mapHref}
           className={cn(
-            "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-2 text-xs font-semibold text-white/85",
-            "transition hover:border-white/25 hover:bg-white/[0.07] hover:text-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c100e]"
+            "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-olive/15 bg-olive/5 px-2 text-xs font-semibold text-olive/80",
+            "transition hover:border-olive/25 hover:bg-olive/5 hover:text-olive",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           )}
         >
           <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />

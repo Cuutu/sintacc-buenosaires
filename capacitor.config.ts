@@ -72,24 +72,24 @@ const config: CapacitorConfig = {
   },
   android: {
     appendUserAgent: server.isPreview ? " CelimapNative/1 CelimapPreview/1" : " CelimapNative/1",
-    backgroundColor: "#0b1220",
+    backgroundColor: "#F7F3EB",
     allowMixedContent: false,
   },
   ios: {
     appendUserAgent: server.isPreview ? " CelimapNative/1 CelimapPreview/1" : " CelimapNative/1",
-    backgroundColor: "#0b1220",
+    backgroundColor: "#F7F3EB",
   },
   plugins: {
     SplashScreen: {
       // Splash nativo lo controla MainActivity hasta pageReady
       launchShowDuration: 0,
       launchAutoHide: true,
-      backgroundColor: "#0b1220",
+      backgroundColor: "#F7F3EB",
       showSpinner: false,
     },
     StatusBar: {
-      style: "DARK",
-      backgroundColor: "#0b1220",
+      style: "LIGHT",
+      backgroundColor: "#F7F3EB",
       // Política B: WebView edge-to-edge; insets vía CSS env(safe-area-*)
       overlaysWebView: true,
     },

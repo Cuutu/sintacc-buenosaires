@@ -4,27 +4,52 @@
 
 @layer base {
   :root {
-    /* Celimap - Dark theme (default) - base #0b0b0c */
-    --background: 240 4% 4%;
-    --foreground: 0 0% 95%;
-    --card: 240 4% 7%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 10% 7%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 8% 12%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 240 8% 12%;
-    --muted-foreground: 240 5% 55%;
-    --accent: 240 8% 15%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 8% 18%;
-    --input: 240 8% 18%;
-    --ring: 160 84% 39%;
-    --radius: 0.75rem;
+    /* —— Primitive brand tokens —— */
+    --color-olive: #2d4a34;
+    --color-cream: #f7f3eb;
+    --color-terracotta: #d4633a;
+    /* Button fill: darker terracotta so cream text meets WCAG AA 4.5:1 */
+    --color-terracotta-strong: #b84420;
+    --color-terracotta-hover: #9a3a1b;
+    --color-cream-card: #fdfbf7;
+    --color-olive-muted: #4d6554;
+
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-soft: 0 8px 28px -18px rgba(45, 74, 52, 0.28);
+
+    /* —— Semantic (HSL for shadcn / Tailwind) —— */
+    /* cream #F7F3EB */
+    --background: 40 43% 94.5%;
+    /* olive #2D4A34 */
+    --foreground: 135 24% 23%;
+    /* warm lifted cream */
+    --card: 40 50% 98%;
+    --card-foreground: 135 24% 23%;
+    --popover: 40 50% 98%;
+    --popover-foreground: 135 24% 23%;
+    /* terracotta-strong #B84420 — CTA / primary actions */
+    --primary: 14 70% 42%;
+    --primary-foreground: 40 43% 94.5%;
+    --secondary: 135 18% 92%;
+    --secondary-foreground: 135 24% 23%;
+    --muted: 40 24% 90%;
+    --muted-foreground: 135 12% 38%;
+    --accent: 16 55% 94%;
+    --accent-foreground: 14 70% 36%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 40 43% 96%;
+    --border: 40 18% 82%;
+    --input: 135 24% 23% / 0.2;
+    --ring: 16 64% 53%;
+    --radius: 1rem;
+
+    /* Brand aliases used by utilities */
+    --olive: 135 24% 23%;
+    --olive-foreground: 40 43% 94.5%;
+    --cream: 40 43% 94.5%;
+    --terracotta: 16 64% 53%;
+    --terracotta-foreground: 40 43% 94.5%;
 
     /* Lote 2 — safe areas (política B: edge-to-edge + CSS). env() → 0px fuera de inset. */
     --safe-area-top: env(safe-area-inset-top, 0px);
@@ -44,26 +69,26 @@
     );
   }
 
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
-    --primary: 160 84% 35%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 4%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 5% 45%;
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 10% 4%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 160 84% 35%;
+  .dark {
+    --background: 135 24% 12%;
+    --foreground: 40 43% 94.5%;
+    --card: 135 20% 16%;
+    --card-foreground: 40 43% 94.5%;
+    --popover: 135 20% 16%;
+    --popover-foreground: 40 43% 94.5%;
+    --primary: 16 64% 53%;
+    --primary-foreground: 40 43% 94.5%;
+    --secondary: 135 16% 20%;
+    --secondary-foreground: 40 43% 94.5%;
+    --muted: 135 14% 20%;
+    --muted-foreground: 40 18% 72%;
+    --accent: 16 30% 22%;
+    --accent-foreground: 40 43% 94.5%;
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 40 43% 96%;
+    --border: 135 14% 24%;
+    --input: 40 43% 94.5% / 0.2;
+    --ring: 16 64% 53%;
   }
 }
 
@@ -91,11 +116,28 @@
     position: relative;
     min-height: 100vh;
     color: hsl(var(--foreground));
-    background:
-      radial-gradient(900px circle at 12% 8%, rgba(16, 185, 129, 0.08), transparent 40%),
-      radial-gradient(700px circle at 88% 85%, rgba(16, 185, 129, 0.06), transparent 45%),
-      #0b0b0c;
+    background-color: var(--color-cream);
+    background-image:
+      radial-gradient(900px circle at 12% 0%, rgba(212, 99, 58, 0.06), transparent 42%),
+      radial-gradient(700px circle at 92% 100%, rgba(45, 74, 52, 0.07), transparent 46%);
   }
+}
+
+/* Textura orgánica muy sutil — secciones oliva */
+.bg-olive-organic {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-olive);
+  color: var(--color-cream);
+}
+.bg-olive-organic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/brand/texture-wheat.svg");
+  background-size: 280px 280px;
+  opacity: 0.07;
 }
 
 /* Textura solo en hero (home); evita grain global que Chrome mezcla mal con blur */
@@ -105,7 +147,7 @@
   pointer-events: none;
   background-image: url("/noise.png");
   background-repeat: repeat;
-  opacity: 0.022;
+  opacity: 0.035;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -125,16 +167,16 @@
   }
 }
 
-/* Map sidebar glassmorphism - dark */
+/* Map sidebar — cream panel */
 .map-sidebar {
-  background: rgba(20, 20, 25, 0.9);
+  background: color-mix(in srgb, var(--color-cream-card) 94%, white);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 4px 0 24px -4px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 0 24px -8px rgba(45, 74, 52, 0.12);
   border-right: 1px solid hsl(var(--border));
 }
 
-/* Mapbox popup - dark theme; z-index alto para no tapar con marcadores */
+/* Mapbox popup */
 .celimap-popup {
   z-index: 40 !important;
 }
@@ -146,18 +188,18 @@
 .celimap-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
-  border-top-color: #11161d !important;
+  border-top-color: var(--color-cream-card) !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
 .celimap-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
-  border-bottom-color: #11161d !important;
+  border-bottom-color: var(--color-cream-card) !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: #11161d !important;
+  border-right-color: var(--color-cream-card) !important;
 }
 .celimap-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: #11161d !important;
+  border-left-color: var(--color-cream-card) !important;
 }
 
 /* Hide scrollbar for horizontal carousel */
@@ -169,19 +211,37 @@
   display: none;
 }
 
-/* Premium surface utility - cards, modals, etc. */
+/* Premium surface — cream cards */
 .surface-premium {
-  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all;
+  @apply rounded-[24px] border border-olive/10 bg-card transition-all;
+  box-shadow: var(--shadow-soft);
 }
 .surface-premium:hover {
-  @apply bg-white/[0.07] border-white/20;
+  @apply border-olive/20;
+  box-shadow: 0 12px 32px -16px rgba(45, 74, 52, 0.22);
 }
 
 /* Place card hover lift */
 .place-card-hover {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .place-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px -12px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 16px 40px -18px rgba(45, 74, 52, 0.22);
+}
+
+/* Wordmark: grano de trigo reemplaza el punto de la i (dotless ı + grain) */
+.brand-i-grain {
+  position: relative;
+  display: inline-block;
+}
+.brand-i-grain .brand-grain {
+  position: absolute;
+  left: 50%;
+  top: -0.02em;
+  width: 0.26em;
+  height: 0.36em;
+  transform: translateX(-50%) rotate(-18deg);
+  color: var(--color-terracotta);
+  pointer-events: none;
 }

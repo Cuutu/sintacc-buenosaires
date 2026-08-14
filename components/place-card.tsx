@@ -51,7 +51,7 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
   }
 
   const cardContent = (
-      <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-border/50 hover:border-primary/50 rounded-xl group bg-card/50">
+      <Card className="place-card-hover overflow-hidden cursor-pointer h-full border border-olive/10 hover:border-olive/25 rounded-[24px] group bg-card shadow-soft">
         {place.photos && place.photos.length > 0 ? (
           <div className="relative h-40 w-full overflow-hidden">
             <Image
@@ -108,7 +108,7 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
               )}
               {place.openingHours && (() => {
                 const open = isOpenNow(place.openingHours)
-                if (open === true) return <Badge key="open" className="text-xs bg-primary/20 text-primary">Abierto</Badge>
+                if (open === true) return <Badge key="open" className="text-xs">Abierto</Badge>
                 if (open === false) return <Badge key="closed" variant="secondary" className="text-xs">Cerrado</Badge>
                 return null
               })()}

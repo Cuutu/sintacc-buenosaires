@@ -1,7 +1,6 @@
 "use client"
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import {
@@ -14,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { AppleSignInButton } from "@/components/auth/AppleSignInButton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BrandLogo } from "@/components/brand/BrandLogo"
 
 export default function LoginPage() {
   return (
@@ -120,13 +120,9 @@ function LoginContent() {
       data-testid="login-screen"
       className="mx-auto flex w-full max-w-full flex-col items-center justify-center overflow-x-hidden px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] min-h-[calc(100dvh-8rem)] [@media(max-height:700px)]:min-h-0 [@media(max-height:700px)]:justify-start"
     >
-      <Image
-        src="/celimaplogocompleto.png"
-        alt="Celimap"
-        width={160}
-        height={42}
-        className="mb-6 h-10 w-auto [@media(max-height:700px)]:mb-3"
-      />
+      <div className="mb-6 [@media(max-height:700px)]:mb-3">
+        <BrandLogo size="md" showTagline />
+      </div>
       <Card data-testid="login-card" className="mx-auto w-full max-w-[400px]">
         <CardHeader>
           <CardTitle className="text-center">Iniciar sesión</CardTitle>

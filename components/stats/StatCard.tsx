@@ -33,9 +33,9 @@ export function StatCard({
   return (
     <article
       className={cn(
-        "group relative min-h-[200px] flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-6",
+        "group relative min-h-[200px] flex flex-col rounded-2xl border border-olive/10 bg-card backdrop-blur-md p-6",
         "transition-all duration-300 ease-out",
-        "hover:border-white/20 hover:bg-white/[0.06] hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5",
+        "hover:border-olive/20 hover:bg-cream hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5",
         "focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background"
       )}
     >
@@ -58,19 +58,19 @@ export function StatCard({
           >
             <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
           </div>
-          <h3 className="text-sm font-medium text-white/90">{title}</h3>
+          <h3 className="text-sm font-medium text-olive">{title}</h3>
         </header>
 
         {/* Centro: número (protagonista) */}
         <div className="flex-1 flex flex-col justify-center py-2">
           {isLoading ? (
-            <div className="h-10 w-24 animate-pulse rounded bg-white/10" aria-hidden />
+            <div className="h-10 w-24 animate-pulse rounded bg-olive/10" aria-hidden />
           ) : showPlaceholder ? (
             <div className="space-y-1">
-              <span className="text-3xl md:text-4xl font-semibold tracking-tight tabular-nums text-white/40">
+              <span className="text-3xl md:text-4xl font-semibold tracking-tight tabular-nums text-muted-foreground">
                 —
               </span>
-              <p className="text-xs text-white/50">Inicializando datos</p>
+              <p className="text-xs text-muted-foreground">Inicializando datos</p>
             </div>
           ) : (
             <p
@@ -86,13 +86,13 @@ export function StatCard({
 
         {/* Footer: subtexto + chips */}
         <footer className="mt-auto pt-4 space-y-2">
-          <p className="text-xs text-white/60 truncate">{subtext}</p>
+          <p className="text-xs text-muted-foreground truncate">{subtext}</p>
           {chips.length > 0 && !isEmpty && (
             <div className="inline-flex flex-wrap gap-2">
               {chips.map((chip) => (
                 <span
                   key={chip}
-                  className="inline-flex px-2 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-medium"
+                  className="inline-flex px-2 py-1 rounded-full border border-olive/10 bg-olive/5 text-muted-foreground text-[11px] font-medium"
                 >
                   {chip}
                 </span>

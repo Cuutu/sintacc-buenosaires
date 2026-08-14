@@ -162,7 +162,7 @@ export default function EmprendimientosPageContent() {
                 "max-md:shrink-0 max-md:snap-center",
                 !categoryParam
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted border border-white/10"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted border border-olive/10"
               )}
             >
               Todos
@@ -177,7 +177,7 @@ export default function EmprendimientosPageContent() {
                   "max-md:shrink-0 max-md:snap-center",
                   categoryParam === cat.id
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-white/10"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-olive/10"
                 )}
               >
                 {cat.label}
@@ -191,7 +191,7 @@ export default function EmprendimientosPageContent() {
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-80 rounded-2xl border border-white/10 bg-white/5 animate-pulse"
+                    className="h-80 rounded-2xl border border-olive/10 bg-olive/5 animate-pulse"
                   />
                 ))}
               </div>

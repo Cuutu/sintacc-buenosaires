@@ -71,8 +71,8 @@ export function PrivateGuideAccordionItem({
     <article
       id={`guide-place-${place._id}`}
       className={cn(
-        "overflow-hidden rounded-xl border bg-[#0c100e] transition-colors",
-        active ? "border-primary/45" : "border-white/10"
+        "overflow-hidden rounded-xl border bg-card transition-colors",
+        active ? "border-primary/45" : "border-olive/10"
       )}
     >
       <h3 className="m-0">
@@ -92,16 +92,16 @@ export function PrivateGuideAccordionItem({
               "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
               active
                 ? "bg-primary text-primary-foreground"
-                : "bg-white/10 text-white/85"
+                : "bg-olive/10 text-olive/80"
             )}
           >
             {order}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-bold leading-snug text-white">
+            <span className="block truncate text-[15px] font-bold leading-snug text-olive">
               {place.name}
             </span>
-            <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-white/55">
+            <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
               <span>{typeLabel}</span>
               <span aria-hidden>·</span>
               <span className="truncate">
@@ -121,7 +121,7 @@ export function PrivateGuideAccordionItem({
           </span>
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 text-white/45 transition-transform duration-200 motion-reduce:transition-none",
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
               open && "rotate-180"
             )}
             aria-hidden
@@ -136,7 +136,7 @@ export function PrivateGuideAccordionItem({
         hidden={!open}
         className={cn(!open && "hidden")}
       >
-        <div className="space-y-3 border-t border-white/8 px-3 pb-3 pt-2.5">
+        <div className="space-y-3 border-t border-olive/10 px-3 pb-3 pt-2.5">
           {note ? (
             <blockquote className="rounded-lg border border-primary/20 bg-primary/[0.08] px-3 py-2.5">
               <div className="mb-1 flex items-center gap-2">
@@ -153,31 +153,31 @@ export function PrivateGuideAccordionItem({
                   Consejo de {creatorName}
                 </p>
               </div>
-              <p className="text-sm leading-relaxed text-white/90">{note}</p>
+              <p className="text-sm leading-relaxed text-olive">{note}</p>
             </blockquote>
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-white/70">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {hasCelimapRating ? (
               <span className="inline-flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-olive">
                   {place.stats?.avgRating?.toFixed(1)}
                 </span>
-                <span className="text-white/50">({place.stats?.totalReviews})</span>
+                <span className="text-muted-foreground">({place.stats?.totalReviews})</span>
               </span>
             ) : googleRating != null && Number.isFinite(googleRating) ? (
               <span className="inline-flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-olive">
                   {googleRating.toFixed(1)}
                 </span>
                 {googleCount != null && googleCount > 0 ? (
-                  <span className="text-white/50">
+                  <span className="text-muted-foreground">
                     ({googleCount.toLocaleString("es-AR")})
                   </span>
                 ) : null}
-                <span className="text-[10px] font-semibold uppercase text-white/40">
+                <span className="text-[10px] font-semibold uppercase text-muted-foreground">
                   Google
                 </span>
               </span>
@@ -185,7 +185,7 @@ export function PrivateGuideAccordionItem({
           </div>
 
           {place.address ? (
-            <p className="flex items-start gap-1.5 text-xs text-white/55">
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary/70" />
               <span>{place.address}</span>
             </p>
@@ -203,7 +203,7 @@ export function PrivateGuideAccordionItem({
             </a>
             <Link
               href={getPlacePath(place)}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-2 text-xs font-semibold text-white/85"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-olive/15 bg-olive/5 px-2 text-xs font-semibold text-olive/80"
             >
               Ver información
             </Link>

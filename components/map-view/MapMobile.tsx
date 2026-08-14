@@ -325,21 +325,21 @@ export function MapMobile({
           <div
             role="dialog"
             aria-label="Más filtros"
-            className="relative w-full max-w-md rounded-3xl border border-white/12 bg-[#0c1014] p-5 shadow-2xl"
+            className="relative w-full max-w-md rounded-3xl border border-olive/15 bg-card p-5 shadow-2xl"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-white">Más filtros</h2>
+              <h2 className="text-base font-semibold text-olive">Más filtros</h2>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
-                className="rounded-full p-2 text-white/55 hover:bg-white/10 hover:text-white"
+                className="rounded-full p-2 text-muted-foreground hover:bg-olive/10 hover:text-olive"
                 aria-label="Cerrar filtros"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Tipo de lugar
             </p>
             <div className="mb-4 flex flex-wrap gap-1.5">
@@ -358,7 +358,7 @@ export function MapMobile({
                     "rounded-full border px-3 py-1.5 text-xs font-medium",
                     filters.type === type.value
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-white/10 bg-white/[0.04] text-white/65"
+                      : "border-olive/10 bg-olive/5 text-muted-foreground"
                   )}
                 >
                   {type.label}
@@ -366,7 +366,7 @@ export function MapMobile({
               ))}
             </div>
 
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Características
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -385,7 +385,7 @@ export function MapMobile({
                     "rounded-full border px-3 py-1.5 text-xs font-medium",
                     filters.tags.includes(chip.id)
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-white/10 bg-white/[0.04] text-white/65"
+                      : "border-olive/10 bg-olive/5 text-muted-foreground"
                   )}
                 >
                   {chip.label}
@@ -397,7 +397,7 @@ export function MapMobile({
               <button
                 type="button"
                 onClick={clearExtraFilters}
-                className="mt-4 text-xs font-medium text-white/55"
+                className="mt-4 text-xs font-medium text-muted-foreground"
               >
                 Limpiar filtros extra
               </button>

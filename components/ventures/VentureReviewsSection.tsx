@@ -91,17 +91,17 @@ export function VentureReviewsSection({
 
   if (loading) {
     return (
-      <section className="rounded-xl border border-white/10 bg-white/[0.03] p-6 animate-pulse h-32" />
+      <section className="rounded-xl border border-olive/10 bg-olive/5 p-6 animate-pulse h-32" />
     )
   }
 
   return (
-    <section className="rounded-xl border border-white/10 bg-white/[0.03] p-6 md:p-8 space-y-5">
+    <section className="rounded-xl border border-olive/10 bg-olive/5 p-6 md:p-8 space-y-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-bold flex items-center gap-2">
           Experiencias de la comunidad
           {stats.totalReviews > 0 && (
-            <span className="text-[10px] font-mono text-muted-foreground bg-white/5 border border-white/8 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-mono text-muted-foreground bg-olive/5 border border-olive/10 px-2 py-0.5 rounded">
               {stats.totalReviews}
             </span>
           )}
@@ -123,7 +123,7 @@ export function VentureReviewsSection({
       </p>
 
       {stats.totalReviews > 0 && !showForm && (
-        <div className="flex items-center gap-4 p-4 rounded-xl border border-white/8 bg-white/[0.02]">
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-olive/10 bg-white/[0.02]">
           <div className="text-center">
             <p className="text-3xl font-extrabold leading-none">{avgRating.toFixed(1)}</p>
             <div className="flex justify-center gap-0.5 my-1">
@@ -156,7 +156,7 @@ export function VentureReviewsSection({
               className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
                 sort === s
                   ? "border-primary/30 bg-primary/8 text-primary"
-                  : "border-white/8 text-muted-foreground"
+                  : "border-olive/10 text-muted-foreground"
               }`}
             >
               {s === "recent" ? "Más recientes" : "Mejor valorados"}
@@ -190,7 +190,7 @@ export function VentureReviewsSection({
             className={`rounded-xl border p-4 ${
               review.pinned
                 ? "border-primary/20 bg-primary/[0.03]"
-                : "border-white/7 bg-white/[0.015]"
+                : "border-olive/10 bg-olive/5"
             }`}
           >
             <div className="flex items-start gap-3 mb-2">
@@ -203,7 +203,7 @@ export function VentureReviewsSection({
                   className="rounded-full object-cover shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-white/8 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-olive/8 flex items-center justify-center text-xs font-bold shrink-0">
                   {(review.userId?.name || "U")[0]}
                 </div>
               )}

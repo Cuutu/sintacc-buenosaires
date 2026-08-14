@@ -1065,9 +1065,9 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     if (initError) {
       return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#0a0f0c] px-4 text-center">
-          <p className="text-sm font-semibold text-white">No pudimos cargar el mapa</p>
-          <p className="max-w-xs text-xs text-white/55">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-card px-4 text-center">
+          <p className="text-sm font-semibold text-olive">No pudimos cargar el mapa</p>
+          <p className="max-w-xs text-xs text-muted-foreground">
             {initError === "Mapa no configurado"
               ? "Falta la configuración del mapa en este entorno."
               : "Este dispositivo no pudo iniciar el mapa. Usá la lista de lugares."}

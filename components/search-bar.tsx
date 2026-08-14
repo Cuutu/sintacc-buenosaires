@@ -31,14 +31,14 @@ export function SearchBar() {
           placeholder="Buscar lugares, direcciones, localidades..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-12 min-h-[48px] rounded-xl border-border/50 bg-card/50 pl-11 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+          className="h-12 min-h-[48px] rounded-lg border-olive/20 bg-cream pl-11 focus:border-terracotta focus:ring-2 focus:ring-terracotta/30"
           aria-label="Buscar lugares"
         />
       </div>
       <Button
         type="submit"
         size="lg"
-        className="h-12 min-h-[48px] w-full shrink-0 rounded-xl px-6 sm:w-auto"
+        className="h-12 min-h-[48px] w-full shrink-0 rounded-lg px-6 sm:w-auto"
       >
         Buscar
       </Button>

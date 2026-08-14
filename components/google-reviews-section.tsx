@@ -74,7 +74,7 @@ export function GoogleReviewsSection({ snapshot, showAllReviews = false }: Props
           {snippets.map((review, i) => (
             <li
               key={`${review.authorName ?? "g"}-${i}`}
-              className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5"
+              className="rounded-xl border border-olive/10 bg-olive/5 px-3 py-2.5"
             >
               <div className="flex items-center gap-2 mb-1">
                 {review.rating != null ? (

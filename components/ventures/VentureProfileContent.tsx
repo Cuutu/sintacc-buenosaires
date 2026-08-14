@@ -104,7 +104,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
         ]}
       />
 
-      <article className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.03] mt-6">
+      <article className="rounded-2xl border border-olive/10 overflow-hidden bg-olive/5 mt-6">
         <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden">
           {photo ? (
             <Image
@@ -130,7 +130,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent pointer-events-none" />
           {photo && (
             <div className="absolute bottom-4 left-4 right-4">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs border border-white/10">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs border border-olive/10">
                 <span aria-hidden>{safetyDot}</span>
                 {safetyLabel}
               </span>
@@ -146,7 +146,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                   {categoryLabel}
                 </Link>
               </Badge>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 border border-white/10">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-olive/5 border border-olive/10">
                 <span aria-hidden>{safetyDot}</span>
                 {safetyLabel}
               </span>
@@ -230,7 +230,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
             </div>
           </header>
 
-          <hr className="border-white/10" />
+          <hr className="border-olive/10" />
 
           <ProfileSection title="Sobre el emprendimiento">
             <p className="text-sm leading-relaxed text-foreground/90">{description}</p>
@@ -242,7 +242,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                 {venture.modalities.map((m) => (
                   <div
                     key={m}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-sm font-medium"
+                    className="rounded-lg border border-olive/10 bg-olive/5 px-3 py-2.5 text-center text-sm font-medium"
                   >
                     {getModalityLabel(m)}
                   </div>
@@ -263,7 +263,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
           </ProfileSection>
 
           <ProfileSection title="Seguridad sin gluten">
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3 text-sm">
+            <div className="rounded-xl border border-olive/10 bg-olive/5 p-4 space-y-3 text-sm">
               <p className="flex items-center gap-2">
                 <span aria-hidden>{safetyDot}</span>
                 <span>

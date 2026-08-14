@@ -110,7 +110,7 @@ export function PwaRegister() {
     <div
       role="status"
       data-testid="sw-update-banner"
-      className="fixed left-2 right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[95] mx-auto flex max-w-md items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-[#0c1510]/95 px-3 py-2 text-sm text-white shadow-lg"
+      className="fixed left-2 right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[95] mx-auto flex max-w-md items-center justify-between gap-2 rounded-xl border border-olive/15 bg-cream px-3 py-2 text-sm text-olive shadow-soft"
     >
       <span>Hay una actualización disponible</span>
       <div className="flex shrink-0 gap-1">
@@ -123,7 +123,7 @@ export function PwaRegister() {
         </button>
         <button
           type="button"
-          className="rounded-full border border-white/20 px-2.5 py-1 text-xs"
+          className="rounded-full border border-olive/20 px-2.5 py-1 text-xs"
           onClick={() => setUpdateReady(false)}
         >
           Después
@@ -157,14 +157,14 @@ export function ChunkLoadFallbackBanner({ show }: { show: boolean }) {
         </button>
         <button
           type="button"
-          className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold"
+          className="rounded-full border border-olive/20 px-3 py-1 text-xs font-semibold"
           onClick={() => window.location.assign("/")}
         >
           Ir al inicio
         </button>
         <button
           type="button"
-          className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold"
+          className="rounded-full border border-olive/20 px-3 py-1 text-xs font-semibold"
           onClick={() => setVisible(false)}
         >
           Cerrar

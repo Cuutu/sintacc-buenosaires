@@ -10,7 +10,7 @@ import { isNativeApp } from "@/lib/native-app"
  * - overlay: true → WebView bajo status bar; env(safe-area-inset-*) > 0 con viewport-fit=cover.
      * - CSS (tokens --safe-area-*) compensa layout; NO mezclar inset nativo con el mismo padding CSS.
  *
- * iOS: Style.Dark = iconos claros; backgroundColor casi no-op con overlay.
+ * iOS: Style.Light = iconos oscuros sobre cream; backgroundColor casi no-op con overlay.
  * Android (Cap 8 / targetSdk 36): overlay true dibuja bajo status/nav; setBackgroundColor
  *   puede teñir la barra nativa pero insets siguen viniendo de CSS.
  *
@@ -49,11 +49,11 @@ export function NativeStatusBar() {
           await StatusBar.setOverlaysWebView({ overlay: true })
           if (cancelled) return
 
-          await StatusBar.setStyle({ style: Style.Dark })
+          await StatusBar.setStyle({ style: Style.Light })
           if (cancelled) return
 
           try {
-            await StatusBar.setBackgroundColor({ color: "#0b1220" })
+            await StatusBar.setBackgroundColor({ color: "#F7F3EB" })
           } catch {
             // Algunos builds iOS ignoran background con overlay.
           }

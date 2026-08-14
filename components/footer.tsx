@@ -1,6 +1,6 @@
 import Link from "next/link"
-import Image from "next/image"
 import { ContactFooterButton } from "@/components/ContactFooterButton"
+import { BrandLogo } from "@/components/brand/BrandLogo"
 
 type FooterLink = { href: string; label: string }
 
@@ -43,7 +43,7 @@ const FOOTER_SECTIONS: FooterSection[] = [
 function FooterColumn({ title, links }: FooterSection) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 mb-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-cream/55 mb-3">
         {title}
       </h3>
       <ul className="flex flex-col gap-2.5">
@@ -51,7 +51,7 @@ function FooterColumn({ title, links }: FooterSection) {
           <li key={link.href}>
             <Link
               href={link.href}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-cream/75 hover:text-cream transition-colors"
             >
               {link.label}
             </Link>
@@ -64,21 +64,15 @@ function FooterColumn({ title, links }: FooterSection) {
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-border/50 bg-card/30">
-      <div className="container mx-auto px-4 py-10 md:py-12">
+    <footer className="mt-auto bg-olive-organic overflow-hidden">
+      <div className="relative container mx-auto px-4 py-12 md:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center">
-              <Image
-                src="/celimaplogocompleto.png"
-                alt="Celimap"
-                width={130}
-                height={34}
-                className="h-8 w-auto"
-              />
+              <BrandLogo inverse size="sm" showTagline />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Mapa colaborativo para celíacos en Argentina.
+            <p className="mt-5 max-w-xs text-sm leading-relaxed text-cream/70">
+              Comunidad y mapa para encontrar lugares sin gluten con más confianza.
             </p>
           </div>
 
@@ -87,14 +81,14 @@ export function Footer() {
           ))}
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-cream/55 mb-3">
               Comunidad
             </h3>
             <ul className="flex flex-col gap-2.5">
               <li>
                 <Link
                   href="/sugerir"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-cream/75 hover:text-cream transition-colors"
                 >
                   Sugerir lugar
                 </Link>
@@ -102,18 +96,18 @@ export function Footer() {
               <li>
                 <Link
                   href="/sugerir-emprendimiento"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-cream/75 hover:text-cream transition-colors"
                 >
                   Sugerir emprendimiento
                 </Link>
               </li>
               <li>
-                <ContactFooterButton />
+                <ContactFooterButton className="text-cream/75 hover:text-cream" />
               </li>
               <li>
                 <Link
                   href="/privacidad"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-cream/75 hover:text-cream transition-colors"
                 >
                   Privacidad
                 </Link>
@@ -121,7 +115,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/login"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-cream/75 hover:text-cream transition-colors"
                 >
                   Iniciar sesión
                 </Link>
@@ -130,18 +124,18 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border/40 pt-6 space-y-3">
-          <p className="text-center text-xs leading-relaxed text-muted-foreground max-w-2xl mx-auto">
+        <div className="mt-12 border-t border-cream/15 pt-6 space-y-3">
+          <p className="text-center text-xs leading-relaxed text-cream/55 max-w-2xl mx-auto">
             Las reseñas y sugerencias son compartidas por la comunidad. Confirmá siempre con el
             establecimiento antes de consumir.{" "}
-            <Link href="/como-verificamos-los-lugares" className="hover:text-foreground transition-colors">
+            <Link href="/como-verificamos-los-lugares" className="hover:text-cream transition-colors">
               Cómo trabajamos la información
             </Link>
             .
           </p>
-          <p className="text-center text-xs text-muted-foreground/80">
-            © {new Date().getFullYear()} Celimap ·{" "}
-            <Link href="/privacidad" className="hover:text-foreground transition-colors">
+          <p className="text-center text-xs text-cream/45">
+            © {new Date().getFullYear()} CeliMap ·{" "}
+            <Link href="/privacidad" className="hover:text-cream transition-colors">
               Privacidad
             </Link>
           </p>

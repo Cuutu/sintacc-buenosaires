@@ -38,13 +38,13 @@ export class MapErrorBoundary extends React.Component<MapErrorBoundaryProps, Sta
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#0a0f0c] px-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-amber-300">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-card px-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-olive/10 bg-olive/5 text-amber-300">
             <AlertTriangle className="h-7 w-7" aria-hidden />
           </div>
           <div className="max-w-sm space-y-2">
-            <p className="text-base font-semibold text-white">No pudimos cargar el mapa</p>
-            <p className="text-sm leading-relaxed text-white/60">
+            <p className="text-base font-semibold text-olive">No pudimos cargar el mapa</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
               No pudimos cargar el mapa en este dispositivo. Todavía podés explorar los lugares desde
               la lista.
             </p>

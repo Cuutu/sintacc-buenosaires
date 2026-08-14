@@ -97,14 +97,14 @@ export class AppErrorBoundary extends React.Component<Props, State> {
     if (this.props.variant === "chrome") {
       return (
         <div
-          className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#080c0f]/90 px-3 py-2 text-xs text-white shadow-lg"
+          className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs text-olive shadow-lg"
           data-error-boundary="chrome"
           data-testid="bottom-nav-error-boundary"
           role="alert"
         >
           <span>Nav con problema</span>
           {this.state.eventId ? (
-            <span data-testid="error-event-id" className="font-mono text-[10px] text-white/70">
+            <span data-testid="error-event-id" className="font-mono text-[10px] text-muted-foreground">
               {this.state.eventId}
             </span>
           ) : null}
@@ -121,26 +121,26 @@ export class AppErrorBoundary extends React.Component<Props, State> {
 
     return (
       <div
-        className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-[#0a0f0c] px-6 py-12 text-center"
+        className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-card px-6 py-12 text-center"
         data-error-boundary="section"
         data-testid="app-error-boundary"
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-amber-300">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-olive/10 bg-olive/5 text-amber-300">
           <AlertTriangle className="h-7 w-7" aria-hidden />
         </div>
         <div className="max-w-sm space-y-2">
-          <p className="text-base font-semibold text-white">Algo falló en esta pantalla</p>
-          <p className="text-sm leading-relaxed text-white/60">
+          <p className="text-base font-semibold text-olive">Algo falló en esta pantalla</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Podés reintentar o volver al inicio. El resto de la app sigue disponible.
           </p>
           {this.state.eventId ? (
-            <p className="text-xs text-white/55" data-testid="error-event-id">
+            <p className="text-xs text-muted-foreground" data-testid="error-event-id">
               Código del error:{" "}
-              <span className="font-mono tracking-wide text-white/80">{this.state.eventId}</span>
+              <span className="font-mono tracking-wide text-olive/80">{this.state.eventId}</span>
             </p>
           ) : null}
           {process.env.NODE_ENV === "development" && this.state.message ? (
-            <p className="break-words rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
+            <p className="break-words rounded-lg border border-olive/10 bg-black/40 p-2 font-mono text-[11px] text-amber-200/90">
               {this.state.message}
             </p>
           ) : null}
@@ -157,7 +157,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
           <button
             type="button"
             onClick={this.goHome}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-olive/15 bg-olive/5 px-4 py-2.5 text-sm font-semibold text-olive"
           >
             <Home className="h-4 w-4" aria-hidden />
             Ir al inicio
@@ -166,7 +166,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
             <button
               type="button"
               onClick={this.copyCode}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-white/70"
+              className="inline-flex items-center gap-2 rounded-full border border-olive/10 px-3 py-2 text-xs font-medium text-muted-foreground"
               data-testid="copy-error-code"
             >
               Copiar código

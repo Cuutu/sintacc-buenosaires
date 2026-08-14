@@ -53,7 +53,7 @@ export function MapScreen({
   if (variant === "loading") {
     return (
       <div
-        className="flex h-full min-h-[50vh] w-full items-center justify-center bg-[#050807] text-sm text-white/50"
+        className="flex h-full min-h-[50vh] w-full items-center justify-center bg-cream text-sm text-muted-foreground"
         aria-busy
         aria-label="Cargando mapa"
         data-map-variant="loading"

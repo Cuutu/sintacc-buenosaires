@@ -58,8 +58,8 @@ function NavGlyph({
           "absolute rounded-full transition-opacity duration-200",
           center ? "inset-1" : "inset-1.5",
           active
-            ? "opacity-100 bg-[radial-gradient(circle_at_50%_45%,rgba(16,185,129,0.24),rgba(16,185,129,0.08)_54%,transparent_74%)] ring-1 ring-primary/25"
-            : "opacity-0 group-hover:opacity-100 group-hover:bg-white/[0.06]"
+            ? "opacity-100 bg-[radial-gradient(circle_at_50%_45%,rgba(212,99,58,0.22),rgba(45,74,52,0.08)_54%,transparent_74%)] ring-1 ring-terracotta/25"
+            : "opacity-0 group-hover:opacity-100 group-hover:bg-olive/[0.08]"
         )}
         aria-hidden
       />
@@ -68,8 +68,8 @@ function NavGlyph({
           "relative z-[1] transition-all duration-200",
           center ? "h-8 w-8" : "h-[26px] w-[26px]",
           active
-            ? "text-primary drop-shadow-[0_0_10px_rgba(16,185,129,0.45)]"
-            : "text-white/86 group-hover:text-white",
+            ? "text-primary drop-shadow-none"
+            : "text-olive/70 group-hover:text-olive",
           center ? "stroke-[2.15]" : "stroke-[2.05]"
         )}
         aria-hidden
@@ -77,7 +77,7 @@ function NavGlyph({
       {active && (
         <span
           className={cn(
-            "absolute rounded-full bg-primary shadow-[0_0_12px_rgba(16,185,129,0.75)]",
+            "absolute rounded-full bg-primary",
             center
               ? "right-4 top-1/2 h-1.5 w-1.5 -translate-y-1/2"
               : "bottom-1.5 h-1 w-4"
@@ -127,7 +127,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-white/15 bg-[#080c0f]/64 shadow-[0_18px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3"
+      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-olive/15 bg-cream/92 shadow-[0_18px_40px_-20px_rgba(45,74,52,0.35),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:left-3 sm:right-3"
       style={{
         bottom: "calc(var(--bottom-nav-float-gap) + var(--safe-area-bottom))",
       }}
@@ -167,7 +167,7 @@ export function BottomNav() {
                     recordBottomNavIntent(pathname || "/", to, stableKey)
                     router.replace(to, { scroll: false })
                   }}
-                  className={cn(navItemClass, isExplorarActive ? "text-primary" : "text-white/86")}
+                  className={cn(navItemClass, isExplorarActive ? "text-primary" : "text-olive/70")}
                   aria-current={isExplorarActive ? "page" : undefined}
                   aria-label={listOpen ? "Cerrar lista del mapa" : "Abrir lista del mapa"}
                   title={label}
@@ -183,7 +183,7 @@ export function BottomNav() {
                 data-nav-slot={stableKey}
                 href="/mapa"
                 onClick={() => recordBottomNavIntent(pathname || "/", "/mapa", stableKey)}
-                className={cn(navItemClass, "text-white/86")}
+                className={cn(navItemClass, "text-olive/70")}
                 aria-label={label}
                 title={label}
               >
@@ -202,8 +202,8 @@ export function BottomNav() {
                 className={cn(
                   centerItemClass,
                   isActive
-                    ? "bg-white/[0.08] text-primary"
-                    : "bg-white/[0.10] text-white hover:bg-white/[0.14]"
+                    ? "bg-primary/12 text-primary"
+                    : "bg-olive/8 text-olive hover:bg-olive/12"
                 )}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
@@ -220,7 +220,7 @@ export function BottomNav() {
               data-nav-slot={stableKey}
               href={hrefStr}
               onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
-              className={cn(navItemClass, isActive ? "text-primary" : "text-white/86")}
+              className={cn(navItemClass, isActive ? "text-primary" : "text-olive/70")}
               aria-current={isActive ? "page" : undefined}
               aria-label={hrefStr === "/admin" ? "Panel de administracion" : label}
               title={label}

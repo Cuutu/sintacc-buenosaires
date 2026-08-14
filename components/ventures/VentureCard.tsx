@@ -43,8 +43,8 @@ export function VentureCard({ venture }: VentureCardProps) {
   return (
     <article
       className={cn(
-        "relative group flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden",
-        "transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07]",
+        "relative group flex flex-col rounded-2xl border border-olive/10 bg-olive/5 backdrop-blur-md overflow-hidden",
+        "transition-all duration-300 hover:border-olive/20 hover:bg-olive/5",
         "hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
       )}
     >
@@ -68,7 +68,7 @@ export function VentureCard({ venture }: VentureCardProps) {
             <div className="w-full h-full bg-gradient-to-br from-emerald-500/25 via-emerald-500/10 to-transparent" />
           )}
           <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium border border-white/10">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium border border-olive/10">
               <span aria-hidden>{safetyDot}</span>
               {safetyLabel}
             </span>
@@ -104,7 +104,7 @@ export function VentureCard({ venture }: VentureCardProps) {
               {venture.modalities!.map((m) => (
                 <span
                   key={m}
-                  className="text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-muted-foreground"
+                  className="text-[11px] px-2 py-0.5 rounded-full bg-olive/5 border border-olive/10 text-muted-foreground"
                 >
                   {getModalityLabel(m)}
                 </span>
@@ -134,7 +134,7 @@ export function VentureCard({ venture }: VentureCardProps) {
               href={igUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-white/10 text-muted-foreground hover:text-primary transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-olive/10 text-muted-foreground hover:text-primary transition-colors"
               aria-label={`Instagram de ${venture.name}`}
             >
               <Instagram className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function VentureCard({ venture }: VentureCardProps) {
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-white/10 text-muted-foreground hover:text-primary transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-olive/10 text-muted-foreground hover:text-primary transition-colors"
               aria-label={`WhatsApp de ${venture.name}`}
             >
               <MessageCircle className="h-4 w-4" />

@@ -40,7 +40,7 @@ type VenturesEmptyStateProps = {
 export function VenturesEmptyState({ hasCategoryFilter }: VenturesEmptyStateProps) {
   return (
     <div className="space-y-10">
-      <div className="text-center rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 md:py-16 md:px-10">
+      <div className="text-center rounded-2xl border border-olive/10 bg-olive/5 px-6 py-12 md:py-16 md:px-10">
         <h3 className="text-lg md:text-xl font-bold mb-3">
           {hasCategoryFilter
             ? "Todavía no hay emprendimientos cargados en esta categoría"
@@ -69,7 +69,7 @@ export function VenturesEmptyState({ hasCategoryFilter }: VenturesEmptyStateProp
           {SUGGEST_CARDS.map((card) => (
             <div
               key={card.category}
-              className="flex flex-col rounded-xl border border-white/8 bg-white/[0.025] p-5 hover:border-primary/25 hover:bg-primary/5 transition-all"
+              className="flex flex-col rounded-xl border border-olive/10 bg-olive/5 p-5 hover:border-primary/25 hover:bg-primary/5 transition-all"
             >
               <card.icon className="h-7 w-7 text-primary mb-3" aria-hidden />
               <h5 className="font-semibold text-sm mb-2">{card.title}</h5>

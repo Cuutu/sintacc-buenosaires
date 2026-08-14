@@ -371,7 +371,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
       <div
-        className="relative w-full max-w-2xl flex flex-col rounded-2xl border border-white/10 bg-[#0b0b0c] shadow-2xl"
+        className="relative w-full max-w-2xl flex flex-col rounded-2xl border border-olive/10 bg-background shadow-2xl"
         style={{ maxHeight: "90vh" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -380,7 +380,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
             <MapPin className="h-5 w-5 text-[#10b981]" />
             Marcá la ubicación en el mapa
           </h2>
-          <p id="map-picker-desc" className="text-sm text-white/60 mt-1">
+          <p id="map-picker-desc" className="text-sm text-muted-foreground mt-1">
             Buscá una dirección o hacé click en el mapa. La dirección se detectará automáticamente.
           </p>
         </div>
@@ -443,15 +443,15 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
           />
         </div>
 
-        <div className="flex-shrink-0 px-6 py-4 space-y-4 border-t border-white/10">
+        <div className="flex-shrink-0 px-6 py-4 space-y-4 border-t border-olive/10">
           {geocoding ? (
-            <p className="text-sm text-white/80 flex items-center gap-2">
+            <p className="text-sm text-olive/80 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Buscando dirección...
             </p>
           ) : addressText ? (
             <div>
-              <Label className="text-xs text-white/60">Dirección detectada</Label>
+              <Label className="text-xs text-muted-foreground">Dirección detectada</Label>
               <p className="text-sm font-medium mt-0.5">{addressText}</p>
             </div>
           ) : needsUserInput && picked ? (
@@ -501,12 +501,12 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
           <p className="px-6 py-2 text-sm text-red-400 bg-red-500/10">{error}</p>
         )}
 
-        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-white/10">
+        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-olive/10">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={geocoding}
-            className="px-4 py-2 rounded-lg border border-white/20 hover:bg-white/5 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg border border-olive/20 hover:bg-olive/5 transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -514,7 +514,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
             type="button"
             onClick={handleConfirm}
             disabled={geocoding || !canConfirm}
-            className="px-4 py-2 rounded-lg bg-[#10b981] text-white hover:bg-[#0d9668] transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-terracotta-hover transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             {geocoding ? (
               <span className="flex items-center gap-2">
@@ -530,7 +530,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
         <button
           type="button"
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-lg p-1.5 hover:bg-white/10 transition-colors"
+          className="absolute right-4 top-4 rounded-lg p-1.5 hover:bg-olive/10 transition-colors"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5" />

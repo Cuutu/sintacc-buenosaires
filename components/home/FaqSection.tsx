@@ -48,7 +48,7 @@ export function FaqSection() {
             <details
               key={item.question}
               open={i === 0}
-              className="group rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden transition-all hover:border-primary/30 hover:bg-card/70 [&[open]]:border-primary/40 [&[open]]:bg-card/80"
+              className="group rounded-[24px] border border-olive/10 bg-card shadow-soft overflow-hidden transition-all hover:border-olive/20 [&[open]]:border-terracotta/30"
             >
               <summary className="flex items-center justify-between gap-4 cursor-pointer list-none px-5 py-4 md:px-6 md:py-5 select-none [&::-webkit-details-marker]:hidden">
                 <span className="font-semibold text-foreground pr-4">

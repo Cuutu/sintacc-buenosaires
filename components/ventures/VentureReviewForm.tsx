@@ -66,7 +66,7 @@ export function VentureReviewForm({ ventureId, onSuccess }: VentureReviewFormPro
   }
 
   return (
-    <Card className="border-white/10 bg-white/[0.03]">
+    <Card className="border-olive/10 bg-olive/5">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Tu experiencia</CardTitle>
         <p className="text-xs text-muted-foreground font-normal">

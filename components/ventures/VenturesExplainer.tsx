@@ -33,7 +33,7 @@ export function VenturesExplainer() {
         {INFO_CARDS.map((card) => (
           <div
             key={card.title}
-            className="rounded-xl border border-white/10 bg-white/[0.04] p-5 md:p-6 transition-colors hover:border-primary/20 hover:bg-white/[0.06]"
+            className="rounded-xl border border-olive/10 bg-olive/5 p-5 md:p-6 transition-colors hover:border-primary/20 hover:bg-olive/5"
           >
             <card.icon className="h-8 w-8 text-primary mb-4" aria-hidden />
             <h3 className="font-semibold mb-2">{card.title}</h3>

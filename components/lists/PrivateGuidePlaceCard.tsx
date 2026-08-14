@@ -68,13 +68,13 @@ export function PrivateGuidePlaceCard({
     <article
       id={`guide-place-${place._id}`}
       className={cn(
-        "overflow-hidden rounded-2xl border bg-[#0c100e]",
+        "overflow-hidden rounded-2xl border bg-card",
         selected
           ? "border-primary/50 ring-2 ring-primary/30"
-          : "border-white/10"
+          : "border-olive/10"
       )}
     >
-      <div className="relative aspect-[16/9] max-h-[180px] w-full overflow-hidden bg-[#0a0f0c]">
+      <div className="relative aspect-[16/9] max-h-[180px] w-full overflow-hidden bg-card">
         {photo ? (
           <Image
             src={photo}
@@ -84,9 +84,9 @@ export function PrivateGuidePlaceCard({
             sizes="(max-width: 768px) 100vw, 420px"
           />
         ) : (
-          <div className="flex h-full min-h-[120px] items-center gap-3 bg-gradient-to-br from-emerald-950/80 to-[#0a0f0c] px-4">
+          <div className="flex h-full min-h-[120px] items-center gap-3 bg-gradient-to-br from-olive/15 to-card px-4">
             <UtensilsCrossed className="h-7 w-7 shrink-0 text-primary/50" />
-            <span className="line-clamp-2 text-sm font-semibold text-white/70">
+            <span className="line-clamp-2 text-sm font-semibold text-olive">
               {place.name}
             </span>
           </div>
@@ -95,7 +95,7 @@ export function PrivateGuidePlaceCard({
           {order}
         </span>
         {typeLabel ? (
-          <span className="absolute bottom-2 left-2 rounded-md border border-white/15 bg-[#0a0e12]/88 px-2 py-0.5 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+          <span className="absolute bottom-2 left-2 rounded-md border border-olive/15 bg-[#0a0e12]/88 px-2 py-0.5 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
             {typeLabel}
           </span>
         ) : null}
@@ -103,10 +103,10 @@ export function PrivateGuidePlaceCard({
 
       <div className="space-y-2.5 p-3.5">
         <div>
-          <h3 className="text-[15px] font-bold leading-snug text-white">
+          <h3 className="text-[15px] font-bold leading-snug text-olive">
             {place.name}
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-white/65">
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
             <span className="truncate">
               {place.neighborhood || place.address || "Ubicación no disponible"}
@@ -118,23 +118,23 @@ export function PrivateGuidePlaceCard({
           {hasCelimapRating ? (
             <span className="inline-flex items-center gap-1">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-white">
+              <span className="font-semibold text-olive">
                 {place.stats?.avgRating?.toFixed(1)}
               </span>
-              <span className="text-white/55">({place.stats?.totalReviews})</span>
+              <span className="text-muted-foreground">({place.stats?.totalReviews})</span>
             </span>
           ) : googleRating != null && Number.isFinite(googleRating) ? (
             <span className="inline-flex items-center gap-1">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-white">
+              <span className="font-semibold text-olive">
                 {googleRating.toFixed(1)}
               </span>
               {googleCount != null && googleCount > 0 ? (
-                <span className="text-white/55">
+                <span className="text-muted-foreground">
                   ({googleCount.toLocaleString("es-AR")})
                 </span>
               ) : null}
-              <span className="text-[10px] font-semibold uppercase text-white/45">
+              <span className="text-[10px] font-semibold uppercase text-muted-foreground">
                 Google
               </span>
             </span>
@@ -172,7 +172,7 @@ export function PrivateGuidePlaceCard({
                 Consejo de {creatorName}
               </p>
             </div>
-            <p className="text-sm leading-relaxed text-white/90">{note}</p>
+            <p className="text-sm leading-relaxed text-olive">{note}</p>
           </blockquote>
         ) : null}
 
@@ -188,7 +188,7 @@ export function PrivateGuidePlaceCard({
           </a>
           <Link
             href={detailHref}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-2 text-xs font-semibold text-white/85 transition hover:bg-white/[0.07]"
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-olive/15 bg-olive/5 px-2 text-xs font-semibold text-olive/80 transition hover:bg-olive/5"
           >
             Ver información
           </Link>

@@ -303,12 +303,12 @@ export default function FavoritosPage() {
           if (v === "listas" && !listsFetched) fetchLists()
         }}
       >
-        <TabsList className="grid h-11 w-full max-w-md grid-cols-2 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+        <TabsList className="grid h-11 w-full max-w-md grid-cols-2 rounded-xl border border-olive/10 bg-olive/5 p-1">
           <TabsTrigger
             value="favoritos"
             className={cn(
               "rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none",
-              "data-[state=inactive]:text-white/50"
+              "data-[state=inactive]:text-muted-foreground"
             )}
           >
             Favoritos{!loading ? ` ${favorites.length}` : ""}
@@ -317,7 +317,7 @@ export default function FavoritosPage() {
             value="listas"
             className={cn(
               "rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none",
-              "data-[state=inactive]:text-white/50"
+              "data-[state=inactive]:text-muted-foreground"
             )}
           >
             Mis listas{listsFetched ? ` ${lists.length}` : ""}
@@ -365,7 +365,7 @@ export default function FavoritosPage() {
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
                     listFilter === key
                       ? "border-primary/40 bg-primary/15 text-primary"
-                      : "border-white/10 text-white/55 hover:text-white/80"
+                      : "border-olive/10 text-muted-foreground hover:text-olive/80"
                   )}
                 >
                   {label}
