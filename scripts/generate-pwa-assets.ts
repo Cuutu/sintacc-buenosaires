@@ -11,7 +11,7 @@ const PWA_ART_REL = "celimappwa.png"
 const PWA_ART_PATH = path.join(PUBLIC_DIR, PWA_ART_REL)
 
 /** Fondo maskable / theme, alineado con manifest */
-const MASK_BG: [number, number, number, number] = [11, 18, 32, 255]
+const MASK_BG: [number, number, number, number] = [45, 74, 52, 255]
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -20,7 +20,16 @@ function ensureDir(dir: string) {
 function writePng(relPath: string, png: PNG) {
   const outPath = path.join(PUBLIC_DIR, relPath)
   ensureDir(path.dirname(outPath))
-  fs.writeFileSync(outPath, PNG.sync.write(png))
+  try {
+    fs.writeFileSync(outPath, PNG.sync.write(png))
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : ""
+    if (fs.existsSync(outPath) && (code === "UNKNOWN" || code === "EBUSY" || code === "EPERM" || code === "EACCES")) {
+      console.warn(`[pwa] skip ${relPath}: archivo en uso`)
+      return
+    }
+    throw error
+  }
 }
 
 function writePngIfMissing(relPath: string, width: number, height: number, draw: (png: PNG) => void) {

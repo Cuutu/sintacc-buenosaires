@@ -12,6 +12,12 @@ import { isOpenNow } from "@/lib/opening-hours"
 import { getPlacePath } from "@/lib/place-url"
 import { GoogleRatingBadge } from "@/components/google-rating-badge"
 import { trackEvent } from "@/lib/analytics"
+import {
+  getNonPrimarySafetyTags,
+  getSafetyBadge,
+  inferSafetyLevel,
+} from "@/components/featured/featured-utils"
+import { cn } from "@/lib/utils"
 
 interface PlaceCardProps {
   place: IPlace & {
@@ -112,9 +118,27 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
                 if (open === false) return <Badge key="closed" variant="secondary" className="text-xs">Cerrado</Badge>
                 return null
               })()}
-              {(place.tags ?? []).slice(0, 3).map((tag) => (
-                <TagBadge key={tag} tag={tag} size="sm" />
-              ))}
+              {(() => {
+                const safetyLevel = inferSafetyLevel(place)
+                const safety = safetyLevel ? getSafetyBadge(safetyLevel) : null
+                return (
+                  <>
+                    {safety && safetyLevel && safetyLevel !== "unknown" ? (
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                          safety.className
+                        )}
+                      >
+                        {safety.label}
+                      </span>
+                    ) : null}
+                    {getNonPrimarySafetyTags(place.tags).slice(0, 2).map((tag) => (
+                      <TagBadge key={tag} tag={tag} size="sm" />
+                    ))}
+                  </>
+                )
+              })()}
             </div>
           </div>
         </CardContent>

@@ -43,16 +43,16 @@ export function VenturesEmptyState({ hasCategoryFilter }: VenturesEmptyStateProp
       <div className="text-center rounded-2xl border border-olive/10 bg-olive/5 px-6 py-12 md:py-16 md:px-10">
         <h3 className="text-lg md:text-xl font-bold mb-3">
           {hasCategoryFilter
-            ? "Todavía no hay emprendimientos cargados en esta categoría"
-            : "Todavía no hay emprendimientos cargados"}
+            ? "Todavía no hay emprendimientos en esta categoría"
+            : "Todavía no hay emprendimientos publicados"}
         </h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-          ¿Conocés alguno? Ayudanos a sumar marcas y proyectos sin gluten para que más personas
-          puedan encontrarlos.
+          ¿Conocés alguno? Ayudanos a sumar emprendimientos sin gluten para que más personas puedan
+          encontrarlos.
         </p>
         <Button asChild size="lg" className="min-h-[48px] gap-2 shadow-lg shadow-primary/20">
           <Link href="/sugerir-emprendimiento">
-            Sugerir emprendimiento
+            Publicar emprendimiento
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>

@@ -28,7 +28,7 @@ export type VentureModalityId = (typeof VENTURE_MODALITIES)[number]["id"]
 
 export const VENTURE_SAFETY_LEVELS = [
   { id: "fully_gf", label: "100% sin gluten", dot: "🟢" },
-  { id: "gf_options", label: "Opciones sin gluten", dot: "🟡" },
+  { id: "gf_options", label: "Tiene opciones", dot: "🟡" },
   { id: "to_confirm", label: "A confirmar", dot: "⚪" },
 ] as const
 

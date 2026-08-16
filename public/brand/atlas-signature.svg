@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" fill="none" aria-hidden="true">
+  <rect width="1440" height="900" fill="#F6F1E8"/>
+  <g stroke="#D9DED4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 148C220 108 380 168 520 128 680 82 860 168 1020 122 1160 86 1300 148 1460 128" stroke-width="1.5"/>
+    <path d="M-20 368C160 328 340 392 500 352 680 304 880 398 1060 348 1200 312 1340 372 1480 352" stroke-width="1.5"/>
+    <path d="M20 588C200 548 380 628 560 578 740 528 940 638 1120 582 1260 546 1380 608 1500 588" stroke-width="1.5"/>
+    <path d="M-10 778C190 738 390 818 580 768 780 712 980 828 1180 772 1300 744 1400 792 1500 778" stroke-width="1.4"/>
+    <path d="M168-20C128 160 228 340 148 540C88 700 208 820 176 940" stroke-width="1.35"/>
+    <path d="M428-10C388 170 478 360 408 560C348 720 468 840 438 950" stroke-width="1.25"/>
+    <path d="M742-30C702 150 802 340 722 540C662 710 782 830 752 960" stroke-width="1.2"/>
+    <path d="M1048-20C1008 170 1118 350 1038 560C978 720 1098 840 1068 950" stroke-width="1.25"/>
+    <path d="M1296-10C1256 180 1366 360 1286 560C1226 720 1346 840 1316 940" stroke-width="1.35"/>
+    <g stroke-width="1" opacity="0.72">
+      <path d="M80 248C260 218 440 278 620 238 820 192 1020 268 1220 228 1340 208 1420 248 1500 238"/>
+      <path d="M60 468C240 438 430 508 620 458 820 408 1040 518 1220 468 1340 444 1440 478 1520 468"/>
+      <path d="M100 688C280 658 480 728 680 678 880 628 1080 738 1260 688 1360 664 1440 698 1520 688"/>
+    </g>
+  </g>
+  <g fill="#BFC8BC">
+    <circle cx="168" cy="148" r="2.1"/>
+    <circle cx="428" cy="128" r="2.1"/>
+    <circle cx="742" cy="148" r="2.1"/>
+    <circle cx="1048" cy="122" r="2.1"/>
+    <circle cx="1296" cy="148" r="2.1"/>
+    <circle cx="176" cy="588" r="2.1"/>
+    <circle cx="1286" cy="588" r="2.1"/>
+    <circle cx="752" cy="778" r="2.1"/>
+  </g>
+  <g opacity="0.32" stroke="#2D4A34" stroke-width="1.15" stroke-linecap="round" stroke-dasharray="3 7">
+    <path d="M428 128C520 210 620 250 740 368"/>
+    <path d="M1048 122C980 220 880 280 740 368"/>
+    <path d="M176 588C320 520 520 460 740 368"/>
+    <path d="M1286 588C1100 500 920 430 740 368"/>
+  </g>
+  <g fill="#C85A2E" opacity="0.28">
+    <g transform="translate(96 96) rotate(-28)">
+      <ellipse cx="0" cy="-16" rx="3" ry="5.2"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.4"/>
+      <ellipse cx="0" cy="4" rx="2.9" ry="5"/>
+      <rect x="-0.75" y="8" width="1.5" height="16" rx="0.75"/>
+    </g>
+    <g transform="translate(1320 780) rotate(22)">
+      <ellipse cx="0" cy="-16" rx="3" ry="5.2"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.4"/>
+      <ellipse cx="0" cy="4" rx="2.9" ry="5"/>
+      <rect x="-0.75" y="8" width="1.5" height="16" rx="0.75"/>
+    </g>
+  </g>
+  <g opacity="0.38">
+    <g transform="translate(428 128) scale(0.22)">
+      <path d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z" fill="#2D4A34"/>
+      <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E"/>
+    </g>
+    <g transform="translate(1048 122) scale(0.22)">
+      <path d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z" fill="#2D4A34"/>
+      <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E"/>
+    </g>
+    <g transform="translate(176 588) scale(0.22)">
+      <path d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z" fill="#2D4A34"/>
+      <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E"/>
+    </g>
+    <g transform="translate(1286 588) scale(0.22)">
+      <path d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z" fill="#2D4A34"/>
+      <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E"/>
+    </g>
+  </g>
+</svg>

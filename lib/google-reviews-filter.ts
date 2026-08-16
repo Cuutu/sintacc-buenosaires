@@ -19,12 +19,11 @@ export function isDedicatedGlutenFreePlace(place: {
   tags?: string[] | null
   aiEnrichment?: { recommendedSafetyLevel?: string | null } | null
 }): boolean {
+  const tags = place.tags ?? []
+  if (tags.includes("opciones_sin_tacc")) return false
   if (place.safetyLevel === "dedicated_gf") return true
   if (place.aiEnrichment?.recommendedSafetyLevel === "dedicated_gf") return true
-
-  const tags = place.tags ?? []
-  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) return true
-
+  if (tags.includes("100_gf")) return true
   return false
 }
 

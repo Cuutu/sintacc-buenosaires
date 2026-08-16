@@ -36,11 +36,11 @@ test.describe("suite crítica @hermetic @critical", () => {
     await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible({
       timeout: 8_000,
     })
-    await expect(stats.getByText("lugares en el mapa")).toBeVisible()
+    await expect(stats.getByText("lugares")).toBeVisible()
     await expect(stats.getByText(String(E2E_STATS.reviewsCountGoogle), { exact: true })).toBeVisible()
-    await expect(stats.getByText("reseñas en Google")).toBeVisible()
+    await expect(stats.getByText("reseñas")).toBeVisible()
     await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("usuarios registrados")).toBeVisible()
+    await expect(stats.getByText("usuarios")).toBeVisible()
     await expect(stats.locator("li")).toHaveCount(3)
     await assertNoAppCrash(page)
     await assertBodyHasVisibleContent(page)

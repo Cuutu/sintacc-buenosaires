@@ -74,7 +74,6 @@ export function PrivateListMap({
         interactionMode="private-guide"
         numberedMarkers
         showPopup={false}
-        darkStyle
         colorBySafety
         clusterMarkers={false}
         enableGeolocate={false}

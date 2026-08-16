@@ -16,10 +16,8 @@ dns.setDefaultResultOrder("ipv4first")
 type SafetyLevel = "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
 
 function safetyFromTags(tags: string[] = []): SafetyLevel | undefined {
-  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) {
-    return "dedicated_gf"
-  }
   if (tags.includes("opciones_sin_tacc")) return "gf_options"
+  if (tags.includes("100_gf")) return "dedicated_gf"
   return undefined
 }
 

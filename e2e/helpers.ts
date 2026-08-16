@@ -23,6 +23,7 @@ import {
 export const ALLOWED_OVERFLOW_MARKERS = [
   "stats-carousel",
   "map-chips",
+  "hero-chips",
   "mapbox-canvas",
   "featured-carousel",
   "decoration",

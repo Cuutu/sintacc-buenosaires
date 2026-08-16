@@ -57,16 +57,17 @@
     --safe-area-left: env(safe-area-inset-left, 0px);
     --safe-area-right: env(safe-area-inset-right, 0px);
     --mobile-header-gap: 0.75rem;
-    --bottom-nav-height: 4rem; /* h-16 interactivo */
+    --bottom-nav-height: 3.5rem; /* h-14 interactivo */
     --bottom-nav-float-gap: 0.75rem; /* aire entre nav y home indicator */
+    /* En PWA/nativo usa safe-area. En browser mobile safe-area suele ser 0 y la toolbar come la pill. */
+    --bottom-nav-edge: var(--safe-area-bottom);
     --bottom-nav-clearance: calc(
-      var(--bottom-nav-height) + var(--bottom-nav-float-gap) + var(--safe-area-bottom) + 0.25rem
+      var(--bottom-nav-height) + var(--bottom-nav-float-gap) + var(--bottom-nav-edge) + 0.25rem
     );
-    /* StickyActionBarMobile: altura visual aprox (botones 48px + padding) */
-    --sticky-action-bar-height: 4.25rem;
-    --lugar-bottom-clearance: calc(
-      var(--bottom-nav-clearance) + var(--sticky-action-bar-height)
-    );
+    /* Desktop floating pill: spacer fijo (no salta al achicarse) */
+    --desktop-nav-clearance: 5rem;
+    /* Ficha lugar: solo BottomNav; ya no hay barra flotante Ir */
+    --lugar-bottom-clearance: var(--bottom-nav-clearance);
   }
 
   .dark {
@@ -89,6 +90,12 @@
     --border: 135 14% 24%;
     --input: 40 43% 94.5% / 0.2;
     --ring: 16 64% 53%;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --bottom-nav-edge: max(var(--safe-area-bottom), 2rem);
   }
 }
 
@@ -150,14 +157,72 @@
   opacity: 0.035;
 }
 
+.celimap-hero-paper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/noise.png");
+  background-repeat: repeat;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+}
+
+.celimap-hero-mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: #f6f1e8;
+  background-image:
+    radial-gradient(ellipse 70% 56% at 50% 38%, rgba(255, 255, 255, 0.55), transparent 64%),
+    radial-gradient(ellipse 42% 38% at 4% 94%, rgba(200, 90, 46, 0.07), transparent 58%),
+    radial-gradient(ellipse 46% 42% at 96% 8%, rgba(45, 74, 52, 0.07), transparent 54%);
+}
+
+.celimap-hero-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 48% 42% at 50% 46%,
+    rgba(246, 241, 232, 0.82) 0%,
+    rgba(246, 241, 232, 0.4) 46%,
+    transparent 72%
+  );
+}
+
+@media (max-width: 768px) {
+  .celimap-hero-vignette {
+    background: linear-gradient(
+      180deg,
+      rgba(247, 243, 235, 0.72) 0%,
+      rgba(247, 243, 235, 0.42) 48%,
+      rgba(247, 243, 235, 0.2) 100%
+    );
+  }
+  .celimap-hero-paper {
+    opacity: 0.02;
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
-  .celimap-hero-noise {
+  .celimap-hero-noise,
+  .celimap-hero-paper {
     display: none;
   }
   .celimap-hero-blob {
     filter: none !important;
   }
   .map-sidebar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .celimap-nav-pill {
+    background-color: var(--color-cream) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .celimap-hero-metrics {
+    background-color: #fff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -176,30 +241,18 @@
   border-right: 1px solid hsl(var(--border));
 }
 
-/* Mapbox popup */
+/* Mapbox popup — ficha editorial, sin triángulo */
 .celimap-popup {
   z-index: 40 !important;
+  max-width: min(400px, calc(100vw - 24px)) !important;
 }
 .celimap-popup .mapboxgl-popup-content {
   background: transparent !important;
   padding: 0 !important;
   box-shadow: none !important;
 }
-.celimap-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
-.celimap-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
-.celimap-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
-  border-top-color: var(--color-cream-card) !important;
-}
-.celimap-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
-.celimap-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
-.celimap-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
-  border-bottom-color: var(--color-cream-card) !important;
-}
-.celimap-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: var(--color-cream-card) !important;
-}
-.celimap-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: var(--color-cream-card) !important;
+.celimap-popup .mapboxgl-popup-tip {
+  display: none !important;
 }
 
 /* Hide scrollbar for horizontal carousel */

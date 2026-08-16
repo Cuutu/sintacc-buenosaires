@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import EmprendimientosPageContent from "./EmprendimientosPageContent"
-import { VentureSeoNavLinks } from "@/components/ventures/VentureSeoNavLinks"
 import { getBaseUrl } from "@/lib/base-url"
 import { getVentureIndexMetadata } from "@/lib/venture-seo"
 
@@ -16,7 +15,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   if (sp.search?.trim() || sp.category) {
     return {
-title: "Emprendimientos sin gluten",
+      title: "Emprendimientos sin gluten",
       robots: { index: false, follow: true },
       alternates: { canonical },
     }
@@ -27,19 +26,12 @@ title: "Emprendimientos sin gluten",
 
 export default function EmprendimientosPage() {
   return (
-    <>
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
-            Cargando...
-          </div>
-        }
-      >
-        <EmprendimientosPageContent />
-      </Suspense>
-      <div className="container mx-auto px-4 pb-12 max-w-5xl">
-        <VentureSeoNavLinks />
-      </div>
-    </>
+    <Suspense
+      fallback={
+        <div className="bg-[#F3EEE4] px-5 py-16 text-center text-[#5F6B63]">Cargando emprendimientos…</div>
+      }
+    >
+      <EmprendimientosPageContent />
+    </Suspense>
   )
 }

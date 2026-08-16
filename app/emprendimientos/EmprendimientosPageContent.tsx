@@ -1,56 +1,68 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import Link from "next/link"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
 import { VentureCard } from "@/components/ventures/VentureCard"
-import { VenturesExplainer } from "@/components/ventures/VenturesExplainer"
+import { VentureFeaturedRail } from "@/components/ventures/VentureFeaturedRail"
+import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
 import { VENTURE_CATEGORIES } from "@/lib/venture-constants"
-import { getCategoryLandingPath } from "@/lib/venture-seo"
+import { VENTURE_ZONE_LANDINGS } from "@/lib/venture-seo"
 import { matchesVentureSearch } from "@/lib/venture-search"
 import { fetchApi } from "@/lib/fetchApi"
 import type { IVenture } from "@/models/Venture"
-import { ArrowLeft, ArrowDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type VentureItem = IVenture & { _id: string }
+
+const HERO_CHIPS = [
+  { key: "all", label: "Todas" },
+  { key: "panificados", label: "Panificados", category: "panificados" },
+  { key: "pasteleria", label: "Pastelería", category: "pasteleria" },
+  { key: "viandas", label: "Viandas", category: "viandas" },
+  { key: "congelados", label: "Congelados", category: "congelados" },
+  { key: "premezclas", label: "Premezclas", category: "premezclas" },
+  { key: "catering", label: "Catering", category: "catering" },
+  { key: "delivery", label: "Delivery", modality: "delivery" },
+  { key: "retiro", label: "Retiro", modality: "retiro" },
+] as const
+
+type Suggestion = {
+  id: string
+  label: string
+  hint: string
+  href?: string
+}
 
 export default function EmprendimientosPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
+  const modalityParam = searchParams.get("modality")
   const searchParam = searchParams.get("search") ?? ""
 
   const [ventures, setVentures] = useState<VentureItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState(searchParam)
+  const [suggestOpen, setSuggestOpen] = useState(false)
+  const boxRef = useRef<HTMLDivElement>(null)
 
-  const fetchVentures = useCallback(
-    async (category: string | null, search: string) => {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams({ limit: "50" })
-        if (category) params.set("category", category)
-        if (search.trim().length >= 2) params.set("search", search.trim())
-        const data = await fetchApi<{ ventures: VentureItem[] }>(
-          `/api/ventures?${params}`
-        )
-        setVentures(data.ventures ?? [])
-      } catch {
-        setVentures([])
-      } finally {
-        setLoading(false)
-      }
-    },
-    []
-  )
+  const fetchVentures = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await fetchApi<{ ventures: VentureItem[] }>("/api/ventures?limit=80")
+      setVentures(data.ventures ?? [])
+    } catch {
+      setVentures([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    fetchVentures(categoryParam, searchParam)
-  }, [categoryParam, searchParam, fetchVentures])
+    fetchVentures()
+  }, [fetchVentures])
 
   useEffect(() => {
     setSearchInput(searchParam)
@@ -66,154 +78,213 @@ export default function EmprendimientosPageContent() {
       const next = q ? `/emprendimientos?${q}` : "/emprendimientos"
       const current = searchParams.toString()
       const currentPath = current ? `/emprendimientos?${current}` : "/emprendimientos"
-      if (next !== currentPath) {
-        router.replace(next, { scroll: false })
-      }
+      if (next !== currentPath) router.replace(next, { scroll: false })
     }, 400)
     return () => clearTimeout(t)
   }, [searchInput, router, searchParams])
 
-  const setCategory = (id: string | null) => {
-    if (id) {
-      router.push(getCategoryLandingPath(id))
-      return
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setSuggestOpen(false)
     }
-    router.replace("/emprendimientos", { scroll: false })
+    document.addEventListener("mousedown", onDoc)
+    return () => document.removeEventListener("mousedown", onDoc)
+  }, [])
+
+  const replaceParams = (mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams.toString())
+    mutate(params)
+    const q = params.toString()
+    router.replace(q ? `/emprendimientos?${q}` : "/emprendimientos", { scroll: false })
   }
 
-  const scrollToExplore = () => {
-    document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" })
+  const setChip = (chip: (typeof HERO_CHIPS)[number]) => {
+    replaceParams((params) => {
+      params.delete("category")
+      params.delete("modality")
+      if ("category" in chip && chip.category) params.set("category", chip.category)
+      if ("modality" in chip && chip.modality) params.set("modality", chip.modality)
+    })
   }
 
-  const displayedVentures = ventures.filter((v) =>
-    matchesVentureSearch(v, searchParam)
-  )
+  const displayedVentures = ventures.filter((v) => {
+    if (categoryParam && v.category !== categoryParam) return false
+    if (modalityParam && !(v.modalities ?? []).some((m) => m === modalityParam)) return false
+    return matchesVentureSearch(v, searchParam)
+  })
+
+  const suggestions = useMemo((): Suggestion[] => {
+    const q = searchInput.trim().toLowerCase()
+    if (q.length < 2) return []
+    const cats: Suggestion[] = []
+    const zones: Suggestion[] = []
+    const brands: Suggestion[] = []
+
+    for (const cat of VENTURE_CATEGORIES) {
+      if (cats.length >= 3) break
+      if (cat.label.toLowerCase().includes(q) || cat.id.includes(q)) {
+        cats.push({
+          id: `cat-${cat.id}`,
+          label: cat.label,
+          hint: "Categoría",
+          href: `/emprendimientos?category=${cat.id}`,
+        })
+      }
+    }
+    for (const zone of VENTURE_ZONE_LANDINGS) {
+      if (zones.length >= 2) break
+      if (zone.label.toLowerCase().includes(q)) {
+        zones.push({
+          id: `zone-${zone.slug}`,
+          label: zone.label,
+          hint: "Zona",
+          href: `/emprendimientos/${zone.slug}`,
+        })
+      }
+    }
+    for (const v of ventures) {
+      if (brands.length >= 5) break
+      if (v.name.toLowerCase().includes(q)) {
+        brands.push({
+          id: v._id,
+          label: v.name,
+          hint: v.zone,
+          href: `/emprendimientos/${v.slug ?? v._id}`,
+        })
+      }
+    }
+    return [...cats, ...zones, ...brands].slice(0, 8)
+  }, [searchInput, ventures])
 
   const showEmpty = !loading && displayedVentures.length === 0
   const hasActiveSearch = searchParam.trim().length >= 2
+  const hasFilter = Boolean(categoryParam || modalityParam || hasActiveSearch)
+  const activeChip = HERO_CHIPS.find((c) => {
+    if ("category" in c && c.category && c.category === categoryParam) return true
+    if ("modality" in c && c.modality && c.modality === modalityParam) return true
+    return false
+  })
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al inicio
-        </Link>
-
-        {/* 1. Hero */}
-        <section className="relative rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden px-6 py-12 md:py-16 text-center mb-12 md:mb-14">
-          <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/20 blur-[80px] pointer-events-none" />
-          <h1 className="relative text-3xl md:text-4xl font-extrabold mb-4 tracking-tight">
-            Descubrí emprendimientos sin gluten
+    <div className="min-h-screen bg-[#F3EEE4]">
+      <div className="mx-auto max-w-6xl px-5 pb-16 pt-6 md:px-8 md:pt-10">
+        <header className="mb-10 max-w-2xl">
+          <h1 className="font-display font-bold tracking-tight text-[#1F4D35]">
+            <span className="block text-base font-medium tracking-[0.04em] text-[#5F6B63] md:text-lg">
+              Descubrí
+            </span>
+            <span className="mt-1 block font-display text-[2.05rem] leading-[0.95] tracking-[-0.04em] text-[#C85A2E] md:text-[3.75rem]">
+              emprendimientos
+            </span>
+            <span className="mt-1 block text-[1.65rem] leading-tight md:text-[2.25rem]">sin gluten</span>
           </h1>
-          <p className="relative text-muted-foreground max-w-2xl mx-auto text-sm md:text-base leading-relaxed mb-8">
-            Marcas, cocineros y proyectos que venden productos aptos para celíacos: viandas,
-            pastelería, panificados, congelados, premezclas y más.
+          <p className="mt-4 text-base leading-relaxed text-[#5F6B63]">
+            Pastelería, panificados, viandas, congelados y productos artesanales recomendados por la
+            comunidad.
           </p>
-          <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="gap-2 min-h-[48px] shadow-lg shadow-primary/20" onClick={scrollToExplore}>
-              Explorar emprendimientos
-              <ArrowDown className="h-4 w-4" />
-            </Button>
-            <Button asChild size="lg" variant="outline" className="min-h-[48px]">
-              <Link href="/sugerir-emprendimiento">Sugerir uno</Link>
-            </Button>
-          </div>
-        </section>
 
-        {/* 2. Explicativa */}
-        <VenturesExplainer />
-
-        {/* 3–5. Buscador, filtros, listado */}
-        <section id="explorar" className="scroll-mt-24">
-          <div className="mb-6">
+          <div ref={boxRef} className="relative mt-6">
             <label htmlFor="venture-search" className="sr-only">
               Buscar emprendimientos
             </label>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input
-                id="venture-search"
-                type="search"
-                placeholder="Buscar tortas, viandas, panificados, CABA..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-11 h-12 bg-card/50 border-border/50 focus:border-primary/50 rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* Filtros: wrap desktop, scroll mobile */}
-          <div
-            className={cn(
-              "flex gap-2 mb-8",
-              "max-md:overflow-x-auto max-md:flex-nowrap max-md:pb-2 max-md:-mx-4 max-md:px-4 max-md:scrollbar-hide max-md:snap-x",
-              "md:flex-wrap"
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => setCategory(null)}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                "max-md:shrink-0 max-md:snap-center",
-                !categoryParam
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted border border-olive/10"
-              )}
-            >
-              Todos
-            </button>
-            {VENTURE_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                  "max-md:shrink-0 max-md:snap-center",
-                  categoryParam === cat.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-olive/10"
-                )}
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5F6B63]" />
+            <input
+              id="venture-search"
+              type="search"
+              autoComplete="off"
+              placeholder="Buscar viandas, panificados, pastelería o una ciudad"
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value)
+                setSuggestOpen(true)
+              }}
+              onFocus={() => setSuggestOpen(true)}
+              className="h-14 w-full rounded-2xl border border-[#E8E1D6] bg-white pl-12 pr-4 text-base text-[#1F4D35] outline-none ring-offset-2 placeholder:text-[#5F6B63]/70 focus:ring-2 focus:ring-[#1F4D35]/25"
+            />
+            {suggestOpen && suggestions.length > 0 && (
+              <ul
+                className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-[#E8E1D6] bg-white py-2 shadow-[0_16px_40px_-24px_rgba(31,77,53,0.45)]"
+                role="listbox"
               >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          <div id="listado">
-            {loading ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-80 rounded-2xl border border-olive/10 bg-olive/5 animate-pulse"
-                  />
+                {suggestions.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left hover:bg-[#F8F5EF]"
+                      onClick={() => {
+                        setSuggestOpen(false)
+                        if (s.href) router.push(s.href)
+                      }}
+                    >
+                      <span className="text-base font-medium text-[#1F4D35]">{s.label}</span>
+                      <span className="text-sm text-[#5F6B63]">{s.hint}</span>
+                    </button>
+                  </li>
                 ))}
-              </div>
-            ) : showEmpty ? (
-              <>
-                {hasActiveSearch && (
-                  <p className="text-center text-sm text-muted-foreground mb-6">
-                    No encontramos resultados para &ldquo;{searchParam}&rdquo;
-                    {categoryParam ? " en esta categoría" : ""}.
-                  </p>
-                )}
-                <VenturesEmptyState hasCategoryFilter={!!categoryParam} />
-              </>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayedVentures.map((v) => (
-                  <VentureCard key={v._id} venture={v} />
-                ))}
-              </div>
+              </ul>
             )}
           </div>
+
+          <div
+            className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+            data-overflow-allowed="venture-chips"
+          >
+            {HERO_CHIPS.map((chip) => {
+              const selected =
+                chip.key === "all" ? !categoryParam && !modalityParam : activeChip?.key === chip.key
+              return (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => setChip(chip)}
+                  className={cn(
+                    "h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors",
+                    selected
+                      ? "border-[#C85A2E] bg-[#C85A2E] text-[#F8F5EF]"
+                      : "border-[#E8E1D6] bg-white text-[#1F4D35] hover:border-[#1F4D35]/30"
+                  )}
+                >
+                  {chip.label}
+                </button>
+              )
+            })}
+          </div>
+        </header>
+
+        {!hasFilter && <VentureFeaturedRail ventures={ventures} />}
+
+        <section id="listado" aria-labelledby="catalog-heading" className="mb-14">
+          <h2 id="catalog-heading" className="mb-5 text-lg font-semibold text-[#1F4D35]">
+            {hasFilter ? "Resultados" : "Todos los emprendimientos"}
+          </h2>
+          {loading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-80 animate-pulse rounded-[24px] border border-[#E8E1D6] bg-[#E8E1D6]/50"
+                />
+              ))}
+            </div>
+          ) : showEmpty ? (
+            <>
+              {hasActiveSearch && (
+                <p className="mb-6 text-center text-base text-[#5F6B63]">
+                  No encontramos resultados para &ldquo;{searchParam}&rdquo;.
+                </p>
+              )}
+              <VenturesEmptyState hasCategoryFilter={!!categoryParam} />
+            </>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {displayedVentures.map((v) => (
+                <VentureCard key={v._id} venture={v} />
+              ))}
+            </div>
+          )}
         </section>
+
+        <VentureExploreSections />
       </div>
     </div>
   )

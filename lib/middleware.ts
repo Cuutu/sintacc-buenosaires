@@ -5,7 +5,6 @@ import type { NextRequest } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { User } from "@/models/User"
 import mongoose from "mongoose"
-
 /**
  * Authority for protected APIs: session + User still exists.
  * One Mongo existence lookup per protected request (JWT callback does not re-query).

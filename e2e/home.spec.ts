@@ -26,14 +26,10 @@ test.describe("home carrusel y buscador @hermetic @mobile", () => {
     await expect(stats.locator("li")).toHaveCount(3)
 
     await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("lugares en el mapa")).toBeVisible()
+    await expect(stats.getByText("lugares")).toBeVisible()
     await expect(stats.getByText(String(E2E_STATS.reviewsCountGoogle), { exact: true })).toBeVisible()
-    await expect(stats.getByText("reseñas en Google")).toBeVisible()
-    await expect(
-      stats.getByText("Acumuladas por los lugares disponibles en CeliMap")
-    ).toBeVisible()
     await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("usuarios registrados")).toBeVisible()
+    await expect(stats.getByText("usuarios")).toBeVisible()
     await expect(stats.locator(".animate-pulse")).toHaveCount(0)
 
     const box = await stats.boundingBox()
@@ -44,14 +40,14 @@ test.describe("home carrusel y buscador @hermetic @mobile", () => {
     assertHappyPathNetwork(guards.responses500, guards.networkFailures)
   })
 
-  test("buscador apilado en 320 y en fila en 640", async ({ page }) => {
+  test("buscador integrado en una fila en 320 y 640", async ({ page }) => {
     await installHappyPathMocks(page)
     await page.setViewportSize({ width: 320, height: 568 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     const form = page.getByTestId("home-search-bar")
     await expect(form).toBeVisible()
     expect(
-      await form.evaluate((el) => getComputedStyle(el).flexDirection === "column")
+      await form.evaluate((el) => getComputedStyle(el).flexDirection === "row")
     ).toBe(true)
 
     await page.setViewportSize({ width: 640, height: 800 })

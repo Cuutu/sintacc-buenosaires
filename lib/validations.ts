@@ -42,6 +42,15 @@ export const placeSchema = z.object({
   safetyLevel: z
     .enum(["dedicated_gf", "gf_options", "cross_contamination_risk", "unknown"])
     .optional(),
+  description: z.string().max(800).optional(),
+  pickup: z.boolean().optional(),
+  seo: z
+    .object({
+      metaTitle: z.string().max(80).optional(),
+      metaDescription: z.string().max(180).optional(),
+      canonical: z.string().max(300).optional(),
+    })
+    .optional(),
 })
 
 export const contaminationReportSchema = z.object({

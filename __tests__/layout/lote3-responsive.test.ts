@@ -48,24 +48,24 @@ describe("overflow-audit helpers", () => {
 })
 
 describe("Lote 3 responsive contracts", () => {
-  it("StatsRow: bloque único responsive (sin carrusel overflow)", () => {
-    const src = read("components/home/StatsRow.tsx")
+  it("HeroMetrics: tarjeta compacta, fila deslizable sin snap", () => {
+    const src = read("components/home/HeroMetrics.tsx")
     expect(src).toContain('data-testid="home-stats"')
-    expect(src).toContain("md:grid-cols-3")
-    expect(src).toContain("divide-y")
-    expect(src).toContain("md:divide-x")
+    expect(src).toContain("lugares")
+    expect(src).toContain("reseñas")
+    expect(src).toContain("usuarios")
     expect(src).not.toContain("snap-x")
     expect(src).not.toContain("statsCarouselCardWidthCss")
     expect(src).not.toMatch(/100vw/)
     expect(src).not.toMatch(/-mx-4/)
   })
 
-  it("SearchBar: apila en mobile, targets 48px", () => {
+  it("SearchBar: píldora integrada, target ≥56px", () => {
     const src = read("components/search-bar.tsx")
-    expect(src).toContain("flex-col")
-    expect(src).toContain("sm:flex-row")
-    expect(src).toContain("min-h-[48px]")
+    expect(src).toContain("min-h-[52px]")
     expect(src).toContain("min-w-0")
+    expect(src).toContain("Buscar cafeterías, restaurantes o ciudades")
+    expect(src).not.toContain("flex-col")
   })
 
   it("BottomNav: cabe en 320 (márgenes left-2, items shrink)", () => {
@@ -78,11 +78,12 @@ describe("Lote 3 responsive contracts", () => {
     expect(src).not.toMatch(/>\s*\{label\}\s*</)
   })
 
-  it("StickyActionBar sin doble clearance (contrato L2 intacto)", () => {
-    const src = read("components/lugar/StickyActionBarMobile.tsx")
-    expect(src).toContain("bottom-[var(--bottom-nav-clearance)]")
-    const matches = src.match(/bottom-nav-clearance/g) || []
-    expect(matches.length).toBe(1)
+  it("ficha lugar sin barra flotante Ir (BottomNav alcanza)", () => {
+    const page = read("app/lugar/[id]/page.tsx")
+    expect(page).not.toContain("StickyActionBarMobile")
+    expect(fs.existsSync(path.join(root, "components/lugar/StickyActionBarMobile.tsx"))).toBe(
+      false
+    )
   })
 
   it("no introduce 1.1rem ni overflow-x-hidden global en layout", () => {

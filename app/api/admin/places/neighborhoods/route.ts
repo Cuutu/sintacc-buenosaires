@@ -12,11 +12,19 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    const neighborhoods = await Place.distinct("neighborhood").then((arr) =>
-      arr.filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
-    )
+    const [neighborhoods, provinces, localities] = await Promise.all([
+      Place.distinct("neighborhood").then((arr) =>
+        arr.filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "es"))
+      ),
+      Place.distinct("province").then((arr) =>
+        arr.filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "es"))
+      ),
+      Place.distinct("locality").then((arr) =>
+        arr.filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "es"))
+      ),
+    ])
 
-    return NextResponse.json({ neighborhoods })
+    return NextResponse.json({ neighborhoods, provinces, localities })
   } catch (error) {
     logApiError("/api/admin/places/neighborhoods", error, { request })
     return NextResponse.json(

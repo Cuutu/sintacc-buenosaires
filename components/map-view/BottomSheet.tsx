@@ -102,7 +102,7 @@ export function MapBottomSheet({
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-xl border-t border-olive/10 rounded-t-2xl shadow-2xl",
+        "fixed inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 overflow-hidden rounded-t-[24px] border border-[#E8E1D6] border-b-0 bg-[#F8F5EF] shadow-[0_-12px_32px_rgba(31,77,53,0.12)]",
         !reduceMotion && !isDragging && "transition-[height] duration-300 ease-out",
         className
       )}
@@ -125,13 +125,13 @@ export function MapBottomSheet({
           }
         }}
       >
-        <div className="w-12 h-1.5 bg-white/40 rounded-full" aria-hidden />
+        <div className="h-1.5 w-10 rounded-full bg-[#E8E1D6]" aria-hidden />
       </div>
 
       <div
         ref={listRef}
         onScroll={handleListScroll}
-        className="overflow-y-auto overscroll-contain h-[calc(100%-3.5rem)] pb-[var(--safe-area-bottom)] touch-pan-y"
+        className="h-[calc(100%-3.5rem)] overflow-y-auto overscroll-contain touch-pan-y pb-4"
       >
         {children}
       </div>

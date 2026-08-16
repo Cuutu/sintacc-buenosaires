@@ -59,6 +59,7 @@ export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMap
           searchQuery=""
           selectedPlaceId={selectedPlaceId}
           onPlaceSelect={(p) => setSelectedPlaceId(p._id.toString())}
+          onPlaceDeselect={() => setSelectedPlaceId(null)}
           initialCenter={province?.center}
           initialZoom={province?.zoom}
           placeIdToFocus={null}

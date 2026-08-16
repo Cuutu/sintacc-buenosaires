@@ -1,37 +1,64 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import { AtlasFlora, AtlasPlaces, AtlasStreets } from "@/components/home/CeliMapAtlas"
+
+const LAYER =
+  "pointer-events-none absolute inset-0 h-full w-full will-change-transform transition-transform duration-200 ease-out"
+
 export function HeroBackdrop() {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const hover = window.matchMedia("(hover: hover) and (pointer: fine)")
+    if (motion.matches || !hover.matches) return
+
+    let raf = 0
+    const onMove = (e: PointerEvent) => {
+      const r = root.getBoundingClientRect()
+      const nx = ((e.clientX - r.left) / r.width - 0.5) * 2
+      const ny = ((e.clientY - r.top) / r.height - 0.5) * 2
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        setOffset({ x: Math.max(-1, Math.min(1, nx)), y: Math.max(-1, Math.min(1, ny)) })
+        raf = 0
+      })
+    }
+
+    window.addEventListener("pointermove", onMove, { passive: true })
+    return () => {
+      window.removeEventListener("pointermove", onMove)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  const far = {
+    transform: `translate3d(${offset.x * 3}px, ${offset.y * 3}px, 0)`,
+  }
+  const mid = {
+    transform: `translate3d(${offset.x * 4}px, ${offset.y * 4}px, 0)`,
+  }
+  const near = {
+    transform: `translate3d(${offset.x * 5}px, ${offset.y * 5}px, 0)`,
+  }
+
   return (
-    <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden>
-      <svg
-        className="absolute inset-0 h-full w-full opacity-[0.09] text-olive"
-        viewBox="0 0 1200 800"
-        preserveAspectRatio="xMidYMid slice"
-        fill="none"
-      >
-        <path
-          d="M80 520C180 480 240 400 340 390C460 378 520 470 640 450C760 430 820 320 940 310C1040 302 1120 360 1180 340"
-          stroke="currentColor"
-          strokeWidth="1.4"
-        />
-        <path
-          d="M40 280C140 300 210 240 320 250C450 262 500 340 630 330C760 320 810 210 940 200C1040 192 1120 240 1200 220"
-          stroke="currentColor"
-          strokeWidth="1.2"
-        />
-        <path
-          d="M0 640C120 610 200 680 320 660C460 636 530 560 660 570C790 580 850 670 980 650"
-          stroke="currentColor"
-          strokeWidth="1.2"
-        />
-        <circle cx="340" cy="390" r="5" fill="currentColor" />
-        <circle cx="640" cy="450" r="4" fill="currentColor" />
-        <circle cx="940" cy="310" r="6" fill="#D4633A" fillOpacity="0.85" />
-        <circle cx="320" cy="250" r="4" fill="currentColor" />
-        <circle cx="630" cy="330" r="5" fill="currentColor" />
-        <circle cx="660" cy="570" r="4" fill="currentColor" />
-      </svg>
-      <div className="absolute -top-24 right-[-8%] h-[28rem] w-[28rem] rounded-full bg-olive/8 blur-[90px]" />
-      <div className="absolute bottom-[-12%] left-[-6%] h-[22rem] w-[22rem] rounded-full bg-terracotta/10 blur-[80px]" />
-      <div className="celimap-hero-noise" />
+    <div
+      ref={rootRef}
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      aria-hidden
+    >
+      <div className="celimap-hero-mesh" />
+      <AtlasStreets className={`${LAYER} opacity-35 md:opacity-100`} style={far} />
+      <AtlasFlora className={`${LAYER} opacity-35 md:opacity-100`} style={mid} />
+      <AtlasPlaces className={`${LAYER} opacity-40 md:opacity-100`} style={near} />
+      <div className="celimap-hero-paper" />
+      <div className="celimap-hero-vignette" />
     </div>
   )
 }

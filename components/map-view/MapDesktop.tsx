@@ -7,7 +7,7 @@ import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMa
 import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
-import { MapLegend } from "./MapLegend"
+import { DesktopMapPopover } from "./DesktopMapPopover"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { filterPlacesInBounds } from "./geo"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
@@ -33,6 +33,7 @@ interface MapDesktopProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  onPlaceDeselect?: () => void
   initialCenter?: [number, number]
   initialZoom?: number
   onMapMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
@@ -91,6 +92,7 @@ export function MapDesktop({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  onPlaceDeselect,
   initialCenter,
   initialZoom,
   onMapMoveEnd,
@@ -100,6 +102,7 @@ export function MapDesktop({
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [sort, setSort] = React.useState<SortOption>("default")
   const [mapKey, setMapKey] = React.useState(0)
+  const [hoveredPlaceId, setHoveredPlaceId] = React.useState<string | null>(null)
 
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
@@ -180,11 +183,16 @@ export function MapDesktop({
     return list
   }, [searchQuery, visiblePlaces, sort])
 
+  const selectedPlace = React.useMemo(
+    () => places.find((place) => place._id.toString() === selectedPlaceId) ?? null,
+    [places, selectedPlaceId]
+  )
+
   const handlePlaceSelect = React.useCallback(
     (place: IPlace) => {
       onPlaceSelect(place)
       if (place.location && mapRef.current) {
-        mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+        mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
       }
     },
     [onPlaceSelect]
@@ -195,7 +203,7 @@ export function MapDesktop({
   }`
 
   return (
-    <div className="flex h-full w-full bg-[#050807]">
+    <div className="flex h-full w-full bg-cream">
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <MapErrorBoundary
           key={mapKey}
@@ -205,23 +213,32 @@ export function MapDesktop({
             ref={mapRef}
             places={places}
             selectedPlaceId={selectedPlaceId ?? undefined}
+            hoveredPlaceId={hoveredPlaceId}
             onPlaceSelect={onPlaceSelect}
+            onBackgroundClick={onPlaceDeselect}
             onBoundsChange={setBounds}
             onMoveEnd={onMapMoveEnd}
             searchQuery={searchQuery}
             initialCenter={initialCenter}
             initialZoom={initialZoom}
-            darkStyle
             reduceMotion={reduceMotion}
             clusterMarkers
             colorBySafety
+            showPopup={false}
           />
         </MapErrorBoundary>
-        <MapLegend />
+
+        {selectedPlace && (
+          <DesktopMapPopover
+            place={selectedPlace}
+            mapRef={mapRef}
+            onClose={() => onPlaceDeselect?.()}
+          />
+        )}
 
         {hasActiveFilters && (
           <div className="pointer-events-auto absolute left-1/2 top-4 z-10 -translate-x-1/2">
-            <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs font-medium text-olive shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+            <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs font-medium text-olive shadow-[0_8px_24px_rgba(31,77,53,0.12)] backdrop-blur-2xl">
               <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
               <span className="truncate">
                 {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
@@ -262,6 +279,7 @@ export function MapDesktop({
             loadError={loadError}
             onRetryLoad={onRetryLoad}
             onPlaceSelect={handlePlaceSelect}
+            onPlaceHover={setHoveredPlaceId}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
           />
         </div>

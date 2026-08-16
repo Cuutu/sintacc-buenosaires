@@ -143,6 +143,46 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
       "Encontrá emprendimientos sin gluten en Rosario: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
     zonePatterns: [/rosario/i],
   },
+  {
+    slug: "zona-sur",
+    label: "Zona Sur",
+    h1: "Emprendimientos sin gluten en Zona Sur",
+    intro:
+      "Encontrá emprendimientos sin gluten en Zona Sur (GBA). Opciones sugeridas por la comunidad de Celimap.",
+    title: "Emprendimientos sin gluten en Zona Sur",
+    description:
+      "Encontrá emprendimientos sin gluten en Zona Sur: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
+    zonePatterns: [
+      /zona sur/i,
+      /avellaneda/i,
+      /lan[uú]s/i,
+      /lomas/i,
+      /quilmes/i,
+      /berazategui/i,
+    ],
+  },
+  {
+    slug: "mar-del-plata",
+    label: "Mar del Plata",
+    h1: "Emprendimientos sin gluten en Mar del Plata",
+    intro:
+      "Encontrá emprendimientos sin gluten en Mar del Plata. Sugeridos por la comunidad de Celimap.",
+    title: "Emprendimientos sin gluten en Mar del Plata",
+    description:
+      "Encontrá emprendimientos sin gluten en Mar del Plata: viandas, pastelería y productos aptos sugeridos por la comunidad.",
+    zonePatterns: [/mar del plata/i, /\bmdq\b/i],
+  },
+  {
+    slug: "buzios",
+    label: "Buzios",
+    h1: "Emprendimientos sin gluten en Buzios",
+    intro:
+      "Encontrá emprendimientos sin gluten en Buzios. Sugeridos por la comunidad de Celimap.",
+    title: "Emprendimientos sin gluten en Buzios",
+    description:
+      "Encontrá emprendimientos sin gluten en Buzios sugeridos por la comunidad de Celimap.",
+    zonePatterns: [/b[uú]zios/i],
+  },
 ]
 
 export const VENTURE_CATEGORY_LANDING_SLUGS = VENTURE_CATEGORY_LANDINGS.map((c) => c.slug)

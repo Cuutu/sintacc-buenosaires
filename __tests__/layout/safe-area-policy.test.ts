@@ -37,11 +37,14 @@ describe("Lote 2 safe-area policy contracts", () => {
     expect(src).toContain("md:top-6")
   })
 
-  it("BottomNav consume safe bottom + float gap", () => {
+  it("BottomNav consume edge + float gap", () => {
     const src = read("components/nav/BottomNav.tsx")
-    expect(src).toContain("var(--safe-area-bottom)")
+    expect(src).toContain("var(--bottom-nav-edge)")
     expect(src).toContain("var(--bottom-nav-float-gap)")
-    expect(src).toContain("h-16")
+    expect(src).toContain("h-14")
+    const css = read("app/globals.css")
+    expect(css).toContain("--bottom-nav-edge:")
+    expect(css).toContain("max(var(--safe-area-bottom), 2rem)")
   })
 
   it("LayoutChrome reserva BottomNav clearance y no pt en mapa", () => {

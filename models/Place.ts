@@ -74,6 +74,8 @@ export interface IPlace extends Document {
     other?: string
   }
   photos: string[]
+  /** community = subida; google = portada Places API */
+  photoSource?: "community" | "google"
   status: "approved" | "pending"
   /** Origen del dato: excel, kml, suggestion, manual */
   source?: "excel" | "kml" | "suggestion" | "manual"
@@ -91,6 +93,14 @@ export interface IPlace extends Document {
   featured?: boolean
   /** Orden entre destacados (menor = primero) */
   featuredOrder?: number
+  description?: string
+  pickup?: boolean
+  seo?: {
+    metaTitle?: string
+    metaDescription?: string
+    canonical?: string
+  }
+  editLog?: Array<{ at: Date; by?: string; fields: string[] }>
   createdAt: Date
   updatedAt: Date
 }
@@ -172,6 +182,10 @@ const PlaceSchema = new Schema<IPlace>(
         message: "Maximum 3 photos allowed in phase 1",
       },
     },
+    photoSource: {
+      type: String,
+      enum: ["community", "google"],
+    },
     status: {
       type: String,
       enum: ["approved", "pending"],
@@ -243,6 +257,20 @@ const PlaceSchema = new Schema<IPlace>(
       type: Number,
       min: 0,
     },
+    description: { type: String, trim: true },
+    pickup: { type: Boolean, default: false },
+    seo: {
+      metaTitle: String,
+      metaDescription: String,
+      canonical: String,
+    },
+    editLog: [
+      {
+        at: Date,
+        by: String,
+        fields: [String],
+      },
+    ],
   },
   {
     timestamps: true,

@@ -54,12 +54,14 @@ Escala 8 / 12 / 16 / 24 / 32 / 48 / 64 (Tailwind `2, 3, 4, 6, 8, 12, 16`).
 
 Componente: `components/brand/BrandLogo.tsx`
 
-- **Mark:** pin oliva, espiga cream, un grano terracota, trazo diagonal
-- **Lockup horizontal:** mark + wordmark (default en header)
-- **Inverso:** mark cream + wordmark cream, para footer / bandas oliva (`inverse`)
-- **Tagline opcional:** “tu mapa sin gluten”
+- **Mark:** `public/brand/mark.png` (pin aislado, fondo transparente)
+- **Lockup cream:** `public/brand/logo-principal.png`
+- **Lockup oliva (negativo):** `public/brand/logo-principal-neg.png`
+- **App icon:** `public/brand/app-icon.png` + PWA `celimappwa.png`
+- **Favicon mark:** `public/brand/favicon-mark.png`
+- **IG:** `public/brand/icon-ig.png`
 
-No se tocan PNG de PWA/OG en este preview (ícono app store sigue el pin actual). El UI usa SVG.
+Fuente original: carpeta `newbranding/`. El UI usa estos PNG, no el SVG generado.
 
 ## Componentes tocados
 
@@ -116,7 +118,7 @@ Onboarding, PWA prompt, error boundaries, ventures, stats, map picker, etc. Text
 2. **Primary = CTA terracota.** Olive es texto/marca, no el botón. Si no, nav y CTA competían.
 3. **Botón más oscuro que el brand terracotta** por WCAG AA.
 4. **Íconos Lucide** stroke ~1.75. Sin librería nueva.
-5. **Mapa sigue siendo mapa.** Sidebar/controles cream; el canvas Mapbox no se re-estiliza acá.
+5. **Mapa light.** Tiles `mapbox://styles/mapbox/light-v11` (papel claro). Dark era leftover del tema tech.
 6. **Duplicar tagline se evitó** en el hero: lockup sin tagline, Fraunces italic debajo del H1.
 
 ## Screenshots (preview local)

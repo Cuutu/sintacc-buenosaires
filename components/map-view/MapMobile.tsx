@@ -5,10 +5,9 @@ import { List, X } from "lucide-react"
 import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
 import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
-import { MapLegend } from "./MapLegend"
 import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
-import { PlaceMiniCard } from "./PlaceMiniCard"
+import { MobileMapBottomSheet, MOBILE_SHEET_COMPACT_PX } from "./MobileMapBottomSheet"
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { toast } from "sonner"
@@ -29,6 +28,7 @@ interface MapMobileProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  onPlaceDeselect?: () => void
   initialCenter?: [number, number]
   initialZoom?: number
   placeIdToFocus?: string | null
@@ -55,6 +55,7 @@ export function MapMobile({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  onPlaceDeselect,
   initialCenter,
   initialZoom,
   placeIdToFocus,
@@ -70,6 +71,7 @@ export function MapMobile({
   const [locating, setLocating] = React.useState(false)
   const [mapKey, setMapKey] = React.useState(0)
   const [moreOpen, setMoreOpen] = React.useState(false)
+  const [sheetHeight, setSheetHeight] = React.useState(MOBILE_SHEET_COMPACT_PX)
 
   const visiblePlaces = React.useMemo(() => {
     if (searchQuery?.trim()) return places
@@ -176,8 +178,9 @@ export function MapMobile({
 
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
+    if (listOpen) onSheetCollapse?.()
     if (place.location && mapRef.current) {
-      mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+      mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
     }
   }
 
@@ -198,7 +201,7 @@ export function MapMobile({
     const place = places.find((p) => p._id.toString() === placeIdToFocus)
     if (place?.location) {
       lastFocusedPlaceIdRef.current = placeIdToFocus
-      mapRef.current.flyTo(place.location.lng, place.location.lat, 15)
+      mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
     }
   }, [placeIdToFocus, places])
 
@@ -221,6 +224,7 @@ export function MapMobile({
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
         onFiltersOpen={() => setMoreOpen(true)}
+        compact={listOpen}
         placeholder="Buscar lugar o zona..."
       />
 
@@ -231,12 +235,15 @@ export function MapMobile({
             places={places}
             selectedPlaceId={selectedPlaceId ?? undefined}
             onPlaceSelect={handlePlaceSelect}
+            onBackgroundClick={() => {
+              if (listOpen) onSheetCollapse?.()
+              onPlaceDeselect?.()
+            }}
             onBoundsChange={setBounds}
             onMoveEnd={onMapMoveEnd}
             searchQuery={searchQuery}
             initialCenter={initialCenter}
             initialZoom={initialZoom}
-            darkStyle
             reduceMotion={reduceMotion}
             enableGeolocate
             onGeolocateError={handleGeolocateError}
@@ -246,35 +253,25 @@ export function MapMobile({
             showPopup={false}
           />
         </MapErrorBoundary>
-        {!selectedPlace && !listOpen && <MapLegend />}
       </div>
 
-      <FabButtons
-        onNearMe={goToNearMe}
-        locating={locating}
-        bottomOffset={
-          listOpen
-            ? "calc(18vh + 1rem)"
-            : selectedPlace && !listOpen
-              ? "calc(var(--bottom-nav-clearance) + 5.5rem)"
-              : "calc(var(--bottom-nav-clearance) + 0.5rem)"
-        }
-      />
-
       {!listOpen && (
+        <FabButtons
+          onNearMe={goToNearMe}
+          locating={locating}
+          bottomOffset={
+            selectedPlace
+              ? `calc(var(--bottom-nav-clearance) + ${sheetHeight + 16}px)`
+              : "calc(var(--bottom-nav-clearance) + 0.5rem)"
+          }
+        />
+      )}
+
+      {!listOpen && !selectedPlace && (
         <div
           className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 flex flex-col items-center gap-2 px-3"
           data-overflow-allowed="decoration"
         >
-          {selectedPlace && (
-            <div className="pointer-events-auto w-full max-w-[440px]">
-              <PlaceMiniCard
-                place={selectedPlace}
-                selected
-                onSelect={() => handlePlaceSelect(selectedPlace)}
-              />
-            </div>
-          )}
           <button
             type="button"
             onClick={() => onListOpen?.()}
@@ -286,7 +283,16 @@ export function MapMobile({
         </div>
       )}
 
-      {listOpen && (
+      {selectedPlace && (
+        <MobileMapBottomSheet
+          place={selectedPlace}
+          onClose={() => onPlaceDeselect?.()}
+          reduceMotion={reduceMotion}
+          onHeightChange={setSheetHeight}
+        />
+      )}
+
+      {listOpen && !selectedPlace && (
         <MapBottomSheet
           initialSnap="half"
           onSnapChange={handleSnapChange}
@@ -315,7 +321,7 @@ export function MapMobile({
       )}
 
       {moreOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 pb-[calc(var(--bottom-nav-float-gap)+var(--safe-area-bottom))]">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 px-3 pb-[var(--bottom-nav-clearance)] pt-[calc(var(--safe-area-top)+0.75rem)]">
           <button
             type="button"
             className="absolute inset-0"
@@ -325,9 +331,9 @@ export function MapMobile({
           <div
             role="dialog"
             aria-label="Más filtros"
-            className="relative w-full max-w-md rounded-3xl border border-olive/15 bg-card p-5 shadow-2xl"
+            className="relative z-10 flex min-h-0 max-h-full w-full max-w-md flex-col overflow-hidden rounded-3xl border border-olive/15 bg-card shadow-2xl"
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-5">
               <h2 className="text-base font-semibold text-olive">Más filtros</h2>
               <button
                 type="button"
@@ -339,6 +345,7 @@ export function MapMobile({
               </button>
             </div>
 
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Tipo de lugar
             </p>
@@ -402,6 +409,7 @@ export function MapMobile({
                 Limpiar filtros extra
               </button>
             )}
+            </div>
           </div>
         </div>
       )}

@@ -27,12 +27,12 @@ const SAFETY_CONFIG = {
   dedicated_gf: {
     label: "100% sin gluten",
     dot: "🟢",
-    className: "bg-primary/20 text-primary border-primary/40",
+    className: "bg-olive/10 text-olive border-olive/25",
   },
   gf_options: {
-    label: "Opciones sin gluten",
+    label: "Tiene opciones",
     dot: "🟡",
-    className: "bg-amber-500/20 text-amber-400 border-amber-500/40",
+    className: "bg-[#C85A2E]/10 text-[#A84A26] border-[#C85A2E]/30",
   },
   cross_contamination_risk: {
     label: "Riesgo contaminación",
@@ -56,11 +56,11 @@ const PRIMARY_SAFETY_TAGS = new Set([
 /** Tags que ya se muestran vía badge/hero de safety — no repetir en detalle. */
 const SAFETY_BADGE_TAGS = new Set(["100_gf", "opciones_sin_tacc"])
 
-function safetyFromTags(tags: string[] = []): PrimarySafetyLevel | undefined {
-  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) {
-    return "dedicated_gf"
-  }
+/** Certificado = materia prima, no cocina dedicada. Solo `100_gf` es 100%. */
+export function safetyFromTags(tags: string[] = []): PrimarySafetyLevel | undefined {
+  // Si hay gluten en el local, nunca venderlo como 100% aunque también tenga 100_gf.
   if (tags.includes("opciones_sin_tacc")) return "gf_options"
+  if (tags.includes("100_gf")) return "dedicated_gf"
   return undefined
 }
 

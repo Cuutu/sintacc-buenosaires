@@ -65,6 +65,7 @@ export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
           searchQuery=""
           selectedPlaceId={selectedPlaceId}
           onPlaceSelect={(p) => setSelectedPlaceId(p._id.toString())}
+          onPlaceDeselect={() => setSelectedPlaceId(null)}
           initialCenter={centerConfig?.center}
           initialZoom={centerConfig?.zoom}
           placeIdToFocus={null}

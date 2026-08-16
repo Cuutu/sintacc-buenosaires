@@ -47,7 +47,7 @@ function PlaceCoverFallback({ name, type }: { name: string; type: string }) {
       }}
       aria-hidden
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#10d98a,transparent_55%)] opacity-[0.12]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#2D4A34,transparent_55%)] opacity-[0.08]" />
       <div className="relative flex flex-col items-center gap-1.5 text-primary/70">
         <UtensilsCrossed className="h-7 w-7" strokeWidth={1.5} />
         <span className="text-2xl font-bold tracking-tight text-olive/40">{initial}</span>
@@ -170,7 +170,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
                   key={tag}
                   className="inline-flex items-center rounded-full border border-olive/15 bg-olive/5 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
                 >
-                  {tag === "certificado_sin_tacc" ? "Sin TACC" : config.label}
+                  {config.label}
                 </span>
               )
             })}

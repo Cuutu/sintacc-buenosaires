@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { VentureCard } from "@/components/ventures/VentureCard"
-import { VentureSeoNavLinks } from "@/components/ventures/VentureSeoNavLinks"
+import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import type { VenturePublic } from "@/lib/ventures-server"
 import { ArrowLeft } from "lucide-react"
 
@@ -20,8 +20,8 @@ export function VentureLandingPage({
   breadcrumbLabel,
 }: VentureLandingPageProps) {
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="min-h-screen bg-[#F3EEE4]">
+      <div className="container mx-auto max-w-6xl px-5 py-8 md:px-8">
         <Link
           href="/emprendimientos"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -43,27 +43,27 @@ export function VentureLandingPage({
             {intro}
           </p>
           <Button asChild variant="outline" size="sm">
-            <Link href="/sugerir-emprendimiento">Sugerir emprendimiento</Link>
+            <Link href="/sugerir-emprendimiento">Publicar emprendimiento</Link>
           </Button>
         </header>
 
         {ventures.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {ventures.map((v) => (
               <VentureCard key={v._id} venture={v} />
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-12 mb-12">
+          <p className="mb-12 py-12 text-center text-[#5F6B63]">
             Todavía no hay emprendimientos publicados en esta sección.{" "}
-            <Link href="/sugerir-emprendimiento" className="text-primary hover:underline">
-              Sugerí uno
+            <Link href="/sugerir-emprendimiento" className="text-[#C85A2E] hover:underline">
+              Publicá la tuya
             </Link>
             .
           </p>
         )}
 
-        <VentureSeoNavLinks />
+        <VentureExploreSections />
       </div>
     </div>
   )

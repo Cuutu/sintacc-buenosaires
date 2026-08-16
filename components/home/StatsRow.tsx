@@ -42,63 +42,55 @@ function mapApiResponse(data: StatsApi): Stats {
 const METRICS: Array<{
   key: keyof Stats
   Icon: LucideIcon
+  label: string
   description: string
   note?: string
 }> = [
   {
     key: "places",
     Icon: MapPin,
+    label: "lugares",
     description: "lugares en el mapa",
   },
   {
     key: "reviews",
     Icon: MessageSquare,
+    label: "reseñas",
     description: "reseñas en Google",
     note: "Acumuladas por los lugares disponibles en CeliMap",
   },
   {
     key: "users",
     Icon: Users,
+    label: "usuarios",
     description: "usuarios registrados",
   },
 ]
 
 function MetricNumber({ formatted, showPlus }: { formatted: string; showPlus: boolean }) {
-  if (!showPlus) {
-    return (
-      <span className="text-[2.1rem] font-semibold leading-none tracking-tight text-primary tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
-        {formatted}
-      </span>
-    )
-  }
-
   const isMillions = / M\+$/.test(formatted)
-  if (isMillions) {
-    const core = formatted.replace(/ M\+$/, "")
-    return (
-      <span className="inline-flex items-baseline gap-1 leading-none text-primary">
-        <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
-          {core}
+  const digits = isMillions
+    ? formatted.replace(/ M\+$/, "")
+    : formatted.replace(/\+$/, "")
+
+  return (
+    <span className="inline-flex items-baseline gap-0.5 leading-none text-olive">
+      {showPlus ? (
+        <span className="text-[1.35rem] font-semibold opacity-80 sm:text-[1.45rem]" aria-hidden>
+          +
         </span>
+      ) : null}
+      <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
+        {digits}
+      </span>
+      {isMillions ? (
         <span
           className="text-[1.15rem] font-semibold tracking-tight opacity-85 sm:text-[1.25rem]"
           aria-hidden
         >
-          M+
+          M
         </span>
-      </span>
-    )
-  }
-
-  const digits = formatted.replace(/\+$/, "")
-  return (
-    <span className="inline-flex items-baseline gap-0.5 leading-none text-primary">
-      <span className="text-[2.1rem] font-semibold tracking-tight tabular-nums sm:text-[2.35rem] md:text-[2.5rem]">
-        {digits}
-      </span>
-      <span className="text-[1.35rem] font-semibold opacity-80 sm:text-[1.45rem]" aria-hidden>
-        +
-      </span>
+      ) : null}
     </span>
   )
 }
@@ -161,17 +153,21 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
         visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
       }`}
     >
-      <div
-        className="pointer-events-none absolute -inset-px rounded-[24px] bg-olive/10 opacity-70 blur-2xl"
-        aria-hidden
-      />
-      <div className="relative overflow-hidden rounded-[24px] border border-olive/10 bg-card shadow-soft">
+      <h2 className="mb-6 text-center font-display text-xl font-bold text-olive md:mb-8 md:text-2xl">
+        La comunidad que hace crecer el mapa
+      </h2>
+      <div className="relative">
+        <div
+          className="pointer-events-none absolute -inset-px rounded-[24px] bg-olive/10 opacity-70 blur-2xl"
+          aria-hidden
+        />
+        <div className="relative overflow-hidden rounded-[24px] border border-olive/10 bg-card shadow-soft">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(45,74,52,0.08),transparent_52%)]"
           aria-hidden
         />
         <ul className="relative grid divide-y divide-olive/10 md:grid-cols-3 md:divide-x md:divide-y-0">
-          {METRICS.map(({ key, Icon, description, note }) => {
+          {METRICS.map(({ key, Icon, label, description, note }) => {
             const raw = stats[key]
             const floored =
               raw != null
@@ -191,7 +187,7 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
                 key={key}
                 className="flex min-w-0 flex-col items-center px-4 py-5 text-center sm:px-5 md:py-6"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-olive/20 bg-olive/10 text-olive">
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
                 </div>
 
@@ -211,8 +207,8 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
                   )}
                 </p>
 
-                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-snug text-muted-foreground sm:text-sm">
-                  {description}
+                <p className="mt-1.5 max-w-[15rem] text-[13px] font-medium leading-snug text-[#4D6554] sm:text-sm">
+                  {label}
                 </p>
                 {note ? (
                   <p className="mt-1 max-w-[15.5rem] text-[11px] leading-snug text-muted-foreground/80 sm:text-xs">
@@ -225,6 +221,7 @@ export function StatsRow({ initialStats = null }: StatsRowProps) {
             )
           })}
         </ul>
+        </div>
       </div>
     </section>
   )

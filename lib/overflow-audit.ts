@@ -6,9 +6,14 @@
 export const LEGITIMATE_OVERFLOW_MARKERS = [
   "data-overflow-allowed=\"stats-carousel\"",
   "data-overflow-allowed=\"map-chips\"",
+  "data-overflow-allowed=\"hero-chips\"",
   "data-overflow-allowed=\"mapbox-canvas\"",
   "data-overflow-allowed=\"featured-carousel\"",
   "data-overflow-allowed=\"decoration\"",
+  "data-overflow-allowed=\"nearby-rail\"",
+  "data-overflow-allowed=\"venture-featured\"",
+  "data-overflow-allowed=\"venture-chips\"",
+  "data-overflow-allowed=\"admin-ops-quick\"",
 ] as const
 
 export type OverflowBox = {

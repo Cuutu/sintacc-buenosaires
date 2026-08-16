@@ -66,3 +66,4 @@ android/key.properties
 secrets/
 .codemagic-credentials/
 icons/
+.env*

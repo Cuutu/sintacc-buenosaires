@@ -98,6 +98,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     }),
+    entry(`${base}/terminos`, {
+      lastModified: staticPageLastModified("/terminos"),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    }),
     entry(`${base}/listas`, {
       lastModified: staticPageLastModified("/listas"),
       changeFrequency: "weekly",

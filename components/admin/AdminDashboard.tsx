@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
@@ -28,10 +29,17 @@ import type {
 
 type AdminDashboardProps = {
   initialCounts: AdminCounts
+  initialSection?: AdminSection
+  hideLauncher?: boolean
 }
 
-export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
+export function AdminDashboard({
+  initialCounts,
+  initialSection = "suggestions",
+  hideLauncher = false,
+}: AdminDashboardProps) {
   const { status } = useSession()
+  const urlParams = useSearchParams()
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
   const [ventureSuggestions, setVentureSuggestions] = useState<VentureSuggestionItem[]>([])
   const [ventures, setVentures] = useState<VentureItem[]>([])
@@ -46,8 +54,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [placesLoading, setPlacesLoading] = useState(false)
   const [contactsLoading, setContactsLoading] = useState(false)
-  const [reviewFilter, setReviewFilter] = useState<string>("")
-  const [placeFilter, setPlaceFilter] = useState<string>("")
+  const [reviewFilter, setReviewFilter] = useState<string>(urlParams.get("status") === "hidden" ? "hidden" : "")
   const [suggestionSearch, setSuggestionSearch] = useState("")
   const [ventureSuggestionSearch, setVentureSuggestionSearch] = useState("")
   const [ventureSearch, setVentureSearch] = useState("")
@@ -56,15 +63,48 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [placeSearch, setPlaceSearch] = useState("")
   const [placeTypeFilter, setPlaceTypeFilter] = useState("")
   const [placeNeighborhoodFilter, setPlaceNeighborhoodFilter] = useState("")
-  const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(false)
+  const missingParam = urlParams.get("missing")
+  const [placeFilter, setPlaceFilter] = useState(
+    urlParams.get("status") === "pending" || urlParams.get("status") === "approved"
+      ? urlParams.get("status") || ""
+      : missingParam
+        ? "approved"
+        : ""
+  )
+  const [placeMissingInfoFilter, setPlaceMissingInfoFilter] = useState(
+    urlParams.get("sinInstagram") === "1" || missingParam === "instagram"
+  )
   const [placeMissingBadgeFilter, setPlaceMissingBadgeFilter] = useState(false)
   const [placeIncompleteOnlyFilter, setPlaceIncompleteOnlyFilter] = useState(false)
+  const [placeNoTaccFilter, setPlaceNoTaccFilter] = useState(
+    urlParams.get("incompletos") === "1" || missingParam === "incomplete"
+  )
+  const [placeIncompleteFichaFilter, setPlaceIncompleteFichaFilter] = useState(missingParam === "ficha")
+  const [placeNoPhotoFilter, setPlaceNoPhotoFilter] = useState(
+    urlParams.get("sinFoto") === "1" || missingParam === "photo"
+  )
+  const [placeNoHoursFilter, setPlaceNoHoursFilter] = useState(
+    urlParams.get("sinHorarios") === "1" || missingParam === "hours"
+  )
+  const [placeNoCoordsFilter, setPlaceNoCoordsFilter] = useState(
+    urlParams.get("sinCoords") === "1" || missingParam === "coords"
+  )
+  const [placeNoPhoneFilter, setPlaceNoPhoneFilter] = useState(missingParam === "phone")
+  const [placeNoWebFilter, setPlaceNoWebFilter] = useState(missingParam === "web")
+  const [placeNoDescriptionFilter, setPlaceNoDescriptionFilter] = useState(missingParam === "description")
+  const [placeFeaturedFilter, setPlaceFeaturedFilter] = useState(urlParams.get("destacados") === "1")
+  const [placeProvinceFilter, setPlaceProvinceFilter] = useState(urlParams.get("provincia") || "")
+  const [placeLocalityFilter, setPlaceLocalityFilter] = useState(urlParams.get("ciudad") || "")
+  const [placeSort, setPlaceSort] = useState(urlParams.get("orden") || "recent")
+  const [placePopularFilter, setPlacePopularFilter] = useState(urlParams.get("popular") === "1")
   const [placeReviewMode, setPlaceReviewMode] = useState<
     "duplicates" | "incomplete" | "google" | null
-  >(null)
+  >(urlParams.get("google") === "1" ? "google" : null)
   const [placesPage, setPlacesPage] = useState(1)
   const [placesPagination, setPlacesPagination] = useState<{ total: number; page: number; pages: number } | null>(null)
   const [neighborhoods, setNeighborhoods] = useState<string[]>([])
+  const [provinces, setProvinces] = useState<string[]>([])
+  const [localities, setLocalities] = useState<string[]>([])
   const [counts, setCounts] = useState<AdminCounts | null>(initialCounts)
   const [selectedPlaceIds, setSelectedPlaceIds] = useState<Set<string>>(new Set())
   const [reviewSearch, setReviewSearch] = useState("")
@@ -72,8 +112,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   const [editingSuggestion, setEditingSuggestion] = useState<SuggestionItem | null>(null)
   const [editingVentureSuggestion, setEditingVentureSuggestion] =
     useState<VentureSuggestionItem | null>(null)
-  const [editingPlaceId, setEditingPlaceId] = useState<string | null>(null)
-  const [activeSection, setActiveSection] = useState<AdminSection>("suggestions")
+  const [editingPlaceId, setEditingPlaceId] = useState<string | null>(urlParams.get("editar"))
+  const [activeSection, setActiveSection] = useState<AdminSection>(initialSection)
 
   const fetchSuggestions = useCallback(async () => {
     try {
@@ -90,9 +130,26 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   }, [suggestionSearch])
 
   useEffect(() => {
+    setActiveSection(initialSection)
+  }, [initialSection])
+
+  useEffect(() => {
     if (status === "loading") return
     fetchSuggestions()
   }, [status, fetchSuggestions])
+
+  useEffect(() => {
+    if (status === "loading" || !hideLauncher) return
+    if (activeSection === "places") {
+      fetchPlaces()
+      fetchNeighborhoods()
+    }
+    if (activeSection === "ventures") fetchVentures()
+    if (activeSection === "ventureSuggestions") fetchVentureSuggestions()
+    if (activeSection === "reviews") fetchReviews()
+    if (activeSection === "ventureReviews") fetchVentureReviews()
+    if (activeSection === "contacts") fetchContacts()
+  }, [status, hideLauncher, activeSection])
 
   const fetchCounts = async () => {
     try {
@@ -195,6 +252,19 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
       if (placeMissingInfoFilter) params.set("missingInfo", "1")
       if (placeMissingBadgeFilter) params.set("missingBadge", "1")
       if (placeIncompleteOnlyFilter) params.set("incompleteOnly", "1")
+      if (placeNoPhotoFilter) params.set("noPhoto", "1")
+      if (placeNoHoursFilter) params.set("noHours", "1")
+      if (placeNoCoordsFilter) params.set("noCoords", "1")
+      if (placeNoPhoneFilter) params.set("noPhone", "1")
+      if (placeNoWebFilter) params.set("noWeb", "1")
+      if (placeNoDescriptionFilter) params.set("noDescription", "1")
+      if (placeNoTaccFilter) params.set("noTacc", "1")
+      if (placeIncompleteFichaFilter) params.set("incompleteFicha", "1")
+      if (placeFeaturedFilter) params.set("featured", "1")
+      if (placeProvinceFilter) params.set("province", placeProvinceFilter)
+      if (placeLocalityFilter) params.set("locality", placeLocalityFilter)
+      if (placeSort) params.set("sort", placeSort)
+      if (placePopularFilter) params.set("popular", "1")
       params.set("page", String(p))
       params.set("limit", "25")
       const res = await fetch(`/api/admin/places?${params}`)
@@ -219,6 +289,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
       if (res.ok) {
         const data = await res.json()
         setNeighborhoods(data.neighborhoods || [])
+        setProvinces(data.provinces || [])
+        setLocalities(data.localities || [])
       }
     } catch (e) {
       console.error("Error fetching neighborhoods:", e)
@@ -352,7 +424,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
   }
 
   const handleBulkAction = async (
-    action: "approve" | "delete" | "set_safety_level" | "clear_safety_level",
+    action: "approve" | "unpublish" | "delete" | "set_safety_level" | "clear_safety_level",
     safetyLevel?: "dedicated_gf" | "gf_options"
   ) => {
     const ids = Array.from(selectedPlaceIds)
@@ -360,6 +432,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
       toast.error("Seleccioná al menos un lugar")
       return
     }
+    if (action === "unpublish" && !confirm(`¿Despublicar ${ids.length} lugar(es)? Van a pasar a pendiente.`)) return
     if (action === "delete" && !confirm(`¿Eliminar ${ids.length} lugar(es)? Esta acción no se puede deshacer.`)) return
     try {
       const res = await fetch("/api/admin/places/bulk", {
@@ -398,6 +471,37 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
     }
   }
 
+  const handleDuplicatePlace = async (place: PlaceItem) => {
+    if (!Number.isFinite(place.location?.lat) || !Number.isFinite(place.location?.lng)) {
+      toast.error("Este lugar no tiene coordenadas para copiar")
+      return
+    }
+    try {
+      const res = await fetch("/api/places", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${place.name} (copia)`,
+          type: place.type || "other",
+          address: place.address,
+          neighborhood: place.neighborhood,
+          location: place.location,
+          openingHours: place.openingHours,
+          contact: place.contact,
+          photos: place.photos,
+          safetyLevel: place.safetyLevel,
+          tags: place.tags,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "No se pudo duplicar")
+      toast.success("Copia creada")
+      fetchPlaces()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al duplicar")
+    }
+  }
+
   const handleDeletePlace = async (id: string, name: string) => {
     if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return
     try {
@@ -428,12 +532,11 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
     )
   }
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className={hideLauncher ? "max-w-6xl" : "container mx-auto px-4 py-8 max-w-5xl"}>
 
-      <AdminHeader />
+      {!hideLauncher && <AdminHeader />}
 
-      {/* ── STATS — qué requiere acción hoy ────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      {!hideLauncher && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {/* Sugerencias pendientes — urgente si > 0 */}
         <button
           onClick={() => setActiveSection("suggestions")}
@@ -501,10 +604,9 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             Reseñas de usuarios
           </div>
         </button>
-      </div>
+      </div>}
 
-      {/* ── NAVEGACIÓN — secciones con descripción ─────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+      {!hideLauncher && <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-6">
         {[
           {
             key: "suggestions",
@@ -628,7 +730,7 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
             </div>
           </button>
         ))}
-      </div>
+      </div>}
 
       {activeSection === "suggestions" && (
         <AdminSuggestionsSection
@@ -705,6 +807,8 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           setPlaceFilter={setPlaceFilter}
           placeNeighborhoodFilter={placeNeighborhoodFilter}
           setPlaceNeighborhoodFilter={setPlaceNeighborhoodFilter}
+          placeTypeFilter={placeTypeFilter}
+          setPlaceTypeFilter={setPlaceTypeFilter}
           placeMissingInfoFilter={placeMissingInfoFilter}
           setPlaceMissingInfoFilter={setPlaceMissingInfoFilter}
           placeMissingBadgeFilter={placeMissingBadgeFilter}
@@ -720,6 +824,35 @@ export function AdminDashboard({ initialCounts }: AdminDashboardProps) {
           goToPlacesPage={goToPlacesPage}
           handleBulkAction={handleBulkAction}
           handleDeletePlace={handleDeletePlace}
+          handleDuplicatePlace={handleDuplicatePlace}
+          placeNoPhotoFilter={placeNoPhotoFilter}
+          setPlaceNoPhotoFilter={setPlaceNoPhotoFilter}
+          placeNoHoursFilter={placeNoHoursFilter}
+          setPlaceNoHoursFilter={setPlaceNoHoursFilter}
+          placeNoCoordsFilter={placeNoCoordsFilter}
+          setPlaceNoCoordsFilter={setPlaceNoCoordsFilter}
+          placeNoPhoneFilter={placeNoPhoneFilter}
+          setPlaceNoPhoneFilter={setPlaceNoPhoneFilter}
+          placeNoWebFilter={placeNoWebFilter}
+          setPlaceNoWebFilter={setPlaceNoWebFilter}
+          placeNoDescriptionFilter={placeNoDescriptionFilter}
+          setPlaceNoDescriptionFilter={setPlaceNoDescriptionFilter}
+          placeNoTaccFilter={placeNoTaccFilter}
+          setPlaceNoTaccFilter={setPlaceNoTaccFilter}
+          placeIncompleteFichaFilter={placeIncompleteFichaFilter}
+          setPlaceIncompleteFichaFilter={setPlaceIncompleteFichaFilter}
+          placeFeaturedFilter={placeFeaturedFilter}
+          setPlaceFeaturedFilter={setPlaceFeaturedFilter}
+          placeProvinceFilter={placeProvinceFilter}
+          setPlaceProvinceFilter={setPlaceProvinceFilter}
+          placeLocalityFilter={placeLocalityFilter}
+          setPlaceLocalityFilter={setPlaceLocalityFilter}
+          placeSort={placeSort}
+          setPlaceSort={setPlaceSort}
+          placePopularFilter={placePopularFilter}
+          setPlacePopularFilter={setPlacePopularFilter}
+          provinces={provinces}
+          localities={localities}
           editingPlaceId={editingPlaceId}
           setEditingPlaceId={setEditingPlaceId}
           placeIncompleteOnlyFilter={placeIncompleteOnlyFilter}

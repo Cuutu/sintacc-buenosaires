@@ -20,7 +20,7 @@ export function SafetyBadge({ safetyLevel }: SafetyBadgeProps) {
       color: "bg-green-500",
     },
     gf_options: {
-      label: "Opciones sin gluten",
+      label: "Tiene opciones",
       variant: "secondary" as const,
       icon: AlertCircle,
       color: "bg-yellow-500",

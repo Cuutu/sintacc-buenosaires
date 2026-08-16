@@ -46,14 +46,12 @@ export function getEffectiveSafetyLevel(place: {
   safetyLevel?: IPlace["safetyLevel"]
   tags?: string[]
 }): IPlace["safetyLevel"] | undefined {
+  const tags = place.tags ?? []
+  if (tags.includes("opciones_sin_tacc")) return "gf_options"
+  if (tags.includes("100_gf")) return "dedicated_gf"
   if (place.safetyLevel && place.safetyLevel !== "unknown") {
     return place.safetyLevel
   }
-  const tags = place.tags ?? []
-  if (tags.includes("100_gf") || tags.includes("certificado_sin_tacc")) {
-    return "dedicated_gf"
-  }
-  if (tags.includes("opciones_sin_tacc")) return "gf_options"
   return undefined
 }
 

@@ -100,11 +100,11 @@ export const TAG_BADGE_CONFIG: Record<string, { label: string; className: string
     className: "bg-olive/10 text-olive border-olive/20",
   },
   opciones_sin_tacc: {
-    label: "Opciones sin gluten",
+    label: "Tiene opciones",
     className: "bg-accent text-accent-foreground border-terracotta/20",
   },
   certificado_sin_tacc: {
-    label: "Certificado sin gluten",
+    label: "Insumos certificados",
     className: "bg-terracotta/12 text-[#9a3a1b] border-terracotta/30",
   },
   cocina_separada: {

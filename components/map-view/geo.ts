@@ -2,6 +2,13 @@
 export const CABA_CENTER: [number, number] = [-58.3816, -34.6037]
 export const CABA_ZOOM = 12
 
+export interface MapViewportBounds {
+  west: number
+  south: number
+  east: number
+  north: number
+}
+
 /** Calcular distancia en km (Haversine) */
 export function distanceKm(
   lat1: number,

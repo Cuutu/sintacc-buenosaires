@@ -1,11 +1,11 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { getCategoryLabel } from "@/lib/venture-constants"
 import type { VentureItem } from "@/components/admin/types"
 import { toast } from "sonner"
+import { adminUi } from "@/lib/admin-ui"
+import { cn } from "@/lib/utils"
 
 export type AdminVenturesSectionProps = {
   ventures: VentureItem[]
@@ -13,6 +13,10 @@ export type AdminVenturesSectionProps = {
   search: string
   setSearch: (v: string) => void
   fetchVentures: () => void
+}
+
+function hasModality(v: VentureItem, value: string) {
+  return Boolean(v.modalities?.some((m) => m.toLowerCase().includes(value)))
 }
 
 export function AdminVenturesSection({
@@ -48,64 +52,74 @@ export function AdminVenturesSection({
   })
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-card">
-        <h2 className="text-sm font-bold">Emprendimientos publicados</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Listado de marcas y proyectos en /emprendimientos
-        </p>
-      </div>
-
-      <div className="px-4 py-2 border-b border-border">
+    <div className="space-y-4">
+      <div className={cn(adminUi.card, "p-5")}>
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar..."
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B746C]" />
+          <input
+            placeholder="Buscar marca..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-8 text-sm"
+            className="h-11 w-full rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] pl-9 pr-3 text-sm text-[#234A33] outline-none"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">Cargando...</div>
+        <p className="py-10 text-center text-sm text-[#6B746C]">Cargando...</p>
       ) : filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">
+        <p className={cn(adminUi.card, "px-5 py-10 text-center text-sm text-[#6B746C]")}>
           No hay emprendimientos publicados
-        </div>
+        </p>
       ) : (
-        <div className="divide-y divide-border">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {filtered.map((v) => (
-            <div
-              key={v._id}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-            >
-              <div>
-                <p className="font-semibold">{v.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {getCategoryLabel(v.category)} · {v.zone}
-                </p>
+            <article key={v._id} className={cn(adminUi.card, "p-5")}>
+              <div className="flex items-start gap-3">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[#E8E1D6]">
+                  {v.photos?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={v.photos[0]} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center font-display text-sm font-bold text-[#234A33]">
+                      {v.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-[#234A33]">{v.name}</p>
+                  <p className="mt-1 text-sm text-[#6B746C]">
+                    {getCategoryLabel(v.category)} · {v.zone || "Sin zona"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {hasModality(v, "delivery") ? <span className={adminUi.chip}>Delivery</span> : null}
+                    {hasModality(v, "retiro") ? <span className={adminUi.chip}>Retiro</span> : null}
+                    {hasModality(v, "envio") || hasModality(v, "envío") ? (
+                      <span className={adminUi.chip}>Envíos</span>
+                    ) : null}
+                    {v.contact?.instagram ? <span className={adminUi.chip}>Instagram</span> : null}
+                    {v.contact?.whatsapp ? <span className={adminUi.chip}>WhatsApp</span> : null}
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <a
-                    href={`/emprendimientos/${(v as { slug?: string }).slug ?? v._id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Ver
-                  </a>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href={`/emprendimientos/${(v as { slug?: string }).slug ?? v._id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={adminUi.chip}
+                >
+                  Ver
+                </a>
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-full border border-[#C85A2E]/30 px-3 text-sm text-[#C85A2E]"
                   onClick={() => handleDelete(v._id, v.name)}
                 >
                   Eliminar
-                </Button>
+                </button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}

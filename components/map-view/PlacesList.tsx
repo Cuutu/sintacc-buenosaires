@@ -12,13 +12,14 @@ interface PlacesListProps {
   loadError?: string | null
   onRetryLoad?: () => void
   onPlaceSelect?: (place: IPlace) => void
+  onPlaceHover?: (placeId: string | null) => void
   onClearFilters?: () => void
 }
 
 function PlaceCardSkeleton() {
   return (
-    <div className="flex min-h-[124px] gap-3 rounded-2xl border border-olive/10 bg-card p-3">
-      <div className="h-[100px] w-[100px] shrink-0 animate-pulse rounded-xl bg-olive/5" />
+      <div className="flex min-h-[72px] gap-3 rounded-[20px] border border-[#E8E1D6] bg-[#F8F5EF] p-3">
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-olive/5" />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
         <div className="h-4 w-3/4 animate-pulse rounded bg-olive/8" />
         <div className="h-3 w-1/2 animate-pulse rounded bg-olive/5" />
@@ -38,6 +39,7 @@ export function PlacesList({
   loadError = null,
   onRetryLoad,
   onPlaceSelect,
+  onPlaceHover,
   onClearFilters,
 }: PlacesListProps) {
   const listRef = React.useRef<HTMLDivElement>(null)
@@ -112,7 +114,11 @@ export function PlacesList({
   }
 
   return (
-    <div ref={listRef} className="space-y-2.5 px-4 pb-6">
+    <div
+      ref={listRef}
+      className="space-y-2.5 px-3 pb-4"
+      onMouseLeave={() => onPlaceHover?.(null)}
+    >
       {places
         .filter((place) => place?._id != null)
         .map((place) => {
@@ -121,6 +127,7 @@ export function PlacesList({
             <div
               key={id}
               ref={selectedPlaceId === id ? selectedRef : null}
+              onMouseEnter={() => onPlaceHover?.(id)}
             >
               <PlaceMiniCard
                 place={place}

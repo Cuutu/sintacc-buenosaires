@@ -1,5 +1,6 @@
 import {
   countMissingConcreteFields,
+  getEffectiveSafetyLevel,
   hasTaccClassification,
   isPlaceEnrichmentReviewCandidate,
   isPlaceInformationIncomplete,
@@ -58,6 +59,15 @@ describe("place incomplete detection", () => {
     expect(hasTaccClassification(place)).toBe(true)
     expect(isPlaceEnrichmentReviewCandidate(place)).toBe(false)
     expect(countMissingConcreteFields(place)).toEqual([])
+  })
+
+  it("opciones tag beats dedicated_gf field", () => {
+    expect(
+      getEffectiveSafetyLevel({
+        safetyLevel: "dedicated_gf",
+        tags: ["100_gf", "opciones_sin_tacc"],
+      })
+    ).toBe("gf_options")
   })
 
   it("lists only TACC when unclassified", () => {

@@ -128,6 +128,42 @@ export function createE2eMockMapboxMap(container: HTMLElement): MapboxMapType {
       return true
     },
     triggerRepaint() {},
+    getStyle() {
+      return { layers: [] as { id: string; type: string }[] }
+    },
+    addSource() {
+      return api
+    },
+    getSource() {
+      return {
+        setData() {},
+        getClusterExpansionZoom(_id: number, cb: (err: Error | null, zoom: number) => void) {
+          cb(null, 14)
+        },
+      }
+    },
+    addLayer() {
+      return api
+    },
+    getLayer() {
+      return { id: "mock" }
+    },
+    removeLayer() {},
+    removeSource() {},
+    hasImage() {
+      return true
+    },
+    addImage() {},
+    loadImage(_url: string, cb: (err: Error | null, img?: unknown) => void) {
+      cb(null, {})
+    },
+    setFeatureState() {},
+    removeFeatureState() {},
+    queryRenderedFeatures() {
+      return []
+    },
+    setPaintProperty() {},
+    setLayoutProperty() {},
   }
 
   queueMicrotask(() => {

@@ -3,13 +3,24 @@
 import { useEffect, useRef, useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
-import type { MapViewportBounds } from "@/components/map-view/MapboxMap"
+import type { MapViewportBounds } from "@/components/map-view/geo"
 import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
+import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
+import {
+  buildMapFilterKey,
+  hasFreshViewportTile,
+  isPlacesCacheFresh,
+  mergeCachedPlaces,
+  quantizeViewportTile,
+  readPlacesCache,
+  rememberViewportTile,
+  writePlacesCache,
+} from "@/lib/map-places-cache"
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
@@ -57,6 +68,7 @@ function MapaContent() {
   const lastSyncedUrlSearchRef = useRef(searchParams.get("search") || "")
   const fetchRequestSeqRef = useRef(0)
   const lastFetchedFilterKeyRef = useRef<string | null>(null)
+  const forceRefreshRef = useRef(false)
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
 
@@ -126,16 +138,97 @@ function MapaContent() {
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
     const freeTextSearch = searchNeighborhood ? "" : search
     const effectiveNeighborhood = searchNeighborhood ?? filters.neighborhood ?? ""
-    const filterKey = JSON.stringify({
+    const filterKey = buildMapFilterKey({
       citySlugs: searchNeighborhood ? "" : citySlugsFromUrl ?? "",
       provinceSlugs: searchNeighborhood ? "" : provinceSlugsFromUrl ?? "",
       localitySlugs: searchNeighborhood ? "" : localitySlugsFromUrl ?? "",
       search: freeTextSearch,
       type: filters.type ?? "",
       neighborhood: effectiveNeighborhood,
-      tags: [...(filters.tags ?? [])].sort(),
+      tags: filters.tags,
       safetyLevel: filters.safetyLevel ?? "",
     })
+
+    const applyMerged = (primaryKey: string, extraKeys: string[] = []) => {
+      setPlaces(mergeCachedPlaces([primaryKey, ...extraKeys]))
+    }
+
+    const buildParams = (neighborhood: string, searchText: string) => {
+      const params = new URLSearchParams()
+      params.append("limit", String(MAP_PLACES_LIMIT))
+      if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
+      if (provinceSlugsFromUrl && !searchNeighborhood) params.append("provinceSlugs", provinceSlugsFromUrl)
+      if (localitySlugsFromUrl && !searchNeighborhood) params.append("localitySlugs", localitySlugsFromUrl)
+      if (searchText) params.append("search", searchText)
+      if (filters.type && filters.type !== "all") params.append("type", filters.type)
+      if (neighborhood && neighborhood !== "all") params.append("neighborhood", neighborhood)
+      if (filters.tags?.length) params.append("tags", filters.tags.join(","))
+      if (filters.safetyLevel) params.append("safetyLevel", filters.safetyLevel)
+      return params
+    }
+
+    const networkFetch = async (key: string, neighborhood: string, searchText: string) => {
+      const data = await fetchApi<{ places: IPlace[] }>(
+        `/api/places?${buildParams(neighborhood, searchText).toString()}`
+      )
+      await writePlacesCache(key, data.places || [])
+      return data.places || []
+    }
+
+    const prefetchAdjacent = (primaryKey: string) => {
+      if (!effectiveNeighborhood) return
+      const neighbors = getAdjacentNeighborhoods(effectiveNeighborhood)
+      const extraKeys = neighbors.map((name) =>
+        buildMapFilterKey({
+          citySlugs: "",
+          provinceSlugs: "",
+          localitySlugs: "",
+          search: "",
+          type: filters.type ?? "",
+          neighborhood: name,
+          tags: filters.tags,
+          safetyLevel: filters.safetyLevel ?? "",
+        })
+      )
+      const run = () => {
+        neighbors.forEach((name, index) => {
+          const key = extraKeys[index]
+          if (isPlacesCacheFresh(key)) {
+            applyMerged(primaryKey, extraKeys)
+            return
+          }
+          void networkFetch(key, name, "")
+            .then(() => applyMerged(primaryKey, extraKeys))
+            .catch(() => {
+              /* prefetch silencioso */
+            })
+        })
+      }
+      if (typeof requestIdleCallback === "function") {
+        requestIdleCallback(run, { timeout: 2500 })
+      } else {
+        setTimeout(run, 400)
+      }
+    }
+
+    const cached = forceRefreshRef.current ? null : await readPlacesCache(filterKey)
+    forceRefreshRef.current = false
+    if (cached?.places?.length) {
+      lastFetchedFilterKeyRef.current = filterKey
+      applyMerged(filterKey)
+      setPlacesError(null)
+      setLoading(false)
+      if (!isPlacesCacheFresh(filterKey)) {
+        try {
+          await networkFetch(filterKey, effectiveNeighborhood, freeTextSearch)
+          applyMerged(filterKey)
+        } catch {
+          /* keep cached */
+        }
+      }
+      prefetchAdjacent(filterKey)
+      return
+    }
 
     if (lastFetchedFilterKeyRef.current === filterKey) return
 
@@ -144,25 +237,12 @@ function MapaContent() {
     setLoading(true)
     setPlacesError(null)
     try {
-      const params = new URLSearchParams()
-      params.append("limit", String(MAP_PLACES_LIMIT))
-      if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
-      if (provinceSlugsFromUrl && !searchNeighborhood) params.append("provinceSlugs", provinceSlugsFromUrl)
-      if (localitySlugsFromUrl && !searchNeighborhood) params.append("localitySlugs", localitySlugsFromUrl)
-      if (freeTextSearch) params.append("search", freeTextSearch)
-      if (filters.type && filters.type !== "all") params.append("type", filters.type)
-      if (effectiveNeighborhood && effectiveNeighborhood !== "all")
-        params.append("neighborhood", effectiveNeighborhood)
-      if (filters.tags?.length) params.append("tags", filters.tags.join(","))
-      if (filters.safetyLevel) params.append("safetyLevel", filters.safetyLevel)
-
-      const data = await fetchApi<{ places: IPlace[] }>(
-        `/api/places?${params.toString()}`
-      )
+      await networkFetch(filterKey, effectiveNeighborhood, freeTextSearch)
       if (requestSeq !== fetchRequestSeqRef.current) return
       lastFetchedFilterKeyRef.current = filterKey
-      setPlaces(data.places || [])
+      applyMerged(filterKey)
       setPlacesError(null)
+      prefetchAdjacent(filterKey)
     } catch (error: any) {
       if (requestSeq !== fetchRequestSeqRef.current) return
       const message = error?.message || "Error al cargar lugares"
@@ -192,7 +272,25 @@ function MapaContent() {
   }, [placeIdFromUrl])
 
   const handleMapMoveEnd = useCallback(
-    (zoom: number, _bounds: MapViewportBounds) => {
+    (zoom: number, bounds: MapViewportBounds) => {
+      const tileKey = quantizeViewportTile(bounds, zoom)
+      const ids = places
+        .filter((place) => {
+          const lng = place.location?.lng
+          const lat = place.location?.lat
+          if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false
+          return (
+            (lng as number) >= bounds.west &&
+            (lng as number) <= bounds.east &&
+            (lat as number) >= bounds.south &&
+            (lat as number) <= bounds.north
+          )
+        })
+        .map((place) => String(place._id))
+      if (!hasFreshViewportTile(tileKey)) {
+        rememberViewportTile(tileKey, ids)
+      }
+
       const params = new URLSearchParams(searchParams.toString())
       let shouldReplaceUrl = false
 
@@ -222,7 +320,7 @@ function MapaContent() {
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [citySlugsFromUrl, provinceSlugsFromUrl, localitySlugsFromUrl, debouncedSearch, filters.search, pathname, router, searchParams]
+    [citySlugsFromUrl, provinceSlugsFromUrl, localitySlugsFromUrl, debouncedSearch, filters.search, pathname, places, router, searchParams]
   )
 
   const handleSheetCollapse = useCallback(() => {
@@ -246,6 +344,7 @@ function MapaContent() {
       loadError={placesError}
       onRetryLoad={() => {
         lastFetchedFilterKeyRef.current = null
+        forceRefreshRef.current = true
         fetchPlaces()
       }}
       filters={filters}
@@ -254,6 +353,7 @@ function MapaContent() {
       searchQuery={debouncedSearch}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
+      onPlaceDeselect={() => setSelectedPlaceId(null)}
       initialCenter={initialCenter}
       initialZoom={initialZoom}
       placeIdToFocus={placeIdFromUrl}
@@ -269,7 +369,7 @@ export default function MapaPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-[calc(100dvh-4rem)] flex items-center justify-center text-muted-foreground">
+        <div className="flex h-[100dvh] items-center justify-center text-muted-foreground md:h-[calc(100vh-var(--desktop-nav-clearance))]">
           Cargando mapa...
         </div>
       }

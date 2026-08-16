@@ -34,7 +34,7 @@ export default function MapaLayout({
   // Mobile: mapa full dvh (sin SEO visible; BottomNav aparte).
   return (
     <div className="flex min-h-0 flex-col md:h-auto md:min-h-0 md:overflow-visible">
-      <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[var(--bottom-nav-clearance)] md:mb-0 md:h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4rem)] md:shrink-0">
+      <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[var(--bottom-nav-clearance)] md:mb-0 md:h-[calc(100vh-var(--desktop-nav-clearance))] md:min-h-[calc(100vh-var(--desktop-nav-clearance))] md:shrink-0">
         <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
       </div>
       <MapaSeoIntro />

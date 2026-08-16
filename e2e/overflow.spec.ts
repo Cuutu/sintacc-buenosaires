@@ -20,6 +20,7 @@ test.describe("overflow horizontal @hermetic @mobile", () => {
       [
         "decoration",
         "featured-carousel",
+        "hero-chips",
         "map-chips",
         "mapbox-canvas",
         "stats-carousel",

@@ -16,6 +16,7 @@ export const STATIC_PAGE_LASTMOD: Record<string, string> = {
   "/como-funciona": "2026-03-10",
   "/como-verificamos-los-lugares": "2026-03-10",
   "/privacidad": "2025-11-01",
+  "/terminos": "2026-08-14",
   "/listas": "2026-02-01",
   "/emprendimientos": "2026-02-01",
 }

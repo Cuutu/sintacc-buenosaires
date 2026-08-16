@@ -254,7 +254,7 @@ export async function fetchSocialItems(options: SocialQueryOptions): Promise<{
   if (preset === "dedicated_gf") {
     placeQuery.$or = [
       { safetyLevel: "dedicated_gf" },
-      { tags: { $in: ["100_gf", "certificado_sin_tacc"] } },
+      { tags: "100_gf" },
     ]
   }
 

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+
+export const dynamic = "force-dynamic"
 import { checkRateLimitByIp } from "@/lib/rate-limit"
 import {
   createNativeAppleChallenge,

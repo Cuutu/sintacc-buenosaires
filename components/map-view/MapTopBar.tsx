@@ -5,6 +5,7 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
+import { MapLegend } from "./MapLegend"
 
 const TAG_CHIPS = [
   { id: "cocina_separada", label: "Cocina separada" },
@@ -41,6 +42,7 @@ interface MapTopBarProps {
   sort?: SortOption
   onSortChange?: (sort: SortOption) => void
   variant?: "overlay" | "sidebar"
+  compact?: boolean
   /** Contador visible en sidebar (ej. "208 lugares en esta zona") */
   resultCountLabel?: string
   onClearFilters?: () => void
@@ -59,7 +61,7 @@ function FilterChip({
   label: string
   onClick: () => void
   onClear?: () => void
-  tone?: "primary" | "amber" | "neutral"
+  tone?: "primary" | "amber" | "neutral" | "olive" | "terracotta"
   pressed?: boolean
 }) {
   return (
@@ -69,8 +71,10 @@ function FilterChip({
       aria-pressed={pressed ?? active}
       className={cn(
         "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        active && tone === "olive" && "border-olive bg-olive text-cream",
+        active && tone === "terracotta" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
-        active && tone === "amber" && "border-amber-400 bg-amber-400 text-amber-950",
+        active && tone === "amber" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "neutral" && "border-primary bg-primary text-primary-foreground",
         !active && "border-olive/15 bg-cream text-olive/70 hover:border-olive/30 hover:text-olive"
       )}
@@ -102,6 +106,7 @@ export function MapTopBar({
   sort = "default",
   onSortChange,
   variant = "overlay",
+  compact = false,
   resultCountLabel,
   onClearFilters,
   hasActiveFilters = false,
@@ -205,14 +210,14 @@ export function MapTopBar({
             <FilterChip
               active={filters.safetyLevel === "dedicated_gf"}
               label="100% sin TACC"
-              tone="primary"
+              tone="olive"
               onClick={() => toggleSafety("dedicated_gf")}
               onClear={() => toggleSafety("dedicated_gf")}
             />
             <FilterChip
               active={filters.safetyLevel === "gf_options"}
               label="Tiene opciones"
-              tone="amber"
+              tone="terracotta"
               onClick={() => toggleSafety("gf_options")}
               onClear={() => toggleSafety("gf_options")}
             />
@@ -246,6 +251,8 @@ export function MapTopBar({
               )}
             </button>
           </div>
+
+          <MapLegend />
 
           {/* Inline panel: evita corte por overflow del aside */}
           {moreOpen && (
@@ -356,7 +363,10 @@ export function MapTopBar({
   ]
 
   return (
-    <div className="fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-olive/20 bg-cream/90 px-2.5 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.44),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md">
+    <div className={cn(
+      "fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-olive/15 bg-cream/92 px-2.5 shadow-[0_12px_32px_rgba(31,77,53,0.12),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md",
+      compact ? "py-2" : "py-3"
+    )}>
       <div className="mb-2.5 flex min-w-0 gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground sm:left-4" aria-hidden />
@@ -414,6 +424,7 @@ export function MapTopBar({
           </button>
         ))}
       </div>
+      {!compact && <MapLegend className="mt-2 px-0.5" />}
     </div>
   )
 }

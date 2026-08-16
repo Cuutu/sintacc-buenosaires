@@ -1,24 +1,11 @@
 "use client"
 
-import Image from "next/image"
-import Link from "next/link"
 import type { ComponentType } from "react"
-import {
-  Coffee,
-  MapPin,
-  ShieldCheck,
-  ShoppingBasket,
-  Star,
-  Store,
-  Utensils,
-} from "lucide-react"
+import { Coffee, MapPin, ShoppingBasket, Star, Store, Utensils } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IPlace } from "@/models/Place"
-import { getSafetyBadge, inferSafetyLevel } from "@/components/featured/featured-utils"
-import { ContaminationRiskBadge } from "@/components/contamination-risk-badge"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { FavoriteButton } from "@/components/favorite-button"
-import { getTagBadgeConfig } from "@/lib/constants"
-import { getPlacePath } from "@/lib/place-url"
 import { TYPES } from "@/lib/constants"
 
 interface PlaceMiniCardProps {
@@ -40,30 +27,38 @@ const TYPE_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   other: MapPin,
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  restaurant: "#ea580c",
-  cafe: "#78350f",
-  bakery: "#ca8a04",
-  store: "#16a34a",
-  icecream: "#ec4899",
-  bar: "#7c3aed",
-  other: "#3b82f6",
+const SAFETY_BADGE: Record<
+  string,
+  { label: string; className: string; dot: string }
+> = {
+  dedicated_gf: {
+    label: "100% sin TACC",
+    className: "bg-[#1F4D35]/10 text-[#1F4D35] border-[#1F4D35]/20",
+    dot: "#1F4D35",
+  },
+  gf_options: {
+    label: "Tiene opciones",
+    className: "bg-[#C85A2E]/10 text-[#C85A2E] border-[#C85A2E]/25",
+    dot: "#C85A2E",
+  },
+  unknown: {
+    label: "Sin información",
+    className: "bg-[#CFC9BF]/35 text-[#6B645C] border-[#CFC9BF]",
+    dot: "#CFC9BF",
+  },
 }
 
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(
   TYPES.map((t) => [t.value, t.label])
 )
 
-const SECONDARY_TAG_IDS = ["cocina_separada", "certificado_sin_tacc", "delivery"] as const
-
 export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps) {
   const primaryType = place.types?.[0] ?? place.type
   const TypeIcon = TYPE_ICONS[primaryType] || MapPin
-  const typeColor = TYPE_COLORS[primaryType] ?? TYPE_COLORS.other
   const typeLabel = TYPE_LABELS[primaryType] ?? primaryType
   const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
-  const effectiveSafetyLevel = inferSafetyLevel(place)
-  const safetyConfig = getSafetyBadge(effectiveSafetyLevel as any)
+  const safetyLevel = inferSafetyLevel(place) ?? "unknown"
+  const safetyBadge = SAFETY_BADGE[safetyLevel] ?? SAFETY_BADGE.unknown
 
   const googleRating = place.googleSnapshot?.rating
   const googleCount = place.googleSnapshot?.userRatingCount
@@ -78,142 +73,69 @@ export function PlaceMiniCard({ place, selected, onSelect }: PlaceMiniCardProps)
     : googleCount != null
       ? googleCount
       : null
-  const ratingSource = hasCommunityReviews ? null : googleRating != null ? "Google" : null
-
-  const secondaryTags = (place.tags ?? []).filter((t) =>
-    (SECONDARY_TAG_IDS as readonly string[]).includes(t)
-  )
-  const visibleTags = secondaryTags.slice(0, 2)
-  const extraTags = Math.max(0, secondaryTags.length - 2)
 
   return (
     <div
       className={cn(
-        "group relative flex min-h-[124px] max-h-[150px] gap-3 rounded-2xl border p-3 transition-colors",
-        "bg-card shadow-soft",
+        "group relative flex items-start gap-3 rounded-[20px] border px-3 py-3 transition-all",
         selected
-          ? "border-primary/70 ring-1 ring-primary/30"
-          : "border-olive/10 hover:border-olive/25 hover:bg-cream"
+          ? "border-[#1F4D35]/30 bg-[#F8F5EF] shadow-[0_8px_20px_rgba(31,77,53,0.08)]"
+          : "border-[#E8E1D6] bg-[#F8F5EF] hover:border-[#1F4D35]/20"
       )}
     >
-      {selected && (
-        <span className="absolute left-0 top-4 h-14 w-1 rounded-r-full bg-primary" aria-hidden />
-      )}
-
       <button
         type="button"
         onClick={onSelect}
-        className="flex min-w-0 flex-1 gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-xl"
+        className="flex min-w-0 flex-1 items-start gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         aria-pressed={selected}
         aria-label={`Seleccionar ${place.name}`}
       >
-        <div
-          className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/8 sm:h-[100px] sm:w-[100px]"
-          style={
-            !place.photos?.[0]
-              ? {
-                  background: `radial-gradient(circle at 30% 25%, ${typeColor}55, rgba(255,255,255,0.06) 55%, rgba(8,12,15,0.9))`,
-                }
-              : undefined
-          }
+        <span
+          className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1F4D35]/[0.08] text-[#1F4D35]"
+          aria-hidden
         >
-          {place.photos?.[0] ? (
-            <Image
-              src={place.photos[0]}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="100px"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center" style={{ color: typeColor }}>
-              <TypeIcon className="h-8 w-8" aria-hidden />
-            </div>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1 py-0.5">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-olive">{place.name}</h3>
-          </div>
-
-          <p className="mt-1 truncate text-xs text-muted-foreground">
+          <TypeIcon className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <h3 className="line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight text-[#1F4D35]">
+            {place.name}
+          </h3>
+          <p className="mt-0.5 truncate text-[12.5px] font-medium text-[#5F6B63]">
             {typeLabel}
             {place.neighborhood ? ` · ${place.neighborhood}` : ""}
           </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {safetyConfig && effectiveSafetyLevel && effectiveSafetyLevel !== "unknown" && (
+          <span className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                safetyBadge.className
+              )}
+            >
               <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-                  safetyConfig.className ?? "bg-muted/50 text-muted-foreground border-border"
-                )}
-              >
-                <ShieldCheck className="h-3 w-3" aria-hidden />
-                {effectiveSafetyLevel === "dedicated_gf"
-                  ? "100% sin TACC"
-                  : effectiveSafetyLevel === "gf_options"
-                    ? "Tiene opciones"
-                    : safetyConfig.label}
-              </span>
-            )}
-
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: safetyBadge.dot }}
+                aria-hidden
+              />
+              {safetyBadge.label}
+            </span>
             {ratingLabel && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-olive/80">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
+              <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1F4D35]">
+                <Star className="h-3.5 w-3.5 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
                 {ratingLabel}
                 {ratingCount != null && (
-                  <span className="text-muted-foreground">
-                    ({ratingCount}
-                    {ratingSource ? ` ${ratingSource}` : ""})
-                  </span>
+                  <span className="font-medium text-[#5F6B63]">({ratingCount})</span>
                 )}
               </span>
             )}
-
-            {(stats.contaminationReportsCount ?? 0) > 0 && (
-              <ContaminationRiskBadge count={stats.contaminationReportsCount ?? 0} variant="inline" />
-            )}
-          </div>
-
-          {(visibleTags.length > 0 || extraTags > 0) && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {visibleTags.map((tag) => {
-                const cfg = getTagBadgeConfig(tag)
-                return (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-olive/10 bg-olive/5 px-2 py-0.5 text-[10px] font-medium text-olive/70"
-                  >
-                    {cfg.label}
-                  </span>
-                )
-              })}
-              {extraTags > 0 && (
-                <span className="rounded-full border border-olive/10 px-2 py-0.5 text-[10px] text-olive/50">
-                  +{extraTags}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+          </span>
+        </span>
       </button>
-
-      <div className="flex shrink-0 flex-col items-end justify-between gap-2">
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <FavoriteButton placeId={place._id.toString()} />
-        </div>
-        <Link
-          href={getPlacePath(place)}
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-        >
-          Ver lugar
-        </Link>
+      <div
+        className="shrink-0"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <FavoriteButton placeId={place._id.toString()} />
       </div>
     </div>
   )

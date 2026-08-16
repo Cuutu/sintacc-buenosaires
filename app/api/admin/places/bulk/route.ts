@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { ids, action, safetyLevel } = body as {
       ids: string[]
-      action: "approve" | "delete" | "set_safety_level" | "clear_safety_level"
+      action: "approve" | "unpublish" | "delete" | "set_safety_level" | "clear_safety_level"
       safetyLevel?: "dedicated_gf" | "gf_options"
     }
 
@@ -29,6 +29,7 @@ export async function PATCH(request: NextRequest) {
     }
     if (
       action !== "approve" &&
+      action !== "unpublish" &&
       action !== "delete" &&
       action !== "set_safety_level" &&
       action !== "clear_safety_level"
@@ -58,6 +59,18 @@ export async function PATCH(request: NextRequest) {
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
       return NextResponse.json({
         message: `${result.modifiedCount} lugares aprobados`,
+        modifiedCount: result.modifiedCount,
+      })
+    }
+
+    if (action === "unpublish") {
+      const result = await Place.updateMany(
+        { _id: { $in: objectIds } },
+        { $set: { status: "pending", updatedAt: new Date() } }
+      )
+      invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      return NextResponse.json({
+        message: `${result.modifiedCount} lugares despublicados`,
         modifiedCount: result.modifiedCount,
       })
     }

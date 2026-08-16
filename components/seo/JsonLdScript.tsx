@@ -23,7 +23,7 @@ export function JsonLdScript() {
       "Mapa celíaco",
     ],
     url: BASE_URL,
-    logo: `${BASE_URL}/CelimapLOGO.png`,
+    logo: `${BASE_URL}/brand/app-icon.png`,
     description: CELIMAP_DESCRIPTION,
     areaServed: {
       "@type": "Country",

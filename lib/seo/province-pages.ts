@@ -65,7 +65,7 @@ export async function getProvincePageData(provinceSlug: string): Promise<Provinc
   ])
 
   const dedicatedGfCount = places.filter(
-    (p) => p.safetyLevel === "dedicated_gf" || p.tags?.includes("100_gf") || p.tags?.includes("certificado_sin_tacc")
+    (p) => p.safetyLevel === "dedicated_gf" || p.tags?.includes("100_gf")
   ).length
   const gfOptionsCount = places.filter(
     (p) => p.safetyLevel === "gf_options" || p.tags?.includes("opciones_sin_tacc")

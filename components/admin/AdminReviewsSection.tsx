@@ -7,6 +7,8 @@ import { Search } from "lucide-react"
 import { ReviewAdminReply } from "@/components/review-admin-reply"
 import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
 import type { ReviewItem } from "@/components/admin/types"
+import { daysSince } from "@/lib/admin-quality"
+import { adminUi } from "@/lib/admin-ui"
 
 export type AdminReviewsSectionProps = {
   reviews: ReviewItem[]
@@ -31,16 +33,15 @@ const {
   handleReviewAction,
 } = props
   return (
-  <div className="rounded-xl border border-border overflow-hidden">
-    <div className="px-4 py-3 border-b border-border bg-card">
-      <h2 className="text-sm font-bold">⭐ Reseñas</h2>
-      <p className="text-xs text-muted-foreground mt-0.5">
-        Ocultá reseñas inapropiadas, destacá las útiles o respondé como {`CELIMAP`}
+  <div className={adminUi.card}>
+    <div className="border-b border-[#E8E1D6] px-5 py-4">
+      <h2 className="text-sm font-semibold text-[#234A33]">Reseñas</h2>
+      <p className="mt-0.5 text-xs text-[#6B746C]">
+        Ocultá reseñas inapropiadas, destacá las útiles o respondé como CeliMap
       </p>
     </div>
 
-    {/* Filtros */}
-    <div className="px-4 py-2 border-b border-border bg-card/50 flex flex-wrap gap-2 items-center">
+    <div className="flex flex-wrap items-center gap-2 border-b border-[#E8E1D6] px-5 py-3">
       <div className="relative flex-1 min-w-[180px] max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
@@ -59,11 +60,7 @@ const {
         <button
           key={f.value}
           onClick={() => { setReviewFilter(f.value); fetchReviews(f.value) }}
-          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-            reviewFilter === f.value
-              ? "border-primary/40 bg-primary/8 text-primary"
-              : "border-border bg-card text-muted-foreground hover:border-border/80"
-          }`}
+          className={reviewFilter === f.value ? adminUi.chipActive : adminUi.chip}
         >
           {f.label}
         </button>
@@ -109,7 +106,12 @@ const {
                       {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
                     </span>
                     <span>·</span>
-                    <span>{new Date((review as any).createdAt).toLocaleDateString("es-AR")}</span>
+                    <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
+                    {review.status === "hidden" && daysSince(review.createdAt) != null && daysSince(review.createdAt)! >= 2 ? (
+                      <span className="font-medium text-[#C85A2E]">
+                        · {daysSince(review.createdAt)} días sin resolver
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${

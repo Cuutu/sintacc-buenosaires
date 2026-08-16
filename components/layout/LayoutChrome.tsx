@@ -52,9 +52,11 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
   const isMobile = useIsMobile()
   const pathname = usePathname()
   const isPrivateList = isPrivateListPath(pathname)
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/")
   const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
-  const showDesktopChrome = isMobile === false && !isPrivateList
-  const showMobileChrome = isMobile === true && !isPrivateList
+  const hidePublicChrome = isPrivateList || isAdminRoute
+  const showDesktopChrome = isMobile === false && !hidePublicChrome
+  const showMobileChrome = isMobile === true && !hidePublicChrome
   const routeKey = pathname || "/"
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
           "min-h-screen",
           showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
           showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]",
-          isPrivateList && "pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)]"
+          hidePublicChrome && "pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)]"
         )}
         data-private-list-shell={isPrivateList ? "true" : undefined}
       >
@@ -84,7 +86,7 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
         </AppErrorBoundary>
       </main>
 
-      {showDesktopChrome && <Footer />}
+      {!hidePublicChrome && !isMapRoute && <Footer />}
 
       {showMobileChrome && (
         <Suspense fallback={null}>

@@ -9,7 +9,7 @@ describe("isDedicatedGlutenFreePlace", () => {
 
   it("detecta por tags sincronizados con el selector", () => {
     expect(isDedicatedGlutenFreePlace({ tags: ["100_gf"] })).toBe(true)
-    expect(isDedicatedGlutenFreePlace({ tags: ["certificado_sin_tacc"] })).toBe(true)
+    expect(isDedicatedGlutenFreePlace({ tags: ["certificado_sin_tacc"] })).toBe(false)
   })
 
   it("no usa solo el nombre", () => {
@@ -21,5 +21,11 @@ describe("isDedicatedGlutenFreePlace", () => {
     expect(isDedicatedGlutenFreePlace({ safetyLevel: "gf_options" })).toBe(false)
     expect(isDedicatedGlutenFreePlace({ safetyLevel: "unknown" })).toBe(false)
     expect(isDedicatedGlutenFreePlace({})).toBe(false)
+    expect(
+      isDedicatedGlutenFreePlace({
+        safetyLevel: "dedicated_gf",
+        tags: ["100_gf", "opciones_sin_tacc"],
+      })
+    ).toBe(false)
   })
 })

@@ -2,15 +2,14 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Instagram, MessageCircle, ArrowRight, Star } from "lucide-react"
+import { Instagram, MessageCircle } from "lucide-react"
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
-import { Badge } from "@/components/ui/badge"
 import {
   getCategoryLabel,
   getModalityLabel,
-  getSafetyBadge,
 } from "@/lib/venture-constants"
 import { parseVentureLinks } from "@/lib/venture-contact"
+import { ventureInitials } from "@/lib/venture-initials"
 import { cn } from "@/lib/utils"
 
 export type VentureCardData = {
@@ -29,130 +28,173 @@ export type VentureCardData = {
 
 interface VentureCardProps {
   venture: VentureCardData
+  featured?: boolean
 }
 
-export function VentureCard({ venture }: VentureCardProps) {
+function safetyOverlay(level?: string): { label: string; className: string } | null {
+  if (level === "fully_gf") {
+    return { label: "100% sin gluten", className: "bg-[#1F4D35] text-[#F8F5EF]" }
+  }
+  if (level === "gf_options") {
+    return { label: "Con opciones", className: "bg-[#C85A2E] text-[#F8F5EF]" }
+  }
+  return null
+}
+
+function CategoryPill({ label, onPhoto }: { label: string; onPhoto?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-3 py-1 text-xs font-semibold text-[#1F4D35]",
+        onPhoto ? "bg-[#F8F5EF]/92 backdrop-blur-sm" : "bg-[#1F4D35]/8"
+      )}
+    >
+      {label}
+    </span>
+  )
+}
+
+export function VentureCard({ venture, featured = false }: VentureCardProps) {
   const href = `/emprendimientos/${venture.slug ?? venture._id}`
   const photo = venture.photos?.[0]
-  const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(venture.safetyLevel)
+  const safety = safetyOverlay(venture.safetyLevel)
+  const category = getCategoryLabel(venture.category)
   const { instagram: igUrl, whatsapp: waUrl } = parseVentureLinks({
     contact: venture.contact,
     purchaseChannels: venture.purchaseChannels,
   })
 
+  const chips = [...(venture.modalities ?? []).map((m) => getModalityLabel(m))]
+  if (waUrl && !chips.includes("WhatsApp")) chips.push("WhatsApp")
+
   return (
     <article
       className={cn(
-        "relative group flex flex-col rounded-2xl border border-olive/10 bg-olive/5 backdrop-blur-md overflow-hidden",
-        "transition-all duration-300 hover:border-olive/20 hover:bg-olive/5",
-        "hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
+        "group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-[#E8E1D6] bg-[#FDFBF7]",
+        "shadow-[0_8px_24px_-18px_rgba(31,77,53,0.35)] transition-transform duration-200",
+        "hover:-translate-y-0.5",
+        featured && "w-[min(82vw,320px)] shrink-0"
       )}
     >
       <Link
         href={href}
-        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute inset-0 z-0 rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35] focus-visible:ring-offset-2"
         aria-label={`Ver perfil de ${venture.name}`}
       />
 
-      <div className="relative z-[1] pointer-events-none flex flex-col flex-1">
-        <div className="relative aspect-[16/10] overflow-hidden">
-          {photo ? (
+      <div className="relative z-[1] pointer-events-none flex h-full min-h-0 flex-1 flex-col">
+        {photo ? (
+          <div
+            className={cn(
+              "relative overflow-hidden",
+              featured ? "h-[220px]" : "aspect-[16/11] min-h-[168px]"
+            )}
+          >
             <Image
               src={photo}
               alt=""
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, 400px"
+              className="object-cover"
+              sizes={featured ? "320px" : "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"}
             />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-emerald-500/25 via-emerald-500/10 to-transparent" />
-          )}
-          <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium border border-olive/10">
-              <span aria-hidden>{safetyDot}</span>
-              {safetyLabel}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col flex-1 p-4">
-          <Badge variant="outline" className="w-fit mb-2 text-[11px] border-primary/30 text-primary">
-            {getCategoryLabel(venture.category)}
-          </Badge>
-          <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-            {venture.name}
-          </h3>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-          <span className="line-clamp-1">{venture.zone}</span>
-        </div>
-
-        {(venture.stats?.totalReviews ?? 0) > 0 && (
-          <div className="flex items-center gap-1.5 mt-2 text-sm">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
-            <span className="font-semibold text-foreground">
-              {venture.stats!.avgRating.toFixed(1)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              ({venture.stats!.totalReviews})
-            </span>
-          </div>
-        )}
-
-          {(venture.modalities?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {venture.modalities!.map((m) => (
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+              {safety ? (
                 <span
-                  key={m}
-                  className="text-[11px] px-2 py-0.5 rounded-full bg-olive/5 border border-olive/10 text-muted-foreground"
+                  className={cn(
+                    "inline-flex max-w-[70%] rounded-full px-3 py-1 text-xs font-semibold",
+                    safety.className
+                  )}
                 >
-                  {getModalityLabel(m)}
+                  {safety.label}
                 </span>
-              ))}
+              ) : (
+                <span />
+              )}
+              <CategoryPill label={category} onPhoto />
             </div>
-          )}
+          </div>
+        ) : null}
 
-          {(igUrl || waUrl) && <div className="h-10 mt-4" aria-hidden />}
+        <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+          {!photo ? (
+            <div className="mb-3 flex items-center justify-between gap-2">
+              {safety ? (
+                <span
+                  className={cn(
+                    "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                    safety.className
+                  )}
+                >
+                  {safety.label}
+                </span>
+              ) : (
+                <span />
+              )}
+              <CategoryPill label={category} />
+            </div>
+          ) : null}
 
-          <div
-            className={cn(
-              "mt-4 w-full flex items-center justify-center gap-2 min-h-[44px] rounded-md",
-              "border border-input bg-background/50 text-sm font-medium",
-              "group-hover:border-primary/40 group-hover:bg-primary/5 transition-colors"
-            )}
-          >
-            Ver perfil
-            <ArrowRight className="h-4 w-4" />
+          <div className="flex items-start gap-3">
+            {!photo ? (
+              <span
+                aria-hidden
+                className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#1F4D35] font-display text-sm font-bold text-[#F8F5EF]"
+              >
+                {ventureInitials(venture.name)}
+              </span>
+            ) : null}
+            <div className="min-w-0">
+              <h3 className="min-h-[2.75rem] font-display text-lg font-bold leading-snug text-[#1F4D35] line-clamp-2">
+                {venture.name}
+              </h3>
+              <p className="mt-1 truncate text-base text-[#5F6B63]">{venture.zone}</p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex min-h-[52px] flex-wrap content-start gap-1.5">
+            {chips.slice(0, 4).map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-[#E8E1D6] bg-white/80 px-2.5 py-1 text-xs font-medium text-[#5F6B63]"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-auto flex flex-col gap-3 pt-4">
+            <div className="flex h-11 items-center gap-2">
+              {igUrl ? (
+                <a
+                  href={igUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="pointer-events-auto relative z-[2] flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E1D6] text-[#1F4D35] hover:bg-[#1F4D35]/5"
+                  aria-label={`Instagram de ${venture.name}`}
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
+              ) : null}
+              {waUrl ? (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="pointer-events-auto relative z-[2] flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E1D6] text-[#1F4D35] hover:bg-[#1F4D35]/5"
+                  aria-label={`WhatsApp de ${venture.name}`}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </a>
+              ) : null}
+            </div>
+            <span className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[#C85A2E] text-sm font-bold text-[#F8F5EF]">
+              Ver perfil
+            </span>
           </div>
         </div>
       </div>
-
-      {(igUrl || waUrl) && (
-        <div className="absolute left-4 bottom-[4.25rem] z-[2] flex items-center gap-2 pointer-events-auto">
-          {igUrl && (
-            <a
-              href={igUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-olive/10 text-muted-foreground hover:text-primary transition-colors"
-              aria-label={`Instagram de ${venture.name}`}
-            >
-              <Instagram className="h-4 w-4" />
-            </a>
-          )}
-          {waUrl && (
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur border border-olive/10 text-muted-foreground hover:text-primary transition-colors"
-              aria-label={`WhatsApp de ${venture.name}`}
-            >
-              <MessageCircle className="h-4 w-4" />
-            </a>
-          )}
-        </div>
-      )}
     </article>
   )
 }

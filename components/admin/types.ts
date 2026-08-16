@@ -82,11 +82,20 @@ export type PlaceItem = {
   type: string
   address: string
   neighborhood: string
+  province?: string
+  locality?: string
   status: string
   source?: "excel" | "kml" | "suggestion" | "manual"
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown"
   tags?: string[]
   photos?: string[]
+  openingHours?: string
+  location?: { lat?: number; lng?: number }
+  featured?: boolean
+  updatedAt?: string
+  description?: string
+  pickup?: boolean
+  seo?: { metaTitle?: string; metaDescription?: string; canonical?: string }
   contact?: { instagram?: string; url?: string; whatsapp?: string; phone?: string }
   stats?: { avgRating: number; totalReviews: number }
 }
@@ -138,7 +147,19 @@ export type AdminCounts = {
   suggestionsPending: number
   ventureSuggestionsPending: number
   contactsTotal: number
+  contactsPending?: number
   placesTotal: number
+  placesApproved?: number
+  placesNoPhoto?: number
+  placesNoHours?: number
+  placesNoInstagram?: number
+  placesNoPhone?: number
+  placesNoWeb?: number
+  placesNoDescription?: number
+  placesNoCoords?: number
+  placesIncomplete?: number
+  reviewsHidden?: number
+  featuredCount?: number
 }
 
 export type VentureReviewItem = {

@@ -6,7 +6,6 @@ import {
   isApexCelimapHost,
   resolveTopSinGlutenRedirect,
 } from "@/lib/seo/canonical-redirects"
-
 const CATEGORY_CITY_PATTERN = /^\/([a-z0-9-]+)-sin-gluten\/([a-z0-9-]+)$/i
 const CATEGORY_PATTERN = /^\/([a-z0-9-]+)-sin-gluten$/i
 

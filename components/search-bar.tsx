@@ -2,11 +2,10 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-/** Buscador home: en 320px input+botón se apilan; ≥sm en fila. */
+/** Buscador home: una sola píldora; botón integrado. Alto 52–56px. */
 export function SearchBar() {
   const [query, setQuery] = useState("")
   const router = useRouter()
@@ -21,24 +20,25 @@ export function SearchBar() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full min-w-0 flex-col gap-2 sm:flex-row"
+      className="flex h-[52px] min-h-[52px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-[18px] border border-[#D9DED4] bg-white py-1 pl-3 pr-1 shadow-[0_8px_28px_-16px_rgba(45,74,52,0.14)] focus-within:border-olive/25 focus-within:ring-2 focus-within:ring-olive/10 md:h-[56px] md:min-h-[56px] md:rounded-[20px] md:pl-4 md:pr-1.5"
       data-testid="home-search-bar"
     >
-      <div className="relative min-w-0 flex-1 group">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-        <Input
-          type="text"
-          placeholder="Buscar lugares, direcciones, localidades..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-12 min-h-[48px] rounded-lg border-olive/20 bg-cream pl-11 focus:border-terracotta focus:ring-2 focus:ring-terracotta/30"
-          aria-label="Buscar lugares"
-        />
-      </div>
+      <Search
+        className="h-5 w-5 shrink-0 text-olive/55"
+        strokeWidth={2}
+        aria-hidden
+      />
+      <input
+        type="text"
+        placeholder="Buscar cafeterías, restaurantes o ciudades"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="min-w-0 flex-1 bg-transparent text-base text-olive outline-none placeholder:text-olive/45"
+        aria-label="Buscar cafeterías, restaurantes o ciudades"
+      />
       <Button
         type="submit"
-        size="lg"
-        className="h-12 min-h-[48px] w-full shrink-0 rounded-lg px-6 sm:w-auto"
+        className="h-10 min-h-[40px] shrink-0 rounded-[12px] bg-[#C85A2E] px-3.5 text-sm text-white shadow-none hover:bg-[#A84A26] md:h-11 md:min-h-[44px] md:rounded-[14px] md:px-5 sm:px-6"
       >
         Buscar
       </Button>

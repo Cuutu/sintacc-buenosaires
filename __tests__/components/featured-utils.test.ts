@@ -16,6 +16,15 @@ describe("resolvePrimarySafety", () => {
     ).toBe("gf_options")
   })
 
+  it("opciones tag beats 100_gf tag (lugar con gluten)", () => {
+    expect(
+      resolvePrimarySafety({
+        safetyLevel: "dedicated_gf",
+        tags: ["100_gf", "opciones_sin_tacc"],
+      })
+    ).toBe("gf_options")
+  })
+
   it("prefers 100_gf tag over gf_options field", () => {
     expect(
       resolvePrimarySafety({
@@ -34,12 +43,18 @@ describe("resolvePrimarySafety", () => {
     ).toBe("dedicated_gf")
   })
 
-  it("infers dedicated_gf from certificado when field missing", () => {
+  it("no trata certificado de materia prima como 100% GF (Growlers)", () => {
+    expect(
+      resolvePrimarySafety({
+        safetyLevel: "dedicated_gf",
+        tags: ["opciones_sin_tacc", "certificado_sin_tacc"],
+      })
+    ).toBe("gf_options")
     expect(
       resolvePrimarySafety({
         tags: ["certificado_sin_tacc", "cocina_separada"],
       })
-    ).toBe("dedicated_gf")
+    ).toBe("unknown")
   })
 
   it("falls back to safetyLevel when tags have no signal", () => {

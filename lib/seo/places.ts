@@ -14,6 +14,17 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 
 const PER_PAGE = 24
 
+/** ISR/build: si Atlas no responde, página vacía — no tumbar `next build`. */
+async function connectSeoDb(): Promise<boolean> {
+  try {
+    await connectDB()
+    return true
+  } catch (error) {
+    console.error("[seo] Mongo unavailable:", error)
+    return false
+  }
+}
+
 export type PlaceSEO = {
   _id: string
   slug?: string | null
@@ -31,6 +42,8 @@ export type PlaceSEO = {
   updatedAt?: Date
   contact?: { instagram?: string; url?: string }
 }
+
+const EMPTY_PLACE_PAGE = { places: [] as PlaceSEO[], total: 0, pages: 0 }
 
 async function enrichPlacesWithStats(places: any[]): Promise<PlaceSEO[]> {
   const placeIds = places.map((p: any) => p._id)
@@ -75,8 +88,8 @@ export async function getPlacesByCity(
 ): Promise<{ places: PlaceSEO[]; total: number; pages: number }> {
   const city = getCityBySlug(citySlug)
   if (!city) return { places: [], total: 0, pages: 0 }
+  if (!(await connectSeoDb())) return EMPTY_PLACE_PAGE
 
-  await connectDB()
   const query: any = {
     status: "approved",
     province: city.provinceSlug,
@@ -107,8 +120,8 @@ export async function getPlacesByCityAndCategory(
   const city = getCityBySlug(citySlug)
   const type = CATEGORY_SLUG_TO_TYPE[categorySlug]
   if (!city || !type) return { places: [], total: 0, pages: 0 }
+  if (!(await connectSeoDb())) return EMPTY_PLACE_PAGE
 
-  await connectDB()
   const skip = (page - 1) * PER_PAGE
 
   const query: any = {
@@ -135,8 +148,8 @@ export async function getPlacesByCategory(
 ): Promise<{ places: PlaceSEO[]; total: number; pages: number }> {
   const type = CATEGORY_SLUG_TO_TYPE[categorySlug]
   if (!type) return { places: [], total: 0, pages: 0 }
+  if (!(await connectSeoDb())) return EMPTY_PLACE_PAGE
 
-  await connectDB()
   const skip = (page - 1) * PER_PAGE
 
   const query: any = {
@@ -166,8 +179,8 @@ export async function getPlacesByCategoryAndCity(
 export async function getTopNeighborhoods(citySlug: string): Promise<{ name: string; count: number }[]> {
   const city = getCityBySlug(citySlug)
   if (!city) return []
+  if (!(await connectSeoDb())) return []
 
-  await connectDB()
   const agg = await Place.aggregate([
     { $match: { status: "approved", province: city.provinceSlug, locality: city.slug } },
     { $group: { _id: "$neighborhood", count: { $sum: 1 } } },
@@ -181,8 +194,8 @@ export async function getTopNeighborhoods(citySlug: string): Promise<{ name: str
 export async function getTopPlaces(citySlug: string, limit = 10): Promise<PlaceSEO[]> {
   const city = getCityBySlug(citySlug)
   if (!city) return []
+  if (!(await connectSeoDb())) return []
 
-  await connectDB()
   const places = await Place.find({
     status: "approved",
     province: city.provinceSlug,
@@ -211,8 +224,8 @@ export async function getPlacesByProvinceSlug(
 ): Promise<{ places: PlaceSEO[]; total: number }> {
   const province = getProvinceBySlug(provinceSlug)
   if (!province) return { places: [], total: 0 }
+  if (!(await connectSeoDb())) return { places: [], total: 0 }
 
-  await connectDB()
   const type = options?.categorySlug ? CATEGORY_SLUG_TO_TYPE[options.categorySlug] : undefined
   const query: any = { status: "approved", province: provinceSlug }
   if (type) query.$or = [{ type }, { types: type }]
@@ -241,8 +254,8 @@ export async function getPlacesByProvinceSlug(
 export async function getProvinceLocalities(provinceSlug: string): Promise<{ name: string; slug: string; count: number; citySlug?: string }[]> {
   const province = getProvinceBySlug(provinceSlug)
   if (!province) return []
+  if (!(await connectSeoDb())) return []
 
-  await connectDB()
   const agg = await Place.aggregate([
     { $match: { status: "approved", province: provinceSlug } },
     { $group: { _id: "$locality", count: { $sum: 1 } } },
@@ -263,7 +276,7 @@ export async function getProvinceLocalities(provinceSlug: string): Promise<{ nam
 }
 
 export async function getProvinceLastUpdated(provinceSlug: string): Promise<Date | null> {
-  await connectDB()
+  if (!(await connectSeoDb())) return null
   const last = await Place.findOne({ status: "approved", province: provinceSlug })
     .sort({ updatedAt: -1 })
     .select("updatedAt")
@@ -274,7 +287,7 @@ export async function getProvinceLastUpdated(provinceSlug: string): Promise<Date
 /** lastmod por scope: máximo updatedAt de los lugares de esa página */
 export async function getPageLastModified(placeIds: string[]): Promise<Date | null> {
   if (placeIds.length === 0) return null
-  await connectDB()
+  if (!(await connectSeoDb())) return null
   const last = await Place.findOne({ _id: { $in: placeIds } })
     .sort({ updatedAt: -1 })
     .select("updatedAt")
@@ -283,7 +296,7 @@ export async function getPageLastModified(placeIds: string[]): Promise<Date | nu
 }
 
 export async function getLastPlaceUpdated(): Promise<Date | null> {
-  await connectDB()
+  if (!(await connectSeoDb())) return null
   const last = await Place.findOne({ status: "approved" })
     .sort({ updatedAt: -1 })
     .select("updatedAt")
@@ -302,9 +315,9 @@ export type CityPageStats = {
 
 /**
  * Agregados reales por ciudad (province + locality).
- * Clasificación: tags 100_gf / certificado_sin_tacc → dedicated;
- * opciones_sin_tacc o safetyLevel gf_options → opciones;
- * safetyLevel dedicated_gf sin tag también cuenta.
+ * Clasificación: tag 100_gf o safetyLevel dedicated_gf → dedicated;
+ * opciones_sin_tacc o safetyLevel gf_options → opciones.
+ * certificado_sin_tacc es materia prima, no cocina 100%.
  */
 export async function getCityPageStats(citySlug: string): Promise<CityPageStats> {
   const empty: CityPageStats = {
@@ -317,8 +330,8 @@ export async function getCityPageStats(citySlug: string): Promise<CityPageStats>
   }
   const city = getCityBySlug(citySlug)
   if (!city) return empty
+  if (!(await connectSeoDb())) return empty
 
-  await connectDB()
   const match = {
     status: "approved",
     province: city.provinceSlug,
@@ -330,7 +343,7 @@ export async function getCityPageStats(citySlug: string): Promise<CityPageStats>
     Place.countDocuments({
       ...match,
       $or: [
-        { tags: { $in: ["100_gf", "certificado_sin_tacc"] } },
+        { tags: "100_gf" },
         { safetyLevel: "dedicated_gf" },
       ],
     }),
@@ -341,7 +354,7 @@ export async function getCityPageStats(citySlug: string): Promise<CityPageStats>
           $or: [{ tags: "opciones_sin_tacc" }, { safetyLevel: "gf_options" }],
         },
         {
-          tags: { $nin: ["100_gf", "certificado_sin_tacc"] },
+          tags: { $nin: ["100_gf"] },
         },
         { safetyLevel: { $ne: "dedicated_gf" } },
       ],
@@ -399,8 +412,8 @@ export async function getRecentReviewsForCity(
 ): Promise<CityRecentReview[]> {
   const city = getCityBySlug(citySlug)
   if (!city) return []
+  if (!(await connectSeoDb())) return []
 
-  await connectDB()
   const places = await Place.find(
     { status: "approved", province: city.provinceSlug, locality: city.slug },
     { _id: 1, name: 1, slug: 1 }

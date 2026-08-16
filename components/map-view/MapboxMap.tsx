@@ -9,8 +9,7 @@ import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useMem
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { IPlace } from "@/models/Place"
-import { CABA_CENTER, CABA_ZOOM } from "./geo"
-import { getPlacePath } from "@/lib/place-url"
+import { CABA_CENTER, CABA_ZOOM, type MapViewportBounds } from "./geo"
 import {
   findKnownNeighborhoodSearch,
   getNeighborhoodSearchValues,
@@ -31,198 +30,67 @@ import {
 } from "@/lib/e2e-mapbox-adapter"
 import { createMapInstanceTeardown, type MapboxTeardownMap } from "@/lib/mapbox-teardown"
 import { reportClientError } from "@/lib/client-error-reporter"
+import { MAP_MOVE_DEBOUNCE_MS } from "@/lib/map-places-cache"
+import { celimapPinMarkup } from "@/lib/celimap-pin"
+import { buildPlacePopupHtml } from "./map-popup-html"
+import {
+  ensurePlacesLayers,
+  expandClusterAt,
+  LAYER_CLUSTERS,
+  LAYER_PIN_FALLBACK,
+  LAYER_PINS,
+  LAYER_SELECTED_PIN,
+  loadCeliMapPinImages,
+  PIN_FOCUS_ZOOM,
+  PIN_POPUP_OFFSET,
+  PLACES_SOURCE,
+  queryPlaceOrClusterAt,
+  setPlacesSourceData,
+  setSelectedPlaceOnMap,
+} from "./map-webgl-layers"
 
-const SAFETY_MARKER_BG = {
-  dedicated_gf: "#10d98a",
-  gf_options: "#f6b33d",
-  other: "#6b7280", // Sin información
-} as const
+export { TYPE_MARKERS } from "./map-popup-html"
+export type { MapViewportBounds }
 
-function getPlaceMarkerBg(place: IPlace, colorBySafety: boolean, fallback: string): string {
-  if (!colorBySafety) return fallback
-  const level = inferSafetyLevel(place)
-  if (level === "dedicated_gf") return SAFETY_MARKER_BG.dedicated_gf
-  if (level === "gf_options") return SAFETY_MARKER_BG.gf_options
-  return SAFETY_MARKER_BG.other
-}
-export const TYPE_MARKERS: Record<string, { emoji: string; bg: string; label: string }> = {
-  restaurant: { emoji: "🍽️", bg: "#ea580c", label: "Restaurante" },
-  cafe: { emoji: "☕", bg: "#78350f", label: "Café" },
-  bakery: { emoji: "🥐", bg: "#ca8a04", label: "Panadería" },
-  store: { emoji: "🛒", bg: "#16a34a", label: "Tienda" },
-  icecream: { emoji: "🍦", bg: "#ec4899", label: "Heladería" },
-  bar: { emoji: "🍺", bg: "#7c3aed", label: "Bar" },
-  other: { emoji: "📍", bg: "#3b82f6", label: "Lugar" },
-}
-
-const POPUP_ICON_PATHS: Record<string, string> = {
-  restaurant: '<path d="M3 2v7c0 1.7 1.3 3 3 3s3-1.3 3-3V2"/><path d="M6 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/>',
-  cafe: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8h1a4 4 0 1 1 0 8h-1"/><path d="M5 8h11v7a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z"/>',
-  bakery: '<path d="M12 20a8 8 0 0 0 8-8c0-2.6-1.3-5-3.4-6.4"/><path d="M12 20a8 8 0 0 1-8-8c0-2.6 1.3-5 3.4-6.4"/><path d="M12 20c2.2 0 4-3.6 4-8s-1.8-8-4-8-4 3.6-4 8 1.8 8 4 8Z"/><path d="M4.3 10h15.4"/>',
-  store: '<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4A2 2 0 0 0 7.1 20h9.8a2 2 0 0 0 2-1.6l1.6-7.4"/><path d="M5 11 9 4"/>',
-  icecream: '<path d="M7 11a5 5 0 0 1 10 0"/><path d="M8 11h8l-4 10Z"/><path d="M12 3v2"/>',
-  bar: '<path d="M8 22h8"/><path d="M12 16v6"/><path d="M7 2h10l-1 9a4 4 0 0 1-8 0Z"/><path d="M7 8h10"/>',
-  other: '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;")
-}
-
-function getPopupIcon(type: string): string {
-  const path = POPUP_ICON_PATHS[type] ?? POPUP_ICON_PATHS.other
-  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block">${path}</svg>`
-}
-
-function getPopupSafety(level?: string | null) {
-  if (level === "dedicated_gf") {
-    return {
-      label: "100% sin TACC",
-      description: "Local dedicado",
-      accent: "#10d98a",
-      badgeBg: "rgba(16,217,138,0.13)",
-      badgeBorder: "rgba(16,217,138,0.34)",
-      badgeText: "#91f5c4",
+function softenLightMap(map: mapboxgl.Map) {
+  const style = map.getStyle()
+  for (const layer of style.layers ?? []) {
+    const id = layer.id
+    try {
+      if (layer.type === "background") {
+        map.setPaintProperty(id, "background-color", "#F6F1E8")
+      }
+      if (layer.type === "fill") {
+        if (/park|landuse|landcover|national-park/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", "#E8EDE4")
+          map.setPaintProperty(id, "fill-opacity", 0.35)
+        }
+        if (/water/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", "#E4E8E6")
+        }
+        if (/building/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", "#EDE8E0")
+          map.setPaintProperty(id, "fill-opacity", 0.22)
+        }
+      }
+      if (layer.type === "line" && /road|street|path|bridge|tunnel|pedestrian/i.test(id)) {
+        map.setPaintProperty(id, "line-color", "#DDD6CC")
+        map.setPaintProperty(id, "line-opacity", 0.38)
+      }
+      if (layer.type === "symbol") {
+        if (/poi|transit|airport|rail/i.test(id)) {
+          map.setLayoutProperty(id, "visibility", "none")
+          continue
+        }
+        map.setPaintProperty(id, "text-color", "#C4BEB4")
+        map.setPaintProperty(id, "text-halo-color", "#F6F1E8")
+        map.setPaintProperty(id, "text-halo-width", 1)
+        map.setPaintProperty(id, "icon-opacity", 0.2)
+      }
+    } catch {
+      /* paint mismatch on this layer */
     }
   }
-
-  if (level === "gf_options") {
-    return {
-      label: "Opciones sin TACC",
-      description: "Consultá al pedir",
-      accent: "#f6b33d",
-      badgeBg: "rgba(246,179,61,0.14)",
-      badgeBorder: "rgba(246,179,61,0.34)",
-      badgeText: "#ffd891",
-    }
-  }
-
-  return null
-}
-
-function getPopupRating(place: IPlace & { stats?: { avgRating?: number; totalReviews?: number } }): string | null {
-  const totalReviews = place.stats?.totalReviews ?? 0
-  const avgRating = place.stats?.avgRating ?? 0
-
-  if (totalReviews > 0) {
-    return `${avgRating.toFixed(1)} · ${totalReviews} reseña${totalReviews === 1 ? "" : "s"}`
-  }
-
-  const googleRating = place.googleSnapshot?.rating
-  const googleCount = place.googleSnapshot?.userRatingCount
-  if (googleRating != null) {
-    return `${googleRating.toFixed(1)} Google${googleCount != null ? ` · ${googleCount}` : ""}`
-  }
-
-  return null
-}
-
-function isCompactMapPopup(): boolean {
-  if (typeof window === "undefined") return false
-  return window.matchMedia("(max-width: 768px)").matches
-}
-
-function buildPlacePopupHtml(place: IPlace, compact: boolean): string {
-  const level = inferSafetyLevel(place) ?? null
-
-  const popupType = (place.types?.[0] ?? place.type) as string
-  const markerConfig = TYPE_MARKERS[popupType] ?? TYPE_MARKERS.other
-  const safety = getPopupSafety(level)
-  const accent = safety?.accent ?? markerConfig.bg
-  const typeLabel = escapeHtml(markerConfig.label)
-  const name = escapeHtml(place.name)
-  const neighborhood = escapeHtml(place.neighborhood)
-  const locationLabel = escapeHtml([place.neighborhood, "CABA"].filter(Boolean).join(", "))
-  const addressLabel = escapeHtml(place.addressText || place.address || place.neighborhood)
-  const ratingLabel = getPopupRating(place)
-  const lng = place.location.lng
-  const lat = place.location.lat
-  const directionsUrl = escapeHtml(
-    Number.isFinite(lng) && Number.isFinite(lat)
-      ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`
-  )
-  const photoUrl = place.photos?.[0] ? escapeHtml(place.photos[0]) : ""
-  const detailPath = escapeHtml(getPlacePath(place))
-  const safetyHtml = safety
-    ? `<span style="display:inline-flex;align-items:center;gap:6px;max-width:100%;border-radius:999px;border:1px solid ${safety.badgeBorder};background:${safety.badgeBg};color:${safety.badgeText};padding:5px 9px;font-size:11.5px;font-weight:760;line-height:1;white-space:nowrap">
-        <span style="width:7px;height:7px;border-radius:999px;background:${safety.accent};box-shadow:0 0 12px ${safety.accent}99;flex:0 0 auto"></span>
-        ${safety.label}
-      </span>`
-    : `<span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#aeb7c5;padding:5px 9px;font-size:11.5px;font-weight:720;white-space:nowrap">Sin dato TACC</span>`
-
-  // Mobile: solo nombre + estado sin TACC (tap abre detalle)
-  if (compact) {
-    return `
-    <a href="${detailPath}" style="display:block;width:min(260px,calc(100vw - 48px));text-decoration:none;overflow:hidden;border-radius:14px;background:#11161d;color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 32px rgba(0,0,0,.55);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px 12px" onclick="event.stopPropagation()">
-      <div title="${name}" style="color:#fff;font-size:15px;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-      <div style="margin-top:8px;display:flex;align-items:center">${safetyHtml}</div>
-    </a>`
-  }
-
-  const photoHtml = photoUrl
-    ? `<img src="${photoUrl}" alt="" loading="lazy" style="width:76px;height:76px;display:block;object-fit:cover;border-radius:15px;background:#10151b;box-shadow:0 12px 22px rgba(0,0,0,.32)">`
-    : `<div style="width:76px;height:76px;border-radius:15px;background:radial-gradient(circle at 35% 25%,${accent}42,rgba(255,255,255,.08) 58%,rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;color:${accent};border:1px solid rgba(255,255,255,.10);box-shadow:0 12px 22px rgba(0,0,0,.24)">${getPopupIcon(popupType)}</div>`
-  const ratingHtml = ratingLabel
-    ? `<span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:5px 9px;font-size:11.5px;font-weight:720;white-space:nowrap">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
-        ${escapeHtml(ratingLabel)}
-      </span>`
-    : ""
-
-  return `
-    <div style="width:min(315px,calc(100vw - 36px));overflow:hidden;border-radius:19px;background:#11161d;color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05) inset;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-      <div style="position:relative;padding:11px">
-        <div style="position:absolute;right:-66px;top:-78px;width:142px;height:142px;border-radius:999px;background:radial-gradient(circle,${accent}28,rgba(255,255,255,0) 66%);pointer-events:none"></div>
-        <div style="position:relative;display:grid;grid-template-columns:76px 1fr;gap:11px;align-items:start">
-          <div style="position:relative">
-            ${photoHtml}
-          </div>
-          <div style="min-width:0;padding-top:2px">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-              <div title="${name}" style="min-width:0;color:#fff;font-size:18px;font-weight:860;line-height:1.08;letter-spacing:0;text-shadow:0 1px 2px rgba(0,0,0,.25);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${name}</div>
-              <div aria-hidden="true" style="width:28px;height:28px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#d7dde8">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
-              </div>
-            </div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;color:#aeb7c5;font-size:12.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block;flex:0 0 auto"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style="overflow:hidden;text-overflow:ellipsis">${locationLabel || addressLabel}</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="position:relative;margin-top:9px;color:#b7bfcc;font-size:11.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${addressLabel || `${typeLabel}${neighborhood ? ` en ${neighborhood}` : ""}`}
-        </div>
-
-        <div style="position:relative;margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
-          ${safetyHtml}
-          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#dce3ee;padding:5px 9px;font-size:11.5px;font-weight:720;white-space:nowrap">
-            ${getPopupIcon(popupType)}
-            ${typeLabel}
-          </span>
-          ${ratingHtml}
-        </div>
-
-        <div style="position:relative;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <a href="${detailPath}" style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border-radius:12px;background:linear-gradient(135deg,#25d976,#50ee92);color:#06130d;text-decoration:none;font-size:12.5px;font-weight:860;box-shadow:0 10px 20px rgba(16,217,138,.18)" onclick="event.stopPropagation()">
-            Ver lugar
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-          </a>
-          <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid ${accent};color:${accent};text-decoration:none;font-size:12.5px;font-weight:800" onclick="event.stopPropagation()">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-            Cómo llegar
-          </a>
-        </div>
-      </div>
-    </div>
-  `
 }
 
 export interface MapboxMapRef {
@@ -233,16 +101,12 @@ export interface MapboxMapRef {
   showUserLocation: (lng: number, lat: number) => void
   /** Encadra todos los lugares visibles (guía privada / reset viewport). */
   fitAllPlaces: (opts?: { maxZoom?: number; padding?: number }) => void
+  projectLngLat: (lng: number, lat: number) => { x: number; y: number } | null
+  getContainerSize: () => { width: number; height: number } | null
+  subscribeViewChange: (listener: () => void) => () => void
 }
 
 export type MapInteractionMode = "default" | "private-guide"
-
-export interface MapViewportBounds {
-  west: number
-  south: number
-  east: number
-  north: number
-}
 
 interface MarkerEntry {
   marker: mapboxgl.Marker
@@ -271,7 +135,9 @@ type MapMarkerItem =
 interface MapboxMapProps {
   places: IPlace[]
   selectedPlaceId?: string
+  hoveredPlaceId?: string | null
   onPlaceSelect?: (place: IPlace) => void
+  onBackgroundClick?: () => void
   onBoundsChange?: (bounds: mapboxgl.LngLatBounds) => void
   /** Llamado al terminar move/zoom con el nivel de zoom actual y bounds visibles */
   onMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
@@ -289,7 +155,7 @@ interface MapboxMapProps {
   /** Callback cuando se obtiene la ubicación correctamente */
   onGeolocateSuccess?: () => void
   clusterMarkers?: boolean
-  /** Verde = 100% sin TACC; verde oscuro = opciones (en vez de color por categoría) */
+  /** Oliva = 100% sin TACC; terracota = opciones; gris = sin info */
   colorBySafety?: boolean
   /** Si false, no muestra popup Mapbox (mobile usa card inferior) */
   showPopup?: boolean
@@ -307,13 +173,15 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     {
       places,
       selectedPlaceId,
+      hoveredPlaceId = null,
       onPlaceSelect,
+      onBackgroundClick,
       onBoundsChange,
       onMoveEnd,
       searchQuery,
       initialCenter,
       initialZoom,
-      darkStyle = true,
+      darkStyle = false,
       reduceMotion = false,
       enableGeolocate = false,
       onGeolocateError,
@@ -329,7 +197,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const isPrivateGuide = interactionMode === "private-guide"
     const useNumberedMarkers = numberedMarkers || isPrivateGuide
     const effectiveShowPopup = isPrivateGuide ? false : showPopup
-    const effectiveCluster = isPrivateGuide ? false : clusterMarkers
+    void clusterMarkers
+    void colorBySafety
     const mapContainer = useRef<HTMLDivElement>(null)
     const map = useRef<mapboxgl.Map | null>(null)
     const disposedRef = useRef(false)
@@ -342,8 +211,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
     const selectedPlaceIdRef = useRef(selectedPlaceId)
     selectedPlaceIdRef.current = selectedPlaceId
+    const hoveredPlaceIdRef = useRef(hoveredPlaceId)
+    hoveredPlaceIdRef.current = hoveredPlaceId
     const onPlaceSelectRef = useRef(onPlaceSelect)
     onPlaceSelectRef.current = onPlaceSelect
+    const onBackgroundClickRef = useRef(onBackgroundClick)
+    onBackgroundClickRef.current = onBackgroundClick
+    const viewListenersRef = useRef(new Set<() => void>())
     const showPopupRef = useRef(effectiveShowPopup)
     showPopupRef.current = effectiveShowPopup
     const useNumberedMarkersRef = useRef(useNumberedMarkers)
@@ -375,7 +249,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [])
 
     const flyTo = useCallback(
-      (lng: number, lat: number, zoom = 15) => {
+      (lng: number, lat: number, zoom = PIN_FOCUS_ZOOM) => {
         if (disposedRef.current || !map.current) return
         try {
           map.current.flyTo({
@@ -465,42 +339,53 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       userLocationMarkerRef.current.setLngLat([lng, lat])
     }, [])
 
+    const projectLngLat = useCallback((lng: number, lat: number) => {
+      if (!map.current) return null
+      try {
+        const point = map.current.project([lng, lat])
+        return { x: point.x, y: point.y }
+      } catch {
+        return null
+      }
+    }, [])
+
+    const getContainerSize = useCallback(() => {
+      const el = map.current?.getContainer()
+      if (!el) return null
+      return { width: el.clientWidth, height: el.clientHeight }
+    }, [])
+
+    const subscribeViewChange = useCallback((listener: () => void) => {
+      viewListenersRef.current.add(listener)
+      return () => {
+        viewListenersRef.current.delete(listener)
+      }
+    }, [])
+
     const applyMarkerSelection = useCallback(
-      (entry: MarkerEntry, isSelected: boolean) => {
-        const numbered = useNumberedMarkersRef.current
-        const base = numbered ? 34 : 36
-        const active = numbered ? 42 : 48
+      (entry: MarkerEntry, isSelected: boolean, isHovered = false) => {
+        if (entry.item.kind === "cluster") return
+        const size = 40
         const motionOk = !reduceMotion
-        entry.element.style.width = `${isSelected ? active : base}px`
-        entry.element.style.height = `${isSelected ? active : base}px`
-        entry.element.style.zIndex = isSelected ? "5" : "1"
+        entry.element.style.width = `${size}px`
+        entry.element.style.height = `${Math.round(size * 1.3)}px`
+        entry.element.style.zIndex = isSelected ? "6" : isHovered ? "4" : "1"
         entry.inner.style.transition = motionOk
-          ? "transform 0.2s ease, box-shadow 0.2s ease"
+          ? "transform 0.2s ease"
           : "none"
-        entry.inner.style.border = `${isSelected ? "3px" : "2px"} solid rgba(255,255,255,0.95)`
-        entry.inner.style.boxShadow = isSelected
-          ? "0 8px 24px rgba(0,0,0,0.45), 0 0 0 4px rgba(16,217,138,0.35)"
-          : "0 2px 8px rgba(0,0,0,0.25)"
-        entry.inner.style.transform = isSelected ? "scale(1.06)" : "scale(1)"
-        entry.icon.style.fontSize = numbered
-          ? `${isSelected ? 15 : 13}px`
-          : `${isSelected ? 20 : 16}px`
+        entry.inner.style.transform = isSelected
+          ? "scale(1.15)"
+          : isHovered
+            ? "scale(1.08)"
+            : "scale(1)"
       },
       [reduceMotion]
     )
 
-    const getGuideMarkerBg = useCallback((place: IPlace, fallback: string) => {
-      const reports =
-        (place as IPlace & { stats?: { contaminationReportsCount?: number } }).stats
-          ?.contaminationReportsCount ?? 0
-      if (reports > 0) return "#ef4444"
-      return getPlaceMarkerBg(place, true, fallback)
-    }, [])
-
     const markerItems = useMemo<MapMarkerItem[]>(() => {
       void markerLayoutVersion
-      const m = map.current
-      const validPlaces = places
+      if (!useNumberedMarkers) return []
+      return places
         .map((place) => ({
           place,
           lng: place.location?.lng,
@@ -511,78 +396,37 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           (item): item is { place: IPlace; lng: number; lat: number; id: string } =>
             Boolean(item.id) && Number.isFinite(item.lng) && Number.isFinite(item.lat)
         )
-
-      if (!effectiveCluster || !m || m.getZoom() >= 15) {
-        return validPlaces.map(({ place, lng, lat, id }) => ({
+        .map(({ place, lng, lat, id }) => ({
           id,
-          kind: "place",
+          kind: "place" as const,
           place,
           lng,
           lat,
         }))
-      }
-
-      const zoom = m.getZoom()
-      const radius = zoom < 11 ? 58 : zoom < 13 ? 48 : 38
-      const clusters: Array<{
-        places: IPlace[]
-        x: number
-        y: number
-        lng: number
-        lat: number
-      }> = []
-
-      validPlaces.forEach(({ place, lng, lat }) => {
-        const point = m.project([lng, lat])
-        const cluster = clusters.find((candidate) => {
-          const dx = candidate.x - point.x
-          const dy = candidate.y - point.y
-          return Math.sqrt(dx * dx + dy * dy) <= radius
-        })
-
-        if (!cluster) {
-          clusters.push({ places: [place], x: point.x, y: point.y, lng, lat })
-          return
-        }
-
-        const nextCount = cluster.places.length + 1
-        cluster.x = (cluster.x * cluster.places.length + point.x) / nextCount
-        cluster.y = (cluster.y * cluster.places.length + point.y) / nextCount
-        cluster.lng = (cluster.lng * cluster.places.length + lng) / nextCount
-        cluster.lat = (cluster.lat * cluster.places.length + lat) / nextCount
-        cluster.places.push(place)
-      })
-
-      return clusters.map((cluster) => {
-        if (cluster.places.length === 1) {
-          const place = cluster.places[0]
-          return {
-            id: place._id != null ? String(place._id) : `orphan:${cluster.lng},${cluster.lat}`,
-            kind: "place" as const,
-            place,
-            lng: cluster.lng,
-            lat: cluster.lat,
-          }
-        }
-
-        const ids = cluster.places
-          .map((place) => (place._id != null ? String(place._id) : ""))
-          .filter(Boolean)
-          .sort()
-        return {
-          id: `cluster:${ids.join(":")}`,
-          kind: "cluster" as const,
-          places: cluster.places,
-          lng: cluster.lng,
-          lat: cluster.lat,
-        }
-      })
-    }, [effectiveCluster, markerLayoutVersion, places])
+    }, [markerLayoutVersion, places, useNumberedMarkers])
 
     useImperativeHandle(
       ref,
-      () => ({ flyTo, setCenter, triggerGeolocate, showUserLocation, fitAllPlaces }),
-      [flyTo, setCenter, triggerGeolocate, showUserLocation, fitAllPlaces]
+      () => ({
+        flyTo,
+        setCenter,
+        triggerGeolocate,
+        showUserLocation,
+        fitAllPlaces,
+        projectLngLat,
+        getContainerSize,
+        subscribeViewChange,
+      }),
+      [
+        flyTo,
+        setCenter,
+        triggerGeolocate,
+        showUserLocation,
+        fitAllPlaces,
+        projectLngLat,
+        getContainerSize,
+        subscribeViewChange,
+      ]
     )
 
     useEffect(() => {
@@ -662,10 +506,25 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             container: mapContainer.current,
             style: darkStyle
               ? "mapbox://styles/mapbox/dark-v11"
-              : "mapbox://styles/mapbox/streets-v12",
+              : "mapbox://styles/mapbox/light-v11",
             center: initialCenter ?? CABA_CENTER,
             zoom: initialZoom ?? CABA_ZOOM,
             failIfMajorPerformanceCaveat: false,
+          })
+          if (!darkStyle) {
+            instance.on("load", () => {
+              if (!disposedRef.current) softenLightMap(instance)
+            })
+          }
+          instance.on("load", () => {
+            if (disposedRef.current || isPrivateGuide) return
+            ensurePlacesLayers(instance, reduceMotion, false)
+            setPlacesSourceData(instance, placesRef.current)
+            void loadCeliMapPinImages(instance).then((pinsReady) => {
+              if (disposedRef.current || map.current !== instance) return
+              ensurePlacesLayers(instance, reduceMotion, pinsReady)
+              setPlacesSourceData(instance, placesRef.current)
+            })
           })
         }
         if (disposedRef.current) {
@@ -682,7 +541,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         trackedInit = true
         if (!isE2eMapboxMockEnabled() && !isPrivateGuide) {
           sharedPopupRef.current = new mapboxgl.Popup({
-            offset: 42,
+            offset: PIN_POPUP_OFFSET,
             className: "celimap-popup",
             closeButton: false,
             closeOnClick: true,
@@ -801,7 +660,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
       map.current.flyTo({
         center: [firstPlace.location.lng, firstPlace.location.lat],
-        zoom: 15,
+        zoom: PIN_FOCUS_ZOOM,
         duration: reduceMotion ? 0 : 1000,
       })
     }, [searchQuery, places, reduceMotion])
@@ -816,22 +675,48 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           const b = m.getBounds()
           if (!b) return
           onBoundsChangeRef.current?.(b)
-          onMoveEndRef.current?.(m.getZoom(), {
-            west: b.getWest(),
-            south: b.getSouth(),
-            east: b.getEast(),
-            north: b.getNorth(),
-          })
         } catch {
           /* mapa destruido */
         }
       }
-      m.on("load", onLoadOrMoveEnd)
-      m.on("moveend", onLoadOrMoveEnd)
+      let moveTimer: ReturnType<typeof setTimeout> | null = null
+      const onMoveEndDebounced = () => {
+        onLoadOrMoveEnd()
+        if (moveTimer) clearTimeout(moveTimer)
+        moveTimer = setTimeout(() => {
+          if (disposedRef.current || !map.current) return
+          try {
+            const b = m.getBounds()
+            if (!b) return
+            onMoveEndRef.current?.(m.getZoom(), {
+              west: b.getWest(),
+              south: b.getSouth(),
+              east: b.getEast(),
+              north: b.getNorth(),
+            })
+          } catch {
+            /* mapa destruido */
+          }
+        }, MAP_MOVE_DEBOUNCE_MS)
+      }
+      const emitViewChange = () => {
+        viewListenersRef.current.forEach((listener) => {
+          try {
+            listener()
+          } catch {
+            /* ignore */
+          }
+        })
+      }
+      m.on("load", onMoveEndDebounced)
+      m.on("moveend", onMoveEndDebounced)
+      m.on("move", emitViewChange)
       return () => {
+        if (moveTimer) clearTimeout(moveTimer)
         try {
-          m.off("load", onLoadOrMoveEnd)
-          m.off("moveend", onLoadOrMoveEnd)
+          m.off("load", onMoveEndDebounced)
+          m.off("moveend", onMoveEndDebounced)
+          m.off("move", emitViewChange)
         } catch {
           /* ignore */
         }
@@ -841,79 +726,162 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     useEffect(() => {
       const m = map.current
       if (!m || disposedRef.current) return
-      // Adapter E2E: sin Markers/Popup reales (lifecycle ya validado en init)
+      if (useNumberedMarkers) return
       if (isE2eMapboxMockEnabled()) return
+
+      const setup = () => {
+        if (disposedRef.current || !map.current) return
+        const instance = map.current
+        ensurePlacesLayers(instance, reduceMotion, false)
+        setPlacesSourceData(instance, placesRef.current)
+        void loadCeliMapPinImages(instance).then((pinsReady) => {
+          if (disposedRef.current || map.current !== instance) return
+          ensurePlacesLayers(instance, reduceMotion, pinsReady)
+          setPlacesSourceData(instance, placesRef.current)
+        })
+      }
+
+      if (m.isStyleLoaded?.() ?? m.loaded?.()) setup()
+      else m.once("load", setup)
+    }, [places, reduceMotion, useNumberedMarkers])
+
+    useEffect(() => {
+      const m = map.current
+      if (!m || disposedRef.current || useNumberedMarkers) return
+      if (isE2eMapboxMockEnabled()) return
+
+      const onMapClick = (e: mapboxgl.MapMouseEvent) => {
+        const hit = queryPlaceOrClusterAt(m, e.point)
+        if (!hit) {
+          onBackgroundClickRef.current?.()
+          return
+        }
+        if (hit.kind === "cluster") {
+          expandClusterAt(m, hit.clusterId, [e.lngLat.lng, e.lngLat.lat], reduceMotion)
+          return
+        }
+        const place = placesRef.current.find(
+          (item) => item._id != null && String(item._id) === hit.id
+        )
+        if (!place) return
+        onPlaceSelectRef.current?.(place)
+        if (
+          !isPrivateGuideRef.current &&
+          showPopupRef.current &&
+          sharedPopupRef.current &&
+          map.current
+        ) {
+          sharedPopupRef.current
+            .setLngLat([place.location.lng, place.location.lat])
+            .setHTML(buildPlacePopupHtml(place))
+            .addTo(map.current)
+        }
+      }
+
+      const pointer = () => {
+        m.getCanvas().style.cursor = "pointer"
+      }
+      const reset = () => {
+        m.getCanvas().style.cursor = ""
+      }
+
+      let bound = false
+      const interactiveLayers = [LAYER_SELECTED_PIN, LAYER_CLUSTERS, LAYER_PINS, LAYER_PIN_FALLBACK]
+      const tryBind = () => {
+        if (bound || disposedRef.current) return
+        const ready = interactiveLayers.some((id) => Boolean(m.getLayer(id)))
+        if (!ready) return
+        bound = true
+        m.on("click", onMapClick)
+        interactiveLayers.forEach((id) => {
+          if (!m.getLayer(id)) return
+          m.on("mouseenter", id, pointer)
+          m.on("mouseleave", id, reset)
+        })
+      }
+
+      tryBind()
+      m.on("idle", tryBind)
+      const poll = window.setInterval(tryBind, 250)
+
+      return () => {
+        window.clearInterval(poll)
+        try {
+          m.off("idle", tryBind)
+          if (bound) {
+            m.off("click", onMapClick)
+            interactiveLayers.forEach((id) => {
+              m.off("mouseenter", id, pointer)
+              m.off("mouseleave", id, reset)
+            })
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    }, [reduceMotion, useNumberedMarkers])
+
+    useEffect(() => {
+      const m = map.current
+      if (!m || disposedRef.current || useNumberedMarkers) return
+      if (isE2eMapboxMockEnabled()) return
+      const selected =
+        selectedPlaceId
+          ? places.find((place) => place._id != null && String(place._id) === selectedPlaceId) ?? null
+          : null
+      const hovered =
+        !selected && hoveredPlaceId
+          ? places.find((place) => place._id != null && String(place._id) === hoveredPlaceId) ?? null
+          : null
+      try {
+        setSelectedPlaceOnMap(m, selected ?? hovered, selected ? "selected" : "hovered")
+      } catch {
+        /* source still not ready */
+      }
+    }, [selectedPlaceId, hoveredPlaceId, places, useNumberedMarkers])
+
+    useEffect(() => {
+      const m = map.current
+      if (!m || disposedRef.current) return
+      if (isE2eMapboxMockEnabled()) return
+      if (!useNumberedMarkers) {
+        markerEntriesRef.current.forEach((entry) => entry.marker.remove())
+        markerEntriesRef.current.clear()
+        return
+      }
 
       const nextMarkerIds = new Set<string>()
 
       markerItems.forEach((item) => {
+        if (item.kind !== "place") return
         nextMarkerIds.add(item.id)
-        const isCluster = item.kind === "cluster"
-        const config = isCluster
-          ? TYPE_MARKERS.other
-          : TYPE_MARKERS[item.place.type] || TYPE_MARKERS.other
-        const markerBg = isCluster
-          ? "linear-gradient(135deg, #06120f, #0f2f27)"
-          : useNumberedMarkersRef.current
-            ? getGuideMarkerBg(item.place, config.bg)
-            : getPlaceMarkerBg(item.place, colorBySafety, config.bg)
-        const markerNumber =
-          !isCluster && useNumberedMarkersRef.current
-            ? placeNumberByIdRef.current.get(item.id)
-            : undefined
+        const safety = inferSafetyLevel(item.place) ?? "unknown"
+        const markerNumber = placeNumberByIdRef.current.get(item.id)
         const existingEntry = markerEntriesRef.current.get(item.id)
 
         if (existingEntry) {
           existingEntry.item = item
           existingEntry.marker.setLngLat([item.lng, item.lat])
-          if (isCluster) {
-            existingEntry.inner.style.background = markerBg
-            existingEntry.inner.style.border = "2px solid rgba(16,185,129,0.85)"
-            existingEntry.inner.style.boxShadow = "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)"
-            existingEntry.icon.textContent = String(item.places.length)
-            existingEntry.icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
-          } else {
-            existingEntry.inner.style.background = markerBg
-            existingEntry.icon.textContent =
-              markerNumber != null ? String(markerNumber) : config.emoji
-            if (markerNumber != null) {
-              const safety = inferSafetyLevel(item.place)
-              const safetyLabel =
-                safety && safety !== "unknown"
-                  ? getSafetyBadge(safety).label
-                  : null
-              const tip = safetyLabel
-                ? `${item.place.name} · ${safetyLabel}`
-                : item.place.name
-              existingEntry.element.title = tip
-              existingEntry.element.setAttribute(
-                "aria-label",
-                `${markerNumber}. ${tip}`
-              )
-            }
-            applyMarkerSelection(existingEntry, selectedPlaceIdRef.current === item.id)
-          }
+          existingEntry.inner.innerHTML = celimapPinMarkup(
+            safety,
+            markerNumber != null ? String(markerNumber) : undefined
+          )
+          applyMarkerSelection(
+            existingEntry,
+            selectedPlaceIdRef.current === item.id,
+            hoveredPlaceIdRef.current === item.id
+          )
           return
         }
 
         const el = document.createElement("div")
         el.className = "mapboxgl-marker"
-        el.style.cssText = `
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        `
-        if (!isCluster && markerNumber != null) {
-          const safety = inferSafetyLevel(item.place)
-          const safetyLabel =
-            safety && safety !== "unknown"
-              ? getSafetyBadge(safety).label
-              : null
-          const tip = safetyLabel
-            ? `${item.place.name} · ${safetyLabel}`
-            : item.place.name
-          el.title = tip
+        el.style.cssText = "display:flex;align-items:flex-end;justify-content:center;cursor:pointer;"
+        const safetyLabel =
+          safety !== "unknown" ? getSafetyBadge(safety).label : null
+        const tip = safetyLabel ? `${item.place.name} · ${safetyLabel}` : item.place.name
+        el.title = tip
+        if (markerNumber != null) {
           el.setAttribute("aria-label", `${markerNumber}. ${tip}`)
         }
 
@@ -921,87 +889,34 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         inner.style.cssText = `
           width: 100%;
           height: 100%;
-          border-radius: 50%;
-          background: ${markerBg};
-          box-shadow: ${isCluster ? "0 10px 28px rgba(0,0,0,0.36), 0 0 0 5px rgba(16,185,129,0.16)" : "0 2px 8px rgba(0,0,0,0.25)"};
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          transform-origin: center bottom;
           transition: ${reduceMotion ? "none" : "transform 0.2s ease, box-shadow 0.2s ease"};
-          transform-origin: center center;
-          color: white;
-          font-weight: 800;
-          border: ${isCluster ? "2px solid rgba(16,185,129,0.85)" : "2px solid rgba(255,255,255,0.95)"};
         `
-
-        const icon = document.createElement("span")
-        icon.style.lineHeight = "1"
-        icon.style.fontFamily = "ui-sans-serif, system-ui, sans-serif"
-        icon.textContent = isCluster
-          ? String(item.places.length)
-          : markerNumber != null
-            ? String(markerNumber)
-            : config.emoji
-
-        inner.appendChild(icon)
+        inner.innerHTML = celimapPinMarkup(
+          safety,
+          markerNumber != null ? String(markerNumber) : undefined
+        )
+        const iconEl = document.createElement("span")
         el.appendChild(inner)
 
         el.addEventListener("click", (e) => {
           e.stopPropagation()
           const currentItem = markerEntriesRef.current.get(item.id)?.item ?? item
-
-          if (currentItem.kind === "cluster") {
-            const bounds = new mapboxgl.LngLatBounds()
-            currentItem.places.forEach((place) => {
-              if (Number.isFinite(place.location?.lng) && Number.isFinite(place.location?.lat)) {
-                bounds.extend([place.location.lng, place.location.lat])
-              }
-            })
-            m.fitBounds(bounds, {
-              padding: 96,
-              maxZoom: Math.max(14, m.getZoom() + 2),
-              duration: reduceMotion ? 0 : 700,
-            })
-            return
-          }
-
-          const currentPlace = currentItem.place
-          onPlaceSelectRef.current?.(currentPlace)
-
-          // private-guide / showPopup=false: nunca montar popup público
-          if (
-            !isPrivateGuideRef.current &&
-            showPopupRef.current &&
-            sharedPopupRef.current &&
-            map.current
-          ) {
-            const lng = (currentPlace.location as any).lng ?? (currentPlace.location as any).coordinates?.[0]
-            const lat = (currentPlace.location as any).lat ?? (currentPlace.location as any).coordinates?.[1]
-            const html = buildPlacePopupHtml(currentPlace, isCompactMapPopup())
-            sharedPopupRef.current
-              .setLngLat([
-                lng,
-                lat,
-              ])
-              .setHTML(html)
-              .addTo(map.current)
-          }
+          if (currentItem.kind !== "place") return
+          onPlaceSelectRef.current?.(currentItem.place)
         })
 
-        const marker = new mapboxgl.Marker({ element: el })
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
           .setLngLat([item.lng, item.lat])
           .addTo(m)
 
-        const entry: MarkerEntry = { marker, element: el, inner, icon, item }
+        const entry: MarkerEntry = { marker, element: el, inner, icon: iconEl, item }
         markerEntriesRef.current.set(item.id, entry)
-        if (isCluster) {
-          el.style.width = "42px"
-          el.style.height = "42px"
-          inner.style.border = "2px solid rgba(16,185,129,0.85)"
-          icon.style.fontSize = item.places.length > 99 ? "14px" : "15px"
-        } else {
-          applyMarkerSelection(entry, selectedPlaceIdRef.current === item.id)
-        }
+        applyMarkerSelection(
+          entry,
+          selectedPlaceIdRef.current === item.id,
+          hoveredPlaceIdRef.current === item.id
+        )
       })
 
       markerEntriesRef.current.forEach((entry, markerId) => {
@@ -1009,12 +924,16 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         entry.marker.remove()
         markerEntriesRef.current.delete(markerId)
       })
-    }, [applyMarkerSelection, colorBySafety, getGuideMarkerBg, markerItems, reduceMotion])
+    }, [applyMarkerSelection, markerItems, reduceMotion, useNumberedMarkers])
 
     useEffect(() => {
       markerEntriesRef.current.forEach((entry, placeId) => {
         if (entry.item.kind !== "place") return
-        applyMarkerSelection(entry, placeId === selectedPlaceId)
+        applyMarkerSelection(
+          entry,
+          placeId === selectedPlaceId,
+          placeId === hoveredPlaceId
+        )
       })
       if (!effectiveShowPopup) {
         try {
@@ -1023,7 +942,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           /* ignore */
         }
       }
-    }, [selectedPlaceId, applyMarkerSelection, effectiveShowPopup])
+    }, [selectedPlaceId, hoveredPlaceId, applyMarkerSelection, effectiveShowPopup])
 
     useEffect(() => {
       const markerEntries = markerEntriesRef.current
@@ -1051,7 +970,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           const currentZoom = map.current.getZoom()
           const zoom = isPrivateGuide
             ? Math.min(Math.max(currentZoom, 12), 14)
-            : 15
+            : PIN_FOCUS_ZOOM
           map.current.easeTo({
             center: [lng as number, lat as number],
             zoom,

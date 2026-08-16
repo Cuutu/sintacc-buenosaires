@@ -1,5 +1,23 @@
+import dns from "node:dns"
 import mongoose from "mongoose"
 import { attachDatabasePool } from "@vercel/functions"
+
+/**
+ * Windows a veces deja Node con DNS 127.0.0.1 (Docker/VPN/AdGuard)
+ * y querySrv a Atlas revienta con ECONNREFUSED. nslookup al router sí anda.
+ * Solo dev: si el resolver es loopback muerto, usamos DNS público.
+ */
+function patchDeadLocalDns() {
+  if (process.env.NODE_ENV === "production") return
+  const servers = dns.getServers()
+  const onlyLoopback =
+    servers.length > 0 &&
+    servers.every(
+      (s) => s === "127.0.0.1" || s === "::1" || s.startsWith("127.0.0.1:") || s.startsWith("[::1]")
+    )
+  if (!onlyLoopback) return
+  dns.setServers(["8.8.8.8", "1.1.1.1"])
+}
 
 interface MongooseCache {
   conn: typeof mongoose | null
@@ -17,6 +35,7 @@ if (!global.mongoose) {
 }
 
 async function connectDB() {
+  patchDeadLocalDns()
   // Leer en connect time (no al import): scripts tsx cargan .env.local después.
   const MONGODB_URI = process.env.MONGODB_URI?.trim()
   if (!MONGODB_URI) {

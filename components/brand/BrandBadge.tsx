@@ -14,7 +14,7 @@ const BADGE_VARIANTS = {
     className: "bg-olive/10 text-olive border-olive/20",
   },
   options: {
-    label: "Opciones sin gluten",
+    label: "Tiene opciones",
     Icon: CheckCircle2,
     className: "bg-accent text-accent-foreground border-terracotta/20",
   },
@@ -34,23 +34,30 @@ export function BrandBadge({
   children,
 }: {
   variant: BrandBadgeVariant
-  size?: "sm" | "md"
+  size?: "sm" | "md" | "lg"
   className?: string
   children?: ReactNode
 }) {
   const config = BADGE_VARIANTS[variant]
   const Icon = config.Icon
+  const sizeClass =
+    size === "sm"
+      ? "h-6 gap-1 px-2 text-[11px]"
+      : size === "lg"
+        ? "h-9 gap-2 px-4 text-sm"
+        : "h-7 gap-1.5 px-3 text-xs"
+  const iconClass = size === "lg" ? "h-4 w-4" : size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border font-semibold",
-        size === "sm" ? "gap-1 px-2 py-0.5 text-[11px]" : "gap-1.5 px-3 py-1 text-xs",
+        "inline-flex items-center whitespace-nowrap rounded-full border font-semibold",
+        sizeClass,
         config.className,
         className
       )}
     >
-      <Icon className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} strokeWidth={1.75} aria-hidden />
+      <Icon className={iconClass} strokeWidth={1.75} aria-hidden />
       {children ?? config.label}
     </span>
   )

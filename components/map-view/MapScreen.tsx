@@ -18,6 +18,7 @@ interface MapScreenProps {
   searchQuery?: string
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
+  onPlaceDeselect?: () => void
   initialCenter?: [number, number]
   initialZoom?: number
   placeIdToFocus?: string | null
@@ -38,6 +39,7 @@ export function MapScreen({
   searchQuery,
   selectedPlaceId,
   onPlaceSelect,
+  onPlaceDeselect,
   initialCenter,
   initialZoom,
   placeIdToFocus,
@@ -77,6 +79,7 @@ export function MapScreen({
           searchQuery={searchQuery}
           selectedPlaceId={selectedPlaceId}
           onPlaceSelect={onPlaceSelect}
+          onPlaceDeselect={onPlaceDeselect}
           initialCenter={initialCenter}
           initialZoom={initialZoom}
           placeIdToFocus={placeIdToFocus}
@@ -102,6 +105,7 @@ export function MapScreen({
         searchQuery={searchQuery}
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
+        onPlaceDeselect={onPlaceDeselect}
         initialCenter={initialCenter}
         initialZoom={initialZoom}
         onMapMoveEnd={onMapMoveEnd}

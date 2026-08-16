@@ -5,12 +5,12 @@ import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useEffect, type ComponentType } from "react"
 import {
-  BadgePlus,
   CircleUserRound,
   Heart,
   Home,
   MapPinned,
   Navigation2,
+  Plus,
   ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -19,11 +19,10 @@ import {
   resolveBottomNavPerfilHref,
 } from "@/lib/bottom-nav-perfil"
 import { recordBottomNavIntent, setAuthStatusProbe } from "@/lib/nav-telemetry"
-
 const BASE_NAV_ITEMS = [
   { href: "/mapa", label: "Mapa", icon: MapPinned },
   { href: "/favoritos", label: "Guardados", icon: Heart },
-  { href: "/sugerir", label: "Sugerir", icon: BadgePlus, isCenter: true },
+  { href: "/sugerir", label: "Sugerir", icon: Plus, isCenter: true },
   { href: "/mapa", label: "Explorar", icon: Navigation2, isListToggle: true },
   {
     href: "/perfil",
@@ -37,10 +36,10 @@ const BASE_NAV_ITEMS = [
 const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck }
 
 const navItemClass =
-  "group relative flex h-11 w-11 min-h-[44px] min-w-[44px] shrink items-center justify-center rounded-full transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-12"
+  "group relative flex h-10 w-10 min-h-[44px] min-w-[44px] shrink items-center justify-center rounded-full transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-11 sm:w-11"
 
 const centerItemClass =
-  "group relative flex h-12 w-14 min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-[1.75rem] transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-14 sm:w-[76px]"
+  "group relative flex h-10 w-12 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-[1.5rem] transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-14"
 
 function NavGlyph({
   Icon,
@@ -58,7 +57,7 @@ function NavGlyph({
           "absolute rounded-full transition-opacity duration-200",
           center ? "inset-1" : "inset-1.5",
           active
-            ? "opacity-100 bg-[radial-gradient(circle_at_50%_45%,rgba(212,99,58,0.22),rgba(45,74,52,0.08)_54%,transparent_74%)] ring-1 ring-terracotta/25"
+            ? "opacity-0"
             : "opacity-0 group-hover:opacity-100 group-hover:bg-olive/[0.08]"
         )}
         aria-hidden
@@ -66,25 +65,17 @@ function NavGlyph({
       <Icon
         className={cn(
           "relative z-[1] transition-all duration-200",
-          center ? "h-8 w-8" : "h-[26px] w-[26px]",
+          center ? "h-6 w-6" : "h-[22px] w-[22px]",
           active
             ? "text-primary drop-shadow-none"
             : "text-olive/70 group-hover:text-olive",
-          center ? "stroke-[2.15]" : "stroke-[2.05]"
+          center ? "stroke-[2.2]" : "stroke-[2.05]"
         )}
         aria-hidden
       />
-      {active && (
-        <span
-          className={cn(
-            "absolute rounded-full bg-primary",
-            center
-              ? "right-4 top-1/2 h-1.5 w-1.5 -translate-y-1/2"
-              : "bottom-1.5 h-1 w-4"
-          )}
-          aria-hidden
-        />
-      )}
+      {active ? (
+        <span className="absolute bottom-1.5 h-1 w-4 rounded-full bg-primary" aria-hidden />
+      ) : null}
     </>
   )
 }
@@ -129,13 +120,13 @@ export function BottomNav() {
     <nav
       className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-olive/15 bg-cream/92 shadow-[0_18px_40px_-20px_rgba(45,74,52,0.35),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:left-3 sm:right-3"
       style={{
-        bottom: "calc(var(--bottom-nav-float-gap) + var(--safe-area-bottom))",
+        bottom: "calc(var(--bottom-nav-float-gap) + var(--bottom-nav-edge))",
       }}
       role="navigation"
       aria-label="Navegacion principal"
       data-testid="bottom-nav"
     >
-      <div className="flex h-16 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-3">
+      <div className="flex h-14 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-3">
         {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle, slotKey }: any) => {
           const hrefStr = href ?? "/"
           const stableKey = slotKey || hrefStr
@@ -201,9 +192,7 @@ export function BottomNav() {
                 onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
                 className={cn(
                   centerItemClass,
-                  isActive
-                    ? "bg-primary/12 text-primary"
-                    : "bg-olive/8 text-olive hover:bg-olive/12"
+                  isActive ? "text-primary" : "text-olive hover:bg-olive/8"
                 )}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}

@@ -118,17 +118,31 @@ export async function PATCH(
     const nextName = validated.name ?? existing.name
     const nextNeighborhood = validated.neighborhood ?? existing.neighborhood
     const shouldRegenerateSlug =
-      !existing.slug ||
-      validated.name !== undefined ||
-      validated.neighborhood !== undefined
+      !validated.slug &&
+      (!existing.slug ||
+        validated.name !== undefined ||
+        validated.neighborhood !== undefined)
+
+    const changed = Object.keys(validated).filter((key) => key !== "editLog")
+    const editLog = [
+      {
+        at: new Date(),
+        by: session.user?.name || session.user?.email || "Admin",
+        fields: changed.slice(0, 12),
+      },
+      ...(existing.editLog ?? []),
+    ].slice(0, 12)
 
     const place = await Place.findByIdAndUpdate(
       params.id,
       {
         ...validated,
-        slug: shouldRegenerateSlug
-          ? await generateUniquePlaceSlug(nextName, nextNeighborhood, existing._id)
-          : existing.slug,
+        slug: validated.slug
+          ? validated.slug
+          : shouldRegenerateSlug
+            ? await generateUniquePlaceSlug(nextName, nextNeighborhood, existing._id)
+            : existing.slug,
+        editLog,
         updatedAt: new Date(),
       },
       { new: true }
