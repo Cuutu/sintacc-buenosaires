@@ -41,8 +41,9 @@ export function extractLocality(
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
   const mapsUrl = normalizeGoogleMapsUrl(address)
   if (mapsUrl) {
-    const fromMaps = await geocodeMapsUrl(mapsUrl)
-    if (fromMaps) return fromMaps
+    // Nunca geocodificar el link como si fuera una calle. Google/Mapbox
+    // devuelven basura tipo "Peachtree Street, Atlanta" cuando el corto falla.
+    return geocodeMapsUrl(mapsUrl)
   }
 
   const googleResult = await geocodeAddressWithGoogle(address)

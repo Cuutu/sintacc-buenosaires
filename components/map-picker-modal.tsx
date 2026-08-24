@@ -103,6 +103,8 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
   const map = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const pendingPinRef = useRef<{ lat: number; lng: number } | null>(null)
+  const appliedSearchRef = useRef("")
 
   const [searchQuery, setSearchQuery] = useState("")
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
@@ -157,12 +159,47 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
     []
   )
 
+  const applyResolvedLocation = useCallback(
+    (resolved: {
+      address: string
+      lat: number
+      lng: number
+      neighborhood?: string
+    }) => {
+      appliedSearchRef.current = resolved.address
+      setSearchQuery(resolved.address)
+      setShowSearchDropdown(false)
+      setSearchSuggestions([])
+      setPicked({ lat: resolved.lat, lng: resolved.lng })
+      pendingPinRef.current = { lat: resolved.lat, lng: resolved.lng }
+      if (map.current) {
+        dropMarker(map.current, markerRef, resolved.lat, resolved.lng)
+        pendingPinRef.current = null
+      }
+      setAddressText(resolved.address)
+      setNeighborhood(resolved.neighborhood)
+      setNeedsUserInput(false)
+      setError("")
+    },
+    []
+  )
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
+    if (!open) {
+      setSearchSuggestions([])
+      setShowSearchDropdown(false)
+      return
+    }
     if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchSuggestions([])
+      setShowSearchDropdown(false)
+      return
+    }
+    if (searchQuery.trim() === appliedSearchRef.current.trim()) {
       setSearchSuggestions([])
       setShowSearchDropdown(false)
       return
@@ -177,17 +214,14 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
         const mapsUrl = normalizeGoogleMapsUrl(searchQuery)
         if (mapsUrl) {
           const resolved = await geocodeAddress(mapsUrl)
-          if (resolved && map.current) {
-            setSearchQuery(resolved.address)
-            setShowSearchDropdown(false)
-            setSearchSuggestions([])
-            setPicked({ lat: resolved.lat, lng: resolved.lng })
-            dropMarker(map.current, markerRef, resolved.lat, resolved.lng)
-            setAddressText(resolved.address)
-            setNeighborhood(resolved.neighborhood)
-            setNeedsUserInput(false)
+          if (resolved) {
+            applyResolvedLocation(resolved)
             return
           }
+          setError("No pudimos leer ese link de Google Maps. Marcá el pin a mano o pegá el link de nuevo.")
+          setSearchSuggestions([])
+          setShowSearchDropdown(false)
+          return
         }
 
         const googleSuggestions = await fetchGoogleSuggestions(
@@ -215,7 +249,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [searchQuery])
+  }, [open, searchQuery, applyResolvedLocation])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -249,7 +283,10 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
     setUserNeighborhood("")
     setUserReference("")
     setError("")
-    setSearchQuery(hasStart ? initialLocation?.address || "" : "")
+    const startAddress = hasStart ? initialLocation?.address || "" : ""
+    appliedSearchRef.current = startAddress
+    setSearchQuery(startAddress)
+    pendingPinRef.current = hasStart ? { lat: startLat, lng: startLng } : null
     if (markerRef.current) {
       markerRef.current.remove()
       markerRef.current = null
@@ -266,7 +303,11 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
 
     mapInstance.on("load", () => {
       mapInstance.resize()
-      if (hasStart) dropMarker(mapInstance, markerRef, startLat, startLng, false)
+      const pending = pendingPinRef.current
+      if (pending) {
+        dropMarker(mapInstance, markerRef, pending.lat, pending.lng, false)
+        pendingPinRef.current = null
+      }
     })
     mapInstance.on("error", (ev: unknown) => {
       const e = ev as { error?: { message?: string } }
@@ -298,13 +339,12 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
           googleSessionTokenRef.current
         )
         if (place) {
-          setSearchQuery(place.address)
-          setShowSearchDropdown(false)
-          setPicked({ lat: place.lat, lng: place.lng })
-          if (map.current) dropMarker(map.current, markerRef, place.lat, place.lng)
-          setAddressText(place.address)
-          setNeighborhood(place.neighborhood)
-          setNeedsUserInput(false)
+          applyResolvedLocation({
+            address: place.address,
+            lat: place.lat,
+            lng: place.lng,
+            neighborhood: place.neighborhood,
+          })
           googleSessionTokenRef.current = createSessionToken()
           return
         }
@@ -316,14 +356,12 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
     const result = item.mapboxResult
     if (!result) return
 
-    setSearchQuery(result.place_name)
-    setShowSearchDropdown(false)
-    setPicked({ lat: result.lat, lng: result.lng })
-    if (map.current) dropMarker(map.current, markerRef, result.lat, result.lng)
-
-    setAddressText(result.address)
-    setNeighborhood(result.neighborhood)
-    setNeedsUserInput(false)
+    applyResolvedLocation({
+      address: result.address || result.place_name,
+      lat: result.lat,
+      lng: result.lng,
+      neighborhood: result.neighborhood,
+    })
   }
 
   const handleConfirm = () => {
@@ -434,7 +472,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
         </div>
 
         <div
-          className="flex-shrink-0 relative"
+          className="relative isolate flex-shrink-0 overflow-hidden"
           style={{ height: 360, width: "100%", minHeight: 360 }}
         >
           <div
@@ -443,7 +481,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
           />
         </div>
 
-        <div className="flex-shrink-0 px-6 py-4 space-y-4 border-t border-olive/10">
+        <div className="relative z-10 flex-shrink-0 space-y-4 border-t border-olive/10 px-6 py-4">
           {geocoding ? (
             <p className="text-sm text-olive/80 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -453,6 +491,11 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
             <div>
               <Label className="text-xs text-muted-foreground">Dirección detectada</Label>
               <p className="text-sm font-medium mt-0.5">{addressText}</p>
+              {picked && !needsUserInput && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Si el pin ya está bien, confirmá. No hace falta moverlo.
+                </p>
+              )}
             </div>
           ) : needsUserInput && picked ? (
             <div>
@@ -501,7 +544,7 @@ export function MapPickerModal({ open, onOpenChange, onSelect, initialLocation }
           <p className="px-6 py-2 text-sm text-red-400 bg-red-500/10">{error}</p>
         )}
 
-        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 py-4 border-t border-olive/10">
+        <div className="relative z-10 flex flex-shrink-0 items-center justify-end gap-2 border-t border-olive/10 px-6 py-4">
           <button
             type="button"
             onClick={() => onOpenChange(false)}

@@ -114,10 +114,10 @@ export function AddressAutocomplete({
           if (resolved) {
             onSelect(resolved)
             onChange(resolved.address)
-            setSuggestions([])
-            setShowDropdown(false)
-            return
           }
+          setSuggestions([])
+          setShowDropdown(false)
+          return
         }
 
         const googleSuggestions = await fetchGoogleSuggestions(value.trim(), googleSessionTokenRef.current)

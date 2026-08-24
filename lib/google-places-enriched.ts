@@ -3,7 +3,10 @@ import {
   getGoogleMapsApiKey,
   type GooglePlaceDetails,
 } from "@/lib/google-places"
-import { resolveGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import {
+  isUsableMapsPlaceName,
+  resolveGoogleMapsUrl,
+} from "@/lib/place-research/resolve-maps-url"
 import { isLikelyArgentinaCoords } from "@/lib/place-research/maps-location"
 import {
   googleTextSearchCenter,
@@ -268,7 +271,7 @@ export async function findGooglePlaceFromMapsUrl(
     enriched = await fetchGooglePlaceEnriched(resolved.placeId)
   } else {
     const query = resolved.placeName?.trim()
-    if (query) {
+    if (isUsableMapsPlaceName(query)) {
       const hit = await searchGooglePlaceByText(
         query,
         Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)

@@ -1,5 +1,8 @@
 import {
+  extractMapsRedirectFromHtml,
+  isAllowedGoogleMapsHost,
   isGoogleMapsUrl,
+  isUsableMapsPlaceName,
   normalizeGoogleMapsUrl,
   parseGoogleMapsUrl,
 } from "@/lib/place-research/resolve-maps-url"
@@ -8,6 +11,12 @@ describe("resolve Google Maps URLs", () => {
   it("detects maps short links", () => {
     expect(isGoogleMapsUrl("https://maps.app.goo.gl/ccf6jcdqfFHm77mP7")).toBe(true)
     expect(isGoogleMapsUrl("https://example.com/maps")).toBe(false)
+    expect(isGoogleMapsUrl("https://mail.google.com")).toBe(false)
+  })
+
+  it("detects google.com/maps without www", () => {
+    expect(isGoogleMapsUrl("https://google.com/maps?q=-34.6,-58.4")).toBe(true)
+    expect(isGoogleMapsUrl("https://maps.google.com/?q=-34.6,-58.4")).toBe(true)
   })
 
   it("normalizes maps URLs without protocol", () => {
@@ -15,6 +24,13 @@ describe("resolve Google Maps URLs", () => {
       "https://maps.app.goo.gl/ccf6jcdqfFHm77mP7"
     )
     expect(normalizeGoogleMapsUrl("https://example.com")).toBeNull()
+  })
+
+  it("extracts maps URL from share text with extra lines", () => {
+    const pasted = `Alelhi Restaurante Sem Gluten\nhttps://maps.app.goo.gl/XayVD2Z5LncnWCV2A`
+    expect(normalizeGoogleMapsUrl(pasted)).toBe(
+      "https://maps.app.goo.gl/XayVD2Z5LncnWCV2A"
+    )
   })
 
   it("parses place name and coordinates from a maps place URL", () => {
@@ -43,5 +59,32 @@ describe("resolve Google Maps URLs", () => {
       "https://www.google.com/maps/search/?api=1&query_place_id=ChIJN1t_tDeuEmsRUsoyG83frY4"
     )
     expect(parsed.placeId).toBe("ChIJN1t_tDeuEmsRUsoyG83frY4")
+  })
+
+  it("parses q=lat,lng dropped pins", () => {
+    const parsed = parseGoogleMapsUrl("https://maps.google.com/?q=-34.6037,-58.3816")
+    expect(parsed.lat).toBeCloseTo(-34.6037, 4)
+    expect(parsed.lng).toBeCloseTo(-58.3816, 4)
+  })
+
+  it("does not treat data= blobs as a place name", () => {
+    const parsed = parseGoogleMapsUrl(
+      "https://www.google.com/maps/place/data=!4m2!3m1!1s0x0:0x123/@-34.6,-58.4,17z"
+    )
+    expect(parsed.placeName).toBeUndefined()
+    expect(isUsableMapsPlaceName("data=!4m2!3m1!1s0x0:0x123")).toBe(false)
+    expect(isUsableMapsPlaceName("Rochino Pastas")).toBe(true)
+  })
+
+  it("extracts redirect target from Google HTML interstitial", () => {
+    const html = `<meta http-equiv="refresh" content="0;url='https://www.google.com/maps/place/Rochino+Pastas/@-34.62,-58.43'">`
+    expect(extractMapsRedirectFromHtml(html, "https://maps.app.goo.gl/abc")).toContain(
+      "google.com/maps/place/Rochino"
+    )
+  })
+
+  it("rejects consent and account hosts", () => {
+    expect(isAllowedGoogleMapsHost("consent.google.com")).toBe(false)
+    expect(isAllowedGoogleMapsHost("maps.app.goo.gl")).toBe(true)
   })
 })
