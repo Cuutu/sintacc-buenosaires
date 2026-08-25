@@ -15,7 +15,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "Buenos Aires",
     provincia: "CABA",
     descripcion:
-      "Buenos Aires es la capital de Argentina y una de las ciudades con mayor oferta gastronómica sin gluten de Latinoamérica. Si sos celíaco y vivís o visitás Buenos Aires, Celimap te ayuda a encontrar restaurantes, panaderías, cafés y dietéticas aptas sin TACC en cada barrio, desde Palermo hasta La Boca.",
+      "Buenos Aires es la capital de Argentina y una de las ciudades con mayor oferta gastronómica sin gluten de Latinoamérica. Si sos celíaco y vivís o visitás Buenos Aires, CeliMap te ayuda a encontrar restaurantes, panaderías, cafés y dietéticas aptas sin TACC en cada barrio, desde Palermo hasta La Boca.",
     poblacion: "~3 millones en CABA, ~15 millones en el AMBA",
     zonasTipicas: ["Palermo", "Recoleta", "San Telmo", "Belgrano", "Villa Crespo", "Caballito"],
   },
@@ -55,7 +55,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "Mar del Plata",
     provincia: "Buenos Aires",
     descripcion:
-      "Mar del Plata es el principal destino turístico de Argentina. Si sos celíaco y vas de vacaciones, Celimap te ayuda a encontrar dónde comer sin TACC en La Perla, Playa Grande, el centro y todos los barrios. Restaurantes, heladerías y panaderías aptas para celíacos.",
+      "Mar del Plata es el principal destino turístico de Argentina. Si sos celíaco y vas de vacaciones, CeliMap te ayuda a encontrar dónde comer sin TACC en La Perla, Playa Grande, el centro y todos los barrios. Restaurantes, heladerías y panaderías con opciones Sin TACC.",
     poblacion: "~620 mil habitantes",
     zonasTipicas: ["Centro", "La Perla", "Playa Grande", "Bristol", "Güemes"],
   },
@@ -87,7 +87,7 @@ export const ciudadesData: Record<string, CiudadSEOData> = {
     nombre: "San Juan",
     provincia: "San Juan",
     descripcion:
-      "San Juan combina tradición vitivinícola con una ciudad en reconstrucción tras el sismo. La oferta sin gluten crece. Encontrá restaurantes, panaderías y dietéticas aptas para celíacos en el centro, Rawson, Rivadavia y el Gran San Juan.",
+      "San Juan combina tradición vitivinícola con una ciudad en reconstrucción tras el sismo. La oferta sin gluten crece. Encontrá restaurantes, panaderías y dietéticas con opciones Sin TACC en el centro, Rawson, Rivadavia y el Gran San Juan.",
     poblacion: "~471 mil habitantes",
     zonasTipicas: ["Centro", "Rawson", "Rivadavia", "Chimbas", "Santa Lucía"],
   },

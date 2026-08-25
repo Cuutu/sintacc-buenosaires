@@ -176,7 +176,7 @@ export function DeleteAccountSection({ needsAppleReauth }: Props) {
                 {needsAppleReauth && !isAppleSignInAvailable() && (
                   <p>
                     En la web no podemos revocar Apple automáticamente. Tras
-                    borrar tus datos en Celimap, podés revocar el acceso desde
+                    borrar tus datos en CeliMap, podés revocar el acceso desde
                     Ajustes de Apple.
                   </p>
                 )}
@@ -221,7 +221,7 @@ export function DeleteAccountSection({ needsAppleReauth }: Props) {
               data-testid="delete-account-apple-manual"
             >
               <p className="font-medium text-foreground">
-                Cuenta eliminada en Celimap. Revocá Apple manualmente:
+                Cuenta eliminada en CeliMap. Revocá Apple manualmente:
               </p>
               <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
                 {manualSteps.map((step) => (

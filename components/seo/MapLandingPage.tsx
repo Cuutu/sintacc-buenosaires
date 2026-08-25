@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { MapPin, ArrowRight, CheckCircle2 } from "lucide-react"
 import { CITIES } from "@/lib/seo/cities"
 import { getBaseUrl } from "@/lib/base-url"
+import { CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
 
 const BASE_URL = getBaseUrl()
 
@@ -138,8 +139,13 @@ export function MapLandingPage({
           <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
             por qué usar CeliMap
           </Link>
+          . Cómo se carga la información:{" "}
+          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
+            metodología
+          </Link>
           .
         </p>
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{CELIMAP_SAFETY_DISCLAIMER}</p>
       </section>
 
       <section className="border-t border-border pt-8">

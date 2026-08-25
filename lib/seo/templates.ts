@@ -13,7 +13,7 @@ export function getCityTitle(city: City): string {
 
 export function getCityDescription(city: City, total?: number): string {
   const count = total != null ? `${total} lugares` : "lugares"
-  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones. Encontrá ${count} aptos para personas celíacas: restaurantes, panaderías y cafés según datos de CeliMap.`
+  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones. Encontrá ${count} con opciones Sin TACC: restaurantes, panaderías y cafés según datos de CeliMap.`
 }
 
 export function getCategoryTitle(city: City | null, categorySlug: string): string {
@@ -139,7 +139,7 @@ export function getProvinceDescription(
     parts.push(`Consultá ${data.total} lugares aportados por la comunidad.`)
   }
   if (data.dedicatedGf > 0) {
-    parts.push(`${data.dedicatedGf} lugares 100% sin gluten.`)
+    parts.push(`${data.dedicatedGf} marcados como 100% libres de gluten según la información cargada.`)
   }
   if (data.localities > 0) {
     parts.push(`Opciones en ${data.localities} localidades.`)
@@ -167,7 +167,7 @@ export function getProvinceCategoryDescription(
   const cat = getCategoryBySlug(categorySlug)
   const catName = cat?.name ?? categorySlug
   const count = total > 0 ? `${total} ` : ""
-  return `Descubrí ${count}${catName.toLowerCase()} sin TACC en la provincia de ${province.name}. Consultá lugares 100% sin gluten, opciones aptas y reseñas de la comunidad.`
+  return `Descubrí ${count}${catName.toLowerCase()} sin TACC en la provincia de ${province.name}. Consultá lugares 100% libres de gluten según la información cargada, opciones sin TACC y reseñas de la comunidad.`
 }
 
 export function getProvinceSEOTextBlock(
@@ -177,7 +177,7 @@ export function getProvinceSEOTextBlock(
   const lines = [
     `# Lugares sin gluten en ${province.name}`,
     "",
-    `En ${province.name} la comunidad celíaca comparte en Celimap los lugares donde comer y comprar sin TACC.`,
+    `En ${province.name} la comunidad celíaca comparte en CeliMap los lugares donde comer y comprar sin TACC.`,
   ]
   if (data.total > 0) {
     lines.push("", `Actualmente hay ${data.total} lugares cargados en la provincia.`)

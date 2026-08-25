@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     n: "03",
-    title: "Elegí con confianza",
+    title: "Leé y confirmá",
     body: "Usá reseñas como guía y confirmá en el local.",
   },
 ] as const

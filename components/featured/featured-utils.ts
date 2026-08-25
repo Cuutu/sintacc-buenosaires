@@ -40,7 +40,7 @@ const SAFETY_CONFIG = {
     className: "bg-destructive/20 text-destructive border-destructive/40",
   },
   unknown: {
-    label: "Sin info verificada",
+    label: "Sin clasificación",
     dot: "⚪",
     className: "bg-muted/50 text-muted-foreground border-border",
   },

@@ -2,15 +2,17 @@
 
 ## Google Play
 
-**App name:** Celimap
+**App name:** Celimap *(identificador de store; marca visible: CeliMap)*
 
 **Short description (80 max):**
-Mapa para celíacos. Lugares sin TACC verificados por la comunidad.
+Mapa colaborativo Sin TACC. Lugares y comercios en Argentina.
 
 **Full description:**
-Celimap es el mapa colaborativo para celíacos en Argentina.
+CeliMap es un mapa colaborativo para encontrar lugares y comercios Sin TACC en Argentina.
 
-Encontrá restaurantes, cafés, panaderías y más lugares sin TACC. Filtrá por barrio, tipo y seguridad. Leé reseñas de la comunidad y sugerí nuevos lugares.
+Encontrá restaurantes, cafés, panaderías y más. Filtrá por barrio, tipo y clasificación. Leé reseñas y reportes de la comunidad y sugerí lugares que faltan.
+
+La información sirve como guía. No es certificación, auditoría ni garantía de seguridad: confirmá siempre en el local.
 
 Funciones:
 • Mapa interactivo de lugares sin gluten
@@ -19,7 +21,7 @@ Funciones:
 • Geolocalización para ver qué hay cerca
 • Sugerí lugares nuevos
 
-Gratis y actualizado por la comunidad celíaca.
+Gratis. Crece con la comunidad celíaca.
 
 **Category:** Food & Drink (o Maps & Navigation)
 **Tags:** celiaco, sin tacc, sin gluten, mapa
@@ -32,18 +34,20 @@ Gratis y actualizado por la comunidad celíaca.
 
 ## App Store Connect
 
-**Name:** Celimap
+**Name:** Celimap *(identificador de store; marca visible: CeliMap)*
 **Subtitle:** Mapa para celíacos sin TACC
 **Category primary:** Food & Drink
 **Category secondary:** Navigation
 
 **Promotional text:**
-El mapa para celíacos de Argentina. Lugares sin TACC, reseñas reales, cerca tuyo.
+El mapa colaborativo para celíacos en Argentina. Lugares Sin TACC y reseñas de la comunidad.
 
 **Description:**
-Celimap es el mapa colaborativo para celíacos en Argentina.
+CeliMap es un mapa colaborativo para encontrar lugares y comercios Sin TACC en Argentina.
 
-Encontrá restaurantes, cafés y panaderías sin TACC. Filtrá por barrio y tipo. Leé reseñas de la comunidad y guardá tus favoritos.
+Encontrá restaurantes, cafés y panaderías. Filtrá por barrio y tipo. Leé reseñas de la comunidad y guardá favoritos.
+
+La información es una guía, no una certificación ni una garantía. Confirmá protocolos en el local.
 
 • Mapa interactivo
 • Reseñas y reportes

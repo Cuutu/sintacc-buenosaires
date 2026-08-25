@@ -71,7 +71,7 @@ export function buildVentureSuggestionNewEmailHtml(params: {
   <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
     <table style="max-width:560px;">
       <tr><td style="text-align:center;padding-bottom:24px;">
-        <img src="${logoUrl}" alt="Celimap" width="160" height="42" />
+        <img src="${logoUrl}" alt="CeliMap" width="160" height="42" />
         <p style="font-size:11px;color:#10b981;font-weight:600;">EMPRENDIMIENTO NUEVO</p>
       </td></tr>
       <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
@@ -105,7 +105,7 @@ export function buildVentureApprovedEmailHtml(params: {
     <table style="max-width:560px;">
       <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;">
         <h1 style="margin:0;font-size:22px;color:#fafafa;">Tu emprendimiento fue publicado</h1>
-        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> ya está en Celimap Emprendimientos.</p>
+        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> ya está en CeliMap Emprendimientos.</p>
       </td></tr>
       <tr><td style="padding:24px;text-align:center;">
         <a href="${url}" style="display:inline-block;padding:14px 28px;background:#10b981;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Ver emprendimiento</a>
@@ -131,12 +131,12 @@ export function buildVentureRejectedEmailHtml(params: {
   <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
     <table style="max-width:560px;">
       <tr><td style="text-align:center;padding-bottom:24px;">
-        <img src="${logoUrl}" alt="Celimap" width="160" height="42" />
+        <img src="${logoUrl}" alt="CeliMap" width="160" height="42" />
         <p style="font-size:11px;color:#f59e0b;font-weight:600;">SUGERENCIA REVISADA</p>
       </td></tr>
       <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;">
         <h1 style="margin:0;font-size:22px;color:#fafafa;">Tu emprendimiento no fue publicado</h1>
-        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> fue revisado y por ahora no lo vamos a publicar en Celimap.</p>
+        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> fue revisado y por ahora no lo vamos a publicar en CeliMap.</p>
         <div style="margin-top:18px;padding:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:12px;">
           <p style="margin:0 0 8px;font-size:12px;color:#fbbf24;font-weight:600;">MOTIVO</p>
           <p style="margin:0;font-size:14px;line-height:1.6;color:#fef3c7;">${escapeHtml(params.rejectionReason)}</p>
@@ -164,9 +164,9 @@ export async function sendVentureSuggestionNewEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap Emprendimientos <${fromDomain}>`,
+      from: `CeliMap Emprendimientos <${fromDomain}>`,
       to: admins,
-      subject: `[Celimap] Emprendimiento nuevo: ${(params.ventureDraft.name as string) || "Sin nombre"}`,
+      subject: `[CeliMap] Emprendimiento nuevo: ${(params.ventureDraft.name as string) || "Sin nombre"}`,
       html: buildVentureSuggestionNewEmailHtml(params),
     })
     return true
@@ -189,9 +189,9 @@ export async function sendVentureApprovedEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap <${fromDomain}>`,
+      from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[Celimap] "${params.ventureName}" ya está publicado`,
+      subject: `[CeliMap] "${params.ventureName}" ya está publicado`,
       html: buildVentureApprovedEmailHtml(params),
     })
     return true
@@ -214,9 +214,9 @@ export async function sendVentureRejectedEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap <${fromDomain}>`,
+      from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[Celimap] Revisamos tu emprendimiento "${params.ventureName}"`,
+      subject: `[CeliMap] Revisamos tu emprendimiento "${params.ventureName}"`,
       html: buildVentureRejectedEmailHtml(params),
     })
     return true

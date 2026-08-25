@@ -63,13 +63,13 @@ export function buildSuggestionNewEmailHtml(params: {
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Sugerencia nueva - Celimap</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Sugerencia nueva - CeliMap</title></head>
 <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#0f0f12;color:#e4e4e7;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0f0f12;min-height:100vh;">
     <tr><td align="center" style="padding:40px 20px;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
         <tr><td style="padding-bottom:24px;text-align:center;">
-          <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+          <img src="${logoUrl}" alt="CeliMap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
           <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#10b981;font-weight:600;">Sugerencia nueva</p>
         </td></tr>
         <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
@@ -90,8 +90,8 @@ export function buildSuggestionNewEmailHtml(params: {
           <a href="${adminUrl}" style="display:inline-block;padding:14px 28px;background:#10b981;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">Ver en el panel admin</a>
         </td></tr>
         <tr><td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-          <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
-          <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en todo el mundo</p>
+          <img src="${iconUrl}" alt="CeliMap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
+          <p style="margin:0;font-size:12px;color:#52525b;">CeliMap · Lugares sin gluten en Argentina</p>
         </td></tr>
       </table>
     </td></tr>
@@ -113,13 +113,13 @@ export function buildSuggestionApprovedEmailHtml(params: {
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tu sugerencia fue aprobada - Celimap</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tu sugerencia fue aprobada - CeliMap</title></head>
 <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#0f0f12;color:#e4e4e7;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0f0f12;min-height:100vh;">
     <tr><td align="center" style="padding:40px 20px;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
         <tr><td style="padding-bottom:24px;text-align:center;">
-          <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+          <img src="${logoUrl}" alt="CeliMap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
           <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#10b981;font-weight:600;">¡Buenas noticias!</p>
         </td></tr>
         <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
@@ -127,7 +127,7 @@ export function buildSuggestionApprovedEmailHtml(params: {
             <tr><td style="padding:28px;">
               <h1 style="margin:0;font-size:22px;font-weight:600;color:#fafafa;">Tu sugerencia fue aprobada</h1>
               <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#d4d4d8;">
-                <strong>${escapeHtml(placeName)}</strong> ya está publicado en el mapa de Celimap. La comunidad celíaca puede verlo y agregar reseñas.
+                <strong>${escapeHtml(placeName)}</strong> ya está publicado en el mapa de CeliMap. La comunidad celíaca puede verlo y agregar reseñas.
               </p>
             </td></tr>
           </table>
@@ -136,8 +136,8 @@ export function buildSuggestionApprovedEmailHtml(params: {
           <a href="${placeUrl}" style="display:inline-block;padding:14px 28px;background:#10b981;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">Ver el lugar en el mapa</a>
         </td></tr>
         <tr><td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-          <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
-          <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en todo el mundo</p>
+          <img src="${iconUrl}" alt="CeliMap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
+          <p style="margin:0;font-size:12px;color:#52525b;">CeliMap · Lugares sin gluten en Argentina</p>
         </td></tr>
       </table>
     </td></tr>
@@ -158,13 +158,13 @@ export function buildSuggestionRejectedEmailHtml(params: {
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tu sugerencia fue revisada - Celimap</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Tu sugerencia fue revisada - CeliMap</title></head>
 <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#0f0f12;color:#e4e4e7;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0f0f12;min-height:100vh;">
     <tr><td align="center" style="padding:40px 20px;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
         <tr><td style="padding-bottom:24px;text-align:center;">
-          <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+          <img src="${logoUrl}" alt="CeliMap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
           <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#f59e0b;font-weight:600;">Sugerencia revisada</p>
         </td></tr>
         <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
@@ -172,7 +172,7 @@ export function buildSuggestionRejectedEmailHtml(params: {
             <tr><td style="padding:28px;">
               <h1 style="margin:0;font-size:22px;font-weight:600;color:#fafafa;">Tu sugerencia no fue publicada</h1>
               <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#d4d4d8;">
-                Revisamos <strong>${escapeHtml(placeName)}</strong> y por ahora no la vamos a publicar en Celimap.
+                Revisamos <strong>${escapeHtml(placeName)}</strong> y por ahora no la vamos a publicar en CeliMap.
               </p>
               <div style="margin-top:18px;padding:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:12px;">
                 <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;font-weight:600;">Motivo</p>
@@ -182,8 +182,8 @@ export function buildSuggestionRejectedEmailHtml(params: {
           </table>
         </td></tr>
         <tr><td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-          <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
-          <p style="margin:0;font-size:12px;color:#52525b;">Celimap &middot; Lugares sin gluten en todo el mundo</p>
+          <img src="${iconUrl}" alt="CeliMap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
+          <p style="margin:0;font-size:12px;color:#52525b;">CeliMap &middot; Lugares sin gluten en Argentina</p>
         </td></tr>
       </table>
     </td></tr>
@@ -206,9 +206,9 @@ export async function sendSuggestionNewEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap Sugerencias <${fromDomain}>`,
+      from: `CeliMap Sugerencias <${fromDomain}>`,
       to: admins,
-      subject: `[Celimap] Sugerencia nueva: ${(params.placeDraft.name as string) || "Sin nombre"}`,
+      subject: `[CeliMap] Sugerencia nueva: ${(params.placeDraft.name as string) || "Sin nombre"}`,
       html: buildSuggestionNewEmailHtml({
         placeDraft: params.placeDraft,
         suggestedByName: params.suggestedByName,
@@ -235,9 +235,9 @@ export async function sendSuggestionApprovedEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap <${fromDomain}>`,
+      from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[Celimap] Tu sugerencia "${params.placeName}" fue aprobada`,
+      subject: `[CeliMap] Tu sugerencia "${params.placeName}" fue aprobada`,
       html: buildSuggestionApprovedEmailHtml({
         placeName: params.placeName,
         placeId: params.placeId,
@@ -263,9 +263,9 @@ export async function sendSuggestionRejectedEmail(params: {
 
   try {
     await resend.emails.send({
-      from: `Celimap <${fromDomain}>`,
+      from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[Celimap] Revisamos tu sugerencia "${params.placeName}"`,
+      subject: `[CeliMap] Revisamos tu sugerencia "${params.placeName}"`,
       html: buildSuggestionRejectedEmailHtml({
         placeName: params.placeName,
         rejectionReason: params.rejectionReason,

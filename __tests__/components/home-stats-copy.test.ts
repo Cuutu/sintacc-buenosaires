@@ -48,7 +48,7 @@ describe("Home landing v3 copy + structure", () => {
     const src = read("components/home/HowItWorks.tsx")
     expect(src).toContain("Abrí el mapa")
     expect(src).toContain("Revisá el nivel de seguridad")
-    expect(src).toContain("Elegí con confianza")
+    expect(src).toContain("Leé y confirmá")
     expect(src).toContain("01")
     expect(src).toContain("02")
     expect(src).toContain("03")

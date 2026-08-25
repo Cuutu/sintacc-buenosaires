@@ -109,7 +109,7 @@ export function MapDesktop({
     if (filters.safetyLevel === "dedicated_gf") parts.push("100% sin TACC")
     if (filters.safetyLevel === "gf_options") parts.push("Tiene opciones")
     if (filters.type) parts.push(TYPE_LABELS[filters.type] ?? filters.type)
-    if (filters.tags.includes("certificado_sin_tacc")) parts.push("Certificado")
+    if (filters.tags.includes("certificado_sin_tacc")) parts.push("Insumos certificados")
     if (filters.tags.includes("cocina_separada")) parts.push("Cocina separada")
     if (filters.tags.includes("delivery")) parts.push("Delivery")
     return parts

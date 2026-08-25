@@ -42,7 +42,7 @@ function buildContactEmailHtml({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nueva consulta - Celimap</title>
+  <title>Nueva consulta - CeliMap</title>
 </head>
 <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#0f0f12;color:#e4e4e7;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(180deg,#0f0f12 0%,#0b0b0e 100%);min-height:100vh;">
@@ -52,7 +52,7 @@ function buildContactEmailHtml({
           <!-- Header con logo -->
           <tr>
             <td style="padding-bottom:32px;text-align:center;">
-              <img src="${logoUrl}" alt="Celimap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
+              <img src="${logoUrl}" alt="CeliMap" width="160" height="42" style="height:42px;width:auto;display:block;margin:0 auto;" />
               <p style="margin:12px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#10b981;font-weight:600;">Nueva consulta de contacto</p>
             </td>
           </tr>
@@ -102,8 +102,8 @@ function buildContactEmailHtml({
           <!-- Footer -->
           <tr>
             <td style="padding:24px 0;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-              <img src="${iconUrl}" alt="Celimap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
-              <p style="margin:0;font-size:12px;color:#52525b;">Celimap · Lugares sin gluten en todo el mundo</p>
+              <img src="${iconUrl}" alt="CeliMap" width="32" height="32" style="height:32px;width:32px;display:block;margin:0 auto 12px;opacity:0.8;" />
+              <p style="margin:0;font-size:12px;color:#52525b;">CeliMap · Lugares sin gluten en Argentina</p>
               <p style="margin:6px 0 0;font-size:11px;color:#3f3f46;">Consultas de la comunidad celíaca</p>
             </td>
           </tr>
@@ -183,10 +183,10 @@ export async function POST(request: NextRequest) {
       const escapedEmail = email.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
       await resend.emails.send({
-        from: `Celimap Contacto <${fromDomain}>`,
+        from: `CeliMap Contacto <${fromDomain}>`,
         to: adminEmail,
         replyTo: email,
-        subject: `[Celimap] ${validated.subject}`,
+        subject: `[CeliMap] ${validated.subject}`,
         html: buildContactEmailHtml({
           subject: escapedSubject,
           name: escapedName,

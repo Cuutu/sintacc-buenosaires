@@ -32,7 +32,7 @@ export function SafetyBadge({ safetyLevel }: SafetyBadgeProps) {
       color: "bg-red-500",
     },
     unknown: {
-      label: "Sin info verificada",
+      label: "Sin clasificación",
       variant: "outline" as const,
       icon: HelpCircle,
       color: "bg-gray-500",

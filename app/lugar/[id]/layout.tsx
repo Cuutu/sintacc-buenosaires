@@ -45,7 +45,7 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
   const locationText = [place.address, place.neighborhood].filter(Boolean).join(", ")
   const description = `${place.name} - ${typeLabel} sin gluten en ${place.neighborhood}. ${
     locationText ? `${locationText}. ` : ""
-  }Resenas, datos de contacto y nivel de seguridad en Celimap.`
+  }Reseñas, datos de contacto y clasificación según la información cargada en CeliMap.`
 
   return {
     // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez

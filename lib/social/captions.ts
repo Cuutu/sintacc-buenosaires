@@ -40,7 +40,7 @@ function buildDigestCaption(
 
   if (platform === "tiktok") {
     const visible = lines.slice(0, 5)
-    const more = lines.length > 5 ? `\n... y ${lines.length - 5} más en Celimap` : ""
+    const more = lines.length > 5 ? `\n... y ${lines.length - 5} más en CeliMap` : ""
     return [
       `🗺️ ${presetTitle}`,
       "",
@@ -61,7 +61,7 @@ function buildDigestCaption(
     "",
     ...lines,
     "",
-    "Encontrá opciones sin gluten verificadas por la comunidad celíaca 👇",
+    "Encontrá opciones sin gluten aportadas por la comunidad celíaca 👇",
     `🔗 ${link}`,
     "",
     hashtags,
@@ -88,7 +88,7 @@ function buildMilestoneCaption(
 
   if (platform === "tiktok") {
     return [
-      "🗺️ Celimap crece con la comunidad celíaca",
+      "🗺️ CeliMap crece con la comunidad celíaca",
       "",
       ...lines.slice(0, 3),
       "",
@@ -100,7 +100,7 @@ function buildMilestoneCaption(
   }
 
   return [
-    "🗺️ Celimap — mapa para celíacos",
+    "🗺️ CeliMap — mapa para celíacos",
     "",
     ...lines,
     "",
@@ -128,14 +128,14 @@ function buildCtaCaption(
   }
   const countLine =
     statsParts.length > 0
-      ? `Ya hay ${statsParts.join(" y ")} en Celimap — ayudanos a sumar más.`
+      ? `Ya hay ${statsParts.join(" y ")} en CeliMap — ayudanos a sumar más.`
       : "Ayudanos a mapear lugares y emprendimientos sin gluten."
 
   if (platform === "tiktok") {
     return [
       "¿Conocés un lugar o una marca sin TACC?",
       "",
-      "🗺️ Local con dirección → sugerilo en Celimap",
+      "🗺️ Local con dirección → sugerilo en CeliMap",
       "🏪 Marca, viandas, pastelería por IG/WA → sugerí el emprendimiento",
       "",
       countLine,

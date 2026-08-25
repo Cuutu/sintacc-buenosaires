@@ -45,7 +45,7 @@ export function heroSafetyCopy(level?: string): { label: string; className: stri
     }
   }
   return {
-    label: "Sin info verificada",
+    label: "Sin clasificación",
     className: "bg-[#CFC9BF] text-[#1F4D35]",
   }
 }

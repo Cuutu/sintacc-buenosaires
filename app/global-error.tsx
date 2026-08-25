@@ -36,7 +36,7 @@ export default function GlobalError({
             textAlign: "center",
           }}
         >
-          <p style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Celimap tuvo un problema</p>
+          <p style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>CeliMap tuvo un problema</p>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: 0, maxWidth: 360 }}>
             Tocá reintentar. Si sigue fallando, cerrá y abrí la app de nuevo.
           </p>

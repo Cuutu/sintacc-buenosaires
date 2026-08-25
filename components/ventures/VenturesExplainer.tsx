@@ -14,7 +14,7 @@ const INFO_CARDS = [
   {
     icon: ShieldCheck,
     title: "Revisado antes de publicar",
-    text: "Las sugerencias pasan por una revisión antes de aparecer en Celimap.",
+    text: "Las sugerencias pasan por una revisión antes de aparecer en CeliMap.",
   },
 ] as const
 
@@ -26,7 +26,7 @@ export function VenturesExplainer() {
       </h2>
       <p className="text-sm text-muted-foreground leading-relaxed mb-8 text-center md:text-left max-w-3xl">
         No todos los productos sin gluten se encuentran en restaurantes o tiendas físicas. En
-        Celimap también queremos visibilizar marcas que venden por encargo, Instagram, WhatsApp,
+        CeliMap también queremos visibilizar marcas que venden por encargo, Instagram, WhatsApp,
         delivery, retiro o ferias.
       </p>
       <div className="grid md:grid-cols-3 gap-4">

@@ -324,7 +324,7 @@ export default function SugerirEmprendimientoContent() {
         <div className="flex gap-2 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-muted-foreground">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-500/80 mt-0.5" />
           <p>
-            Las sugerencias son revisadas antes de publicarse. Celimap no certifica emprendimientos,
+            Las sugerencias son revisadas antes de publicarse. CeliMap no certifica emprendimientos,
             pero ayuda a visibilizar opciones recomendadas por la comunidad.
           </p>
         </div>

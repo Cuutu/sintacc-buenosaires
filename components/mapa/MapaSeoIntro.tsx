@@ -26,8 +26,8 @@ export function MapaSeoIntro() {
           , Buenos Aires y más ciudades. Filtrá por zona y nivel de seguridad.
         </p>
         <p className="text-xs text-muted-foreground/80">
-          Las reseñas y sugerencias son compartidas por la comunidad. Siempre verificá con el
-          establecimiento antes de consumir.
+          Las reseñas y sugerencias son compartidas por la comunidad. Confirmá siempre protocolos
+          y contaminación cruzada en el local antes de consumir.
         </p>
       </div>
     </section>

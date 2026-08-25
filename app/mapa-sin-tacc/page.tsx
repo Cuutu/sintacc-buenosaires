@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Mapa sin tacc ",
     description:
-      "Mapa sin tacc con lugares aptos para celíacos en Argentina. Restaurantes, cafés y panaderías con datos de la comunidad.",
+      "Mapa sin tacc con restaurantes, cafés y panaderías con opciones Sin TACC en Argentina. Datos aportados por la comunidad.",
     url: CANONICAL,
     type: "website",
   },

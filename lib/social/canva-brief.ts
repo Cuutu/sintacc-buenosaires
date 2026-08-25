@@ -26,7 +26,7 @@ function buildMilestoneBrief(milestone: SocialMilestoneData, link: string): stri
   const baseUrl = getBaseUrl()
   return [
     "═══ BRIEF CANVA ═══",
-    "Título sugerido: Celimap crece con la comunidad",
+    "Título sugerido: CeliMap crece con la comunidad",
     "Subtítulo: Mapa sin gluten para celíacos",
     "",
     "SLIDE / DATOS:",
@@ -59,7 +59,7 @@ function buildCtaBrief(
   return [
     "═══ BRIEF CANVA ═══",
     "Título: ¿Conocés un lugar o emprendimiento sin gluten?",
-    "Subtítulo: Sumá a la comunidad Celimap",
+    "Subtítulo: Sumá a la comunidad CeliMap",
     "",
     "BLOQUE 1 — Lugar con local (mapa):",
     "· Restaurante, café, panadería con dirección",

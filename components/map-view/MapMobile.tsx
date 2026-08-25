@@ -40,7 +40,7 @@ interface MapMobileProps {
 
 const TAG_CHIPS = [
   { id: "cocina_separada", label: "Cocina separada" },
-  { id: "certificado_sin_tacc", label: "Certificado" },
+  { id: "certificado_sin_tacc", label: "Insumos certificados" },
   { id: "delivery", label: "Delivery" },
 ] as const
 

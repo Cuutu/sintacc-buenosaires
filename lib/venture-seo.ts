@@ -35,17 +35,17 @@ export const VENTURE_CATEGORY_LANDINGS: VentureCategoryLandingConfig[] = [
     slug: "pasteleria-sin-gluten",
     h1: "Pastelería sin gluten",
     intro:
-      "Encontrá emprendimientos de pastelería sin gluten: tortas, productos dulces y propuestas por encargo. Las opciones son sugeridas por la comunidad de Celimap y se revisan antes de publicarse.",
+      "Encontrá emprendimientos de pastelería sin gluten: tortas, productos dulces y propuestas por encargo. Las opciones son sugeridas por la comunidad de CeliMap y se revisan antes de publicarse.",
     title: "Pastelería sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá emprendimientos de pastelería sin gluten: tortas, productos dulces y propuestas por encargo aptas para celíacos. Opciones sugeridas por la comunidad.",
+      "Encontrá emprendimientos de pastelería sin gluten: tortas, productos dulces y propuestas por encargo. Opciones sugeridas por la comunidad.",
   },
   {
     categoryId: "viandas",
     slug: "viandas-sin-gluten",
     h1: "Viandas sin gluten",
     intro:
-      "Encontrá emprendimientos que preparan viandas sin gluten para el trabajo, la facultad, el freezer o el día a día. Las opciones son sugeridas por la comunidad de Celimap y se revisan antes de publicarse.",
+      "Encontrá emprendimientos que preparan viandas sin gluten para el trabajo, la facultad, el freezer o el día a día. Las opciones son sugeridas por la comunidad de CeliMap y se revisan antes de publicarse.",
     title: "Viandas sin gluten | Emprendimientos recomendados",
     description:
       "Encontrá emprendimientos que preparan viandas sin gluten para el trabajo, la facultad, el freezer o el día a día. Opciones sugeridas por la comunidad celíaca.",
@@ -55,40 +55,40 @@ export const VENTURE_CATEGORY_LANDINGS: VentureCategoryLandingConfig[] = [
     slug: "panificados-sin-gluten",
     h1: "Panificados sin gluten",
     intro:
-      "Encontrá emprendimientos de panificados sin gluten: panes, budines, medialunas y opciones sin TACC. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos de panificados sin gluten: panes, budines, medialunas y opciones sin TACC. Sugeridos por la comunidad de CeliMap.",
     title: "Panificados sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá panificados sin gluten: panes, budines, medialunas y productos aptos sugeridos por la comunidad de Celimap.",
+      "Encontrá panificados sin gluten: panes, budines, medialunas y productos aptos sugeridos por la comunidad de CeliMap.",
   },
   {
     categoryId: "congelados",
     slug: "congelados-sin-gluten",
     h1: "Congelados sin gluten",
     intro:
-      "Encontrá emprendimientos con productos congelados sin gluten para stockar o pedir con anticipación. Opciones sugeridas por la comunidad de Celimap.",
+      "Encontrá emprendimientos con productos congelados sin gluten para stockar o pedir con anticipación. Opciones sugeridas por la comunidad de CeliMap.",
     title: "Congelados sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá emprendimientos con congelados sin gluten para freezer y pedidos. Opciones sugeridas por la comunidad celíaca en Celimap.",
+      "Encontrá emprendimientos con congelados sin gluten para freezer y pedidos. Opciones sugeridas por la comunidad celíaca en CeliMap.",
   },
   {
     categoryId: "premezclas",
     slug: "premezclas-sin-gluten",
     h1: "Premezclas sin gluten",
     intro:
-      "Encontrá emprendimientos que venden premezclas y bases sin gluten para cocinar en casa. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos que venden premezclas y bases sin gluten para cocinar en casa. Sugeridos por la comunidad de CeliMap.",
     title: "Premezclas sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá premezclas sin gluten y bases aptas para celíacos. Emprendimientos sugeridos por la comunidad de Celimap.",
+      "Encontrá premezclas sin gluten y bases con opciones Sin TACC. Emprendimientos sugeridos por la comunidad de CeliMap.",
   },
   {
     categoryId: "catering",
     slug: "catering-sin-gluten",
     h1: "Catering sin gluten",
     intro:
-      "Encontrá emprendimientos de catering sin gluten para eventos, reuniones o pedidos grupales. Opciones sugeridas por la comunidad de Celimap.",
+      "Encontrá emprendimientos de catering sin gluten para eventos, reuniones o pedidos grupales. Opciones sugeridas por la comunidad de CeliMap.",
     title: "Catering sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá catering sin gluten para eventos y pedidos grupales. Emprendimientos sugeridos por la comunidad celíaca en Celimap.",
+      "Encontrá catering sin gluten para eventos y pedidos grupales. Emprendimientos sugeridos por la comunidad celíaca en CeliMap.",
   },
 ]
 
@@ -98,10 +98,10 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "CABA",
     h1: "Emprendimientos sin gluten en CABA",
     intro:
-      "Encontrá emprendimientos sin gluten en CABA: viandas, pastelería, panificados, congelados y productos aptos sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en CABA: viandas, pastelería, panificados, congelados y productos aptos sugeridos por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en CABA",
     description:
-      "Encontrá emprendimientos sin gluten en CABA: viandas, pastelería, panificados, congelados y productos aptos sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en CABA: viandas, pastelería, panificados, congelados y productos aptos sugeridos por la comunidad de CeliMap.",
     zonePatterns: [
       /\bcaba\b/i,
       /capital federal/i,
@@ -115,7 +115,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Zona Norte",
     h1: "Emprendimientos sin gluten en Zona Norte",
     intro:
-      "Encontrá emprendimientos sin gluten en Zona Norte (GBA): viandas, pastelería, panificados y más. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Zona Norte (GBA): viandas, pastelería, panificados y más. Sugeridos por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Zona Norte",
     description:
       "Encontrá emprendimientos sin gluten en Zona Norte: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
@@ -126,7 +126,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Córdoba",
     h1: "Emprendimientos sin gluten en Córdoba",
     intro:
-      "Encontrá emprendimientos sin gluten en Córdoba y alrededores. Opciones sugeridas por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Córdoba y alrededores. Opciones sugeridas por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Córdoba",
     description:
       "Encontrá emprendimientos sin gluten en Córdoba: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
@@ -137,7 +137,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Rosario",
     h1: "Emprendimientos sin gluten en Rosario",
     intro:
-      "Encontrá emprendimientos sin gluten en Rosario y alrededores. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Rosario y alrededores. Sugeridos por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Rosario",
     description:
       "Encontrá emprendimientos sin gluten en Rosario: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
@@ -148,7 +148,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Zona Sur",
     h1: "Emprendimientos sin gluten en Zona Sur",
     intro:
-      "Encontrá emprendimientos sin gluten en Zona Sur (GBA). Opciones sugeridas por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Zona Sur (GBA). Opciones sugeridas por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Zona Sur",
     description:
       "Encontrá emprendimientos sin gluten en Zona Sur: viandas, pastelería, panificados y productos aptos sugeridos por la comunidad.",
@@ -166,7 +166,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Mar del Plata",
     h1: "Emprendimientos sin gluten en Mar del Plata",
     intro:
-      "Encontrá emprendimientos sin gluten en Mar del Plata. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Mar del Plata. Sugeridos por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Mar del Plata",
     description:
       "Encontrá emprendimientos sin gluten en Mar del Plata: viandas, pastelería y productos aptos sugeridos por la comunidad.",
@@ -177,10 +177,10 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     label: "Buzios",
     h1: "Emprendimientos sin gluten en Buzios",
     intro:
-      "Encontrá emprendimientos sin gluten en Buzios. Sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Buzios. Sugeridos por la comunidad de CeliMap.",
     title: "Emprendimientos sin gluten en Buzios",
     description:
-      "Encontrá emprendimientos sin gluten en Buzios sugeridos por la comunidad de Celimap.",
+      "Encontrá emprendimientos sin gluten en Buzios sugeridos por la comunidad de CeliMap.",
     zonePatterns: [/b[uú]zios/i],
   },
 ]
@@ -225,14 +225,14 @@ export function getVentureSeoDescription(
   const zonePart = zone?.trim() ? ` en ${zone}` : ""
 
   const templates: Partial<Record<VentureCategoryId, string>> = {
-    pasteleria: `${name} es un emprendimiento de pastelería sin gluten${zonePart}. Fue sugerido por la comunidad de Celimap y puede ser útil para personas que buscan tortas, productos dulces o propuestas sin TACC por pedido.`,
-    viandas: `${name} es un emprendimiento de viandas sin gluten${zonePart}. Fue sugerido por la comunidad de Celimap y puede ser útil para personas que buscan comidas aptas para el trabajo, la facultad o el freezer.`,
-    panificados: `${name} es un emprendimiento de panificados sin gluten${zonePart}. Fue sugerido por la comunidad de Celimap y puede ser útil para personas que buscan panes, budines, medialunas u opciones sin TACC.`,
+    pasteleria: `${name} es un emprendimiento de pastelería sin gluten${zonePart}. Fue sugerido por la comunidad de CeliMap y puede ser útil para personas que buscan tortas, productos dulces o propuestas sin TACC por pedido.`,
+    viandas: `${name} es un emprendimiento de viandas sin gluten${zonePart}. Fue sugerido por la comunidad de CeliMap y puede ser útil para personas que buscan comidas aptas para el trabajo, la facultad o el freezer.`,
+    panificados: `${name} es un emprendimiento de panificados sin gluten${zonePart}. Fue sugerido por la comunidad de CeliMap y puede ser útil para personas que buscan panes, budines, medialunas u opciones sin TACC.`,
   }
 
   return (
     templates[category as VentureCategoryId] ??
-    `${name} es un emprendimiento sin gluten${zonePart} sugerido por la comunidad de Celimap. Podés consultar sus productos, modalidad de compra y disponibilidad antes de consumir.`
+    `${name} es un emprendimiento sin gluten${zonePart} sugerido por la comunidad de CeliMap. Podés consultar sus productos, modalidad de compra y disponibilidad antes de consumir.`
   )
 }
 
@@ -257,7 +257,7 @@ export function buildVentureMetaDescription(
     modalities.length > 0
       ? getModalityLabels(modalities).join(", ")
       : "Consultá modalidad de compra"
-  return `Conocé ${name}, emprendimiento de ${catLabel} sin gluten${zonePart}. ${modText}. Información sugerida por la comunidad de Celimap.`
+  return `Conocé ${name}, emprendimiento de ${catLabel} sin gluten${zonePart}. ${modText}. Información sugerida por la comunidad de CeliMap.`
 }
 
 export function buildVentureMetadata(input: {
@@ -290,7 +290,7 @@ export function buildVentureMetadata(input: {
       url: canonical,
       type: "website",
       locale: "es_AR",
-      siteName: "Celimap",
+      siteName: "CeliMap",
       images: [{ url: ogImage, width: 1200, height: 630, alt: input.name }],
     },
     twitter: {
@@ -319,7 +319,7 @@ export function buildCategoryLandingMetadata(
       url: canonical,
       type: "website",
       locale: "es_AR",
-      siteName: "Celimap",
+      siteName: "CeliMap",
       images: [{ url: `${base}${VENTURE_DEFAULT_OG_IMAGE}`, width: 1200, height: 630 }],
     },
     twitter: {
@@ -347,7 +347,7 @@ export function buildZoneLandingMetadata(
       url: canonical,
       type: "website",
       locale: "es_AR",
-      siteName: "Celimap",
+      siteName: "CeliMap",
       images: [{ url: `${base}${VENTURE_DEFAULT_OG_IMAGE}`, width: 1200, height: 630 }],
     },
     twitter: {
@@ -363,7 +363,7 @@ export function getVentureIndexMetadata(): Metadata {
   const canonical = `${base}/emprendimientos`
   const title = "Emprendimientos sin gluten"
   const description =
-    "Marcas, cocineros y proyectos aptos para celíacos: viandas, pastelería, panificados, congelados y más. Recomendados por la comunidad."
+    "Marcas, cocineros y proyectos con opciones Sin TACC: viandas, pastelería, panificados, congelados y más. Recomendados por la comunidad."
   return {
     title,
     description,
@@ -381,7 +381,7 @@ export function getVentureIndexMetadata(): Metadata {
       url: canonical,
       type: "website",
       locale: "es_AR",
-      siteName: "Celimap",
+      siteName: "CeliMap",
       images: [{ url: `${base}${VENTURE_DEFAULT_OG_IMAGE}`, width: 1200, height: 630 }],
     },
     twitter: { card: "summary_large_image", title, description },

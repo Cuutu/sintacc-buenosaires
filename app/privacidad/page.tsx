@@ -10,7 +10,7 @@ const CONTACT_MAIL = "hola@celimap.com.ar"
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description:
-    "Cómo Celimap trata datos personales: Google, Sign in with Apple, ubicación, reseñas, fotos y eliminación de cuenta en la app.",
+    "Cómo CeliMap trata datos personales: Google, Sign in with Apple, ubicación, reseñas, fotos y eliminación de cuenta en la app.",
   alternates: { canonical: `${BASE_URL}/privacidad` },
   openGraph: {
     title: "Política de privacidad",
@@ -29,11 +29,11 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
     body: (
       <>
         <p>
-          Celimap (“nosotros”) opera el sitio{" "}
+          CeliMap (“nosotros”) opera el sitio{" "}
           <a href={BASE_URL} className="text-primary hover:underline">
             {BASE_URL}
           </a>{" "}
-          y la aplicación móvil Celimap (iOS / Android), que muestra el mismo
+          y la aplicación móvil CeliMap (iOS / Android), que muestra el mismo
           contenido web.
         </p>
         <p>
@@ -95,7 +95,7 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
     title: "3. Para qué usamos los datos",
     body: (
       <ul className="list-disc space-y-2 pl-5">
-        <li>Mostrar el mapa y fichas de lugares sin TACC / aptos para celíacos.</li>
+        <li>Mostrar el mapa y fichas de lugares sin TACC o con opciones Sin TACC.</li>
         <li>Identificarte en favoritos, listas, reseñas y sugerencias.</li>
         <li>Moderar contenido y prevenir abuso.</li>
         <li>Responder consultas (email vía Resend).</li>
@@ -114,14 +114,14 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
         </p>
         <p>
           No guardamos refresh tokens de Google. Al eliminar la cuenta borramos
-          tu identidad en Celimap y cerramos la sesión; no afirmamos una
+          tu identidad en CeliMap y cerramos la sesión; no afirmamos una
           revocación remota de tokens de Google.
         </p>
         <p>
           En cuentas Apple intentamos revocar la autorización con Apple al
           eliminar (pidiendo confirmación con Apple en ese momento). Si no es
           posible, te mostramos cómo hacerlo desde Ajustes de Apple. La
-          eliminación de tus datos en Celimap no se bloquea por una falla de
+          eliminación de tus datos en CeliMap no se bloquea por una falla de
           Apple.
         </p>
       </>
@@ -152,7 +152,7 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
           </li>
           <li>
             <strong className="text-foreground">Vercel:</strong> hosting y
-            Analytics de producto (sin publicidad de Celimap).
+            Analytics de producto (sin publicidad de CeliMap).
           </li>
           <li>
             <strong className="text-foreground">Cloudinary:</strong> imágenes
@@ -234,7 +234,7 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
     title: "10. Menores",
     body: (
       <p>
-        Celimap no está dirigido a menores de 13 años. Si detectamos una cuenta
+        CeliMap no está dirigido a menores de 13 años. Si detectamos una cuenta
         de un menor sin consentimiento adecuado, la eliminaremos.
       </p>
     ),
@@ -282,7 +282,7 @@ export default function PrivacidadPage() {
         </Link>{" "}
         ·{" "}
         <Link href="/que-es-celimap" className="font-medium text-primary hover:underline">
-          Qué es Celimap
+          Qué es CeliMap
         </Link>
       </p>
     </main>

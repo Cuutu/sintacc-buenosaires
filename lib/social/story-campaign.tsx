@@ -323,7 +323,7 @@ export function StoryCtaImage({ format, logoUrl, placesCount, venturesCount }: S
                 textAlign: "center",
               }}
             >
-              {`${proof} ya en Celimap`}
+              {`${proof} ya en CeliMap`}
             </div>
           ) : null}
           <div

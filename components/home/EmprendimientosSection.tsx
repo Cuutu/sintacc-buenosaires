@@ -27,7 +27,7 @@ export function EmprendimientosSection() {
         También podés descubrir emprendimientos
       </h2>
       <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-        No todos los lugares sin gluten tienen local. En Celimap también podés encontrar marcas,
+        No todos los lugares sin gluten tienen local. En CeliMap también podés encontrar marcas,
         cocineros y proyectos que venden productos aptos por encargo, delivery o redes sociales.
       </p>
 

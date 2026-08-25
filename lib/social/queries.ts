@@ -156,19 +156,19 @@ export function getPresetTitle(
 ): string {
   switch (preset) {
     case "latest_places":
-      return `${itemCount} lugares nuevos en Celimap`
+      return `${itemCount} lugares nuevos en CeliMap`
     case "latest_ventures":
-      return `${itemCount} emprendimientos nuevos en Celimap`
+      return `${itemCount} emprendimientos nuevos en CeliMap`
     case "neighborhood":
       return `${itemCount} lugares nuevos en ${neighborhood ?? "el barrio"}`
     case "dedicated_gf":
-      return `${itemCount} lugares 100% sin TACC en Celimap`
+      return `${itemCount} lugares 100% sin TACC en CeliMap`
     case "milestone":
-      return "Hito comunidad Celimap"
+      return "Hito comunidad CeliMap"
     case "cta_suggest":
       return "¿Conocés un lugar o emprendimiento sin gluten?"
     default:
-      return "Contenido Celimap"
+      return "Contenido CeliMap"
   }
 }
 

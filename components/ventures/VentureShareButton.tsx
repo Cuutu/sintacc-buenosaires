@@ -10,7 +10,7 @@ type VentureShareButtonProps = {
 export function VentureShareButton({ ventureName, shareUrl }: VentureShareButtonProps) {
   return (
     <ShareButton
-      title={`${ventureName} · Celimap`}
+      title={`${ventureName} · CeliMap`}
       shareUrl={shareUrl}
       eventName="place_share"
       eventProps={{ type: "venture" }}

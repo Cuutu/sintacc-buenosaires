@@ -26,7 +26,7 @@ function MobileReturnContent() {
         const data = (await res.json()) as { code?: string }
         if (!data.code) throw new Error("missing code")
 
-        setMessage("Volviendo a Celimap…")
+        setMessage("Volviendo a CeliMap…")
         reportNativeOAuth("native-oauth-return", {
           route: "/auth/mobile-return",
           deepLink: true,
@@ -43,7 +43,7 @@ function MobileReturnContent() {
 
         window.setTimeout(() => {
           setMessage(
-            "Si no volviste a la app, cerrá esta ventana y abrí Celimap desde TestFlight."
+            "Si no volviste a la app, cerrá esta ventana y abrí CeliMap desde TestFlight."
           )
         }, 2000)
       })
@@ -61,7 +61,7 @@ function MobileReturnContent() {
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-muted-foreground">
           No pudimos volver a la app. Cerrá esta ventana e intentá iniciar sesión otra vez desde
-          Celimap.
+          CeliMap.
         </p>
       </div>
     )

@@ -84,7 +84,7 @@ Agregar:
 **Archivo:** `lib/seo/templates.ts`
 
 - Incluir más variantes: "apto celíacos", "sin TACC", "donde comer"
-- Ejemplo descripción ciudad: "Donde comer sin gluten en [ciudad]. Restaurantes, panaderías y cafés aptos celíacos verificados por la comunidad."
+- Ejemplo descripción ciudad: "Dónde comer sin gluten en [ciudad]. Restaurantes, panaderías y cafés con opciones Sin TACC según datos de CeliMap."
 
 #### Paso 3.3 — Página home: más contenido SEO
 **Archivo:** `app/page.tsx`

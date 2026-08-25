@@ -119,7 +119,7 @@ export function VentureReviewsSection({
       </div>
 
       <p className="text-xs text-muted-foreground -mt-2">
-        Opiniones de quienes compraron. Celimap no certifica; verificá siempre antes de consumir.
+        Opiniones de quienes compraron. CeliMap no certifica; confirmá siempre antes de consumir.
       </p>
 
       {stats.totalReviews > 0 && !showForm && (

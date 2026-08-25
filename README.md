@@ -1,6 +1,6 @@
 # SinTACC BSAS
 
-Plataforma web para encontrar lugares sin TACC (sin gluten) en Buenos Aires. Una comunidad donde celíacos comparten lugares seguros, reseñas y experiencias.
+Plataforma web para encontrar lugares sin TACC (sin gluten) en Argentina. Una comunidad donde personas celíacas comparten lugares, reseñas y experiencias. CeliMap no certifica ni garantiza seguridad: la información es una guía.
 
 **Repositorio:** [github.com/Cuutu/sintacc-buenosaires](https://github.com/Cuutu/sintacc-buenosaires)
 

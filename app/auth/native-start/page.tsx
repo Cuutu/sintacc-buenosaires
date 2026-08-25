@@ -20,7 +20,7 @@ function NativeStartContent() {
 
     const from = searchParams.get("from")
     if (from !== "native") {
-      setError("Esta pantalla solo inicia sesión desde la app Celimap.")
+      setError("Esta pantalla solo inicia sesión desde la app CeliMap.")
       reportNativeOAuth("native-oauth-error", {
         route: "/auth/native-start",
         code: "not_native_entry",
@@ -49,7 +49,7 @@ function NativeStartContent() {
     reportNativeOAuth("native-oauth-start", { route: "/auth/native-start" })
 
     void signIn("google", { callbackUrl }).catch(() => {
-      setError("No pudimos abrir Google. Cerrá esta ventana e intentá de nuevo desde Celimap.")
+      setError("No pudimos abrir Google. Cerrá esta ventana e intentá de nuevo desde CeliMap.")
       reportNativeOAuth("native-oauth-error", {
         route: "/auth/native-start",
         code: "signin_throw",

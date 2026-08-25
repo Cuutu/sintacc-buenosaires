@@ -27,7 +27,7 @@ export function GoogleReviewsSection({ snapshot, showAllReviews = false }: Props
         <div>
           <h2 className="text-base font-bold">En Google</h2>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Reseñas de Google · complementan las de la comunidad Celimap
+            Reseñas de Google · complementan las de la comunidad CeliMap
           </p>
         </div>
         {mapsUrl ? (
@@ -100,7 +100,7 @@ export function GoogleReviewsSection({ snapshot, showAllReviews = false }: Props
       ) : null}
 
       <p className="text-[10px] text-muted-foreground/70 mt-3">
-        Datos y reseñas provistos por Google. No son reseñas de la comunidad Celimap.
+        Datos y reseñas provistos por Google. No son reseñas de la comunidad CeliMap.
       </p>
     </section>
   )

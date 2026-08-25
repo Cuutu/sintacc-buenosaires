@@ -1,4 +1,4 @@
-/** Nombre público al responder reseñas como equipo Celimap */
+/** Nombre público al responder reseñas como equipo CeliMap */
 export const ADMIN_REPLY_DISPLAY_NAME = "CELIMAP — Franco Varela"
 
 export const NEIGHBORHOODS = [
@@ -86,11 +86,11 @@ export const TYPES = [
 ]
 
 export const PLACE_TAGS = [
-  { value: "certificado_sin_tacc", label: "Certificado sin TACC" },
+  { value: "certificado_sin_tacc", label: "Insumos certificados Sin TACC" },
   { value: "opciones_sin_tacc", label: "Opciones sin TACC" },
   { value: "100_gf", label: "100% gluten free" },
   { value: "cocina_separada", label: "Cocina separada" },
-  { value: "sin_info", label: "Sin información verificada" },
+  { value: "sin_info", label: "Sin clasificación clara" },
 ]
 
 /** Config para badges de tags: label legible, estilo */
@@ -112,7 +112,7 @@ export const TAG_BADGE_CONFIG: Record<string, { label: string; className: string
     className: "bg-olive/8 text-olive border-olive/15",
   },
   sin_info: {
-    label: "Sin info verificada",
+    label: "Sin clasificación",
     className: "bg-muted/50 text-muted-foreground border-border",
   },
 }

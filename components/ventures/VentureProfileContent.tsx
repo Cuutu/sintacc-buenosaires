@@ -276,7 +276,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                   Tiene productos certificados según quien lo sugirió.
                 </p>
               ) : !isVerified ? (
-                <p className="text-muted-foreground">Información pendiente de verificación.</p>
+                <p className="text-muted-foreground">Información pendiente de revisión.</p>
               ) : null}
             </div>
           </ProfileSection>
@@ -285,8 +285,8 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
             <div className="flex gap-3 p-4 rounded-xl border border-amber-500/25 bg-amber-500/5">
               <AlertCircle className="h-5 w-5 shrink-0 text-amber-500/90 mt-0.5" />
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Celimap no certifica emprendimientos. Las opciones son recomendadas por la
-                comunidad; verificá siempre antes de consumir.
+                CeliMap no certifica emprendimientos. Las opciones son recomendadas por la
+                comunidad; confirmá siempre ingredientes y manipulación antes de consumir.
               </p>
             </div>
           </ProfileSection>

@@ -58,7 +58,7 @@ export default async function SinGlutenArgentinaPage() {
       </p>
 
       <section className="mb-12 max-w-2xl">
-        <h2 className="text-lg font-semibold mb-3">Restaurantes y lugares aptos celíacos</h2>
+        <h2 className="text-lg font-semibold mb-3">Restaurantes y lugares con opciones Sin TACC</h2>
         <p className="text-muted-foreground text-sm mb-6">
           Donde comer sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más. Restaurantes sin TACC, panaderías sin gluten y cafés con datos aportados por la comunidad.
         </p>
@@ -119,7 +119,7 @@ export default async function SinGlutenArgentinaPage() {
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Dónde comer sin gluten en Argentina?</h3>
             <p>
-              En Celimap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario,
+              En CeliMap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario,
               Mendoza y más ciudades. Restaurantes, panaderías y cafés con datos aportados por la
               comunidad.
             </p>
@@ -127,15 +127,15 @@ export default async function SinGlutenArgentinaPage() {
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Hay restaurantes sin TACC en Buenos Aires?</h3>
             <p>
-              Sí, hay muchos restaurantes sin gluten en Buenos Aires. Celimap reúne opciones 100%
-              libres de gluten y locales con menú adaptado según la información cargada. Confirmá
-              siempre en el local.
+              Hay restaurantes con opciones Sin TACC cargados en Buenos Aires. CeliMap reúne
+              lugares 100% libres de gluten y locales con menú adaptado según la información
+              cargada. Confirmá siempre en el local.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Cómo encontrar panaderías sin gluten?</h3>
             <p>
-              Usá el mapa de Celimap para filtrar por tipo de establecimiento. Hay panaderías
+              Usá el mapa de CeliMap para filtrar por tipo de establecimiento. Hay panaderías
               dedicadas y otras con opciones sin TACC en las principales ciudades de Argentina.
             </p>
           </div>

@@ -83,7 +83,7 @@ export function ReviewAdminReplyForm({
           setOpen(true)
         }}
       >
-        {existingReply ? "Editar respuesta" : "Responder como Celimap"}
+        {existingReply ? "Editar respuesta" : "Responder como CeliMap"}
       </Button>
     )
   }

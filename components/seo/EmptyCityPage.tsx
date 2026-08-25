@@ -12,7 +12,7 @@ const CATEGORIES_PREVIEW = [
   { emoji: "🥐", label: "Panaderías y pastelerías sin TACC" },
   { emoji: "🛒", label: "Dietéticas y almacenes naturales" },
   { emoji: "🍦", label: "Heladerías con opciones sin gluten" },
-  { emoji: "☕", label: "Cafés aptos para celíacos" },
+  { emoji: "☕", label: "Cafés con opciones Sin TACC" },
   { emoji: "📍", label: "Otros establecimientos sin TACC" },
 ]
 
@@ -33,7 +33,7 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
   const provincia = data?.provincia ?? city.province
   const descripcion =
     data?.descripcion ??
-    `Encontrá restaurantes, panaderías, dietéticas y heladerías aptas para celíacos en ${city.name}. Celimap es el mapa colaborativo donde la comunidad celíaca comparte sus experiencias sin TACC.`
+    `Encontrá restaurantes, panaderías, dietéticas y heladerías con opciones Sin TACC en ${city.name}. CeliMap es el mapa colaborativo donde la comunidad celíaca comparte sus experiencias.`
   const zonasTipicas = data?.zonasTipicas ?? city.neighborhoods?.slice(0, 6) ?? []
 
   const faqs = [

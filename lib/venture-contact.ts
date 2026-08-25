@@ -94,10 +94,10 @@ export function parseVentureLinks(input: {
 
 const DESCRIPTION_FALLBACKS: Partial<Record<VentureCategoryId, string>> = {
   pasteleria:
-    "Emprendimiento de pastelería sin gluten sugerido por la comunidad de Celimap.",
-  viandas: "Emprendimiento de viandas sin gluten sugerido por la comunidad de Celimap.",
+    "Emprendimiento de pastelería sin gluten sugerido por la comunidad de CeliMap.",
+  viandas: "Emprendimiento de viandas sin gluten sugerido por la comunidad de CeliMap.",
   panificados:
-    "Emprendimiento de panificados sin gluten sugerido por la comunidad de Celimap.",
+    "Emprendimiento de panificados sin gluten sugerido por la comunidad de CeliMap.",
 }
 
 export function getVentureDescription(
@@ -110,7 +110,7 @@ export function getVentureDescription(
   if (description?.trim()) return description.trim()
   return (
     DESCRIPTION_FALLBACKS[category as VentureCategoryId] ??
-    "Emprendimiento sin gluten sugerido por la comunidad de Celimap."
+    "Emprendimiento sin gluten sugerido por la comunidad de CeliMap."
   )
 }
 

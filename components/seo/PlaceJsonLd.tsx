@@ -58,7 +58,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: place.name,
-    description: `${place.name} - ${typeLabel} sin gluten en ${place.neighborhood}. Lugar apto para celíacos en Argentina.`,
+    description: `${place.name} - ${typeLabel} con opciones Sin TACC en ${place.neighborhood}, según la información cargada en CeliMap.`,
     url: placeUrl,
     image: imageUrl,
     address: place.address

@@ -17,7 +17,7 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
   const faqs = [
     {
       question: `¿Dónde comer sin TACC en ${province.name}?`,
-      answer: `Encontrá restaurantes, cafeterías, panaderías y tiendas sin gluten en toda la provincia de ${province.name} usando el mapa o el listado de Celimap.`,
+      answer: `Encontrá restaurantes, cafeterías, panaderías y tiendas sin gluten en toda la provincia de ${province.name} usando el mapa o el listado de CeliMap.`,
     },
     {
       question: `¿Hay restaurantes 100% sin gluten en ${province.name}?`,
