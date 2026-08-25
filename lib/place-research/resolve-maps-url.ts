@@ -61,7 +61,7 @@ export function isGoogleMapsUrl(raw: string): boolean {
   }
 }
 
-export function isUsableMapsPlaceName(name?: string | null): boolean {
+export function isUsableMapsPlaceName(name?: string | null): name is string {
   const text = String(name ?? "").trim()
   if (text.length < 2) return false
   if (/^data=/i.test(text)) return false
