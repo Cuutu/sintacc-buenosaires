@@ -14,7 +14,7 @@ import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
 const PATH = "/como-verificamos-los-lugares"
-const UPDATED_AT = "2026-08-12"
+const UPDATED_AT = "2026-08-24"
 
 const title = "Cómo trabajamos la información de los lugares"
 const description =
@@ -31,9 +31,14 @@ const faqs = [
     answer: CLASSIFICATION_HELP.dedicated_gf,
   },
   {
-    question: "¿Qué hago si veo un dato incorrecto?",
+    question: "¿Qué hago si veo un dato incorrecto o el menú cambió?",
     answer:
-      "Podés reportarlo desde la ficha o contactar al equipo. Las reseñas y reportes visibles ayudan a corregir o matizar información.",
+      "Reportalo desde la ficha o contactá al equipo. Hasta que se corrija, la ficha puede estar desactualizada: confirmá siempre en el local.",
+  },
+  {
+    question: "¿Con qué frecuencia revisan cada lugar?",
+    answer:
+      "No hay un inspector en cada cocina ni un calendario público de recertificación. El mapa se actualiza con sugerencias nuevas y con correcciones cuando llega un reporte.",
   },
 ]
 
@@ -96,13 +101,13 @@ export default function ComoVerificamosPage() {
       <section>
         <h2 className="mb-3 text-xl font-semibold">Cómo se corrigen datos incorrectos</h2>
         <p className="text-muted-foreground">
-          Cuando alguien señala un error (dirección, clasificación, cierre del local, etc.), el
-          equipo puede revisar y actualizar la ficha. También podés{" "}
+          Cuando alguien señala un error (dirección, clasificación, cierre del local, menú que ya
+          no es apto, etc.), el equipo puede revisar y actualizar la ficha. También podés{" "}
           <Link href="/sugerir" className="text-primary hover:underline">
             sugerir un lugar
           </Link>{" "}
           o aportar contexto en reseñas. La corrección depende de poder validar el cambio con la
-          información disponible.
+          información disponible. Hasta entonces, tratá la ficha como una pista, no como un sello.
         </p>
       </section>
 
@@ -150,6 +155,11 @@ export default function ComoVerificamosPage() {
           <li>
             <Link href="/como-funciona" className="text-primary hover:underline">
               Cómo funciona CeliMap
+            </Link>
+          </li>
+          <li>
+            <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
+              Por qué usar CeliMap
             </Link>
           </li>
           <li>

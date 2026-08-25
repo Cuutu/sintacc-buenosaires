@@ -9,7 +9,7 @@ import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
 const PATH = "/como-funciona"
-const UPDATED_AT = "2026-08-12"
+const UPDATED_AT = "2026-08-24"
 
 const title = "Cómo funciona CeliMap"
 const description =
@@ -22,9 +22,14 @@ const faqs = [
       "Podés explorar el mapa y las páginas de ciudades sin cuenta. Para guardar favoritos, crear listas o aportar reseñas, sí necesitás iniciar sesión.",
   },
   {
-    question: "¿Cómo busco por ciudad?",
+    question: "¿Cómo busco por ciudad o tipo de lugar?",
     answer:
-      "Entrá a Sin gluten Argentina o usá URLs como /sin-gluten/la-plata. También podés abrir el mapa y moverte por la zona que te interesa.",
+      "Entrá a Sin gluten Argentina, usá URLs como /sin-gluten/la-plata o /restaurantes-sin-gluten, o abrí el mapa y filtrá por tipo y zona.",
+  },
+  {
+    question: "¿Con qué frecuencia se actualiza el mapa?",
+    answer:
+      "No hay un calendario público. Los lugares nuevos se publican cuando una sugerencia se revisa. Las fichas se corrigen cuando alguien reporta un cambio.",
   },
   {
     question: "¿Puedo compartir una lista privada?",
@@ -73,7 +78,24 @@ export default function ComoFuncionaPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xl font-semibold">2. Mirá fichas y señales</h2>
+        <h2 className="mb-3 text-xl font-semibold">2. Filtrá por zona y tipo</h2>
+        <p className="text-muted-foreground">
+          En el mapa podés acercarte a tu zona y filtrar por tipo (restaurantes, cafés, panaderías,
+          tiendas, heladerías, bares). También hay listados por ciudad, por provincia y por
+          categoría nacional, por ejemplo{" "}
+          <Link href="/restaurantes-sin-gluten" className="text-primary hover:underline">
+            restaurantes sin gluten
+          </Link>{" "}
+          o{" "}
+          <Link href="/tiendas-sin-gluten" className="text-primary hover:underline">
+            tiendas sin gluten
+          </Link>
+          .
+        </p>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">3. Mirá fichas y señales</h2>
         <p className="text-muted-foreground">
           Cada ficha puede incluir dirección, tipo de local, clasificación (100% libre de gluten u
           opciones sin TACC), reseñas y reportes cuando existen. Usá esa información como guía, no
@@ -82,7 +104,7 @@ export default function ComoFuncionaPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xl font-semibold">3. Guardá y organizá</h2>
+        <h2 className="mb-3 text-xl font-semibold">4. Guardá y organizá</h2>
         <p className="text-muted-foreground">
           Con cuenta podés marcar favoritos y armar{" "}
           <Link href="/listas" className="text-primary hover:underline">
@@ -93,7 +115,7 @@ export default function ComoFuncionaPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xl font-semibold">4. Aportá a la comunidad</h2>
+        <h2 className="mb-3 text-xl font-semibold">5. Aportá a la comunidad</h2>
         <p className="text-muted-foreground">
           Si falta un lugar,{" "}
           <Link href="/sugerir" className="text-primary hover:underline">
@@ -120,6 +142,16 @@ export default function ComoFuncionaPage() {
           <li>
             <Link href="/mapa-para-celiacos" className="text-primary hover:underline">
               Mapa para celíacos
+            </Link>
+          </li>
+          <li>
+            <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
+              Por qué usar CeliMap
+            </Link>
+          </li>
+          <li>
+            <Link href="/comprar-productos-sin-tacc" className="text-primary hover:underline">
+              Comprar productos Sin TACC
             </Link>
           </li>
           <li>

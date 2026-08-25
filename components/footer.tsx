@@ -8,8 +8,10 @@ const INSTAGRAM_URL = CELIMAP_SAME_AS[0]
 
 const EXPLORE_LINKS = [
   { href: "/mapa", label: "Mapa" },
-  { href: "/listas", label: "Listas" },
+  { href: "/sin-gluten-argentina", label: "Por ciudad" },
+  { href: "/comprar-productos-sin-tacc", label: "Comprar Sin TACC" },
   { href: "/emprendimientos", label: "Emprendimientos" },
+  { href: "/listas", label: "Listas" },
   { href: "/sugerir", label: "Sugerir un lugar" },
 ] as const
 
@@ -17,6 +19,7 @@ const INFO_LINKS = [
   { href: "/que-es-celimap", label: "Qué es CeliMap" },
   { href: "/como-funciona", label: "Cómo funciona" },
   { href: "/como-verificamos-los-lugares", label: "Cómo verificamos la información" },
+  { href: "/por-que-usar-celimap", label: "Por qué usar CeliMap" },
   { href: "/guias", label: "Guías" },
 ] as const
 
@@ -98,8 +101,8 @@ function FooterCta() {
             >
               ¿Conocés un lugar sin gluten?
             </h2>
-            <p className="mt-2 text-base leading-relaxed text-[#5F6B63]">
-              Ayudá a que más personas puedan encontrar opciones seguras.
+              <p className="mt-2 text-base leading-relaxed text-[#5F6B63]">
+              Ayudá a que más personas encuentren opciones Sin TACC.
             </p>
           </div>
           <Link

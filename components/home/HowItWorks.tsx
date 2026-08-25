@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 const STEPS = [
   {
     n: "01",
@@ -36,6 +38,13 @@ export function HowItWorks() {
           </li>
         ))}
       </ol>
+      <p className="mt-8 text-center text-sm text-[#4D6554]">
+        Más detalle en{" "}
+        <Link href="/como-funciona" className="font-medium text-olive underline-offset-2 hover:underline">
+          cómo funciona CeliMap
+        </Link>
+        .
+      </p>
     </section>
   )
 }

@@ -91,6 +91,16 @@ export function InstitutionalPage({
             </Link>
           </li>
           <li>
+            <Link href="/comprar-productos-sin-tacc" className="text-primary hover:underline">
+              Dónde comprar productos Sin TACC
+            </Link>
+          </li>
+          <li>
+            <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
+              Por qué usar CeliMap
+            </Link>
+          </li>
+          <li>
             <Link href="/listas" className="text-primary hover:underline">
               Listas públicas
             </Link>

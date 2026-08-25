@@ -13,6 +13,7 @@
  */
 
 import { CANONICAL_ORIGIN } from "../lib/base-url"
+import { FUTURE_GUIDE_TOPICS } from "../lib/seo/guides"
 
 type Finding = { url: string; issue: string }
 
@@ -129,12 +130,12 @@ async function main() {
     findings.push({ url: u, issue: "top_url_should_not_be_in_sitemap" })
   }
 
-  if (urls.some((u) => u.endsWith("/guias") || u.includes("/guias/"))) {
-    // hub vacío noindex: /guias no debe estar; guías draft tampoco
-    const guias = urls.filter((u) => u.includes("/guias"))
-    for (const u of guias) {
-      findings.push({ url: u, issue: "guias_url_present_check_published" })
-    }
+  // Guías published y el hub /guias sí van al sitemap. Reservadas sin contenido, no.
+  const unpublishedGuideInSitemap = urls.filter((u) =>
+    FUTURE_GUIDE_TOPICS.some((slug) => u.endsWith(`/guias/${slug}`))
+  )
+  for (const u of unpublishedGuideInSitemap) {
+    findings.push({ url: u, issue: "unpublished_reserved_guide_in_sitemap" })
   }
 
   const picked = sample(urls, sampleSize)

@@ -51,6 +51,21 @@ export const FAQ_ITEMS = [
     answer:
       "Los lugares cambian de dueño, de menú y de protocolo. Si ves algo incorrecto, reportalo en la ficha o contactá al equipo.\n\nUna reseña reciente también ayuda: contá qué preguntaste, qué te dijeron y cómo te sentiste. Eso le sirve a la siguiente persona más que una estrella suelta.\n\nCeliMap corrige con lo que la comunidad y las visitas van aportando. No hay un inspector en cada cocina.",
   },
+  {
+    question: "¿Hay opciones en ciudades chicas o solo en las grandes?",
+    answer:
+      "La cobertura no es uniforme. Hay fichas en varias ciudades de Argentina, no solo en Buenos Aires, pero algunas zonas tienen pocos lugares cargados.\n\nSi conocés un comercio en una ciudad chica o un barrio poco cubierto, sugerilo. El mapa crece con esas altas, no con un censo nacional.\n\nMientras tanto podés mirar el directorio por ciudad o provincia y el mapa, sin asumir que “no hay nada” si la ficha todavía no existe.",
+  },
+  {
+    question: "¿Por qué usar CeliMap y no solo Google Maps o Instagram?",
+    answer:
+      "Google Maps e Instagram sirven para llegar y ver fotos. No están pensados para clasificar un local 100% libre de gluten frente a uno con algunas opciones, ni para reportes de contaminación cruzada.\n\nCeliMap es un mapa colaborativo con fichas, filtros y páginas por ciudad en Argentina. No reemplaza preguntar en el local ni a una asociación médica.\n\nSi tu duda es comprar envasados de marca, el supermercado sigue siendo el canal de góndola; CeliMap apunta a tiendas y emprendimientos listados.",
+  },
+  {
+    question: "¿Dónde compro productos Sin TACC?",
+    answer:
+      "Los envasados de marca se compran en supermercados y dietéticas, leyendo el rótulo. CeliMap no es Jumbo, Coto ni Carrefour.\n\nPara tiendas y productores cargados por la comunidad, usá las tiendas del mapa y la sección de emprendimientos.\n\nConfirmá ingredientes y manipulación con el comercio: la ficha orienta, no certifica.",
+  },
 ] as const
 
 type FaqItemData = (typeof FAQ_ITEMS)[number]
@@ -77,8 +92,9 @@ function FaqItem({ item, defaultOpen = false }: { item: FaqItemData; defaultOpen
 }
 
 export function FaqSection() {
-  const left = FAQ_ITEMS.slice(0, 5)
-  const right = FAQ_ITEMS.slice(5, 10)
+  const mid = Math.ceil(FAQ_ITEMS.length / 2)
+  const left = FAQ_ITEMS.slice(0, mid)
+  const right = FAQ_ITEMS.slice(mid)
 
   return (
     <section className="px-4 py-12 md:py-16" aria-label="Preguntas frecuentes">

@@ -99,6 +99,21 @@ export default function GuiasIndexPage() {
           <Link href="/como-verificamos-los-lugares">Metodología de datos</Link>
         </Button>
       </div>
+      <p className="mt-6 text-sm text-muted-foreground">
+        También:{" "}
+        <Link href="/que-es-celimap" className="text-primary hover:underline">
+          qué es CeliMap
+        </Link>
+        ,{" "}
+        <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
+          por qué usarlo
+        </Link>{" "}
+        y{" "}
+        <Link href="/comprar-productos-sin-tacc" className="text-primary hover:underline">
+          dónde comprar productos Sin TACC
+        </Link>
+        .
+      </p>
     </main>
   )
 }

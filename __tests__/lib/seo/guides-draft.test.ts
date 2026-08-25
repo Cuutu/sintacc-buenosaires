@@ -2,27 +2,27 @@ import { getGuideBySlug, getPublishedGuides, getGuidesRelatedToCity, GUIDES } fr
 import { isDraftGuidePreviewEnv } from "@/lib/seo/guide-access"
 import { decideGuideIndexing } from "@/lib/seo/indexing-rules"
 
-describe("guides draft policy", () => {
-  it("todas las guías iniciales son draft (no auto-publish)", () => {
+describe("guides publish policy", () => {
+  it("guías iniciales publicadas son indexables", () => {
     expect(GUIDES.length).toBeGreaterThan(0)
-    expect(GUIDES.every((g) => g.status === "draft")).toBe(true)
-    expect(getPublishedGuides()).toEqual([])
+    expect(GUIDES.every((g) => g.status === "published")).toBe(true)
+    expect(getPublishedGuides().length).toBe(GUIDES.length)
   })
 
-  it("getGuidesRelatedToCity no expone drafts", () => {
+  it("getGuidesRelatedToCity solo expone published", () => {
     const related = getGuidesRelatedToCity("buenos-aires")
     expect(related.every((g) => g.status === "published")).toBe(true)
-    expect(related).toEqual([])
+    expect(related.length).toBeGreaterThan(0)
   })
 
-  it("draft → noindex", () => {
+  it("published → index; draft → noindex", () => {
     const guide = getGuideBySlug("que-significa-100-libre-de-gluten")
-    expect(guide?.status).toBe("draft")
+    expect(guide?.status).toBe("published")
+    expect(decideGuideIndexing("published")).toBe("index")
     expect(decideGuideIndexing("draft")).toBe("noindex")
   })
 
   it("isDraftGuidePreviewEnv refleja NODE_ENV/VERCEL_ENV", () => {
-    // En jest suele ser test/development — no debe lanzar
     expect(typeof isDraftGuidePreviewEnv()).toBe("boolean")
   })
 })

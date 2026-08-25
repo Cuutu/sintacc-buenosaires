@@ -39,7 +39,7 @@ export function MapLandingJsonLd({
     name: metaTitle,
     description: metaDescription,
     url,
-    isPartOf: { "@type": "WebSite", name: "Celimap", url: BASE_URL },
+    isPartOf: { "@type": "WebSite", name: "CeliMap", url: BASE_URL },
   }
 
   return (
@@ -69,9 +69,16 @@ export function MapLandingPage({
         faq={faq}
       />
 
-      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Celimap</p>
+      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">CeliMap</p>
       <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">{h1}</h1>
-      <p className="mb-8 text-muted-foreground leading-relaxed">{intro}</p>
+      <p className="mb-4 text-muted-foreground leading-relaxed">{intro}</p>
+      <p className="mb-8 text-sm text-muted-foreground">
+        CeliMap es un mapa colaborativo para encontrar lugares Sin TACC en Argentina.{" "}
+        <Link href="/que-es-celimap" className="text-primary hover:underline">
+          Qué es CeliMap
+        </Link>
+        .
+      </p>
 
       <div className="mb-10 flex flex-col gap-3 sm:flex-row">
         <Button asChild size="lg" className="min-h-[48px] gap-2">
@@ -97,7 +104,7 @@ export function MapLandingPage({
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-4 text-xl font-semibold">Ciudades con más lugares sin tacc</h2>
+        <h2 className="mb-4 text-xl font-semibold">Ciudades para explorar</h2>
         <div className="flex flex-wrap gap-2">
           {CITIES.slice(0, 8).map((city) => (
             <Link
@@ -112,12 +119,12 @@ export function MapLandingPage({
       </section>
 
       <section className="mb-10 rounded-xl border border-border/60 bg-card/40 p-6">
-        <h2 className="mb-4 text-lg font-semibold">¿Por qué usar Celimap?</h2>
+        <h2 className="mb-4 text-lg font-semibold">¿Por qué usar CeliMap?</h2>
         <ul className="space-y-3 text-sm text-muted-foreground">
           {[
-            "Mapa interactivo con filtros por tipo, barrio y nivel de seguridad",
-            "Reseñas reales de la comunidad celíaca",
-            "Lugares en Buenos Aires, La Plata, Tucumán, Córdoba y más",
+            "Mapa interactivo con filtros por tipo, barrio y clasificación sin TACC",
+            "Reseñas y reportes de la comunidad celíaca cuando existen",
+            "Páginas por ciudad en Argentina, además del mapa",
             "Gratis, sin registro para explorar",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
@@ -126,6 +133,13 @@ export function MapLandingPage({
             </li>
           ))}
         </ul>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Más detalle en{" "}
+          <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
+            por qué usar CeliMap
+          </Link>
+          .
+        </p>
       </section>
 
       <section className="border-t border-border pt-8">

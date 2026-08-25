@@ -8,6 +8,13 @@ describe("robots.txt sitemap reference", () => {
     expect(getBaseUrl()).toBe(CANONICAL_ORIGIN)
     const conf = robots()
     expect(conf.sitemap).toBe(`${CANONICAL_ORIGIN}/sitemap.xml`)
+    const rules = Array.isArray(conf.rules) ? conf.rules : [conf.rules]
+    const llmRule = rules.find((rule) =>
+      Array.isArray(rule?.userAgent)
+        ? rule.userAgent.includes("PerplexityBot")
+        : false
+    )
+    expect(llmRule).toBeTruthy()
     if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_URL
     else process.env.NEXT_PUBLIC_BASE_URL = prev
   })

@@ -45,8 +45,8 @@ export const GUIDES: Guide[] = [
       "Explicación práctica de la etiqueta “100% libre de gluten” en CeliMap y qué conviene confirmar en el local.",
     author: "Equipo CeliMap",
     publishedAt: "2026-08-12",
-    updatedAt: "2026-08-12",
-    status: "draft",
+    updatedAt: "2026-08-24",
+    status: "published",
     sources: [
       { label: "Clasificaciones en CeliMap", url: "/como-verificamos-los-lugares" },
     ],
@@ -92,8 +92,8 @@ export const GUIDES: Guide[] = [
       "Cómo distinguir en CeliMap un lugar dedicado de uno que ofrece algunas opciones sin gluten.",
     author: "Equipo CeliMap",
     publishedAt: "2026-08-12",
-    updatedAt: "2026-08-12",
-    status: "draft",
+    updatedAt: "2026-08-24",
+    status: "published",
     sources: [
       { label: "Cómo trabajamos la información", url: "/como-verificamos-los-lugares" },
     ],
@@ -135,8 +135,8 @@ export const GUIDES: Guide[] = [
       "Lista práctica de preguntas para reducir incertidumbre al comer afuera. No es consejo médico.",
     author: "Equipo CeliMap",
     publishedAt: "2026-08-12",
-    updatedAt: "2026-08-12",
-    status: "draft",
+    updatedAt: "2026-08-24",
+    status: "published",
     sources: [],
     sections: [
       {
@@ -175,8 +175,8 @@ export const GUIDES: Guide[] = [
       "Hábitos prácticos para bajar riesgo al comer fuera de casa. Orientación general, no tratamiento médico.",
     author: "Equipo CeliMap",
     publishedAt: "2026-08-12",
-    updatedAt: "2026-08-12",
-    status: "draft",
+    updatedAt: "2026-08-24",
+    status: "published",
     sources: [
       { label: "Metodología de información en CeliMap", url: "/como-verificamos-los-lugares" },
     ],

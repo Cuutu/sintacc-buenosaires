@@ -36,6 +36,7 @@ function entry(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getBaseUrl()
+  const publishedGuides = getPublishedGuides()
 
   const staticPages: MetadataRoute.Sitemap = [
     entry(base, {
@@ -93,6 +94,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.78,
     }),
+    entry(`${base}/comprar-productos-sin-tacc`, {
+      lastModified: staticPageLastModified("/comprar-productos-sin-tacc"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }),
+    entry(`${base}/por-que-usar-celimap`, {
+      lastModified: staticPageLastModified("/por-que-usar-celimap"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }),
+    ...(publishedGuides.length > 0
+      ? [
+          entry(`${base}/guias`, {
+            lastModified: staticPageLastModified("/guias"),
+            changeFrequency: "monthly",
+            priority: 0.72,
+          }),
+        ]
+      : []),
     entry(`${base}/privacidad`, {
       lastModified: staticPageLastModified("/privacidad"),
       changeFrequency: "yearly",
@@ -158,8 +178,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // Listas opcionales
     }
 
-    const publishedGuides = getPublishedGuides()
-    // Hub /guias queda fuera mientras esté noindex / sin publicados
+    // Hub /guias ya está en staticPages si hay published; acá van las fichas.
     guideUrls = publishedGuides.map((g) =>
       entry(`${base}/guias/${g.slug}`, {
         lastModified: new Date(g.updatedAt),

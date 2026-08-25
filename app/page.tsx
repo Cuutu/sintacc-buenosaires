@@ -69,7 +69,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="mb-4 max-w-[640px] text-center text-sm leading-relaxed text-[#55635A] md:mb-6 md:text-lg">
-              Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
+              CeliMap es un mapa colaborativo Sin TACC en Argentina. Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
             <div className="mb-3 w-full min-w-0 md:mb-4">
