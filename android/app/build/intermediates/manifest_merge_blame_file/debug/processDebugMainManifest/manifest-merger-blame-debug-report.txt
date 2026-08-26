@@ -18,196 +18,345 @@
 13-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:60:5-79
 13-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:60:22-76
 14
-15    <permission
-15-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
-16        android:name="com.celimap.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-16-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
-17        android:protectionLevel="signature" />
-17-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
-18
-19    <uses-permission android:name="com.celimap.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-19-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
-19-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
-20
-21    <application
-21-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:4:5-56:19
-22        android:allowBackup="true"
-22-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:5:9-35
-23        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-23-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:28:18-86
-24        android:debuggable="true"
-25        android:extractNativeLibs="false"
-26        android:hardwareAccelerated="true"
-26-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:12:9-43
-27        android:icon="@mipmap/ic_launcher"
-27-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:6:9-43
-28        android:label="@string/app_name"
-28-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:7:9-41
-29        android:largeHeap="true"
-29-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:13:9-33
-30        android:roundIcon="@mipmap/ic_launcher_round"
-30-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:8:9-54
-31        android:supportsRtl="true"
-31-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:9:9-35
-32        android:theme="@style/AppTheme"
-32-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:10:9-40
-33        android:usesCleartextTraffic="false" >
-33-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:11:9-45
-34        <activity
-34-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:15:9-45:20
-35            android:name="com.celimap.app.MainActivity"
-35-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:17:13-41
-36            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-36-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:16:13-148
-37            android:exported="true"
-37-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:21:13-36
-38            android:hardwareAccelerated="true"
-38-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:22:13-47
-39            android:label="@string/title_activity_main"
-39-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:18:13-56
-40            android:launchMode="singleTask"
-40-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:20:13-44
-41            android:theme="@style/AppTheme.NoActionBarLaunch"
-41-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:19:13-62
-42            android:windowSoftInputMode="adjustResize" >
-42-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:23:13-55
-43            <intent-filter>
-43-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:25:13-28:29
-44                <action android:name="android.intent.action.MAIN" />
-44-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:26:17-69
-44-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:26:25-66
-45
-46                <category android:name="android.intent.category.LAUNCHER" />
-46-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:27:17-77
-46-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:27:27-74
-47            </intent-filter>
-48            <intent-filter>
-48-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:30:13-35:29
-49                <action android:name="android.intent.action.VIEW" />
-49-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:17-69
-49-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:25-66
-50
-51                <category android:name="android.intent.category.DEFAULT" />
-51-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:17-76
-51-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:27-73
-52                <category android:name="android.intent.category.BROWSABLE" />
-52-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:17-78
-52-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:27-75
-53
-54                <data android:scheme="celimap" />
-54-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
-54-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
-55            </intent-filter>
-56            <intent-filter android:autoVerify="true" >
-56-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:37:13-43:29
-56-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:37:28-53
-57                <action android:name="android.intent.action.VIEW" />
-57-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:17-69
-57-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:25-66
-58
-59                <category android:name="android.intent.category.DEFAULT" />
-59-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:17-76
-59-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:27-73
-60                <category android:name="android.intent.category.BROWSABLE" />
-60-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:17-78
-60-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:27-75
-61
-62                <data
-62-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
-63                    android:host="www.celimap.com.ar"
-63-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:41:46-79
-64                    android:scheme="https" />
-64-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
-65                <data
-65-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
-66                    android:host="celimap.com.ar"
-66-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:41:46-79
-67                    android:scheme="https" />
-67-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
-68            </intent-filter>
-69        </activity>
+15    <queries>
+15-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:7:5-11:15
+16        <intent>
+16-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:9-10:18
+17            <action android:name="android.support.customtabs.action.CustomTabsService" />
+17-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:13-90
+17-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:21-87
+18        </intent>
+19        <intent>
+19-->[com.google.androidbrowserhelper:androidbrowserhelper:2.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\dfb6e460def361744c995451d8c56165\transformed\androidbrowserhelper-2.5.0\AndroidManifest.xml:27:9-33:18
+20            <action android:name="android.intent.action.VIEW" />
+20-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:17-69
+20-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:25-66
+21
+22            <category android:name="android.intent.category.BROWSABLE" />
+22-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:17-78
+22-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:27-75
+23
+24            <data android:scheme="https" />
+24-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
+24-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
+25        </intent>
+26    </queries>
+27
+28    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+28-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-74
+28-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:22-71
+29    <uses-permission android:name="android.permission.USE_BIOMETRIC" /> <!-- suppress DeprecatedClassUsageInspection -->
+29-->[androidx.biometric:biometric:1.1.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\17ef906cf8180b1e2bbb18e5c144ebdb\transformed\biometric-1.1.0\AndroidManifest.xml:24:5-72
+29-->[androidx.biometric:biometric:1.1.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\17ef906cf8180b1e2bbb18e5c144ebdb\transformed\biometric-1.1.0\AndroidManifest.xml:24:22-69
+30    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+30-->[androidx.biometric:biometric:1.1.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\17ef906cf8180b1e2bbb18e5c144ebdb\transformed\biometric-1.1.0\AndroidManifest.xml:27:5-74
+30-->[androidx.biometric:biometric:1.1.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\17ef906cf8180b1e2bbb18e5c144ebdb\transformed\biometric-1.1.0\AndroidManifest.xml:27:22-71
+31
+32    <permission
+32-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
+33        android:name="com.celimap.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+33-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
+34        android:protectionLevel="signature" />
+34-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
+35
+36    <uses-permission android:name="com.celimap.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+36-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
+36-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
+37
+38    <application
+38-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:4:5-56:19
+39        android:allowBackup="true"
+39-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:5:9-35
+40        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+40-->[androidx.core:core:1.17.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:28:18-86
+41        android:debuggable="true"
+42        android:extractNativeLibs="false"
+43        android:hardwareAccelerated="true"
+43-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:12:9-43
+44        android:icon="@mipmap/ic_launcher"
+44-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:6:9-43
+45        android:label="@string/app_name"
+45-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:7:9-41
+46        android:largeHeap="true"
+46-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:13:9-33
+47        android:roundIcon="@mipmap/ic_launcher_round"
+47-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:8:9-54
+48        android:supportsRtl="true"
+48-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:9:9-35
+49        android:theme="@style/AppTheme"
+49-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:10:9-40
+50        android:usesCleartextTraffic="false" >
+50-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:11:9-45
+51        <activity
+51-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:15:9-45:20
+52            android:name="com.celimap.app.MainActivity"
+52-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:17:13-41
+53            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+53-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:16:13-148
+54            android:exported="true"
+54-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:21:13-36
+55            android:hardwareAccelerated="true"
+55-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:22:13-47
+56            android:label="@string/title_activity_main"
+56-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:18:13-56
+57            android:launchMode="singleTask"
+57-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:20:13-44
+58            android:theme="@style/AppTheme.NoActionBarLaunch"
+58-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:19:13-62
+59            android:windowSoftInputMode="adjustResize" >
+59-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:23:13-55
+60            <intent-filter>
+60-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:25:13-28:29
+61                <action android:name="android.intent.action.MAIN" />
+61-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:26:17-69
+61-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:26:25-66
+62
+63                <category android:name="android.intent.category.LAUNCHER" />
+63-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:27:17-77
+63-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:27:27-74
+64            </intent-filter>
+65            <intent-filter>
+65-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:30:13-35:29
+66                <action android:name="android.intent.action.VIEW" />
+66-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:17-69
+66-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:25-66
+67
+68                <category android:name="android.intent.category.DEFAULT" />
+68-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:17-76
+68-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:27-73
+69                <category android:name="android.intent.category.BROWSABLE" />
+69-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:17-78
+69-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:27-75
 70
-71        <provider
-72            android:name="androidx.core.content.FileProvider"
-72-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:48:13-62
-73            android:authorities="com.celimap.app.fileprovider"
-73-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:49:13-64
-74            android:exported="false"
-74-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:50:13-37
-75            android:grantUriPermissions="true" >
-75-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:51:13-47
-76            <meta-data
-76-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:52:13-54:54
-77                android:name="android.support.FILE_PROVIDER_PATHS"
-77-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:53:17-67
-78                android:resource="@xml/file_paths" />
-78-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:54:17-51
-79        </provider>
-80        <provider
-80-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
-81            android:name="androidx.startup.InitializationProvider"
-81-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
-82            android:authorities="com.celimap.app.androidx-startup"
-82-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
-83            android:exported="false" >
-83-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
-84            <meta-data
-84-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
-85                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-85-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
-86                android:value="androidx.startup" />
-86-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
-87            <meta-data
-87-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
-88                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-88-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
-89                android:value="androidx.startup" />
-89-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
-90            <meta-data
-90-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
-91                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-91-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
-92                android:value="androidx.startup" />
-92-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
-93        </provider>
-94
-95        <receiver
-95-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
-96            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-96-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
-97            android:directBootAware="false"
-97-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
-98            android:enabled="true"
-98-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
-99            android:exported="true"
-99-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
-100            android:permission="android.permission.DUMP" >
-100-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
-101            <intent-filter>
-101-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
-102                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-102-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
-102-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
-103            </intent-filter>
-104            <intent-filter>
-104-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
-105                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-105-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
-105-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
-106            </intent-filter>
-107            <intent-filter>
-107-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
-108                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-108-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
-108-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
-109            </intent-filter>
-110            <intent-filter>
-110-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
-111                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-111-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
-111-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\ddb775011ef36ea48137a4626897d143\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
-112            </intent-filter>
-113        </receiver>
-114    </application>
-115
-116</manifest>
+71                <data android:scheme="celimap" />
+71-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
+71-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
+72            </intent-filter>
+73            <intent-filter android:autoVerify="true" >
+73-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:37:13-43:29
+73-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:37:28-53
+74                <action android:name="android.intent.action.VIEW" />
+74-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:17-69
+74-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:31:25-66
+75
+76                <category android:name="android.intent.category.DEFAULT" />
+76-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:17-76
+76-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:32:27-73
+77                <category android:name="android.intent.category.BROWSABLE" />
+77-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:17-78
+77-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:33:27-75
+78
+79                <data
+79-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
+80                    android:host="www.celimap.com.ar"
+80-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:41:46-79
+81                    android:scheme="https" />
+81-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
+82                <data
+82-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:17-50
+83                    android:host="celimap.com.ar"
+83-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:41:46-79
+84                    android:scheme="https" />
+84-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:34:23-47
+85            </intent-filter>
+86        </activity>
+87
+88        <provider
+89            android:name="androidx.core.content.FileProvider"
+89-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:48:13-62
+90            android:authorities="com.celimap.app.fileprovider"
+90-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:49:13-64
+91            android:exported="false"
+91-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:50:13-37
+92            android:grantUriPermissions="true" >
+92-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:51:13-47
+93            <meta-data
+93-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:52:13-54:54
+94                android:name="android.support.FILE_PROVIDER_PATHS"
+94-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:53:17-67
+95                android:resource="@xml/file_paths" />
+95-->C:\Users\Franco\Desktop\sintacc-bsas\android\app\src\main\AndroidManifest.xml:54:17-51
+96        </provider>
+97
+98        <activity
+98-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:14:9-18:75
+99            android:name="com.capacitorjs.plugins.browser.BrowserControllerActivity"
+99-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:15:13-85
+100            android:exported="false"
+100-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-37
+101            android:launchMode="singleTask"
+101-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:17:13-44
+102            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+102-->[:capacitor-browser] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capacitor\browser\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-72
+103        <activity
+103-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:9-21:84
+104            android:name="ee.forgr.capacitor.social.login.TwitterLoginActivity"
+104-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:19:13-80
+105            android:exported="false"
+105-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:20:13-37
+106            android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+106-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:21:13-81
+107        <activity
+107-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:22:9-25:84
+108            android:name="ee.forgr.capacitor.social.login.OAuth2LoginActivity"
+108-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:23:13-79
+109            android:exported="false"
+109-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:24:13-37
+110            android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+110-->[:capgo-capacitor-social-login] C:\Users\Franco\Desktop\sintacc-bsas\node_modules\@capgo\capacitor-social-login\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:25:13-81
+111
+112        <service
+112-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:24:9-32:19
+113            android:name="androidx.credentials.playservices.CredentialProviderMetadataHolder"
+113-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:25:13-94
+114            android:enabled="true"
+114-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:26:13-35
+115            android:exported="false" >
+115-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:27:13-37
+116            <meta-data
+116-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:29:13-31:104
+117                android:name="androidx.credentials.CREDENTIAL_PROVIDER_KEY"
+117-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:30:17-76
+118                android:value="androidx.credentials.playservices.CredentialProviderPlayServicesImpl" />
+118-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:31:17-101
+119        </service>
+120
+121        <activity
+121-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:34:9-41:20
+122            android:name="androidx.credentials.playservices.HiddenActivity"
+122-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:35:13-76
+123            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+123-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:36:13-87
+124            android:enabled="true"
+124-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:37:13-35
+125            android:exported="false"
+125-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:38:13-37
+126            android:fitsSystemWindows="true"
+126-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:39:13-45
+127            android:theme="@style/Theme.Hidden" >
+127-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:40:13-48
+128        </activity>
+129        <activity
+129-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:42:9-49:20
+130            android:name="androidx.credentials.playservices.IdentityCredentialApiHiddenActivity"
+130-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:43:13-97
+131            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+131-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:44:13-87
+132            android:enabled="true"
+132-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:45:13-35
+133            android:exported="false"
+133-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:46:13-37
+134            android:fitsSystemWindows="true"
+134-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:47:13-45
+135            android:theme="@style/Theme.Hidden" >
+135-->[androidx.credentials:credentials-play-services-auth:1.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\05cdb77dd29d96d2e3a7842cb35c76ce\transformed\credentials-play-services-auth-1.5.0\AndroidManifest.xml:48:13-48
+136        </activity>
+137        <activity
+137-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:23:9-27:75
+138            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+138-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:24:13-93
+139            android:excludeFromRecents="true"
+139-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:25:13-46
+140            android:exported="false"
+140-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:26:13-37
+141            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+141-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:27:13-72
+142        <!--
+143            Service handling Google Sign-In user revocation. For apps that do not integrate with
+144            Google Sign-In, this service will never be started.
+145        -->
+146        <service
+146-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:33:9-37:51
+147            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+147-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:34:13-89
+148            android:exported="true"
+148-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:35:13-36
+149            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+149-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:36:13-107
+150            android:visibleToInstantApps="true" />
+150-->[com.google.android.gms:play-services-auth:21.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\30bc27f63c66c18647c93dfd809d7c34\transformed\play-services-auth-21.4.0\AndroidManifest.xml:37:13-48
+151
+152        <activity
+152-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\c1b0052ae712299163f2612d6db27779\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:9-173
+153            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+153-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\c1b0052ae712299163f2612d6db27779\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:19-85
+154            android:exported="false"
+154-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\c1b0052ae712299163f2612d6db27779\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:146-170
+155            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+155-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\c1b0052ae712299163f2612d6db27779\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:86-145
+156
+157        <meta-data
+157-->[com.google.android.gms:play-services-basement:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\d49ac3d260f86fb89f00e238ad30715b\transformed\play-services-basement-18.5.0\AndroidManifest.xml:21:9-23:69
+158            android:name="com.google.android.gms.version"
+158-->[com.google.android.gms:play-services-basement:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\d49ac3d260f86fb89f00e238ad30715b\transformed\play-services-basement-18.5.0\AndroidManifest.xml:22:13-58
+159            android:value="@integer/google_play_services_version" />
+159-->[com.google.android.gms:play-services-basement:18.5.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\d49ac3d260f86fb89f00e238ad30715b\transformed\play-services-basement-18.5.0\AndroidManifest.xml:23:13-66
+160
+161        <provider
+161-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+162            android:name="androidx.startup.InitializationProvider"
+162-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+163            android:authorities="com.celimap.app.androidx-startup"
+163-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+164            android:exported="false" >
+164-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+165            <meta-data
+165-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+166                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+166-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+167                android:value="androidx.startup" />
+167-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+168            <meta-data
+168-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+169                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+169-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+170                android:value="androidx.startup" />
+170-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+171            <meta-data
+171-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+172                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+172-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+173                android:value="androidx.startup" />
+173-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+174        </provider>
+175
+176        <receiver
+176-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+177            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+177-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+178            android:directBootAware="false"
+178-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+179            android:enabled="true"
+179-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+180            android:exported="true"
+180-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+181            android:permission="android.permission.DUMP" >
+181-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+182            <intent-filter>
+182-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+183                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+183-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+183-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+184            </intent-filter>
+185            <intent-filter>
+185-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+186                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+186-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+186-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+187            </intent-filter>
+188            <intent-filter>
+188-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+189                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+189-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+189-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+190            </intent-filter>
+191            <intent-filter>
+191-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+192                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+192-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+192-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Franco\AppData\Local\Temp\cursor-sandbox-cache\cd86caba7cb684d9ccd234292a55a0d3\gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
+193            </intent-filter>
+194        </receiver>
+195    </application>
+196
+197</manifest>

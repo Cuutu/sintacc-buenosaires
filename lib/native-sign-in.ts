@@ -124,6 +124,8 @@ async function ensureNativeSocialLoginReady(): Promise<void> {
       const { SocialLogin } = await import("@capgo/capacitor-social-login")
       const webClientId = getNativeGoogleWebClientId()
       const iOSClientId = getNativeGoogleIosClientId()
+      // Android: webClientId is the *Web* OAuth client. Do NOT pass an Android
+      // client ID here. Package com.celimap.app + SHA-1 live only in Google Cloud.
       await SocialLogin.initialize({
         google: {
           webClientId,

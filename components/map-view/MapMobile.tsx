@@ -11,6 +11,11 @@ import { MobileMapBottomSheet, MOBILE_SHEET_COMPACT_PX } from "./MobileMapBottom
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { toast } from "sonner"
+import {
+  locationPermissionBlockedRetryCopy,
+  locationPermissionDeniedCopy,
+} from "@/lib/native-location-copy"
+import { registerAndroidMapBackHandlers } from "@/lib/native-android-back"
 import mapboxgl from "mapbox-gl"
 import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
@@ -128,10 +133,9 @@ export function MapMobile({
         setLocating(false)
 
         if (error.code === error.PERMISSION_DENIED) {
-          toast.error(
-            "No se pudo acceder a tu ubicación. Activá el permiso de ubicación para este sitio en la configuración del navegador.",
-            { action: { label: "Reintentar", onClick: goToNearMe } }
-          )
+          toast.error(locationPermissionDeniedCopy(), {
+            action: { label: "Reintentar", onClick: goToNearMe },
+          })
           return
         }
 
@@ -161,10 +165,9 @@ export function MapMobile({
       triggerMapboxGeolocate()
     }
     if (error.code === 1) {
-      toast.error(
-        "No se pudo acceder a tu ubicación. Si la bloqueaste antes, activala en la configuración del navegador.",
-        { action: { label: "Reintentar", onClick: retry } }
-      )
+      toast.error(locationPermissionBlockedRetryCopy(), {
+        action: { label: "Reintentar", onClick: retry },
+      })
     } else {
       toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", {
         action: { label: "Reintentar", onClick: retry },
@@ -190,6 +193,16 @@ export function MapMobile({
     },
     [onSheetCollapse]
   )
+
+  React.useEffect(() => {
+    registerAndroidMapBackHandlers({
+      moreFiltersOpen: moreOpen,
+      placeSheetOpen: Boolean(selectedPlace),
+      closeMoreFilters: () => setMoreOpen(false),
+      closePlaceSheet: () => onPlaceDeselect?.(),
+    })
+    return () => registerAndroidMapBackHandlers(null)
+  }, [moreOpen, selectedPlace, onPlaceDeselect])
 
   React.useEffect(() => {
     if (!placeIdToFocus || !mapRef.current) {

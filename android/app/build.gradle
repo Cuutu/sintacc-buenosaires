@@ -27,7 +27,7 @@ android {
             if (keystorePropertiesFile.exists()) {
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
-                storeFile file(keystoreProperties['storeFile'])
+                storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
             }
         }
@@ -38,6 +38,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
+            } else {
+                logger.warn("RELEASE UNSIGNED: android/key.properties missing. " +
+                    "Local: npm run android:keystore. Codemagic: group android_credentials.")
             }
         }
     }

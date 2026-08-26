@@ -68,8 +68,10 @@ Checklist QA Android:
 - [ ] Abre www.celimap.com.ar dentro del WebView
 - [ ] Login Google vuelve a la app
 - [ ] Mapa + geolocalización
-- [ ] Deep link `celimap://` (opcional)
-- [ ] Sin crash offline (fallback www/)
+- [ ] Deep link `celimap://` (OAuth handoff)
+- [ ] Offline: pagina local (`server.errorPath` → `www/index.html`)
+
+Internal testing (firma + OAuth + SHA): [ANDROID-INTERNAL-TESTING.md](./ANDROID-INTERNAL-TESTING.md)
 
 ---
 

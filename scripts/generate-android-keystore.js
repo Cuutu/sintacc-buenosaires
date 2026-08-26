@@ -102,3 +102,9 @@ console.log("OK key.properties:", keyPropsPath)
 console.log(
   "BACKUP offline de secrets/ y key.properties. Sin esto no podes actualizar la app en Play."
 )
+console.log(
+  "SHA-1/SHA-256 (Google Cloud Android OAuth + assetlinks). No commitear:"
+)
+console.log(
+  "  keytool -list -v -keystore secrets/celimap-release.keystore -alias celimap"
+)

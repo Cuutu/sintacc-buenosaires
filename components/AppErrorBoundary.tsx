@@ -97,7 +97,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
     if (this.props.variant === "chrome") {
       return (
         <div
-          className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs text-olive shadow-lg"
+          className="fixed bottom-[var(--bottom-nav-clearance)] left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs text-olive shadow-lg"
           data-error-boundary="chrome"
           data-testid="bottom-nav-error-boundary"
           role="alert"

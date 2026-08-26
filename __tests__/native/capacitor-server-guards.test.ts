@@ -15,6 +15,7 @@ describe("capacitor server URL guards", () => {
     const mod = await import("../../capacitor.config")
     expect(mod.default.server?.url).toBe("https://www.celimap.com.ar")
     expect(mod.default.server?.cleartext).toBe(false)
+    expect(mod.default.server?.errorPath).toBe("index.html")
   })
 
   it("URL sin MODE=preview lanza", async () => {
@@ -28,6 +29,7 @@ describe("capacitor server URL guards", () => {
     process.env.CAPACITOR_SERVER_URL = "https://preview.example.com"
     const mod = await import("../../capacitor.config")
     expect(mod.default.server?.url).toBe("https://preview.example.com")
+    expect(mod.default.server?.errorPath).toBe("index.html")
   })
 
   it("preview no puede ser URL de producción", async () => {

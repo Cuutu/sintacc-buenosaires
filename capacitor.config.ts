@@ -69,6 +69,8 @@ const config: CapacitorConfig = {
   server: {
     url: server.url,
     cleartext: server.cleartext,
+    // Local www/index.html when remote server.url fails (offline / DNS).
+    errorPath: "index.html",
   },
   android: {
     appendUserAgent: server.isPreview ? " CelimapNative/1 CelimapPreview/1" : " CelimapNative/1",

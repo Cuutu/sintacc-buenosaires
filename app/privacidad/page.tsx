@@ -4,7 +4,7 @@ import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
-const UPDATED_AT = "11 de agosto de 2026"
+const UPDATED_AT = "25 de agosto de 2026"
 const CONTACT_MAIL = "hola@celimap.com.ar"
 
 export const metadata: Metadata = {
@@ -175,9 +175,12 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
     title: "6. App móvil y permisos",
     body: (
       <p>
-        La app es un contenedor nativo (Capacitor) del sitio. Pedimos ubicación
-        o cámara solo cuando usás esa función. Podés revocar permisos en
-        Ajustes del sistema.
+        La app es un contenedor nativo (Capacitor) del sitio. En Android
+        pedimos ubicación solo cuando usás “cerca mío” o el botón de ubicación
+        (permisos del sistema: ubicación aproximada/precisa). No pedimos cámara
+        ni notificaciones push en Android: las fotos se eligen con el selector
+        de archivos del sistema. En iOS, si tomás una foto desde ese selector,
+        el sistema puede pedir cámara. Podés revocar permisos en Ajustes.
       </p>
     ),
   },
@@ -203,8 +206,9 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
         <p className="font-medium text-foreground">Perfil → Eliminar cuenta</p>
         <p>
           Se eliminan perfil, favoritos, listas, reseñas, reportes, sugerencias
-          asociadas, mensajes de contacto, tokens de notificación y fotos
-          asociadas cuando podemos identificarlas. La acción es permanente y
+          asociadas, mensajes de contacto y fotos asociadas cuando podemos
+          identificarlas. La app Android actual no registra tokens de
+          notificación push. La acción es permanente y
           cierra tu sesión. Si la revocación automática con Apple no se
           completa, te indicamos el paso manual en Ajustes.
         </p>

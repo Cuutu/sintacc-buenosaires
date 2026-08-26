@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { Capacitor } from "@capacitor/core"
-import { getCapacitorPlatform, isNativeApp, isNativeIosApp } from "@/lib/native-app"
+import { getCapacitorPlatform, isNativeApp, isNativeAndroidApp, isNativeIosApp } from "@/lib/native-app"
 
 jest.mock("@capacitor/core", () => ({
   Capacitor: {
@@ -112,6 +112,7 @@ describe("native iOS / iPadOS detection", () => {
     )
     expect(isNativeApp()).toBe(true)
     expect(isNativeIosApp()).toBe(false)
+    expect(isNativeAndroidApp()).toBe(true)
   })
 
   it("Macintosh web sin CelimapNative no es iOS", () => {

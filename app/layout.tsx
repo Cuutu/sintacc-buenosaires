@@ -13,6 +13,7 @@ import { NativeLayoutDebug } from "@/components/native/NativeLayoutDebug";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { ClientErrorListeners } from "@/components/ClientErrorListeners";
+import { AnalyticsSessionInit } from "@/components/analytics/AnalyticsSessionInit";
 import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
 import { getBaseUrl } from "@/lib/base-url";
@@ -116,13 +117,19 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-cream text-olive">
         <JsonLdScript />
         <Providers>
+          <AnalyticsSessionInit />
           <ClientErrorListeners />
           <PwaRegister />
           <PreviewBadge />
           <MobileShell>
             <LayoutChrome>{children}</LayoutChrome>
           </MobileShell>
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster
+            position="top-center"
+            richColors
+            closeButton
+            offset="calc(var(--safe-area-top) + 0.75rem)"
+          />
           <NativeAppBridge />
           <NativeStatusBar />
           <NativeLayoutDebug />

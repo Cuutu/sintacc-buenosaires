@@ -83,4 +83,13 @@ describe("Lote 2 safe-area policy contracts", () => {
     expect(src).toContain("-mb-[var(--bottom-nav-clearance)]")
     expect(src).toContain("100dvh")
   })
+
+  it("Toaster y dialogs usan safe-area; chrome error no usa bottom-24", () => {
+    expect(read("app/layout.tsx")).toContain("calc(var(--safe-area-top) + 0.75rem)")
+    expect(read("components/ui/dialog.tsx")).toContain("var(--safe-area-top)")
+    expect(read("components/AppErrorBoundary.tsx")).toContain(
+      "bottom-[var(--bottom-nav-clearance)]"
+    )
+    expect(read("components/AppErrorBoundary.tsx")).not.toMatch(/bottom-24/)
+  })
 })

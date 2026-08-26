@@ -48,6 +48,7 @@ import {
   setPlacesSourceData,
   setSelectedPlaceOnMap,
 } from "./map-webgl-layers"
+import { isNativeApp } from "@/lib/native-app"
 
 export { TYPE_MARKERS } from "./map-popup-html"
 export type { MapViewportBounds }
@@ -569,6 +570,46 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
       // Solo montar/desmontar: evita reinits por cambios de props y limpia en unmount
       // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // WebView Android: canvas queda mal dimensionado tras background / IME / Settings.
+    useEffect(() => {
+      const resize = () => {
+        const instance = map.current
+        if (!instance || disposedRef.current) return
+        try {
+          instance.resize()
+        } catch {
+          /* ignore */
+        }
+      }
+
+      const onVisibility = () => {
+        if (document.visibilityState === "visible") resize()
+      }
+      document.addEventListener("visibilitychange", onVisibility)
+      window.addEventListener("resize", resize)
+
+      let removeAppListener: (() => void) | undefined
+      let cancelled = false
+      if (isNativeApp()) {
+        void import("@capacitor/app").then(({ App }) => {
+          if (cancelled) return
+          const handle = App.addListener("appStateChange", ({ isActive }) => {
+            if (isActive) resize()
+          })
+          removeAppListener = () => {
+            void handle.then((listener) => listener.remove())
+          }
+        })
+      }
+
+      return () => {
+        cancelled = true
+        document.removeEventListener("visibilitychange", onVisibility)
+        window.removeEventListener("resize", resize)
+        removeAppListener?.()
+      }
     }, [])
 
     // GeolocateControl: punto azul de ubicación del usuario (solo en mobile, se activa con FAB)

@@ -6,6 +6,9 @@ import { sanitizeAnalyticsProps } from "@/lib/analytics-sanitize"
  * Ver sanitize en analytics-sanitize.ts — nunca tokens/emails/URLs privadas.
  */
 export type AnalyticsEvent =
+  | "first_open"
+  | "app_open"
+  | "session_start"
   | "place_view"
   | "place_share"
   | "favorite_add"

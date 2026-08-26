@@ -93,3 +93,9 @@ export function isNativeIosApp(): boolean {
   // `"web"` and iPadOS UA looks like Macintosh without touch hints.
   return true
 }
+
+/** Android Capacitor shell (Play / debug APK). */
+export function isNativeAndroidApp(): boolean {
+  if (typeof window === "undefined" || !isNativeApp()) return false
+  return hasAndroidSignals()
+}

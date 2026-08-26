@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/image-upload"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Star } from "lucide-react"
+import { trackEvent } from "@/lib/analytics"
 
 interface ReviewFormProps {
   placeId: string
@@ -62,6 +63,8 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
       if (!res.ok) {
         throw new Error(data.error || "Error al crear reseña")
       }
+
+      trackEvent("review_submit", { placeId })
 
       // Reset form
       setRating(0)

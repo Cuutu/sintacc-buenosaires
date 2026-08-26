@@ -37,6 +37,7 @@ const optionalEnvVars = [
   "APPLE_TEAM_ID",
   "APPLE_KEY_ID",
   "APPLE_PRIVATE_KEY",
+  "ANDROID_APP_SHA256_FINGERPRINTS",
 ]
 
 function checkEnv() {
