@@ -173,7 +173,7 @@ describe("MapMobile location auto preference", () => {
     expect(mockSetLocationAutoEnabled).not.toHaveBeenCalled()
   })
 
-  it("auto permission denied limpia preference", async () => {
+  it("auto permission denied mantiene preference", async () => {
     mockGetLocationAutoEnabled.mockReturnValue(true)
     mockGeolocation((_success, error) => {
       error?.({
@@ -187,7 +187,8 @@ describe("MapMobile location auto preference", () => {
 
     await mountMapMobile()
 
-    expect(mockClearLocationAutoEnabled).toHaveBeenCalled()
+    expect(mockClearLocationAutoEnabled).not.toHaveBeenCalled()
+    expect(mockSetLocationAutoEnabled).not.toHaveBeenCalled()
   })
 
   it("auto timeout mantiene preference", async () => {
@@ -206,6 +207,85 @@ describe("MapMobile location auto preference", () => {
 
     expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalled()
     expect(mockClearLocationAutoEnabled).not.toHaveBeenCalled()
+  })
+
+  it("auto position unavailable mantiene preference", async () => {
+    mockGetLocationAutoEnabled.mockReturnValue(true)
+    mockGeolocation((_success, error) => {
+      error?.({
+        code: 2,
+        message: "unavailable",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } as GeolocationPositionError)
+    })
+
+    await mountMapMobile()
+
+    expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalled()
+    expect(mockClearLocationAutoEnabled).not.toHaveBeenCalled()
+    expect(mockSetLocationAutoEnabled).not.toHaveBeenCalled()
+  })
+
+  it("manual permission denied no activa preference", async () => {
+    mockGetLocationAutoEnabled.mockReturnValue(false)
+    mockGeolocation((_success, error) => {
+      error?.({
+        code: 1,
+        message: "denied",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } as GeolocationPositionError)
+    })
+
+    const { el } = await mountMapMobile()
+    const fab = el.querySelector('[data-testid="near-me-fab"]') as HTMLButtonElement
+
+    await act(async () => {
+      fab.click()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(mockSetLocationAutoEnabled).not.toHaveBeenCalled()
+    expect(mockClearLocationAutoEnabled).not.toHaveBeenCalled()
+  })
+
+  it("auto falla y usuario puede usar FAB manualmente", async () => {
+    mockGetLocationAutoEnabled.mockReturnValue(true)
+    const getCurrentPosition = jest.fn((_success, error) => {
+      error?.({
+        code: 1,
+        message: "denied",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } as GeolocationPositionError)
+    })
+    Object.defineProperty(global.navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition },
+    })
+
+    const { el } = await mountMapMobile()
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1)
+
+    getCurrentPosition.mockImplementation((success: PositionCallback) => {
+      success({
+        coords: { latitude: -34.6, longitude: -58.4 },
+      } as GeolocationPosition)
+    })
+
+    const fab = el.querySelector('[data-testid="near-me-fab"]') as HTMLButtonElement
+    await act(async () => {
+      fab.click()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+    expect(mockShowUserLocation).toHaveBeenCalledWith(-58.4, -34.6)
+    expect(mockSetLocationAutoEnabled).toHaveBeenCalledWith(true)
   })
 
   it("manual success guarda preference true", async () => {

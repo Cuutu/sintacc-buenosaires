@@ -17,7 +17,6 @@ import {
 } from "@/lib/native-location-copy"
 import { registerAndroidMapBackHandlers } from "@/lib/native-android-back"
 import {
-  clearLocationAutoEnabled,
   getLocationAutoEnabled,
   setLocationAutoEnabled,
 } from "@/lib/location-preference"
@@ -157,7 +156,6 @@ export function MapMobile({
 
         if (error.code === error.PERMISSION_DENIED) {
           if (silent) {
-            clearLocationAutoEnabled()
             return
           }
           toast.error(locationPermissionDeniedCopy(), {
