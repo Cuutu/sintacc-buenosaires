@@ -16,6 +16,11 @@ import {
   locationPermissionDeniedCopy,
 } from "@/lib/native-location-copy"
 import { registerAndroidMapBackHandlers } from "@/lib/native-android-back"
+import {
+  clearLocationAutoEnabled,
+  getLocationAutoEnabled,
+  setLocationAutoEnabled,
+} from "@/lib/location-preference"
 import mapboxgl from "mapbox-gl"
 import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
@@ -74,6 +79,8 @@ export function MapMobile({
   const lastFocusedPlaceIdRef = React.useRef<string | null>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [locating, setLocating] = React.useState(false)
+  const locatingRef = React.useRef(false)
+  const autoLocationAttemptedRef = React.useRef(false)
   const [mapKey, setMapKey] = React.useState(0)
   const [moreOpen, setMoreOpen] = React.useState(false)
   const [sheetHeight, setSheetHeight] = React.useState(MOBILE_SHEET_COMPACT_PX)
@@ -105,49 +112,73 @@ export function MapMobile({
     setTimeout(() => toast.dismiss("location"), 5000)
   }
 
-  const goToNearMe = () => {
-    if (locating) return
+  const goToNearMe = React.useCallback((options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false
+    if (locatingRef.current) return
 
     if (!window.isSecureContext) {
-      toast.error("La ubicación solo funciona en sitios seguros (HTTPS).")
+      if (!silent) {
+        toast.error("La ubicación solo funciona en sitios seguros (HTTPS).")
+      }
       return
     }
 
     if (!navigator.geolocation) {
-      toast.error("Tu navegador no soporta geolocalización")
+      if (!silent) {
+        toast.error("Tu navegador no soporta geolocalización")
+      }
       return
     }
 
+    locatingRef.current = true
     setLocating(true)
-    toast.loading("Obteniendo tu ubicación...", { id: "location" })
+    if (!silent) {
+      toast.loading("Obteniendo tu ubicación...", { id: "location" })
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
         mapRef.current?.showUserLocation(longitude, latitude)
         mapRef.current?.flyTo(longitude, latitude, 16)
-        toast.success("Ubicación encontrada", { id: "location" })
+        if (!silent) {
+          toast.success("Ubicación encontrada", { id: "location" })
+          setLocationAutoEnabled(true)
+        }
+        locatingRef.current = false
         setLocating(false)
       },
       (error) => {
-        toast.dismiss("location")
+        if (!silent) {
+          toast.dismiss("location")
+        }
+        locatingRef.current = false
         setLocating(false)
 
         if (error.code === error.PERMISSION_DENIED) {
+          if (silent) {
+            clearLocationAutoEnabled()
+            return
+          }
           toast.error(locationPermissionDeniedCopy(), {
-            action: { label: "Reintentar", onClick: goToNearMe },
+            action: { label: "Reintentar", onClick: () => goToNearMe() },
           })
+          return
+        }
+
+        if (silent) {
           return
         }
 
         if (error.code === error.TIMEOUT) {
           toast.error("La ubicación tardó demasiado. Revisá el GPS/señal e intentá de nuevo.", {
-            action: { label: "Reintentar", onClick: goToNearMe },
+            action: { label: "Reintentar", onClick: () => goToNearMe() },
           })
           return
         }
 
         toast.error("No se pudo obtener tu ubicación. Revisá que el GPS esté activado.", {
-          action: { label: "Reintentar", onClick: goToNearMe },
+          action: { label: "Reintentar", onClick: () => goToNearMe() },
         })
       },
       {
@@ -156,7 +187,14 @@ export function MapMobile({
         maximumAge: 30000,
       }
     )
-  }
+  }, [])
+
+  React.useEffect(() => {
+    if (autoLocationAttemptedRef.current) return
+    autoLocationAttemptedRef.current = true
+    if (!getLocationAutoEnabled()) return
+    goToNearMe({ silent: true })
+  }, [goToNearMe])
 
   const handleGeolocateError = React.useCallback((error: GeolocationPositionError) => {
     toast.dismiss("location")
@@ -270,7 +308,7 @@ export function MapMobile({
 
       {!listOpen && (
         <FabButtons
-          onNearMe={goToNearMe}
+          onNearMe={() => goToNearMe()}
           locating={locating}
           bottomOffset={
             selectedPlace
