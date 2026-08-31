@@ -3,6 +3,8 @@ import os
 import StoreKit
 import UIKit
 
+/// StoreKit review APIs and `UIApplication.shared` are `@MainActor` (Xcode 26 SDK).
+@MainActor
 final class ReviewManager {
     static let shared = ReviewManager()
 
@@ -59,14 +61,14 @@ final class ReviewManager {
             line("gate failed trigger=\(trigger) \(failed)")
             return ConsiderResult(requested: false, reason: failed)
         }
-        guard let scene = Self.foregroundActiveWindowScene() else {
+        guard Self.foregroundActiveWindowScene() != nil else {
             line("skip API: no foregroundActive UIWindowScene trigger=\(trigger)")
             return ConsiderResult(requested: false, reason: "no_foreground_scene")
         }
         line("all gates passed trigger=\(trigger) calling requestReview")
         defaults.set(now.timeIntervalSince1970, forKey: Key.lastRequestAt)
         defaults.set(currentVersion, forKey: Key.lastRequestVersion)
-        requestReview(in: scene)
+        presentReviewPrompt()
         return ConsiderResult(requested: true, reason: "requested")
     }
 
@@ -102,12 +104,12 @@ final class ReviewManager {
     }
 
     func debugForce() {
-        guard let scene = Self.foregroundActiveWindowScene() else {
+        guard Self.foregroundActiveWindowScene() != nil else {
             line("debugForce skip: no foregroundActive UIWindowScene")
             return
         }
         line("debugForce calling requestReview (gates skipped)")
-        requestReview(in: scene)
+        presentReviewPrompt()
     }
     #endif
 
@@ -151,7 +153,11 @@ final class ReviewManager {
             .first { $0.activationState == .foregroundActive }
     }
 
-    private func requestReview(in scene: UIWindowScene) {
+    private func presentReviewPrompt() {
+        guard let scene = Self.foregroundActiveWindowScene() else {
+            line("skip API: no foregroundActive UIWindowScene at request time")
+            return
+        }
         if #available(iOS 18.0, *) {
             AppStore.requestReview(in: scene)
         } else {

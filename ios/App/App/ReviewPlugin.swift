@@ -6,42 +6,50 @@ public class ReviewPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "ReviewPlugin"
     public let jsName = "Review"
 
-    public let pluginMethods: [CAPPluginMethod] = {
-        var methods = [
-            CAPPluginMethod(name: "consider", returnType: CAPPluginReturnPromise),
-        ]
+    /// Xcode 26 imports `init(name:returnType:)` as failable (`CAPPluginMethod?`).
+    /// Build the list with `compactMap` so `pluginMethods` is `[CAPPluginMethod]`.
+    public let pluginMethods: [CAPPluginMethod] = ReviewPlugin.buildPluginMethods()
+
+    private static func buildPluginMethods() -> [CAPPluginMethod] {
+        var names = ["consider"]
         #if DEBUG
-        methods.append(contentsOf: [
-            CAPPluginMethod(name: "debugStatus", returnType: CAPPluginReturnPromise),
-            CAPPluginMethod(name: "debugReset", returnType: CAPPluginReturnPromise),
-            CAPPluginMethod(name: "debugForce", returnType: CAPPluginReturnPromise),
-        ])
+        names.append(contentsOf: ["debugStatus", "debugReset", "debugForce"])
         #endif
-        return methods
-    }()
+        return names.compactMap { name in
+            CAPPluginMethod(name: name, returnType: CAPPluginReturnPromise)
+        }
+    }
 
     @objc func consider(_ call: CAPPluginCall) {
         let trigger = call.getString("trigger") ?? "unknown"
-        let result = ReviewManager.shared.consider(trigger: trigger)
-        call.resolve([
-            "requested": result.requested,
-            "reason": result.reason,
-        ])
+        Task { @MainActor in
+            let result = ReviewManager.shared.consider(trigger: trigger)
+            call.resolve([
+                "requested": result.requested,
+                "reason": result.reason,
+            ])
+        }
     }
 
     #if DEBUG
     @objc func debugStatus(_ call: CAPPluginCall) {
-        call.resolve(ReviewManager.shared.snapshot())
+        Task { @MainActor in
+            call.resolve(ReviewManager.shared.snapshot())
+        }
     }
 
     @objc func debugReset(_ call: CAPPluginCall) {
-        ReviewManager.shared.debugReset()
-        call.resolve()
+        Task { @MainActor in
+            ReviewManager.shared.debugReset()
+            call.resolve()
+        }
     }
 
     @objc func debugForce(_ call: CAPPluginCall) {
-        ReviewManager.shared.debugForce()
-        call.resolve()
+        Task { @MainActor in
+            ReviewManager.shared.debugForce()
+            call.resolve()
+        }
     }
     #endif
 }
