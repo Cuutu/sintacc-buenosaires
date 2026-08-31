@@ -71,6 +71,8 @@ const nextConfig = {
       { source: "/mapa-celiacos", destination: "/mapa-para-celiacos", permanent: true },
       { source: "/mapa-celiacos/", destination: "/mapa-para-celiacos", permanent: true },
       { source: "/sin-gluten", destination: "/sin-gluten-argentina", permanent: true },
+      // Huérfana SSG: canonical ya era /sin-gluten/:ciudad/:cat. Pretty /{cat}-sin-gluten/{ciudad} ya 301 en middleware.
+      { source: "/categoria/:category/:ciudadSlug", destination: "/sin-gluten/:ciudadSlug/:category", permanent: true },
     ];
   },
   images: {

@@ -130,6 +130,23 @@ describe("top-sin-gluten redirects", () => {
     expect(topBlock).toMatch(/NextResponse\.redirect\(url,\s*301\)/)
     expect(topBlock).not.toContain("NextResponse.rewrite")
   })
+
+  it("308 /categoria/:cat/:ciudad → /sin-gluten/:ciudad/:cat; rewrite país intacto", () => {
+    const { readFileSync } = require("fs")
+    const { join } = require("path")
+    const nextCfg = readFileSync(join(__dirname, "../../../next.config.js"), "utf8")
+    const catCity = nextCfg.slice(
+      nextCfg.indexOf('source: "/categoria/:category/:ciudadSlug"'),
+      nextCfg.indexOf('source: "/categoria/:category/:ciudadSlug"') + 280
+    )
+    expect(catCity).toContain('destination: "/sin-gluten/:ciudadSlug/:category"')
+    expect(catCity).toContain("permanent: true")
+    const mw = readFileSync(join(__dirname, "../../../middleware.ts"), "utf8")
+    expect(mw).toContain("url.pathname = `/categoria/${category}`")
+    expect(mw).toContain("NextResponse.rewrite(url)")
+    expect(mw).toContain("CATEGORY_PATTERN")
+    expect(mw).not.toMatch(/\/categoria\/\$\{category\}\/\$\{/)
+  })
 })
 
 describe("sitemap www + no tops + lastmod no Date.now", () => {

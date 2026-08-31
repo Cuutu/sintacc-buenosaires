@@ -30,6 +30,7 @@ describe("lib/seo/sitemap-pages", () => {
     expect(new Set(urls).size).toBe(urls.length)
     // /sin-gluten/cordoba aparece una sola vez (página de ciudad)
     expect(urls.filter((u) => u === `${BASE}/sin-gluten/cordoba`)).toHaveLength(1)
+    expect(urls.some((u) => u.includes("/categoria/"))).toBe(false)
   })
 
   it("excluye páginas provinciales no indexables (menos de 5 lugares o 1 localidad)", () => {
