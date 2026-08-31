@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { getProvinceBySlug, type ProvinceConfig } from "./provinces"
 import {
   getPlacesByProvinceSlug,
@@ -43,7 +44,7 @@ export type ProvinceCategoryPageData = {
   lastUpdated: Date | null
 }
 
-export async function getProvincePageData(provinceSlug: string): Promise<ProvincePageData> {
+async function loadProvincePageData(provinceSlug: string): Promise<ProvincePageData> {
   const province = getProvinceBySlug(provinceSlug)
   if (!province) {
     return {
@@ -100,7 +101,10 @@ export async function getProvincePageData(provinceSlug: string): Promise<Provinc
   }
 }
 
-export async function getProvinceCategoryPageData(
+/** Deduplica generateMetadata + page en el mismo request. */
+export const getProvincePageData = cache(loadProvincePageData)
+
+async function loadProvinceCategoryPageData(
   provinceSlug: string,
   categorySlug: string
 ): Promise<ProvinceCategoryPageData> {
@@ -131,3 +135,5 @@ export async function getProvinceCategoryPageData(
     lastUpdated,
   }
 }
+
+export const getProvinceCategoryPageData = cache(loadProvinceCategoryPageData)

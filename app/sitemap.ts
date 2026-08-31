@@ -196,8 +196,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     )
 
-    for (const cat of VENTURE_CATEGORY_LANDINGS) {
-      const count = await countApprovedVentures({ category: cat.categoryId })
+    const [categoryCounts, zoneCounts] = await Promise.all([
+      Promise.all(
+        VENTURE_CATEGORY_LANDINGS.map(async (cat) => ({
+          cat,
+          count: await countApprovedVentures({ category: cat.categoryId }),
+        }))
+      ),
+      Promise.all(
+        VENTURE_ZONE_LANDINGS.map(async (zone) => ({
+          zone,
+          count: await countApprovedVentures({ zoneConfig: zone }),
+        }))
+      ),
+    ])
+
+    for (const { cat, count } of categoryCounts) {
       if (count > 0) {
         ventureUrls.push(
           entry(`${base}/emprendimientos/${cat.slug}`, {
@@ -209,8 +223,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
 
-    for (const zone of VENTURE_ZONE_LANDINGS) {
-      const count = await countApprovedVentures({ zoneConfig: zone })
+    for (const { zone, count } of zoneCounts) {
       if (count > 0) {
         ventureUrls.push(
           entry(`${base}/emprendimientos/${zone.slug}`, {

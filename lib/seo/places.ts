@@ -1,3 +1,4 @@
+import { cache } from "react"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
@@ -81,7 +82,7 @@ async function enrichPlacesWithStats(places: any[]): Promise<PlaceSEO[]> {
  * porque barrios como "Centro" existen en múltiples ciudades.
  * El filtro ?barrio= se mantiene como refinamiento adicional sobre neighborhood.
  */
-export async function getPlacesByCity(
+async function loadPlacesByCity(
   citySlug: string,
   page = 1,
   barrio?: string
@@ -112,7 +113,10 @@ export async function getPlacesByCity(
   return { places: enriched, total, pages }
 }
 
-export async function getPlacesByCityAndCategory(
+/** Deduplica generateMetadata + page en el mismo request. */
+export const getPlacesByCity = cache(loadPlacesByCity)
+
+async function loadPlacesByCityAndCategory(
   citySlug: string,
   categorySlug: string,
   page = 1
@@ -141,6 +145,8 @@ export async function getPlacesByCityAndCategory(
   const pages = Math.ceil(total / PER_PAGE)
   return { places: enriched, total, pages }
 }
+
+export const getPlacesByCityAndCategory = cache(loadPlacesByCityAndCategory)
 
 export async function getPlacesByCategory(
   categorySlug: string,

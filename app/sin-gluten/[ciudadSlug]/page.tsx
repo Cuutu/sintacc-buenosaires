@@ -87,8 +87,8 @@ export async function generateMetadata({
 
   const search = await searchParams
   const page = Math.max(1, parseInt(search.page || "1", 10))
-  const barrio = search.barrio
-  const { total, pages } = await getPlacesByCity(ciudadSlug, page)
+  const barrio = search.barrio || undefined
+  const { total, pages } = await getPlacesByCity(ciudadSlug, page, barrio)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}`
   // Canonical limpio: page>1 y filtros barrio no crean canónicos indexables distintos

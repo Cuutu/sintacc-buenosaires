@@ -10,14 +10,15 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8")
 describe("rediseño ficha lugar", () => {
   it("hero mobile 220px con badge y acciones flotantes", () => {
     const src = read("components/lugar/PlaceHero.tsx")
+    const chrome = read("components/lugar/PlaceHeroChrome.tsx")
     const ui = read("components/lugar/place-detail-ui.ts")
     expect(src).toContain("h-[220px]")
     expect(ui).toContain("100% Sin TACC")
     expect(ui).toContain("Con opciones")
     expect(src).toContain("emptyHeroPinSrc")
-    expect(src).toContain("Volver")
-    expect(src).toContain("Compartir")
-    expect(src).toContain('variant="icon"')
+    expect(chrome).toContain("Volver")
+    expect(chrome).toContain("Compartir")
+    expect(chrome).toContain('variant="icon"')
     expect(src).toContain("Foto: Google")
   })
 
@@ -43,7 +44,7 @@ describe("rediseño ficha lugar", () => {
 
   it("reseñas de la comunidad van antes que Google", () => {
     const page = read("app/lugar/[id]/page.tsx")
-    const community = page.indexOf("PlaceCommunityReviews")
+    const community = page.indexOf("PlaceCommunityReviewsClient")
     const google = page.indexOf("PlaceGoogleSection")
     expect(community).toBeGreaterThan(-1)
     expect(google).toBeGreaterThan(community)

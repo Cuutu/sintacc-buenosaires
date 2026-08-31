@@ -89,6 +89,10 @@ const nextConfig = {
       },
     ],
   },
+  // Lint y tsc viven en GitHub Actions (.github/workflows/ci.yml: npm run lint + npx tsc --noEmit).
+  // Si se saca el CI, revertir ignoreDuringBuilds / ignoreBuildErrors.
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   env: {
     FEATURES: process.env.FEATURES || 'phase1',
     NEXT_PUBLIC_BUILD_SHA: (
@@ -104,6 +108,7 @@ const nextConfig = {
     ).slice(0, 64),
   },
   experimental: {
+    optimizePackageImports: ["lucide-react"],
     outputFileTracingIncludes: {
       "/api/admin/social/generate-image": ["./assets/fonts/**"],
     },

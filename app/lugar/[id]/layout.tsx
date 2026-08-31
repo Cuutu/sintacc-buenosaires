@@ -1,14 +1,13 @@
 import type { Metadata } from "next"
-import connectDB from "@/lib/mongodb"
-import { Place } from "@/models/Place"
-import mongoose from "mongoose"
+import { notFound } from "next/navigation"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
 import { PlaceJsonLd } from "@/components/seo/PlaceJsonLd"
 import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
+import { getPlaceLiveStats } from "@/lib/place-stats"
 
 export const dynamicParams = true
-export const dynamic = "force-dynamic"
+export const revalidate = 3600
 
 interface LugarLayoutProps {
   params: Promise<{ id: string }>
@@ -48,7 +47,6 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
   }Reseñas, datos de contacto y clasificación según la información cargada en CeliMap.`
 
   return {
-    // title SIN marca: el layout raíz agrega " | CeliMap" una sola vez
     title: `${place.name}`,
     description,
     alternates: { canonical },
@@ -69,58 +67,41 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
 }
 
 export async function generateMetadata({ params }: LugarLayoutProps): Promise<Metadata> {
-  try {
-    const { id } = await params
-    await connectDB()
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      const place = await Place.findOne({ slug: id, status: "approved" }).lean()
-      if (!place) return { title: "Lugar no encontrado", robots: { index: false } }
-      return buildPlaceMetadata(place as PlaceMetadataInput)
-    }
-
-    const place = await Place.findOne({
-      _id: new mongoose.Types.ObjectId(id),
-      status: "approved",
-    }).lean()
-
-    if (!place) {
-      console.error(`[lugar/[id]] No se encontro lugar con id: ${id}`)
-      return { title: "Lugar no encontrado", robots: { index: false } }
-    }
-
-    return buildPlaceMetadata(place as PlaceMetadataInput)
-  } catch (error) {
-    console.error("[lugar/[id]] Error en generateMetadata:", error)
-    return { title: "Lugar" }
-  }
+  const { id } = await params
+  const place = await getApprovedPlaceByRouteParam(id)
+  if (!place) notFound()
+  return buildPlaceMetadata(place)
 }
 
 export default async function LugarLayout({ params, children }: LugarLayoutProps) {
   const { id } = await params
   const place = await getApprovedPlaceByRouteParam(id)
+  if (!place) notFound()
+
+  const liveStats = await getPlaceLiveStats(place._id.toString())
 
   return (
     <>
-      {place ? (
-        <PlaceJsonLd
-          place={{
-            _id: place._id.toString(),
-            slug: place.slug,
-            name: place.name,
-            type: place.type,
-            neighborhood: place.neighborhood,
-            province: place.province,
-            locality: place.locality,
-            address: place.address,
-            location: place.location,
-            photos: place.photos,
-            contact: place.contact,
-            openingHours: place.openingHours,
-            stats: place.stats,
-          }}
-        />
-      ) : null}
+      <PlaceJsonLd
+        place={{
+          _id: place._id.toString(),
+          slug: place.slug,
+          name: place.name,
+          type: place.type,
+          neighborhood: place.neighborhood,
+          province: place.province,
+          locality: place.locality,
+          address: place.address,
+          location: place.location,
+          photos: place.photos,
+          contact: place.contact,
+          openingHours: place.openingHours,
+          stats: {
+            avgRating: liveStats.avgRating,
+            totalReviews: liveStats.totalReviews,
+          },
+        }}
+      />
       {children}
     </>
   )

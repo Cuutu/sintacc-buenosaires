@@ -1,15 +1,21 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
 import { ContaminationReportForm } from "@/components/contamination-report-form"
 import { placeCardClass } from "./place-detail-ui"
 
 interface PlaceReportCardProps {
   placeId: string
-  onSuccess: () => void
+  onSuccess?: () => void
 }
 
 export function PlaceReportCard({ placeId, onSuccess }: PlaceReportCardProps) {
+  const router = useRouter()
+  const handleSuccess = () => {
+    onSuccess?.()
+    router.refresh()
+  }
   return (
     <section className={`${placeCardClass} flex items-start gap-4 p-5`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1F4D35]/8">
@@ -23,7 +29,7 @@ export function PlaceReportCard({ placeId, onSuccess }: PlaceReportCardProps) {
         <div className="mt-3">
           <ContaminationReportForm
             placeId={placeId}
-            onSuccess={onSuccess}
+            onSuccess={handleSuccess}
             trigger={
               <button
                 type="button"

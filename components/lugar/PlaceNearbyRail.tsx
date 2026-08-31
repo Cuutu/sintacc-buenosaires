@@ -2,16 +2,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
-import type { IPlace } from "@/models/Place"
+import type { NearbyPlaceCard } from "@/lib/place-nearby"
 import { formatNearbyDistance } from "./place-detail-ui"
 
-type NearbyPlace = IPlace & {
-  stats?: { avgRating?: number; totalReviews?: number }
-  distance?: number
-}
-
 interface PlaceNearbyRailProps {
-  places: NearbyPlace[]
+  places: NearbyPlaceCard[]
 }
 
 export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
@@ -33,7 +28,7 @@ export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
           const distance = formatNearbyDistance(place.distance)
           return (
             <Link
-              key={place._id.toString()}
+              key={place._id}
               href={getPlacePath(place)}
               className="w-[220px] shrink-0 rounded-[20px] border border-[#E8E1D6] bg-[#FDFBF7] p-3 transition-transform active:scale-[0.99]"
             >

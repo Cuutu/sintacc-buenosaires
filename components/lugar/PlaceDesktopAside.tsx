@@ -14,7 +14,7 @@ interface PlaceDesktopAsideProps {
   address: string
   openingHours?: string
   phone?: string
-  onReportSuccess: () => void
+  onReportSuccess?: () => void
 }
 
 export function PlaceDesktopAside({

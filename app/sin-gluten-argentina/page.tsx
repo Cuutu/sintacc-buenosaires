@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { getArgentinaLandingTitle, getArgentinaLandingDescription } from "@/lib/seo/templates"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { PROVINCES } from "@/lib/seo/provinces"
-import { getPlacesByProvinceSlug } from "@/lib/seo/places"
+import { getPlacesByProvinceSlug, getProvinceLocalities } from "@/lib/seo/places"
 import { isProvincePageIndexable } from "@/lib/seo/indexing-rules"
 import { ArgentinaLandingJsonLd } from "@/components/seo/ArgentinaLandingJsonLd"
 import { getBaseUrl } from "@/lib/base-url"
@@ -33,14 +33,18 @@ export const metadata: Metadata = {
 
 export default async function SinGlutenArgentinaPage() {
   // Provincias indexables (≥5 lugares y ≥2 localidades)
-  const indexableProvinces: { slug: string; name: string; total: number }[] = []
-  for (const province of PROVINCES) {
-    const { total } = await getPlacesByProvinceSlug(province.slug, { limit: 1 })
-    const localities = await getProvinceLocalitiesCount(province.slug)
-    if (isProvincePageIndexable(total, localities)) {
-      indexableProvinces.push({ slug: province.slug, name: province.name, total })
-    }
-  }
+  const provinceRows = await Promise.all(
+    PROVINCES.map(async (province) => {
+      const [{ total }, localities] = await Promise.all([
+        getPlacesByProvinceSlug(province.slug, { limit: 1 }),
+        getProvinceLocalities(province.slug),
+      ])
+      return { slug: province.slug, name: province.name, total, localityCount: localities.length }
+    })
+  )
+  const indexableProvinces = provinceRows
+    .filter((row) => isProvincePageIndexable(row.total, row.localityCount))
+    .map(({ slug, name, total }) => ({ slug, name, total }))
 
   return (
     <div className="container py-8">
@@ -152,10 +156,4 @@ export default async function SinGlutenArgentinaPage() {
       </section>
     </div>
   )
-}
-
-async function getProvinceLocalitiesCount(provinceSlug: string): Promise<number> {
-  const { getProvinceLocalities } = await import("@/lib/seo/places")
-  const localities = await getProvinceLocalities(provinceSlug)
-  return localities.length
 }

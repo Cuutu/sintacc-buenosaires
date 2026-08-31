@@ -1,3 +1,8 @@
+jest.mock("react", () => {
+  const actual = jest.requireActual("react") as typeof import("react")
+  return { ...actual, cache: (fn: unknown) => fn }
+})
+
 import { getProvincePageData, getProvinceCategoryPageData } from "@/lib/seo/province-pages"
 import { getPlacesByProvinceSlug, getProvinceLocalities } from "@/lib/seo/places"
 
