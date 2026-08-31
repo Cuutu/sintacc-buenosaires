@@ -21,6 +21,17 @@ import { TrackPageView } from "@/components/analytics/TrackPageView"
 
 export const revalidate = 3600
 
+/**
+ * Array vacío a propósito: opta /lugar/[id] al bucket estático/ISR
+ * (sin esto Next marca ƒ y ignora revalidate).
+ * dynamicParams=true en layout → cada slug se genera on-demand en el
+ * primer request y queda cacheada 1h. No listar ~1200 fichas acá:
+ * prerender en CI haría el build lento y frágil.
+ */
+export async function generateStaticParams() {
+  return []
+}
+
 interface LugarPageProps {
   params: Promise<{ id: string }>
 }
