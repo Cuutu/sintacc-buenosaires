@@ -27,4 +27,8 @@ describe("NativeAppBridge wiring", () => {
   it("no usa seenCodesRef como única guarda", () => {
     expect(src).not.toContain("seenCodesRef")
   })
+
+  it("expone debug de review nativo", () => {
+    expect(src).toContain("attachReviewDebugToWindow")
+  })
 })

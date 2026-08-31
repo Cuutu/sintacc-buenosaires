@@ -16,7 +16,7 @@ describe("privacy-manifest exact Apple identifiers", () => {
     expect(result.ok).toBe(true)
   })
 
-  it("tipos exactos, sin crash/perf, ProductInteraction unlinked, sin UserDefaults", () => {
+  it("tipos exactos, sin crash/perf, ProductInteraction unlinked, UserDefaults CA92.1", () => {
     const xml = fs.readFileSync(
       path.join(process.cwd(), "ios/App/App/PrivacyInfo.xcprivacy"),
       "utf8"
@@ -28,7 +28,8 @@ describe("privacy-manifest exact Apple identifiers", () => {
     for (const t of FORBIDDEN_COLLECTED_TYPES) {
       expect(xml).not.toContain(t)
     }
-    expect(xml).not.toContain("NSPrivacyAccessedAPICategoryUserDefaults")
+    expect(xml).toContain("NSPrivacyAccessedAPICategoryUserDefaults")
+    expect(xml).toContain("CA92.1")
     const pi =
       xml.match(
         /NSPrivacyCollectedDataTypeProductInteraction[\s\S]*?<\/dict>/

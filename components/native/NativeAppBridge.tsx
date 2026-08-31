@@ -7,6 +7,7 @@ import { createLaunchUrlHandler } from "@/lib/native-handoff-once"
 import { reportNativeOAuth } from "@/lib/native-oauth-report"
 import { warmNativeGoogleSignIn } from "@/lib/native-sign-in"
 import { executeAndroidBack } from "@/lib/native-android-back"
+import { attachReviewDebugToWindow } from "@/lib/native-review"
 
 /**
  * Native shell bridge: OAuth deep links (cold + warm) + Android back.
@@ -18,6 +19,8 @@ export function NativeAppBridge() {
 
   useEffect(() => {
     if (!isNativeApp()) return
+
+    attachReviewDebugToWindow()
 
     void warmNativeGoogleSignIn().catch((error) => {
       console.warn("SocialLogin warm-init failed:", error)

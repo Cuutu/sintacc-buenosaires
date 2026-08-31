@@ -41,6 +41,7 @@
 		"CAPBrowserPlugin",
 		"SplashScreenPlugin",
 		"StatusBarPlugin",
-		"SocialLoginPlugin"
+		"SocialLoginPlugin",
+		"ReviewPlugin"
 	]
 }

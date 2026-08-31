@@ -116,11 +116,18 @@ export function checkPrivacyManifest(
     )
   }
 
-  // App target does not call UserDefaults; third-party frameworks ship their own manifests.
-  if (xml.includes("NSPrivacyAccessedAPICategoryUserDefaults")) {
-    errors.push(
-      "Do not declare UserDefaults Required Reason in app manifest (no App-target usage)"
-    )
+  // El manifiesto debe reflejar el uso real del App target. ReviewManager
+  // usa UserDefaults.standard para persistir los contadores de review, por
+  // eso CA92.1 es obligatorio. Si en el futuro el target deja de usar
+  // UserDefaults, esta verificación tiene que invertirse de nuevo, no
+  // declarar un uso inexistente.
+  // Historia: 63fd027 prohibía UserDefaults porque el App target no lo usaba
+  // (SDKs llevan su propio PrivacyInfo). Invertido al agregar ReviewManager.
+  if (!xml.includes("NSPrivacyAccessedAPICategoryUserDefaults")) {
+    errors.push("Missing NSPrivacyAccessedAPICategoryUserDefaults (ReviewManager)")
+  }
+  if (!xml.includes("CA92.1")) {
+    errors.push("UserDefaults reason must be CA92.1")
   }
 
   if (!fs.existsSync(pbxPath)) {

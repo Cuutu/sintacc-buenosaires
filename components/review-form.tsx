@@ -11,6 +11,7 @@ import { ImageUpload } from "@/components/image-upload"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Star } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
+import { considerInAppReview } from "@/lib/native-review"
 
 interface ReviewFormProps {
   placeId: string
@@ -65,6 +66,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
       }
 
       trackEvent("review_submit", { placeId })
+      considerInAppReview("review")
 
       // Reset form
       setRating(0)

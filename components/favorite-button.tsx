@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
 import { features } from "@/lib/features"
-import { trackEvent } from "@/lib/analytics"
+import { persistFavoriteToggle } from "@/lib/favorites-persist"
 import { useFavorites } from "@/components/favorites-provider"
 import { cn } from "@/lib/utils"
 
@@ -18,7 +18,7 @@ interface FavoriteButtonProps {
 
 export function FavoriteButton({ placeId, showLabel, className }: FavoriteButtonProps) {
   const { data: session } = useSession()
-  const { isFavorite, add, remove } = useFavorites()
+  const { isFavorite, ids, add, remove } = useFavorites()
   const [loading, setLoading] = useState(false)
   const favorited = isFavorite(placeId)
 
@@ -27,25 +27,7 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
 
     setLoading(true)
     try {
-      if (favorited) {
-        const res = await fetch(`/api/favorites?placeId=${placeId}`, { method: "DELETE" })
-        if (res.ok) {
-          remove(placeId)
-          trackEvent("favorite_remove", { placeId })
-        }
-      } else {
-        const res = await fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ placeId }),
-        })
-        if (res.ok || res.status === 400) {
-          add(placeId)
-          trackEvent("favorite_add", { placeId })
-        }
-      }
-    } catch (error) {
-      console.error("Error toggling favorite:", error)
+      await persistFavoriteToggle(placeId, favorited, ids, { add, remove })
     } finally {
       setLoading(false)
     }
