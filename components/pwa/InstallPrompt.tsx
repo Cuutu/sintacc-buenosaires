@@ -10,6 +10,7 @@ import {
   getDevicePlatform,
   isStandaloneDisplay,
 } from "@/lib/device-platform"
+import { useBottomPrompt } from "@/lib/use-bottom-prompt"
 import {
   INSTALL_REQUEST_EVENT,
   canPromptPwaInstall,
@@ -36,9 +37,11 @@ function snoozePrompt() {
 
 export function InstallPrompt() {
   const pathname = usePathname()
+  const { prompt: bottomPrompt } = useBottomPrompt()
   const [open, setOpen] = useState(false)
   const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop")
   const onPrivateList = isPrivateListPath(pathname)
+  const suppressForStoreBanner = bottomPrompt === "store"
 
   useEffect(() => {
     initPwaInstallCapture()
@@ -46,7 +49,12 @@ export function InstallPrompt() {
   }, [])
 
   useEffect(() => {
-    if (onPrivateList || isNativeApp() || isStandaloneDisplay()) {
+    if (
+      suppressForStoreBanner ||
+      onPrivateList ||
+      isNativeApp() ||
+      isStandaloneDisplay()
+    ) {
       setOpen(false)
       return
     }
@@ -54,12 +62,13 @@ export function InstallPrompt() {
     const onRequest = () => {
       if (getDismissedUntil() > Date.now()) return
       if (isNativeApp() || isStandaloneDisplay()) return
+      if (suppressForStoreBanner) return
       setOpen(true)
     }
 
     window.addEventListener(INSTALL_REQUEST_EVENT, onRequest)
     return () => window.removeEventListener(INSTALL_REQUEST_EVENT, onRequest)
-  }, [onPrivateList])
+  }, [onPrivateList, suppressForStoreBanner])
 
   const dismiss = () => {
     snoozePrompt()
@@ -75,7 +84,7 @@ export function InstallPrompt() {
     if (outcome === "unavailable") dismiss()
   }
 
-  if (!open || onPrivateList) return null
+  if (!open || onPrivateList || suppressForStoreBanner) return null
 
   const ios = platform === "ios"
   const androidInstallable = platform === "android" && canPromptPwaInstall()

@@ -29,6 +29,9 @@ describe("Llevá CeliMap con vos", () => {
     expect(src).toContain("Descargá CeliMap")
     expect(src).toContain("Instalá CeliMap")
     expect(src).not.toContain("setTimeout(() => setOpen(true)")
+    expect(src).toContain("useBottomPrompt")
+    expect(src).toContain('bottomPrompt === "store"')
+    expect(src).toContain("suppressForStoreBanner")
     expect(src).not.toContain("Acceso rápido desde tu pantalla de inicio")
   })
 

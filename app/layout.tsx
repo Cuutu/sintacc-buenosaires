@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Fraunces, Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -11,6 +12,7 @@ import { NativeAppBridge } from "@/components/native/NativeAppBridge";
 import { NativeStatusBar } from "@/components/native/NativeStatusBar";
 import { NativeLayoutDebug } from "@/components/native/NativeLayoutDebug";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { StoreAppBanner } from "@/components/store-banner/StoreAppBanner";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { AnalyticsSessionInit } from "@/components/analytics/AnalyticsSessionInit";
@@ -40,6 +42,12 @@ const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  // Smart App Banner (Safari iOS). Argumento estático: Safari no relee el meta en SPA.
+  // TODO: deep link por página → generateMetadata en app/mapa/[slug]/page.tsx (SSR), no client.
+  itunes: {
+    appId: "6797278308",
+    appArgument: "https://www.celimap.com.ar",
+  },
   // title.template agrega la marca UNA sola vez. Las funciones de pagina devuelven el titulo SIN marca.
   title: {
     default: "Mapa para celíacos en Argentina | CeliMap",
@@ -133,7 +141,10 @@ export default function RootLayout({
           <NativeAppBridge />
           <NativeStatusBar />
           <NativeLayoutDebug />
-          <InstallPrompt />
+          <Suspense fallback={null}>
+            <StoreAppBanner />
+            <InstallPrompt />
+          </Suspense>
           <OnboardingModal />
         </Providers>
         <Analytics />

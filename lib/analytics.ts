@@ -17,6 +17,9 @@ export type AnalyticsEvent =
   | "map_open"
   | "map_filter"
   | "install_prompt_shown"
+  | "store_banner_shown"
+  | "store_banner_clicked"
+  | "store_banner_dismissed"
   | "onboarding_complete"
   | "city_page_view"
   | "guide_page_view"
@@ -34,8 +37,12 @@ export function trackEvent(
   name: AnalyticsEvent,
   properties?: Record<string, string | number | boolean>
 ) {
+  const props = sanitizeAnalyticsProps(properties)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[analytics]", name, props ?? {})
+  }
   try {
-    track(name, sanitizeAnalyticsProps(properties))
+    track(name, props)
   } catch {
     // Analytics no debe romper UX
   }
