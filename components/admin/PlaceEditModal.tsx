@@ -15,6 +15,8 @@ import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
 import { AdminPhotoStudio } from "@/components/admin/ops/AdminPhotoStudio"
 import { HoursEditor } from "@/components/admin/ops/HoursEditor"
+import { PlaceResearchPanel } from "@/components/admin/PlaceResearchPanel"
+import type { AiResearchItem } from "@/components/admin/types"
 import { formatOpeningHours, parseOpeningHours, type WeekHours } from "@/lib/opening-hours"
 import { getPlacePath } from "@/lib/place-url"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
@@ -54,6 +56,7 @@ type PlaceData = {
   seo?: { metaTitle?: string; metaDescription?: string; canonical?: string }
   updatedAt?: string
   editLog?: EditLogItem[]
+  aiEnrichment?: AiResearchItem
 }
 
 type FormState = {
@@ -130,10 +133,17 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
   const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving">("saved")
   const [editLog, setEditLog] = useState<EditLogItem[]>([])
   const [updatedAt, setUpdatedAt] = useState("")
+  const [aiResearch, setAiResearch] = useState<AiResearchItem | undefined>()
+  const [researchTick, setResearchTick] = useState(0)
   const [dupes, setDupes] = useState<Array<{ id: string; name: string; reasons: string[] }>>([])
   const [historyOpen, setHistoryOpen] = useState(false)
   const skipAuto = useRef(true)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setResearchTick(0)
+    setAiResearch(undefined)
+  }, [placeId])
 
   const inferSafetyFromTags = (tags: string[]) => {
     if (tags.includes("opciones_sin_tacc")) return "gf_options"
@@ -174,8 +184,11 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
 
   useEffect(() => {
     if (!open || !placeId) return
-    setFetching(true)
-    setError("")
+    const silent = researchTick > 0
+    if (!silent) {
+      setFetching(true)
+      setError("")
+    }
     skipAuto.current = true
     fetch(`/api/admin/places/${placeId}`)
       .then((res) => res.json())
@@ -221,7 +234,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
         setWeekHours(parseOpeningHours(place.openingHours))
         setEditLog(place.editLog || [])
         setUpdatedAt(place.updatedAt || "")
-        setTab("General")
+        setAiResearch(place.aiEnrichment)
+        if (researchTick === 0) setTab("General")
         setSaveState("saved")
         const q = encodeURIComponent((place.name || "").slice(0, 40))
         if (q.length >= 2) {
@@ -249,12 +263,12 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       })
       .catch(() => setError("Error al cargar el lugar"))
       .finally(() => {
-        setFetching(false)
+        if (!silent) setFetching(false)
         setTimeout(() => {
           skipAuto.current = false
         }, 400)
       })
-  }, [open, placeId])
+  }, [open, placeId, researchTick])
 
   const toggleType = (typeValue: string) => {
     setFormData((prev) => ({
@@ -491,6 +505,13 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                       </Link>
                     </div>
                   ) : null}
+
+                  <PlaceResearchPanel
+                    placeId={placeId}
+                    placeName={formData.name}
+                    aiResearch={aiResearch}
+                    onUpdated={() => setResearchTick((n) => n + 1)}
+                  />
 
                   <div
                     className="-mx-1 flex gap-1 overflow-x-auto px-1"

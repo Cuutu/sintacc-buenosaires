@@ -1,15 +1,32 @@
+import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { getBaseUrl } from "@/lib/base-url"
 import { logApiError } from "@/lib/logger"
 import { isPlaceMissingTaccClassification } from "@/lib/place-incomplete"
+import {
+  catalogStatusFilter,
+  shouldEnqueuePlaceForResearch,
+  type EnrichmentCatalog,
+} from "@/lib/place-enrichment-eligibility"
 import { runPlaceResearch } from "@/lib/place-research/run-place-research"
 import { waitUntil } from "@vercel/functions"
+
+export type { EnrichmentCatalog }
+export { catalogStatusFilter, shouldEnqueuePlaceForResearch }
 
 const MAX_PLACES_PER_TICK = 1
 /** Vercel mata la función a los 60s; reclaim antes. */
 const QUEUE_JOB_STALE_MS = 65_000
 const ENQUEUE_LIMIT = 500
+
+export type EnrichmentQueueOptions = {
+  catalog?: EnrichmentCatalog
+  ids?: string[]
+}
+
+const PLACE_SELECT =
+  "name address neighborhood type types contact openingHours photos safetyLevel tags description location aiEnrichment"
 
 export type EnrichmentQueueStats = {
   queued: number
@@ -26,21 +43,24 @@ function getInternalJobSecret(): string | null {
   return process.env.INTERNAL_JOB_SECRET?.trim() || null
 }
 
-export async function getEnrichmentQueueStats(): Promise<EnrichmentQueueStats> {
+export async function getEnrichmentQueueStats(
+  catalog: EnrichmentCatalog = "approved"
+): Promise<EnrichmentQueueStats> {
   await connectDB()
   const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
+  const scope = catalogStatusFilter(catalog)
   const [queued, running, done, failed, stuckRunning, places] = await Promise.all([
-    Place.countDocuments({ status: "approved", "aiEnrichment.status": "queued" }),
-    Place.countDocuments({ status: "approved", "aiEnrichment.status": "running" }),
-    Place.countDocuments({ status: "approved", "aiEnrichment.status": "done" }),
-    Place.countDocuments({ status: "approved", "aiEnrichment.status": "failed" }),
+    Place.countDocuments({ ...scope, "aiEnrichment.status": "queued" }),
+    Place.countDocuments({ ...scope, "aiEnrichment.status": "running" }),
+    Place.countDocuments({ ...scope, "aiEnrichment.status": "done" }),
+    Place.countDocuments({ ...scope, "aiEnrichment.status": "failed" }),
     Place.countDocuments({
-      status: "approved",
+      ...scope,
       "aiEnrichment.status": "running",
       "aiEnrichment.startedAt": { $lt: staleBefore },
     }),
-    Place.find({ status: "approved" })
-      .select("name address neighborhood type types contact openingHours photos safetyLevel tags")
+    Place.find(scope)
+      .select(PLACE_SELECT)
       .limit(3000)
       .lean(),
   ])
@@ -66,7 +86,6 @@ export async function resetStaleEnrichmentJobs(): Promise<number> {
   const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
   const result = await Place.updateMany(
     {
-      status: "approved",
       "aiEnrichment.status": "running",
       $or: [
         { "aiEnrichment.startedAt": { $lt: staleBefore } },
@@ -83,27 +102,32 @@ export async function resetStaleEnrichmentJobs(): Promise<number> {
   return result.modifiedCount
 }
 
-export async function enqueueIncompletePlaces(): Promise<{ queued: number; skipped: number }> {
+export async function enqueueIncompletePlaces(
+  options: EnrichmentQueueOptions = {}
+): Promise<{ queued: number; skipped: number }> {
   await connectDB()
-  const places = await Place.find({ status: "approved" })
-    .select("name address neighborhood type types contact openingHours photos safetyLevel tags aiEnrichment")
+  const catalog = options.catalog ?? "approved"
+  const ids = (options.ids ?? []).filter((id) => mongoose.Types.ObjectId.isValid(id))
+  const query = ids.length
+    ? { _id: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) } }
+    : catalogStatusFilter(catalog)
+
+  const places = await Place.find(query)
+    .select(PLACE_SELECT)
     .sort({ updatedAt: 1 })
-    .limit(3000)
+    .limit(ids.length ? ids.length : 3000)
     .lean()
 
   let queued = 0
   let skipped = 0
 
   for (const place of places) {
-    const status = place.aiEnrichment?.status
-    if (status === "queued" || status === "running") {
-      skipped++
-      continue
-    }
-
-    const shouldEnqueue =
-      isPlaceMissingTaccClassification(place) || status === "failed"
-    if (!shouldEnqueue) {
+    if (
+      !shouldEnqueuePlaceForResearch(place, {
+        catalog,
+        force: ids.length > 0,
+      })
+    ) {
       skipped++
       continue
     }
@@ -133,7 +157,6 @@ async function claimNextQueuedPlace(): Promise<string | null> {
   await connectDB()
   const claimed = await Place.findOneAndUpdate(
     {
-      status: "approved",
       "aiEnrichment.status": "queued",
     },
     {
@@ -203,7 +226,6 @@ export async function processEnrichmentQueueTick(): Promise<{
   }
 
   const remaining = await Place.countDocuments({
-    status: "approved",
     "aiEnrichment.status": "queued",
   })
 
@@ -250,35 +272,39 @@ export async function runEnrichmentQueueWorker(): Promise<void> {
   } catch (err) {
     logApiError("runEnrichmentQueueWorker", err, {})
     const remaining = await Place.countDocuments({
-      status: "approved",
       "aiEnrichment.status": "queued",
     }).catch(() => 0)
     if (remaining > 0) scheduleNextQueueWorker()
   }
 }
 
-export async function startEnrichmentQueue(): Promise<{
+export async function startEnrichmentQueue(
+  options: EnrichmentQueueOptions = {}
+): Promise<{
   queued: number
   skipped: number
   stats: EnrichmentQueueStats
 }> {
+  const catalog = options.catalog ?? (options.ids?.length ? "all" : "approved")
   await resetStaleEnrichmentJobs()
-  const { queued, skipped } = await enqueueIncompletePlaces()
-  const stats = await getEnrichmentQueueStats()
+  const { queued, skipped } = await enqueueIncompletePlaces({ ...options, catalog })
+  const stats = await getEnrichmentQueueStats(catalog)
   if (stats.queued > 0 || stats.stuckRunning > 0) {
     scheduleNextQueueWorker()
   }
-  const latestStats = await getEnrichmentQueueStats()
+  const latestStats = await getEnrichmentQueueStats(catalog)
   return { queued, skipped, stats: latestStats }
 }
 
-export async function resumeEnrichmentQueue(): Promise<EnrichmentQueueStats> {
+export async function resumeEnrichmentQueue(
+  catalog: EnrichmentCatalog = "all"
+): Promise<EnrichmentQueueStats> {
   await resetStaleEnrichmentJobs()
-  const stats = await getEnrichmentQueueStats()
+  const stats = await getEnrichmentQueueStats(catalog)
   if (stats.queued > 0 || stats.stuckRunning > 0) {
     scheduleNextQueueWorker()
   }
-  return getEnrichmentQueueStats()
+  return getEnrichmentQueueStats(catalog)
 }
 
 export function isValidInternalJobRequest(secret: string | null): boolean {

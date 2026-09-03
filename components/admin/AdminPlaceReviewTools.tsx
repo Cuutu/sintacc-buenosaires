@@ -8,6 +8,7 @@ import { TYPES } from "@/lib/constants"
 import type { PlaceDuplicatePair } from "@/lib/place-duplicates-scan"
 import type { AiResearchItem } from "@/components/admin/types"
 import { PlaceResearchPanel } from "@/components/admin/PlaceResearchPanel"
+import type { EnrichmentCatalog } from "@/lib/place-enrichment-eligibility"
 
 type QueueStats = {
   queued: number
@@ -52,6 +53,7 @@ type GoogleSyncPlace = {
 type IncompletePlace = {
   _id: string
   name: string
+  status?: string
   address?: string
   neighborhood?: string
   type?: string
@@ -66,6 +68,7 @@ type ReviewFilter = "all" | "done" | "failed" | "pending"
 
 type Props = {
   mode: "duplicates" | "incomplete" | "google" | null
+  catalog?: EnrichmentCatalog
   onClose: () => void
   onRefreshPlaces: () => void
   onEditPlace: (id: string) => void
@@ -78,6 +81,7 @@ function typeLabel(type?: string) {
 
 export function AdminPlaceReviewTools({
   mode,
+  catalog = "approved",
   onClose,
   onRefreshPlaces,
   onEditPlace,
@@ -101,6 +105,10 @@ export function AdminPlaceReviewTools({
   const [deleting, setDeleting] = useState(false)
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("done")
   const lastAutoResumeRef = useRef(0)
+
+  useEffect(() => {
+    setReviewFilter(catalog === "pending" ? "pending" : "done")
+  }, [catalog])
 
   const filterCounts = useMemo(() => {
     const counts = { all: 0, done: 0, failed: 0, pending: 0 }
@@ -201,7 +209,7 @@ export function AdminPlaceReviewTools({
   }
 
   const refreshIncomplete = async () => {
-    const res = await fetch("/api/admin/places/incomplete")
+    const res = await fetch(`/api/admin/places/incomplete?catalog=${catalog}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Error al listar incompletos")
     setIncompletePlaces(data.places || [])
@@ -237,7 +245,7 @@ export function AdminPlaceReviewTools({
       }
     }
     void load()
-  }, [mode])
+  }, [mode, catalog])
 
   useEffect(() => {
     if (mode !== "incomplete") return
@@ -245,7 +253,7 @@ export function AdminPlaceReviewTools({
       void refreshIncomplete()
         .then(async () => {
           onRefreshPlaces()
-          const res = await fetch("/api/admin/places/enrichment-queue")
+          const res = await fetch(`/api/admin/places/enrichment-queue?catalog=${catalog}`)
           if (!res.ok) return
           const stats = (await res.json()) as QueueStats
           if (stats.stalled && (stats.queued > 0 || (stats.stuckRunning ?? 0) > 0)) {
@@ -255,7 +263,7 @@ export function AdminPlaceReviewTools({
               await fetch("/api/admin/places/enrichment-queue", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "resume" }),
+                body: JSON.stringify({ action: "resume", catalog }),
               })
             }
           }
@@ -263,7 +271,7 @@ export function AdminPlaceReviewTools({
         .catch(() => {})
     }, 5000)
     return () => clearInterval(timer)
-  }, [mode, onRefreshPlaces])
+  }, [mode, onRefreshPlaces, catalog])
 
   useEffect(() => {
     if (mode !== "google") return
@@ -294,7 +302,11 @@ export function AdminPlaceReviewTools({
   const startQueue = async () => {
     setEnriching(true)
     try {
-      const res = await fetch("/api/admin/places/enrichment-queue", { method: "POST" })
+      const res = await fetch("/api/admin/places/enrichment-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ catalog }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al iniciar cola")
       toast.success(data.message || "Cola iniciada")
@@ -313,7 +325,7 @@ export function AdminPlaceReviewTools({
       const res = await fetch("/api/admin/places/enrichment-queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "resume" }),
+        body: JSON.stringify({ action: "resume", catalog }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al reanudar cola")
@@ -367,20 +379,48 @@ export function AdminPlaceReviewTools({
 
   const runBatchEnrichment = startQueue
 
+  const approveSelectedPending = async () => {
+    const ids = [...selectedDeleteIds]
+    if (ids.length === 0) return
+    if (!window.confirm(`¿Publicar ${ids.length} lugar(es)? Van a verse en el mapa.`)) return
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/admin/places/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, action: "approve" }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al publicar")
+      toast.success(data.message || "Lugares publicados")
+      setSelectedDeleteIds(new Set())
+      await refreshIncomplete()
+      onRefreshPlaces()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al publicar")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (!mode) return null
 
   const title =
     mode === "duplicates"
       ? "Revisar duplicados"
       : mode === "incomplete"
-        ? "Lugares sin información"
+        ? catalog === "pending"
+          ? "Investigar pendientes"
+          : "Lugares sin información"
         : "Reviews Google"
 
   const subtitle =
     mode === "duplicates"
       ? "Exactos y muy probables: nombre parecido, misma ubicación/barrio o dirección. Marcá cuál borrar."
       : mode === "incomplete"
-        ? "Solo lugares sin clasificar: 100% sin gluten u opciones sin TACC."
+        ? catalog === "pending"
+          ? "Google + IA buscan dirección, horarios, teléfono, web y TACC. Revisá informe y después publicá."
+          : "Solo lugares publicados sin clasificar: 100% sin gluten u opciones sin TACC."
         : "Sincroniza rating y reseñas de Google. Celimap sigue siendo la fuente principal."
 
   return (
@@ -534,6 +574,18 @@ export function AdminPlaceReviewTools({
               )}
               Encolar todos y enriquecer
             </Button>
+            {catalog === "pending" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                disabled={deleting || selectedDeleteIds.size === 0}
+                onClick={() => void approveSelectedPending()}
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                Publicar seleccionados ({selectedDeleteIds.size})
+              </Button>
+            ) : null}
             {queueStats && queueStats.stalled ? (
               <Button size="sm" variant="outline" className="h-8 text-xs" onClick={resumeQueue}>
                 Reanudar cola
@@ -585,7 +637,18 @@ export function AdminPlaceReviewTools({
                   className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-xs"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold">{place.name}</p>
+                    {catalog === "pending" ? (
+                      <label className="mb-1 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedDeleteIds.has(place._id)}
+                          onChange={() => toggleDeleteSelection(place._id)}
+                        />
+                        <span className="font-semibold">{place.name}</span>
+                      </label>
+                    ) : (
+                      <p className="font-semibold">{place.name}</p>
+                    )}
                     <p className="text-muted-foreground truncate">
                       {place.address}
                       {place.neighborhood ? ` · ${place.neighborhood}` : ""}

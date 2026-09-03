@@ -6,7 +6,13 @@ import {
   getEnrichmentQueueStats,
   resumeEnrichmentQueue,
   startEnrichmentQueue,
+  type EnrichmentCatalog,
 } from "@/lib/place-enrichment-queue"
+
+function parseCatalog(value: unknown): EnrichmentCatalog {
+  if (value === "pending" || value === "all" || value === "approved") return value
+  return "approved"
+}
 
 export const maxDuration = 60
 
@@ -15,7 +21,8 @@ export async function GET(request: NextRequest) {
     const session = await requireAdmin(request)
     if (session instanceof NextResponse) return session
 
-    const stats = await getEnrichmentQueueStats()
+    const catalog = parseCatalog(request.nextUrl.searchParams.get("catalog"))
+    const stats = await getEnrichmentQueueStats(catalog)
     return NextResponse.json(stats)
   } catch (error) {
     logApiError("/api/admin/places/enrichment-queue", error, { request })
@@ -35,14 +42,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = (await request.json().catch(() => ({}))) as { action?: string }
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: string
+      catalog?: EnrichmentCatalog
+      ids?: string[]
+    }
+    const catalog = parseCatalog(body.catalog)
+    const ids = Array.isArray(body.ids) ? body.ids.filter((id) => typeof id === "string") : undefined
 
     if (body.action === "resume") {
-      const stats = await resumeEnrichmentQueue()
+      const stats = await resumeEnrichmentQueue(catalog === "approved" && !ids?.length ? "all" : catalog)
       return NextResponse.json({ message: "Cola reanudada", stats })
     }
 
-    const result = await startEnrichmentQueue()
+    const result = await startEnrichmentQueue({
+      catalog: ids?.length ? "all" : catalog,
+      ids,
+    })
     return NextResponse.json({
       message:
         result.queued > 0

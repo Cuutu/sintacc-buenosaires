@@ -454,6 +454,32 @@ export function AdminDashboard({
     }
   }
 
+  const handleBulkResearch = async () => {
+    const ids = Array.from(selectedPlaceIds)
+    if (ids.length === 0) {
+      toast.error("Seleccioná al menos un lugar")
+      return
+    }
+    try {
+      const res = await fetch("/api/admin/places/enrichment-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, catalog: "all" }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || "Investigación en cola")
+        setPlaceFilter("pending")
+        setPlaceReviewMode("incomplete")
+        fetchPlaces()
+      } else {
+        toast.error(data.error || "Error al investigar")
+      }
+    } catch (e) {
+      toast.error("Error al investigar")
+    }
+  }
+
   const togglePlaceSelection = (id: string) => {
     setSelectedPlaceIds((prev) => {
       const next = new Set(prev)
@@ -823,6 +849,7 @@ export function AdminDashboard({
           fetchPlaces={fetchPlaces}
           goToPlacesPage={goToPlacesPage}
           handleBulkAction={handleBulkAction}
+          handleBulkResearch={handleBulkResearch}
           handleDeletePlace={handleDeletePlace}
           handleDuplicatePlace={handleDuplicatePlace}
           placeNoPhotoFilter={placeNoPhotoFilter}

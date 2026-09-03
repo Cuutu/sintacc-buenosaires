@@ -70,6 +70,7 @@ export type AdminPlacesSectionProps = {
     action: "approve" | "unpublish" | "delete" | "set_safety_level" | "clear_safety_level",
     safetyLevel?: "dedicated_gf" | "gf_options"
   ) => void
+  handleBulkResearch: () => void
   handleDeletePlace: (id: string, name: string) => void
   handleDuplicatePlace: (place: PlaceItem) => void
   editingPlaceId: string | null
@@ -137,6 +138,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
     fetchPlaces,
     goToPlacesPage,
     handleBulkAction,
+    handleBulkResearch,
     handleDeletePlace,
     handleDuplicatePlace,
     editingPlaceId,
@@ -259,6 +261,9 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
           {chip(placeReviewMode === "duplicates", "Duplicados", () =>
             setPlaceReviewMode(placeReviewMode === "duplicates" ? null : "duplicates")
           )}
+          {chip(placeReviewMode === "incomplete", "Investigar IA", () =>
+            setPlaceReviewMode(placeReviewMode === "incomplete" ? null : "incomplete")
+          )}
           {placePopularFilter
             ? chip(true, "Con reseñas Google", () => {
                 setPlacePopularFilter(false)
@@ -356,6 +361,9 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("approve")}>
                 Publicar
               </button>
+              <button type="button" className={adminUi.chip} onClick={() => handleBulkResearch()}>
+                Investigar con IA
+              </button>
               <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("unpublish")}>
                 Despublicar
               </button>
@@ -406,6 +414,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
 
       <AdminPlaceReviewTools
         mode={placeReviewMode}
+        catalog={placeFilter === "pending" ? "pending" : "approved"}
         onClose={() => setPlaceReviewMode(null)}
         onRefreshPlaces={() => fetchPlaces(undefined, props.placesPage)}
         onEditPlace={setEditingPlaceId}
