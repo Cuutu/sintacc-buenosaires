@@ -1,13 +1,13 @@
 import { notFound, permanentRedirect } from "next/navigation"
 import { Star } from "lucide-react"
 import mongoose from "mongoose"
-import { TYPES } from "@/lib/constants"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getPlacePath } from "@/lib/place-url"
 import { getBaseUrl } from "@/lib/base-url"
 import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 import { getPlaceLiveStats } from "@/lib/place-stats"
 import { getNearbyPlacesForPlace } from "@/lib/place-nearby"
+import { placeCategoryLine } from "@/lib/seo/place-metadata"
 import { PlaceHero } from "@/components/lugar/PlaceHero"
 import { PlaceTrustCard } from "@/components/lugar/PlaceTrustCard"
 import { PlacePrimaryActions } from "@/components/lugar/PlacePrimaryActions"
@@ -61,10 +61,9 @@ export default async function LugarPage({ params }: LugarPageProps) {
   const effectiveSafety = inferSafetyLevel(place)
   const isDedicated = effectiveSafety === "dedicated_gf"
   const addressText = place.addressText || place.address || ""
-  const typeConfig = TYPES.find((t) => t.value === (place.types?.[0] ?? place.type))
   const totalReviews = liveStats.totalReviews
   const avgRating = liveStats.avgRating
-  const categoryLine = [typeConfig?.label, place.neighborhood].filter(Boolean).join(" · ")
+  const categoryLine = placeCategoryLine(place)
 
   return (
     <div className="min-h-full bg-[#F8F5EF] pb-8 lg:pb-16">
