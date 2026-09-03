@@ -93,6 +93,7 @@ describe("lib/seo/indexing-rules", () => {
 
     it("0 lugares nunca indexa aunque sea excepción", () => {
       expect(decideCityPageIndexing(0, "la-plata")).toBe("noindex")
+      expect(decideCityPageIndexing(0, "rosario")).toBe("noindex")
     })
   })
 

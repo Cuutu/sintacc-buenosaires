@@ -12,6 +12,7 @@ import {
 } from "./cities"
 import { getProvinceBySlug } from "./provinces"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import { canonicalCityPlaceFilter } from "./city-place-match"
 
 const PER_PAGE = 24
 
@@ -92,9 +93,7 @@ async function loadPlacesByCity(
   if (!(await connectSeoDb())) return EMPTY_PLACE_PAGE
 
   const query: any = {
-    status: "approved",
-    province: city.provinceSlug,
-    locality: city.slug,
+    ...canonicalCityPlaceFilter(city),
   }
   if (barrio) {
     const matchedBarrio = city.neighborhoods.find((n) => n.toLowerCase() === barrio.toLowerCase())
@@ -129,9 +128,7 @@ async function loadPlacesByCityAndCategory(
   const skip = (page - 1) * PER_PAGE
 
   const query: any = {
-    status: "approved",
-    province: city.provinceSlug,
-    locality: city.slug,
+    ...canonicalCityPlaceFilter(city),
     $or: [{ type }, { types: type }],
   }
 
@@ -188,7 +185,7 @@ export async function getTopNeighborhoods(citySlug: string): Promise<{ name: str
   if (!(await connectSeoDb())) return []
 
   const agg = await Place.aggregate([
-    { $match: { status: "approved", province: city.provinceSlug, locality: city.slug } },
+    { $match: canonicalCityPlaceFilter(city) },
     { $group: { _id: "$neighborhood", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 10 },
@@ -202,11 +199,7 @@ export async function getTopPlaces(citySlug: string, limit = 10): Promise<PlaceS
   if (!city) return []
   if (!(await connectSeoDb())) return []
 
-  const places = await Place.find({
-    status: "approved",
-    province: city.provinceSlug,
-    locality: city.slug,
-  })
+  const places = await Place.find(canonicalCityPlaceFilter(city))
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean()
@@ -338,11 +331,7 @@ export async function getCityPageStats(citySlug: string): Promise<CityPageStats>
   if (!city) return empty
   if (!(await connectSeoDb())) return empty
 
-  const match = {
-    status: "approved",
-    province: city.provinceSlug,
-    locality: city.slug,
-  }
+  const match = canonicalCityPlaceFilter(city)
 
   const [total, dedicatedGf, gfOptions, typeAgg, neighborhoods, last] = await Promise.all([
     Place.countDocuments(match),
@@ -420,10 +409,11 @@ export async function getRecentReviewsForCity(
   if (!city) return []
   if (!(await connectSeoDb())) return []
 
-  const places = await Place.find(
-    { status: "approved", province: city.provinceSlug, locality: city.slug },
-    { _id: 1, name: 1, slug: 1 }
-  ).lean()
+  const places = await Place.find(canonicalCityPlaceFilter(city), {
+    _id: 1,
+    name: 1,
+    slug: 1,
+  }).lean()
   if (places.length === 0) return []
 
   const placeMap = new Map(

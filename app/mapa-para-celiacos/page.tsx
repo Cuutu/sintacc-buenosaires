@@ -4,11 +4,11 @@ import {
   InstitutionalPage,
   buildWebPageJsonLd,
 } from "@/components/seo/InstitutionalPage"
-import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME, CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
+import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
-const PATH = "/mapa-para-celiacos"
+const CANONICAL_PATH = "/mapa"
 const UPDATED_AT = "2026-08-12"
 
 const title = "Mapa para celíacos"
@@ -47,16 +47,16 @@ const PRIORITY_CITIES = [
 export const metadata: Metadata = {
   title,
   description,
-  alternates: { canonical: `${BASE_URL}${PATH}` },
+  alternates: { canonical: `${BASE_URL}${CANONICAL_PATH}` },
   openGraph: {
-    title: `${title} | ${CELIMAP_NAME}`,
+    title,
     description,
-    url: `${BASE_URL}${PATH}`,
+    url: `${BASE_URL}${CANONICAL_PATH}`,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${title} | ${CELIMAP_NAME}`,
+    title,
     description,
   },
 }
@@ -69,7 +69,7 @@ export default function MapaParaCeliacosPage() {
       intro={`${CELIMAP_DESCRIPTION_SHORT} Esta página resume cómo usar el mapa y las guías por ciudad.`}
       updatedAt={UPDATED_AT}
       faqs={faqs}
-      jsonLd={buildWebPageJsonLd({ name: title, description, path: PATH, faqs })}
+      jsonLd={buildWebPageJsonLd({ name: title, description, path: CANONICAL_PATH, faqs })}
       primaryCta={{ href: "/mapa", label: "Abrir el mapa" }}
       secondaryCta={{ href: "/sugerir", label: "Recomendar un lugar" }}
     >

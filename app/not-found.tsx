@@ -1,8 +1,12 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Home, MapPin } from "lucide-react"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { BrandEmptyState } from "@/components/brand/BrandEmptyState"
+import { missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
+
+export const metadata: Metadata = missingPlaceMetadata
 
 export default function NotFound() {
   return (
@@ -11,8 +15,8 @@ export default function NotFound() {
         <BrandLogo size="md" showTagline />
       </div>
       <BrandEmptyState
-        title="Página no encontrada"
-        description="El lugar o la página que buscás no existe o fue eliminado."
+        title="No encontramos este lugar"
+        description="Este lugar no está en CeliMap o fue dado de baja. Podés volver al mapa o al inicio."
         action={
           <div className="flex flex-col sm:flex-row gap-3">
             <Button asChild>

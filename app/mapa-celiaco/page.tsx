@@ -3,7 +3,7 @@ import { MapLandingPage } from "@/components/seo/MapLandingPage"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
-const CANONICAL = `${BASE_URL}/mapa-celiaco`
+const CANONICAL = `${BASE_URL}/mapa`
 
 const FAQ = [
   {
@@ -24,7 +24,7 @@ const FAQ = [
 ]
 
 export const metadata: Metadata = {
-  title: "Mapa celíaco | Lugares sin gluten ",
+  title: "Mapa celíaco: lugares sin gluten",
   description:
     "Mapa celíaco de Argentina: restaurantes, cafés y panaderías sin gluten con datos aportados por la comunidad.",
   keywords: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {
-    title: "Mapa celíaco ",
+    title: "Mapa celíaco: lugares sin gluten",
     description:
       "Mapa celíaco con lugares sin gluten en Argentina. Reseñas de la comunidad y filtros por ciudad.",
     url: CANONICAL,
@@ -50,8 +50,8 @@ export default function MapaCeliacoPage() {
     <MapLandingPage
       h1="Mapa celíaco de Argentina"
       intro="El mapa para celíacos que usa la comunidad: restaurantes, panaderías y cafés sin gluten, con reseñas cuando existen."
-      canonicalPath="/mapa-celiaco"
-      metaTitle="Mapa celíaco "
+      canonicalPath="/mapa"
+      metaTitle="Mapa celíaco: lugares sin gluten"
       metaDescription={metadata.description as string}
       faq={FAQ}
       keywordParagraphs={[

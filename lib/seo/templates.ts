@@ -7,13 +7,40 @@ import type { ProvinceConfig } from "./provinces"
  * vía `title: { template: "%s | CeliMap" }`. Así se evita "| CeliMap | CeliMap".
  */
 
-export function getCityTitle(city: City): string {
-  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones`
+type CityStatsLike = {
+  total: number
+  dedicatedGf: number
+  gfOptions: number
 }
 
-export function getCityDescription(city: City, total?: number): string {
-  const count = total != null ? `${total} lugares` : "lugares"
-  return `Lugares sin TACC en ${city.name}: mapa y recomendaciones. Encontrá ${count} con opciones Sin TACC: restaurantes, panaderías y cafés según datos de CeliMap.`
+export function getCityTitle(city: City, stats?: CityStatsLike): string {
+  if (!stats || stats.total === 0) {
+    return `Lugares sin TACC en ${city.name} — Guía para celíacos`
+  }
+  const base = `Dónde comer sin TACC en ${city.name}`
+  const withTypes = `${base}: restaurantes y panaderías`
+  return withTypes.length <= 60 ? withTypes : base
+}
+
+export function getCityDescription(city: City, stats?: CityStatsLike): string {
+  if (!stats || stats.total === 0) {
+    return `Todavía no hay lugares aprobados para mostrar en ${city.name}. CeliMap es un mapa colaborativo: cuando la comunidad cargue opciones sin TACC, van a aparecer acá.`
+  }
+  const n = stats.total
+  const lugares = n === 1 ? "lugar" : "lugares"
+  const lead = `${n} ${lugares} sin TACC en ${city.name}: restaurantes, panaderías y cafés.`
+  const bits: string[] = []
+  if (stats.dedicatedGf > 0) {
+    const v = stats.dedicatedGf
+    bits.push(
+      v === 1 ? "1 es 100% libre de gluten" : `${v} son 100% libres de gluten`
+    )
+  }
+  if (stats.gfOptions > 0) {
+    bits.push(`${stats.gfOptions} con opciones`)
+  }
+  const mid = bits.length > 0 ? ` ${bits.join(" y ")},` : ""
+  return `${lead}${mid} según datos de CeliMap; confirmá en el local.`
 }
 
 export function getCategoryTitle(city: City | null, categorySlug: string): string {
@@ -33,12 +60,6 @@ export function getCategoryDescription(city: City | null, categorySlug: string, 
     return `Donde comer sin gluten en ${city.name}. ${count}${catName.toLowerCase()} con información de la comunidad en CeliMap.`
   }
   return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina en el mapa colaborativo CeliMap.`
-}
-
-type CityStatsLike = {
-  total: number
-  dedicatedGf: number
-  gfOptions: number
 }
 
 export function buildCityFaqs(city: City, stats: CityStatsLike) {

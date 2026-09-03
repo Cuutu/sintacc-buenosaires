@@ -3,7 +3,7 @@ import { MapLandingPage } from "@/components/seo/MapLandingPage"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
-const CANONICAL = `${BASE_URL}/mapa-sin-tacc`
+const CANONICAL = `${BASE_URL}/mapa`
 
 const FAQ = [
   {
@@ -24,7 +24,7 @@ const FAQ = [
 ]
 
 export const metadata: Metadata = {
-  title: "Mapa sin tacc | Lugares aptos celíacos ",
+  title: "Mapa sin tacc: lugares aptos celíacos",
   description:
     "¿Buscás un mapa sin tacc? CeliMap reúne restaurantes, cafés y panaderías con opciones Sin TACC en Argentina, con datos aportados por la comunidad.",
   keywords: [
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: CANONICAL },
   openGraph: {
-    title: "Mapa sin tacc ",
+    title: "Mapa sin tacc: lugares aptos celíacos",
     description:
       "Mapa sin tacc con restaurantes, cafés y panaderías con opciones Sin TACC en Argentina. Datos aportados por la comunidad.",
     url: CANONICAL,
@@ -48,8 +48,8 @@ export default function MapaSinTaccPage() {
     <MapLandingPage
       h1="Mapa sin tacc de Argentina"
       intro="Si buscás un mapa sin tacc, acá está: restaurantes, cafés y panaderías con datos de la comunidad, reseñas cuando existen y filtros por ciudad."
-      canonicalPath="/mapa-sin-tacc"
-      metaTitle="Mapa sin tacc "
+      canonicalPath="/mapa"
+      metaTitle="Mapa sin tacc: lugares aptos celíacos"
       metaDescription={metadata.description as string}
       faq={FAQ}
       keywordParagraphs={[

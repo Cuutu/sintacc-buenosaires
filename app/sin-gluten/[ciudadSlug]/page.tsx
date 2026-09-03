@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { cache } from "react"
 import { Metadata } from "next"
 import Link from "next/link"
 import { getCityBySlug, getTop10CitySlugs, CITIES } from "@/lib/seo/cities"
@@ -8,7 +9,7 @@ import {
   getCityPageStats,
   getRecentReviewsForCity,
 } from "@/lib/seo/places"
-import { getCityDescription, getSEOTextBlock, buildCityFaqs } from "@/lib/seo/templates"
+import { getCityTitle, getCityDescription, getSEOTextBlock, buildCityFaqs } from "@/lib/seo/templates"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
@@ -31,8 +32,11 @@ import { Place } from "@/models/Place"
 import { List } from "@/models/List"
 import { publicListsQuery } from "@/lib/lists/access"
 import { INDEXING_THRESHOLDS } from "@/lib/seo/indexing-config"
+import { canonicalCityPlaceFilter } from "@/lib/seo/city-place-match"
 
 const BASE_URL = getBaseUrl()
+
+const getCityPageStatsCached = cache(getCityPageStats)
 
 export const dynamicParams = true
 export const revalidate = 3600
@@ -47,10 +51,7 @@ async function getRelatedPublicLists(citySlug: string) {
   if (!city) return []
   try {
     await connectDB()
-    const placeIds = await Place.find(
-      { status: "approved", province: city.provinceSlug, locality: city.slug },
-      { _id: 1 }
-    ).lean()
+    const placeIds = await Place.find(canonicalCityPlaceFilter(city), { _id: 1 }).lean()
     if (placeIds.length === 0) return []
     const ids = placeIds.map((p: { _id: unknown }) => p._id)
     const lists = await List.find({
@@ -89,6 +90,9 @@ export async function generateMetadata({
   const page = Math.max(1, parseInt(search.page || "1", 10))
   const barrio = search.barrio || undefined
   const { total, pages } = await getPlacesByCity(ciudadSlug, page, barrio)
+  const stats = await getCityPageStatsCached(ciudadSlug)
+  const title = getCityTitle(city, stats)
+  const description = getCityDescription(city, stats)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}`
   // Canonical limpio: page>1 y filtros barrio no crean canónicos indexables distintos
@@ -102,19 +106,13 @@ export async function generateMetadata({
     (page > 1 ? { index: false, follow: true } : undefined)
 
   return {
-    title: `Lugares sin TACC en ${city.name}: mapa y recomendaciones`,
-    description:
-      total === 0
-        ? `Mapa colaborativo de lugares sin TACC en ${city.name}. Todavía hay pocos o ningún lugar cargado: podés sugerir el primero.`
-        : getCityDescription(city, total),
+    title,
+    description,
     ...(robots ? { robots } : {}),
     alternates: { canonical },
     openGraph: {
-      title: `Lugares sin TACC en ${city.name} | CeliMap`,
-      description:
-        total === 0
-          ? `Encontrá opciones sin TACC en ${city.name}. CeliMap es el mapa colaborativo de la comunidad celíaca.`
-          : getCityDescription(city, total),
+      title,
+      description,
       url: baseCanonical,
       type: "website",
     },
@@ -141,7 +139,7 @@ export default async function SinGlutenCiudadPage({
   const [{ places, total, pages }, stats, topNeighborhoods, recentReviews, relatedLists] =
     await Promise.all([
       getPlacesByCity(ciudadSlug, page, barrio),
-      getCityPageStats(ciudadSlug),
+      getCityPageStatsCached(ciudadSlug),
       getTopNeighborhoods(ciudadSlug),
       getRecentReviewsForCity(ciudadSlug, 5),
       getRelatedPublicLists(ciudadSlug),
@@ -179,7 +177,7 @@ export default async function SinGlutenCiudadPage({
       />
       <CityPageJsonLd city={city} places={places} totalPlaces={total} faqs={faqs} />
       <h1 className="mt-4 mb-3 text-2xl font-bold md:text-3xl">
-        Lugares sin TACC en {city.name}: mapa y recomendaciones
+        {getCityTitle(city, stats)}
       </h1>
       <p className="mb-6 max-w-3xl text-muted-foreground">
         En {city.name} hay {stats.total} lugar{stats.total === 1 ? "" : "es"} en CeliMap

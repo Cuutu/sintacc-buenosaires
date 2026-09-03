@@ -30,8 +30,8 @@ export default function MapaLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Desktop: mapa full viewport; SEO debajo (scroll de página).
-  // Mobile: mapa full dvh (sin SEO visible; BottomNav aparte).
+  // Desktop: mapa full viewport; SEO debajo (H1 siempre en HTML; copy extra md+).
+  // Mobile: mapa full dvh; H1 sr-only (no display:none).
   return (
     <div className="flex min-h-0 flex-col md:h-auto md:min-h-0 md:overflow-visible">
       <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden -mb-[var(--bottom-nav-clearance)] md:mb-0 md:h-[calc(100vh-var(--desktop-nav-clearance))] md:min-h-[calc(100vh-var(--desktop-nav-clearance))] md:shrink-0">

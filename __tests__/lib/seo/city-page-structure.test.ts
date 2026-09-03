@@ -42,7 +42,9 @@ describe("city/category page structure — sin FAQs duplicadas", () => {
     expect(src).toContain("CityPageExtras")
     expect(src).toContain("SEOTextBlock")
     expect(src).toContain("buildCityFaqs")
-    expect(src).toContain("CityPageJsonLd")
+    expect(src).toContain("getCityTitle")
+    expect(src).toContain("getCityDescription")
+    expect(src).not.toMatch(/mapa y recomendaciones/)
   })
 
   it("página categoría: un bloque FAQ visible", () => {

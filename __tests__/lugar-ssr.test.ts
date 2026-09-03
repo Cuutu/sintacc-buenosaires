@@ -39,4 +39,14 @@ describe("PR1 ficha lugar SSR", () => {
     expect(loader).toContain('from "react"')
     expect(loader).toContain("cache(")
   })
+
+  it("generateMetadata de ficha faltante no llama notFound", () => {
+    const layout = read("app/lugar/[id]/layout.tsx")
+    const genStart = layout.indexOf("export async function generateMetadata")
+    const genEnd = layout.indexOf("export default async function LugarLayout")
+    const gen = layout.slice(genStart, genEnd)
+    expect(gen).not.toContain("notFound()")
+    expect(gen).toContain("missingPlaceMetadata")
+    expect(layout.slice(genEnd)).toContain("notFound()")
+  })
 })

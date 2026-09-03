@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     "mejor valorados sin TACC",
     "nuevos lugares aptos celíacos",
   ],
+  robots: { index: false, follow: true },
   alternates: { canonical: `${BASE_URL}/explorar` },
   openGraph: {
     title: "Explorar lugares sin gluten - Mapa para celÃ­acos",

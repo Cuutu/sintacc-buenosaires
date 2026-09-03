@@ -23,7 +23,7 @@ export function BrandEmptyState({
       <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-olive/8 text-olive">
         <Wheat className="h-6 w-6" strokeWidth={1.7} aria-hidden />
       </span>
-      <h2 className="font-display text-lg font-bold text-olive">{title}</h2>
+      <h1 className="font-display text-lg font-bold text-olive">{title}</h1>
       {description ? (
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
           {description}

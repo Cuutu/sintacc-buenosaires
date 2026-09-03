@@ -5,6 +5,7 @@ import { getPlacePath } from "@/lib/place-url"
 import { PlaceJsonLd } from "@/components/seo/PlaceJsonLd"
 import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 import { getPlaceLiveStats } from "@/lib/place-stats"
+import { missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
 
 export const dynamicParams = true
 export const revalidate = 3600
@@ -69,7 +70,7 @@ function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
 export async function generateMetadata({ params }: LugarLayoutProps): Promise<Metadata> {
   const { id } = await params
   const place = await getApprovedPlaceByRouteParam(id)
-  if (!place) notFound()
+  if (!place) return missingPlaceMetadata
   return buildPlaceMetadata(place)
 }
 

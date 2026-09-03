@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { List } from "@/models/List"
 import { getBaseUrl } from "@/lib/base-url"
-import { getPlacePath } from "@/lib/place-url"
+import { getPlacePath, isIndexablePlaceSlug } from "@/lib/place-url"
 import { buildSeoPages, dedupeUrls, type SitemapPlace } from "@/lib/seo/sitemap-pages"
 import {
   VENTURE_CATEGORY_LANDINGS,
@@ -17,28 +17,11 @@ import { staticPageLastModified } from "@/lib/seo/static-lastmod"
 
 export const revalidate = 86400 // 24 horas
 
-function entry(
-  url: string,
-  opts: {
-    lastModified?: Date
-    changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"]
-    priority?: number
-  }
-): MetadataRoute.Sitemap[number] {
-  const row: MetadataRoute.Sitemap[number] = {
-    url,
-    changeFrequency: opts.changeFrequency,
-    priority: opts.priority,
-  }
-  if (opts.lastModified) row.lastModified = opts.lastModified
-  return row
-}
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = getBaseUrl()
-  const publishedGuides = getPublishedGuides()
-
-  const staticPages: MetadataRoute.Sitemap = [
+export function buildSitemapStaticPages(
+  base: string,
+  publishedGuides: { slug: string }[]
+): MetadataRoute.Sitemap {
+  return [
     entry(base, {
       lastModified: staticPageLastModified("/"),
       changeFrequency: "daily",
@@ -63,11 +46,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: staticPageLastModified("/mapa-para-celiacos"),
       changeFrequency: "weekly",
       priority: 0.9,
-    }),
-    entry(`${base}/explorar`, {
-      lastModified: staticPageLastModified("/explorar"),
-      changeFrequency: "daily",
-      priority: 0.85,
     }),
     entry(`${base}/sugerir`, {
       lastModified: staticPageLastModified("/sugerir"),
@@ -134,6 +112,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }),
   ]
+}
+
+function entry(
+  url: string,
+  opts: {
+    lastModified?: Date
+    changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"]
+    priority?: number
+  }
+): MetadataRoute.Sitemap[number] {
+  const row: MetadataRoute.Sitemap[number] = {
+    url,
+    changeFrequency: opts.changeFrequency,
+    priority: opts.priority,
+  }
+  if (opts.lastModified) row.lastModified = opts.lastModified
+  return row
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = getBaseUrl()
+  const publishedGuides = getPublishedGuides()
+
+  const staticPages = buildSitemapStaticPages(base, publishedGuides)
 
   let seoPages: MetadataRoute.Sitemap = []
   let placeUrls: MetadataRoute.Sitemap = []
@@ -149,13 +151,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { _id: 1, slug: 1, type: 1, types: 1, neighborhood: 1, province: 1, locality: 1, updatedAt: 1 }
     ).lean()
     seoPages = dedupeUrls(buildSeoPages(base, places as SitemapPlace[]))
-    placeUrls = (places as SitemapPlace[]).map((p) =>
-      entry(`${base}${getPlacePath(p)}`, {
-        lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
-        changeFrequency: "weekly",
-        priority: 0.8,
-      })
-    )
+    placeUrls = (places as SitemapPlace[])
+      .filter((p) => isIndexablePlaceSlug(p.slug))
+      .map((p) =>
+        entry(`${base}${getPlacePath(p)}`, {
+          lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
+          changeFrequency: "weekly",
+          priority: 0.8,
+        })
+      )
 
     try {
       const lists = await List.find(publicListsQuery(), {

@@ -1,4 +1,8 @@
+import { readFileSync } from "fs"
+import path from "path"
 import { buildSeoPages, dedupeUrls, type SitemapPlace } from "@/lib/seo/sitemap-pages"
+import { getPlacePath, isIndexablePlaceSlug } from "@/lib/place-url"
+import { getPublishedGuides, FUTURE_GUIDE_TOPICS } from "@/lib/seo/guides"
 
 const BASE = "https://www.celimap.com.ar"
 
@@ -15,6 +19,93 @@ function makePlace(overrides: Partial<SitemapPlace> & { _id: string }): SitemapP
     ...overrides,
   }
 }
+
+describe("isIndexablePlaceSlug", () => {
+  it("rechaza slug vacío o ausente", () => {
+    expect(isIndexablePlaceSlug(undefined)).toBe(false)
+    expect(isIndexablePlaceSlug("")).toBe(false)
+    expect(isIndexablePlaceSlug("   ")).toBe(false)
+  })
+
+  it("rechaza ObjectId de 24 hex", () => {
+    expect(isIndexablePlaceSlug("69a980cadebe71f1c8464444")).toBe(false)
+  })
+
+  it("acepta slug humano", () => {
+    expect(isIndexablePlaceSlug("gout-caballito-caballito")).toBe(true)
+  })
+
+  it("no filtra slugs GSC con clics (approved vivos)", () => {
+    const gscSlugs = [
+      "gout-gluten-free-canning",
+      "piacere-sin-tacc-ramos-mejia",
+      "la-union-gluten-free-guemes-palermo",
+      "campobravo-las-lomitas",
+      "gout-gluten-free-caballito-caballito",
+      "dalone-rock-san-isidro",
+      "big-pons-unicenter",
+      "dragon-porteno-belgrano",
+      "la-union-gluten-free-belgrano-palermo",
+      "la-chiperia-gastronomia-casera-libre-de-gluten",
+      "gout-gluten-free-barracas-barracas",
+      "la-union-gluten-free-olivos",
+      "sin-tacc-corrientes-almagro",
+      "el-rey-del-chipa",
+      "rica-celi-gluten-free-recoleta",
+    ]
+    for (const slug of gscSlugs) {
+      expect(isIndexablePlaceSlug(slug)).toBe(true)
+    }
+  })
+})
+
+describe("sitemap place URLs", () => {
+  it("filtra ObjectId antes de getPlacePath; getPlacePath igual usa ObjectId si no hay slug", () => {
+    const objectId = "69a980cadebe71f1c8464444"
+    const places = [
+      { _id: objectId, slug: objectId },
+      { _id: objectId, slug: null },
+      { _id: "ok", slug: "gout-caballito-caballito" },
+    ]
+    const urls = places
+      .filter((p) => isIndexablePlaceSlug(p.slug))
+      .map((p) => `${BASE}${getPlacePath(p)}`)
+    expect(urls).toEqual([`${BASE}/lugar/gout-caballito-caballito`])
+    expect(getPlacePath({ _id: objectId, slug: objectId })).toBe(`/lugar/${objectId}`)
+  })
+})
+
+describe("sitemap static pages", () => {
+  const sitemapSrc = readFileSync(
+    path.join(__dirname, "../../../app/sitemap.ts"),
+    "utf8"
+  )
+
+  it("lista estática no incluye /explorar", () => {
+    expect(sitemapSrc).toMatch(/buildSitemapStaticPages/)
+    expect(sitemapSrc).not.toMatch(/\$\{base\}\/explorar/)
+    const staticBlock = sitemapSrc.slice(
+      sitemapSrc.indexOf("export function buildSitemapStaticPages"),
+      sitemapSrc.indexOf("function entry")
+    )
+    expect(staticBlock).toContain("${base}/guias")
+    expect(staticBlock).not.toContain("/explorar")
+  })
+})
+
+describe("getPublishedGuides slugs", () => {
+  it("expone exactamente las 4 published", () => {
+    expect(getPublishedGuides().map((g) => g.slug)).toEqual([
+      "que-significa-100-libre-de-gluten",
+      "diferencia-sin-tacc-y-opciones-sin-tacc",
+      "que-preguntar-en-un-restaurante-si-sos-celiaco",
+      "reducir-contaminacion-cruzada-al-comer-afuera",
+    ])
+    for (const slug of FUTURE_GUIDE_TOPICS) {
+      expect(getPublishedGuides().some((g) => g.slug === slug)).toBe(false)
+    }
+  })
+})
 
 describe("lib/seo/sitemap-pages", () => {
   it("no genera URLs duplicadas (incluye /sin-gluten/cordoba una sola vez)", () => {

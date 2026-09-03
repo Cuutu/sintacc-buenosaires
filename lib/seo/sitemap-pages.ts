@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { CITIES, CATEGORIES, CATEGORY_SLUG_TO_TYPE } from "./cities"
 import { PROVINCES } from "./provinces"
+import { placeMatchesCanonicalCity } from "./city-place-match"
 import {
   isProvincePageIndexable,
   isProvinceCategoryIndexable,
@@ -73,9 +74,7 @@ export function buildSeoPages(base: string, places: SitemapPlace[]): MetadataRou
   }
 
   for (const city of CITIES) {
-    const cityPlaces = places.filter(
-      (p) => p.province === city.provinceSlug && p.locality === city.slug
-    )
+    const cityPlaces = places.filter((p) => placeMatchesCanonicalCity(p, city))
     if (isCityPageIndexable(cityPlaces.length, city.slug)) {
       pages.push({
         url: `${base}/sin-gluten/${city.slug}`,
