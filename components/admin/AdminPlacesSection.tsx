@@ -261,9 +261,17 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
           {chip(placeReviewMode === "duplicates", "Duplicados", () =>
             setPlaceReviewMode(placeReviewMode === "duplicates" ? null : "duplicates")
           )}
-          {chip(placeReviewMode === "incomplete", "Investigar IA", () =>
-            setPlaceReviewMode(placeReviewMode === "incomplete" ? null : "incomplete")
-          )}
+          {chip(placeReviewMode === "incomplete", "Investigar IA", () => {
+            if (placeReviewMode === "incomplete") {
+              setPlaceReviewMode(null)
+              return
+            }
+            if (placeFilter !== "pending") {
+              setPlaceFilter("pending")
+              apply("pending")
+            }
+            setPlaceReviewMode("incomplete")
+          })}
           {placePopularFilter
             ? chip(true, "Con reseñas Google", () => {
                 setPlacePopularFilter(false)
@@ -414,7 +422,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
 
       <AdminPlaceReviewTools
         mode={placeReviewMode}
-        catalog={placeFilter === "pending" ? "pending" : "approved"}
+        catalog="pending"
         onClose={() => setPlaceReviewMode(null)}
         onRefreshPlaces={() => fetchPlaces(undefined, props.placesPage)}
         onEditPlace={setEditingPlaceId}

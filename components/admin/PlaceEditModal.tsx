@@ -506,12 +506,14 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                     </div>
                   ) : null}
 
-                  <PlaceResearchPanel
-                    placeId={placeId}
-                    placeName={formData.name}
-                    aiResearch={aiResearch}
-                    onUpdated={() => setResearchTick((n) => n + 1)}
-                  />
+                  {formData.status !== "approved" ? (
+                    <PlaceResearchPanel
+                      placeId={placeId}
+                      placeName={formData.name}
+                      aiResearch={aiResearch}
+                      onUpdated={() => setResearchTick((n) => n + 1)}
+                    />
+                  ) : null}
 
                   <div
                     className="-mx-1 flex gap-1 overflow-x-auto px-1"

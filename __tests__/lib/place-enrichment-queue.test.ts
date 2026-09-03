@@ -6,6 +6,7 @@ describe("shouldEnqueuePlaceForResearch", () => {
     address: "Calle 1",
     neighborhood: "Palermo",
     type: "other" as const,
+    status: "pending" as const,
     photos: [] as string[],
   }
 
@@ -13,37 +14,43 @@ describe("shouldEnqueuePlaceForResearch", () => {
     expect(
       shouldEnqueuePlaceForResearch(
         { ...barePending, aiEnrichment: { status: "queued" } },
-        { catalog: "pending", force: true }
+        { force: true }
       )
     ).toBe(false)
     expect(
-      shouldEnqueuePlaceForResearch(
-        { ...barePending, aiEnrichment: { status: "running" } },
-        { catalog: "approved" }
-      )
+      shouldEnqueuePlaceForResearch({
+        ...barePending,
+        aiEnrichment: { status: "running" },
+      })
     ).toBe(false)
   })
 
-  it("enqueues published places missing TACC", () => {
-    expect(shouldEnqueuePlaceForResearch(barePending, { catalog: "approved" })).toBe(true)
+  it("never enqueues published places", () => {
+    expect(
+      shouldEnqueuePlaceForResearch({
+        ...barePending,
+        status: "approved",
+        safetyLevel: undefined,
+      })
+    ).toBe(false)
     expect(
       shouldEnqueuePlaceForResearch(
-        { ...barePending, safetyLevel: "gf_options" },
-        { catalog: "approved" }
+        { ...barePending, status: "approved", aiEnrichment: { status: "failed" } },
+        { force: true }
       )
     ).toBe(false)
   })
 
   it("enqueues pending places with thin ficha even if TACC is set", () => {
     expect(
-      shouldEnqueuePlaceForResearch(
-        { ...barePending, safetyLevel: "gf_options" },
-        { catalog: "pending" }
-      )
+      shouldEnqueuePlaceForResearch({
+        ...barePending,
+        safetyLevel: "gf_options",
+      })
     ).toBe(true)
   })
 
-  it("force re-enqueues done places unless already in flight", () => {
+  it("force re-enqueues done pending places unless already in flight", () => {
     expect(
       shouldEnqueuePlaceForResearch(
         {

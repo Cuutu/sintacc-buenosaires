@@ -44,7 +44,7 @@ function getInternalJobSecret(): string | null {
 }
 
 export async function getEnrichmentQueueStats(
-  catalog: EnrichmentCatalog = "approved"
+  catalog: EnrichmentCatalog = "pending"
 ): Promise<EnrichmentQueueStats> {
   await connectDB()
   const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
@@ -86,6 +86,7 @@ export async function resetStaleEnrichmentJobs(): Promise<number> {
   const staleBefore = new Date(Date.now() - QUEUE_JOB_STALE_MS)
   const result = await Place.updateMany(
     {
+      status: "pending",
       "aiEnrichment.status": "running",
       $or: [
         { "aiEnrichment.startedAt": { $lt: staleBefore } },
@@ -106,14 +107,14 @@ export async function enqueueIncompletePlaces(
   options: EnrichmentQueueOptions = {}
 ): Promise<{ queued: number; skipped: number }> {
   await connectDB()
-  const catalog = options.catalog ?? "approved"
   const ids = (options.ids ?? []).filter((id) => mongoose.Types.ObjectId.isValid(id))
-  const query = ids.length
-    ? { _id: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) } }
-    : catalogStatusFilter(catalog)
+  const query: Record<string, unknown> = { status: "pending" }
+  if (ids.length) {
+    query._id = { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) }
+  }
 
   const places = await Place.find(query)
-    .select(PLACE_SELECT)
+    .select(`${PLACE_SELECT} status`)
     .sort({ updatedAt: 1 })
     .limit(ids.length ? ids.length : 3000)
     .lean()
@@ -124,7 +125,6 @@ export async function enqueueIncompletePlaces(
   for (const place of places) {
     if (
       !shouldEnqueuePlaceForResearch(place, {
-        catalog,
         force: ids.length > 0,
       })
     ) {
@@ -157,6 +157,7 @@ async function claimNextQueuedPlace(): Promise<string | null> {
   await connectDB()
   const claimed = await Place.findOneAndUpdate(
     {
+      status: "pending",
       "aiEnrichment.status": "queued",
     },
     {
@@ -226,6 +227,7 @@ export async function processEnrichmentQueueTick(): Promise<{
   }
 
   const remaining = await Place.countDocuments({
+    status: "pending",
     "aiEnrichment.status": "queued",
   })
 
@@ -272,6 +274,7 @@ export async function runEnrichmentQueueWorker(): Promise<void> {
   } catch (err) {
     logApiError("runEnrichmentQueueWorker", err, {})
     const remaining = await Place.countDocuments({
+      status: "pending",
       "aiEnrichment.status": "queued",
     }).catch(() => 0)
     if (remaining > 0) scheduleNextQueueWorker()
@@ -285,26 +288,51 @@ export async function startEnrichmentQueue(
   skipped: number
   stats: EnrichmentQueueStats
 }> {
-  const catalog = options.catalog ?? (options.ids?.length ? "all" : "approved")
   await resetStaleEnrichmentJobs()
-  const { queued, skipped } = await enqueueIncompletePlaces({ ...options, catalog })
-  const stats = await getEnrichmentQueueStats(catalog)
+  const { queued, skipped } = await enqueueIncompletePlaces({ ...options, catalog: "pending" })
+  const stats = await getEnrichmentQueueStats("pending")
   if (stats.queued > 0 || stats.stuckRunning > 0) {
     scheduleNextQueueWorker()
   }
-  const latestStats = await getEnrichmentQueueStats(catalog)
+  const latestStats = await getEnrichmentQueueStats("pending")
   return { queued, skipped, stats: latestStats }
 }
 
-export async function resumeEnrichmentQueue(
-  catalog: EnrichmentCatalog = "all"
-): Promise<EnrichmentQueueStats> {
+export async function resumeEnrichmentQueue(): Promise<EnrichmentQueueStats> {
   await resetStaleEnrichmentJobs()
-  const stats = await getEnrichmentQueueStats(catalog)
+  const stats = await getEnrichmentQueueStats("pending")
   if (stats.queued > 0 || stats.stuckRunning > 0) {
     scheduleNextQueueWorker()
   }
-  return getEnrichmentQueueStats(catalog)
+  return getEnrichmentQueueStats("pending")
+}
+
+/** Saca queued/running. El lugar ya en vuelo puede terminar igual. */
+export async function cancelEnrichmentQueue(): Promise<{
+  cancelled: number
+  stats: EnrichmentQueueStats
+}> {
+  await connectDB()
+  const result = await Place.updateMany(
+    {
+      status: "pending",
+      "aiEnrichment.status": { $in: ["queued", "running"] },
+    },
+    {
+      $set: {
+        aiEnrichment: {
+          status: "pending",
+          ranAt: new Date(),
+          summary: "",
+          evidence: [],
+          needsAdmin: true,
+          error: "Cola cancelada",
+        },
+      },
+    }
+  )
+  const stats = await getEnrichmentQueueStats("pending")
+  return { cancelled: result.modifiedCount, stats }
 }
 
 export function isValidInternalJobRequest(secret: string | null): boolean {

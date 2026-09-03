@@ -37,6 +37,13 @@ export async function POST(
       return NextResponse.json({ error: "Lugar no encontrado" }, { status: 404 })
     }
 
+    if (place.status === "approved") {
+      return NextResponse.json(
+        { error: "Solo se investigan lugares pendientes / no publicados" },
+        { status: 400 }
+      )
+    }
+
     const result = await runPlaceResearch(params.id)
     const updated = await Place.findById(params.id).lean()
 
@@ -75,6 +82,13 @@ export async function PATCH(
     const place = await Place.findById(params.id)
     if (!place) {
       return NextResponse.json({ error: "Lugar no encontrado" }, { status: 404 })
+    }
+
+    if (place.status === "approved") {
+      return NextResponse.json(
+        { error: "Solo se investigan lugares pendientes / no publicados" },
+        { status: 400 }
+      )
     }
 
     const patch: Partial<IPlace> = {

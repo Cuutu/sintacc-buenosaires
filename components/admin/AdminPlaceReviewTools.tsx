@@ -81,7 +81,7 @@ function typeLabel(type?: string) {
 
 export function AdminPlaceReviewTools({
   mode,
-  catalog = "approved",
+  catalog = "pending",
   onClose,
   onRefreshPlaces,
   onEditPlace,
@@ -338,6 +338,27 @@ export function AdminPlaceReviewTools({
     }
   }
 
+  const cancelQueue = async () => {
+    if (!window.confirm("¿Cancelar la cola de investigación? Los lugares vuelven a pendientes.")) return
+    setEnriching(true)
+    try {
+      const res = await fetch("/api/admin/places/enrichment-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al cancelar cola")
+      toast.success(data.message || "Cola cancelada")
+      await refreshIncomplete()
+      onRefreshPlaces()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al cancelar")
+    } finally {
+      setEnriching(false)
+    }
+  }
+
   const startGoogleQueue = async (force = false) => {
     setEnriching(true)
     try {
@@ -584,6 +605,17 @@ export function AdminPlaceReviewTools({
               >
                 {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 Publicar seleccionados ({selectedDeleteIds.size})
+              </Button>
+            ) : null}
+            {queueStats && (queueStats.queued > 0 || queueStats.running > 0) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                disabled={enriching}
+                onClick={() => void cancelQueue()}
+              >
+                Cancelar cola
               </Button>
             ) : null}
             {queueStats && queueStats.stalled ? (

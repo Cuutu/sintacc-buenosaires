@@ -18,29 +18,30 @@ export type EnrichmentPlaceLike = Pick<
   | "safetyLevel"
   | "tags"
 > & {
+  status?: IPlace["status"]
   aiEnrichment?: { status?: string } | null
 }
 
-export function catalogStatusFilter(catalog: EnrichmentCatalog = "approved"): Record<string, unknown> {
+export function isUnpublishedPlace(place: { status?: string | null }): boolean {
+  return place.status !== "approved"
+}
+
+export function catalogStatusFilter(catalog: EnrichmentCatalog = "pending"): Record<string, unknown> {
   if (catalog === "all") return { status: { $in: ["approved", "pending"] } }
   return { status: catalog }
 }
 
+/** Solo pendientes / no publicados. Publicados nunca entran a la cola IA. */
 export function shouldEnqueuePlaceForResearch(
   place: EnrichmentPlaceLike,
-  options: { catalog?: EnrichmentCatalog; force?: boolean } = {}
+  options: { force?: boolean } = {}
 ): boolean {
+  if (!isUnpublishedPlace(place)) return false
   const status = place.aiEnrichment?.status
   if (status === "queued" || status === "running") return false
   if (options.force) return true
   if (status === "failed") return true
-
-  const catalog = options.catalog ?? "approved"
-  if (catalog === "pending" || catalog === "all") {
-    if (isPlaceInformationIncomplete(place)) return true
-    if (isPlaceMissingTaccClassification(place)) return true
-    return status !== "done"
-  }
-
-  return isPlaceMissingTaccClassification(place)
+  if (isPlaceInformationIncomplete(place)) return true
+  if (isPlaceMissingTaccClassification(place)) return true
+  return status !== "done"
 }

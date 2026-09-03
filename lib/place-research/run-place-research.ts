@@ -240,6 +240,9 @@ export async function runPlaceResearch(
   await connectDB()
   const place = await Place.findById(placeId)
   if (!place) throw new Error("Lugar no encontrado")
+  if (place.status === "approved") {
+    throw new Error("Solo se investigan lugares pendientes / no publicados")
+  }
 
   const existing = place.aiEnrichment
   // Cola ya claim-eó el job (status=running). No salir early: eso deja jobs colgados forever.

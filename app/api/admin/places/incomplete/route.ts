@@ -62,7 +62,9 @@ export async function GET(request: NextRequest) {
     if (session instanceof NextResponse) return session
 
     await connectDB()
-    const catalog = parseCatalog(request.nextUrl.searchParams.get("catalog"))
+    const catalog = parseCatalog(request.nextUrl.searchParams.get("catalog")) === "approved"
+      ? "approved"
+      : "pending"
     const places = await Place.find(catalogStatusFilter(catalog))
       .select(
         "name address neighborhood type types contact openingHours photos safetyLevel tags description location status aiEnrichment"
@@ -118,9 +120,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = (await request.json().catch(() => ({}))) as { catalog?: EnrichmentCatalog }
-    const catalog = parseCatalog(body.catalog ?? null)
-    const result = await startEnrichmentQueue({ catalog })
+    const result = await startEnrichmentQueue({ catalog: "pending" })
     return NextResponse.json(result)
   } catch (error) {
     logApiError("/api/admin/places/incomplete", error, { request })

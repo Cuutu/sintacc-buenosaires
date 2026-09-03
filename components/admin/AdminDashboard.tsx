@@ -455,9 +455,12 @@ export function AdminDashboard({
   }
 
   const handleBulkResearch = async () => {
-    const ids = Array.from(selectedPlaceIds)
+    const ids = Array.from(selectedPlaceIds).filter((id) => {
+      const place = places.find((row) => row._id === id)
+      return place && place.status !== "approved"
+    })
     if (ids.length === 0) {
-      toast.error("Seleccioná al menos un lugar")
+      toast.error("Solo se investigan lugares pendientes / no publicados")
       return
     }
     try {
