@@ -172,7 +172,7 @@ workflows:
       groups:
         - android_credentials
       vars:
-        PACKAGE_NAME: "com.celimap.app"
+        PACKAGE_NAME: "com.celimap.mobile"
         CAPACITOR_RELEASE_LOCK: "1"
       java: 21
     scripts:

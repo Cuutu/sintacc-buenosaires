@@ -1,6 +1,15 @@
 import type { CapacitorConfig } from "@capacitor/cli"
 
 /**
+ * App IDs (NO son el mismo):
+ *   iOS App Store / default:  com.celimap.app
+ *   Android Play:             com.celimap.mobile
+ *
+ * `npx cap sync ios` y `npx cap sync` (sin plataforma) escriben el id de iOS,
+ * para que un build iOS futuro no pise el bundle de Apple.
+ * `npx cap sync android` (Codemagic android-aab) escribe com.celimap.mobile.
+ * El applicationId real de Play vive en android/app/build.gradle — sync no lo pisa.
+ *
  * server.url se resuelve en sync-time (máquina del developer / CI), no en runtime WebView.
  *
  * Producción (default):
@@ -15,6 +24,22 @@ import type { CapacitorConfig } from "@capacitor/cli"
  * - MODE=preview sin URL → throw
  * - Release CI: no definir CAPACITOR_SERVER_* → prod garantizado
  */
+
+export const IOS_APP_ID = "com.celimap.app"
+export const ANDROID_APP_ID = "com.celimap.mobile"
+
+/** iOS id salvo sync/copy/open android-only, o CAPACITOR_ANDROID_APP_ID=1. */
+export function resolveAppId(
+  argv: string[] = process.argv,
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  if (env.CAPACITOR_ANDROID_APP_ID === "1") return ANDROID_APP_ID
+  const args = argv.slice(2).join(" ").toLowerCase()
+  const hasAndroid = /\bandroid\b/.test(args)
+  const hasIos = /\bios\b/.test(args)
+  if (hasAndroid && !hasIos) return ANDROID_APP_ID
+  return IOS_APP_ID
+}
 
 const PROD_SERVER_URL = "https://www.celimap.com.ar"
 
@@ -62,7 +87,7 @@ function resolveServer(): { url: string; cleartext: boolean; isPreview: boolean 
 const server = resolveServer()
 
 const config: CapacitorConfig = {
-  appId: "com.celimap.app",
+  appId: resolveAppId(),
   // Nombre visible distinto en Preview (mismo bundle ID / signing)
   appName: server.isPreview ? "CeliMap Preview" : "Celimap",
   webDir: "www",

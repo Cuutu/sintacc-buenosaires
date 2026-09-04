@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Celimap</string>
     <string name="title_activity_main">Celimap</string>
-    <string name="package_name">com.celimap.app</string>
-    <string name="custom_url_scheme">com.celimap.app</string>
+    <string name="package_name">com.celimap.mobile</string>
+    <string name="custom_url_scheme">com.celimap.mobile</string>
 </resources>

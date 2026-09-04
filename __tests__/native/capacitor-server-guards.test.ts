@@ -51,4 +51,26 @@ describe("capacitor server URL guards", () => {
     process.env.CAPACITOR_SERVER_URL = "https://preview.example.com"
     await expect(import("../../capacitor.config")).rejects.toThrow(/Release lock/)
   })
+
+  it("default / iOS appId es com.celimap.app", async () => {
+    const { resolveAppId, IOS_APP_ID } = await import("../../capacitor.config")
+    expect(IOS_APP_ID).toBe("com.celimap.app")
+    expect(resolveAppId(["node", "cap", "sync"])).toBe("com.celimap.app")
+    expect(resolveAppId(["node", "cap", "sync", "ios"])).toBe("com.celimap.app")
+  })
+
+  it("sync android-only usa com.celimap.mobile", async () => {
+    const { resolveAppId, ANDROID_APP_ID } = await import("../../capacitor.config")
+    expect(ANDROID_APP_ID).toBe("com.celimap.mobile")
+    expect(resolveAppId(["node", "cap", "sync", "android"])).toBe(
+      "com.celimap.mobile"
+    )
+  })
+
+  it("sync ambas plataformas no pisa iOS con el id de Android", async () => {
+    const { resolveAppId } = await import("../../capacitor.config")
+    expect(resolveAppId(["node", "cap", "sync", "ios", "android"])).toBe(
+      "com.celimap.app"
+    )
+  })
 })

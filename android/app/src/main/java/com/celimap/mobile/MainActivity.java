@@ -1,4 +1,4 @@
-package com.celimap.app;
+package com.celimap.mobile;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
