@@ -96,6 +96,11 @@ export function buildSitemapStaticPages(
       changeFrequency: "yearly",
       priority: 0.3,
     }),
+    entry(`${base}/eliminar-cuenta`, {
+      lastModified: staticPageLastModified("/eliminar-cuenta"),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    }),
     entry(`${base}/terminos`, {
       lastModified: staticPageLastModified("/terminos"),
       changeFrequency: "yearly",
