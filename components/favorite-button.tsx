@@ -47,9 +47,9 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
       aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
       aria-pressed={favorited}
     >
-      <Heart
+        <Heart
         className={`h-5 w-5 ${showLabel ? "mr-2" : ""} ${
-          favorited ? "fill-red-500 text-red-500" : ""
+          favorited ? "fill-[#B64320] text-[#B64320]" : ""
         }`}
       />
       {showLabel && "Guardar"}

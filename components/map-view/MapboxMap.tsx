@@ -53,46 +53,8 @@ import { isNativeApp } from "@/lib/native-app"
 export { TYPE_MARKERS } from "./map-popup-html"
 export type { MapViewportBounds }
 
-function softenLightMap(map: mapboxgl.Map) {
-  const style = map.getStyle()
-  for (const layer of style.layers ?? []) {
-    const id = layer.id
-    try {
-      if (layer.type === "background") {
-        map.setPaintProperty(id, "background-color", "#F6F1E8")
-      }
-      if (layer.type === "fill") {
-        if (/park|landuse|landcover|national-park/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", "#E8EDE4")
-          map.setPaintProperty(id, "fill-opacity", 0.35)
-        }
-        if (/water/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", "#E4E8E6")
-        }
-        if (/building/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", "#EDE8E0")
-          map.setPaintProperty(id, "fill-opacity", 0.22)
-        }
-      }
-      if (layer.type === "line" && /road|street|path|bridge|tunnel|pedestrian/i.test(id)) {
-        map.setPaintProperty(id, "line-color", "#DDD6CC")
-        map.setPaintProperty(id, "line-opacity", 0.38)
-      }
-      if (layer.type === "symbol") {
-        if (/poi|transit|airport|rail/i.test(id)) {
-          map.setLayoutProperty(id, "visibility", "none")
-          continue
-        }
-        map.setPaintProperty(id, "text-color", "#C4BEB4")
-        map.setPaintProperty(id, "text-halo-color", "#F6F1E8")
-        map.setPaintProperty(id, "text-halo-width", 1)
-        map.setPaintProperty(id, "icon-opacity", 0.2)
-      }
-    } catch {
-      /* paint mismatch on this layer */
-    }
-  }
-}
+/** Estilo publicado CeliMap. No pisar con light-v11 ni paint runtime. */
+export const CELIMAP_MAP_STYLE = "mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831"
 
 export interface MapboxMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void
@@ -105,6 +67,20 @@ export interface MapboxMapRef {
   projectLngLat: (lng: number, lat: number) => { x: number; y: number } | null
   getContainerSize: () => { width: number; height: number } | null
   subscribeViewChange: (listener: () => void) => () => void
+}
+
+export type MapOverlayPadding = {
+  top: number
+  bottom: number
+}
+
+const CAMERA_FOCUS_MS = 420
+const CAMERA_PADDING_MS = 300
+const PIN_KEEP_ZOOM = 15.5
+
+function overlayPaddingKey(padding: MapOverlayPadding | null | undefined): string {
+  if (!padding) return ""
+  return `${padding.top}|${padding.bottom}`
 }
 
 export type MapInteractionMode = "default" | "private-guide"
@@ -167,6 +143,11 @@ interface MapboxMapProps {
   interactionMode?: MapInteractionMode
   /** Marcadores con número de orden (1..n según orden de `places`). */
   numberedMarkers?: boolean
+  /**
+   * Padding de overlay (top bar + nav + ficha). Si `false`, aún no se midió:
+   * no mover cámara. Desktop no pasa esta prop.
+   */
+  overlayPadding?: MapOverlayPadding | false
 }
 
 export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -192,6 +173,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       showPopup = true,
       interactionMode = "default",
       numberedMarkers = false,
+      overlayPadding,
     },
     ref
   ) => {
@@ -210,6 +192,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
+    const lastOverlayPaddingKeyRef = useRef<string | null>(null)
     const selectedPlaceIdRef = useRef(selectedPlaceId)
     selectedPlaceIdRef.current = selectedPlaceId
     const hoveredPlaceIdRef = useRef(hoveredPlaceId)
@@ -507,16 +490,11 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             container: mapContainer.current,
             style: darkStyle
               ? "mapbox://styles/mapbox/dark-v11"
-              : "mapbox://styles/mapbox/light-v11",
+              : CELIMAP_MAP_STYLE,
             center: initialCenter ?? CABA_CENTER,
             zoom: initialZoom ?? CABA_ZOOM,
             failIfMajorPerformanceCaveat: false,
           })
-          if (!darkStyle) {
-            instance.on("load", () => {
-              if (!disposedRef.current) softenLightMap(instance)
-            })
-          }
           instance.on("load", () => {
             if (disposedRef.current || isPrivateGuide) return
             ensurePlacesLayers(instance, reduceMotion, false)
@@ -875,11 +853,11 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           ? places.find((place) => place._id != null && String(place._id) === hoveredPlaceId) ?? null
           : null
       try {
-        setSelectedPlaceOnMap(m, selected ?? hovered, selected ? "selected" : "hovered")
+        setSelectedPlaceOnMap(m, selected ?? hovered, selected ? "selected" : "hovered", reduceMotion)
       } catch {
         /* source still not ready */
       }
-    }, [selectedPlaceId, hoveredPlaceId, places, useNumberedMarkers])
+    }, [selectedPlaceId, hoveredPlaceId, places, useNumberedMarkers, reduceMotion])
 
     useEffect(() => {
       const m = map.current
@@ -996,32 +974,76 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [])
 
     useEffect(() => {
-      if (!map.current || !selectedPlaceId) {
-        lastFocusedPlaceIdRef.current = null
-        return
-      }
-      if (lastFocusedPlaceIdRef.current === selectedPlaceId) return
+      if (!map.current) return
+      if (overlayPadding === false) return
 
-      const place = places.find((p) => p._id != null && String(p._id) === selectedPlaceId)
-      const lng = place?.location?.lng
-      const lat = place?.location?.lat
-      if (place && Number.isFinite(lng) && Number.isFinite(lat)) {
-        lastFocusedPlaceIdRef.current = selectedPlaceId
+      const padding = overlayPadding
+        ? { top: overlayPadding.top, right: 0, bottom: overlayPadding.bottom, left: 0 }
+        : null
+      const padKey = overlayPaddingKey(overlayPadding ?? null)
+      const durationPadding = reduceMotion ? 0 : CAMERA_PADDING_MS
+      const durationFocus = reduceMotion ? 0 : CAMERA_FOCUS_MS
+
+      const runEaseTo = (options: mapboxgl.EaseToOptions) => {
+        if (disposedRef.current || !map.current) return
         try {
-          const currentZoom = map.current.getZoom()
-          const zoom = isPrivateGuide
-            ? Math.min(Math.max(currentZoom, 12), 14)
-            : PIN_FOCUS_ZOOM
-          map.current.easeTo({
-            center: [lng as number, lat as number],
-            zoom,
-            duration: reduceMotion ? 0 : 700,
-          })
+          map.current.stop()
+          map.current.easeTo(options)
         } catch {
           /* mapa destruido */
         }
       }
-    }, [selectedPlaceId, places, reduceMotion, isPrivateGuide])
+
+      if (!selectedPlaceId) {
+        lastFocusedPlaceIdRef.current = null
+        if (padding && lastOverlayPaddingKeyRef.current !== padKey) {
+          runEaseTo({
+            padding,
+            duration: lastOverlayPaddingKeyRef.current == null ? 0 : durationPadding,
+            essential: true,
+          })
+          lastOverlayPaddingKeyRef.current = padKey
+        }
+        return
+      }
+
+      if (lastFocusedPlaceIdRef.current === selectedPlaceId) {
+        if (padding && lastOverlayPaddingKeyRef.current !== padKey) {
+          runEaseTo({
+            padding,
+            duration: durationPadding,
+            essential: true,
+          })
+          lastOverlayPaddingKeyRef.current = padKey
+        }
+        return
+      }
+
+      const place = places.find((p) => p._id != null && String(p._id) === selectedPlaceId)
+      const lng = place?.location?.lng
+      const lat = place?.location?.lat
+      if (!place || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+
+      lastFocusedPlaceIdRef.current = selectedPlaceId
+      lastOverlayPaddingKeyRef.current = padKey
+      try {
+        const currentZoom = map.current.getZoom()
+        const zoom = isPrivateGuide
+          ? Math.min(Math.max(currentZoom, 12), 14)
+          : currentZoom >= PIN_KEEP_ZOOM
+            ? currentZoom
+            : PIN_FOCUS_ZOOM
+        runEaseTo({
+          center: [lng as number, lat as number],
+          zoom,
+          ...(padding ? { padding } : {}),
+          duration: durationFocus,
+          essential: true,
+        })
+      } catch {
+        /* mapa destruido */
+      }
+    }, [selectedPlaceId, places, reduceMotion, isPrivateGuide, overlayPadding])
 
     if (initError) {
       return (

@@ -102,7 +102,7 @@ export function MapBottomSheet({
   return (
     <div
       className={cn(
-        "fixed inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 overflow-hidden rounded-t-[24px] border border-[#E8E1D6] border-b-0 bg-[#F8F5EF] shadow-[0_-12px_32px_rgba(31,77,53,0.12)]",
+        "map-paper fixed inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0",
         !reduceMotion && !isDragging && "transition-[height] duration-300 ease-out",
         className
       )}
@@ -125,7 +125,7 @@ export function MapBottomSheet({
           }
         }}
       >
-        <div className="h-1.5 w-10 rounded-full bg-[#E8E1D6]" aria-hidden />
+        <div className="map-handle" aria-hidden />
       </div>
 
       <div

@@ -25,6 +25,8 @@ jest.mock("@/components/map-view/PlacesList", () => ({
 jest.mock("@/components/map-view/MobileMapBottomSheet", () => ({
   MobileMapBottomSheet: () => React.createElement("div"),
   MOBILE_SHEET_COMPACT_PX: 120,
+  MOBILE_SHEET_EXPANDED_PX: 320,
+  CAMERA_SHEET_GAP_PX: 8,
 }))
 
 jest.mock("@/components/map-view/BottomSheet", () => ({

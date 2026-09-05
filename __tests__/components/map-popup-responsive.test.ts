@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { formatListDistance, metersBetween } from "@/components/map-view/geo"
 
 describe("popup mapa responsive", () => {
   it("desktop usa popover anclado, no bottom sheet", () => {
@@ -45,6 +46,9 @@ describe("popup mapa responsive", () => {
     expect(src).toContain("CLOSE_THRESHOLD_PX")
     expect(src).toContain('data-directions="true"')
     expect(src).toContain("getPlaceDetailPath")
+    expect(src).toContain("translate3d")
+    expect(src).not.toContain("transition-[height]")
+    expect(src).not.toContain("onHeightChange")
   })
 
   it("lista mobile cream, sin FAB encima de cards", () => {
@@ -60,11 +64,46 @@ describe("popup mapa responsive", () => {
       path.join(process.cwd(), "components/map-view/PlaceMiniCard.tsx"),
       "utf8"
     )
-    expect(sheet).toContain("#F8F5EF")
+    expect(sheet).toContain("map-paper")
     expect(sheet).not.toContain("bg-black/70")
-    expect(mobile).toContain("{!listOpen && (")
+    expect(mobile).toContain("!listOpen && sheetSnap !== \"expanded\"")
     expect(mobile).toContain("<FabButtons")
     expect(mobile).not.toContain("18vh")
-    expect(card).not.toContain("getPlaceImageUrl")
+    expect(card).toContain("getPlaceImageUrl")
+    expect(card).toContain("formatListDistance")
+    expect(card).toContain('primaryType !== "other"')
+  })
+
+  it("select de lugar no dispara flyTo; GPS si", () => {
+    const mobile = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MapMobile.tsx"),
+      "utf8"
+    )
+    const map = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MapboxMap.tsx"),
+      "utf8"
+    )
+    const desktop = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MapDesktop.tsx"),
+      "utf8"
+    )
+    expect(mobile).not.toContain("mapRef.current.flyTo(place.location")
+    expect(mobile).toContain("mapRef.current?.flyTo(longitude, latitude, 16)")
+    expect(mobile).toContain("overlayPadding={overlayPadding}")
+    expect(map).toContain("map.current.stop()")
+    expect(map).toContain("CAMERA_FOCUS_MS")
+    expect(map).toContain("lastFocusedPlaceIdRef.current === selectedPlaceId")
+    expect(desktop).not.toContain("mapRef.current.flyTo")
+  })
+
+  it("distancia lista: metros o km con un decimal", () => {
+    expect(formatListDistance(400)).toBe("400 m")
+    expect(formatListDistance(1200)).toBe("1.2 km")
+    expect(formatListDistance(-1)).toBeNull()
+    const meters = metersBetween(
+      { lat: -34.6037, lng: -58.3816 },
+      { lat: -34.6037, lng: -58.3816 }
+    )
+    expect(meters).toBeLessThan(1)
   })
 })

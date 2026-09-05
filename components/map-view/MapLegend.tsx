@@ -17,9 +17,9 @@ export function MapLegend({ className }: { className?: string }) {
       className={cn("flex flex-wrap items-center gap-x-3.5 gap-y-1", className)}
     >
       {ITEMS.map((item) => (
-        <span key={item.label} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-olive/75">
+        <span key={item.label} className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.01em] text-[#1F4D35]/65">
           <span
-            className="h-2 w-2 shrink-0 rounded-full ring-1 ring-[#F6F1E8]"
+            className="h-[7px] w-[7px] shrink-0 rounded-full ring-1 ring-[#F6F1E8]"
             style={{ backgroundColor: item.color }}
             aria-hidden
           />

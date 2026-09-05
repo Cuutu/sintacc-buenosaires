@@ -68,13 +68,13 @@ function NavGlyph({
           center ? "h-6 w-6" : "h-[22px] w-[22px]",
           active
             ? "text-primary drop-shadow-none"
-            : "text-olive/70 group-hover:text-olive",
-          center ? "stroke-[2.2]" : "stroke-[2.05]"
+            : "text-olive/55 group-hover:text-olive",
+          center ? "stroke-[2.1]" : "stroke-[1.9]"
         )}
         aria-hidden
       />
       {active ? (
-        <span className="absolute bottom-1.5 h-1 w-4 rounded-full bg-primary" aria-hidden />
+        <span className="absolute bottom-[3px] h-[3px] w-2.5 rounded-full bg-primary" aria-hidden />
       ) : null}
     </>
   )
@@ -118,7 +118,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] border border-olive/15 bg-cream/92 shadow-[0_18px_40px_-20px_rgba(45,74,52,0.35),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:left-3 sm:right-3"
+      className="map-chrome fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] sm:left-3 sm:right-3"
       style={{
         bottom: "calc(var(--bottom-nav-float-gap) + var(--bottom-nav-edge))",
       }}
@@ -192,7 +192,7 @@ export function BottomNav() {
                 onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
                 className={cn(
                   centerItemClass,
-                  isActive ? "text-primary" : "text-olive hover:bg-olive/8"
+                  isActive ? "text-primary" : "bg-[#1F4D35]/[0.06] text-olive hover:bg-[#1F4D35]/[0.10]"
                 )}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}

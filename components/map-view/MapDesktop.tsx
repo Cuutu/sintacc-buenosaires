@@ -188,16 +188,6 @@ export function MapDesktop({
     [places, selectedPlaceId]
   )
 
-  const handlePlaceSelect = React.useCallback(
-    (place: IPlace) => {
-      onPlaceSelect(place)
-      if (place.location && mapRef.current) {
-        mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
-      }
-    },
-    [onPlaceSelect]
-  )
-
   const resultCountLabel = `${sortedPlaces.length} lugar${sortedPlaces.length !== 1 ? "es" : ""}${
     searchQuery?.trim() ? "" : " en esta zona"
   }`
@@ -278,7 +268,7 @@ export function MapDesktop({
             loading={loading}
             loadError={loadError}
             onRetryLoad={onRetryLoad}
-            onPlaceSelect={handlePlaceSelect}
+            onPlaceSelect={onPlaceSelect}
             onPlaceHover={setHoveredPlaceId}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
           />

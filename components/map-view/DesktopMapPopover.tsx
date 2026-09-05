@@ -107,7 +107,7 @@ export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverP
           : { left: 16, top: 16, visibility: "hidden" }
       }
     >
-      <div className="relative overflow-hidden rounded-[22px] border border-[#E8E1D6] bg-[#F8F5EF] p-4 shadow-[0_12px_32px_rgba(31,77,53,0.14)]">
+      <div className="relative overflow-hidden rounded-[22px] border border-[var(--map-paper-border)] bg-[var(--map-paper-bg)] p-4 shadow-[0_12px_32px_-14px_rgba(45,74,52,0.22)]">
         <Link
           href={detailPath}
           className="absolute inset-0 z-0 rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
@@ -118,7 +118,7 @@ export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverP
             <PlaceSafetyBadge place={place} />
             <PlaceTypeGlyph place={place} />
           </div>
-          <h2 className="mt-3 line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1F4D35]">
+          <h2 className="mt-3 line-clamp-2 text-[20px] font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]">
             {place.name}
           </h2>
           {meta ? (
@@ -126,15 +126,15 @@ export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverP
           ) : null}
           {address ? (
             <p className="mt-2.5 flex items-start gap-2 text-[13px] leading-snug text-[#5F6B63]">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1F4D35]" aria-hidden />
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 stroke-[1.85] text-[#1F4D35]" aria-hidden />
               <span className="line-clamp-1">{address}</span>
             </p>
           ) : null}
           <PlaceRatingRow place={place} className="mt-2.5" />
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1 text-[13px] font-extrabold text-[#C85A2E]">
+            <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tracking-[0.01em] text-[#C85A2E]">
               Ver lugar
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              <ArrowRight className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
             </span>
             <a
               href={directionsUrl}
@@ -142,9 +142,9 @@ export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverP
               rel="noopener noreferrer"
               data-directions="true"
               onClick={(event) => event.stopPropagation()}
-              className="pointer-events-auto relative z-[2] inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#1F4D35] bg-[#F8F5EF] px-3 text-[13px] font-extrabold text-[#1F4D35] hover:bg-[#1F4D35]/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+              className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
             >
-              <Navigation className="h-3.5 w-3.5" aria-hidden />
+              <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
               Cómo llegar
             </a>
           </div>
@@ -164,8 +164,8 @@ function PopoverArrow({
   x: number
   y: number
 }) {
-  const base =
-    "pointer-events-none absolute h-3.5 w-3.5 rotate-45 border-[#E8E1D6] bg-[#F8F5EF]"
+    const base =
+    "pointer-events-none absolute h-3.5 w-3.5 rotate-45 border-[var(--map-paper-border)] bg-[var(--map-paper-bg)]"
   if (side === "top") {
     return (
       <span

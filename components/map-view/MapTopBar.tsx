@@ -70,13 +70,13 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={pressed ?? active}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         active && tone === "olive" && "border-olive bg-olive text-cream",
         active && tone === "terracotta" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
         active && tone === "amber" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "neutral" && "border-primary bg-primary text-primary-foreground",
-        !active && "border-olive/15 bg-cream text-olive/70 hover:border-olive/30 hover:text-olive"
+        !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"
       )}
     >
       <span>{label}</span>
@@ -363,21 +363,22 @@ export function MapTopBar({
   ]
 
   return (
-    <div className={cn(
-      "fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[1.65rem] border border-olive/15 bg-cream/92 px-2.5 shadow-[0_12px_32px_rgba(31,77,53,0.12),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:left-3 sm:right-3 sm:px-3 md:left-6 md:right-auto md:top-6 md:max-w-md",
-      compact ? "py-2" : "py-3"
+    <div
+      data-map-topbar
+      className={cn(
+      "map-chrome fixed left-2 right-2 top-[calc(var(--safe-area-top)+var(--mobile-header-gap))] z-30 mx-auto max-w-[440px] min-w-0 rounded-[2rem] px-3 sm:left-3 sm:right-3 sm:px-3.5 md:left-6 md:right-auto md:top-6 md:max-w-md",
+      compact ? "py-2" : "py-2.5"
     )}>
-      <div className="mb-2.5 flex min-w-0 gap-2">
+      <div className="mb-2 flex min-w-0 items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground sm:left-4" aria-hidden />
+          <Search className="absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 stroke-[1.85] text-[#1F4D35]/45 sm:left-3.5" aria-hidden />
           <input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Buscar lugar o zona"
-            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-[1.25rem] border border-olive/10 pl-10 pr-3 text-base outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/70 sm:pl-11 sm:pr-4"
+            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-full bg-transparent pl-10 pr-2 text-base outline-none transition placeholder:text-[#5F6B63]/70 focus-visible:ring-0 sm:pl-11"
             style={{
-              backgroundColor: "rgba(247, 243, 235, 0.92)",
               color: "#2D4A34",
               WebkitTextFillColor: "#2D4A34",
               caretColor: "#D4633A",
@@ -389,9 +390,9 @@ export function MapTopBar({
             type="button"
             onClick={onFiltersOpen}
             aria-label="Más filtros"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.25rem] border border-olive/15 bg-olive/8 text-olive/80"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#1F4D35]/70 transition hover:bg-[#1F4D35]/[0.06] hover:text-[#1F4D35]"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="h-4 w-4 stroke-[1.85]" />
           </button>
         )}
       </div>
@@ -404,25 +405,29 @@ export function MapTopBar({
         onMouseMove={handleChipsMouseMove}
         onMouseUp={handleChipsMouseUp}
         onMouseLeave={handleChipsMouseUp}
-        className="scrollbar-hide -mx-0.5 flex max-w-full cursor-grab select-none snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5 active:cursor-grabbing"
+        className="scrollbar-hide -mx-0.5 flex max-w-full cursor-grab select-none snap-x snap-mandatory gap-1.5 overflow-x-auto border-t border-[#1F4D35]/[0.06] pt-2 pb-0.5 active:cursor-grabbing"
         data-overflow-allowed="map-chips"
       >
-        {mobileSafetyChips.map((chip) => (
-          <button
-            key={chip.id}
-            type="button"
-            onClick={(e) => handleChipClick(e, chip.id)}
-            aria-pressed={filters.tags.includes(chip.id)}
-            className={cn(
-              "min-h-[38px] shrink-0 snap-center rounded-full border px-3.5 py-2 text-sm font-semibold transition-all active:scale-95",
-              filters.tags.includes(chip.id)
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-olive/10 bg-olive/8 text-olive/80 hover:bg-olive/10 hover:text-olive"
-            )}
-          >
-            {chip.label}
-          </button>
-        ))}
+        {mobileSafetyChips.map((chip) => {
+          const active = filters.tags.includes(chip.id)
+          const isDedicated = chip.id === "100_gf"
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={(e) => handleChipClick(e, chip.id)}
+              aria-pressed={active}
+              className={cn(
+                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-colors active:scale-[0.98]",
+                active && isDedicated && "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]",
+                active && !isDedicated && "border-[#C85A2E] bg-[#C85A2E] text-white",
+                !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"
+              )}
+            >
+              {chip.label}
+            </button>
+          )
+        })}
       </div>
       {!compact && <MapLegend className="mt-2 px-0.5" />}
     </div>

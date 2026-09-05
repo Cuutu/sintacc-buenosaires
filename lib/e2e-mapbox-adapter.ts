@@ -106,6 +106,7 @@ export function createE2eMockMapboxMap(container: HTMLElement): MapboxMapType {
     easeTo() {
       queueMicrotask(() => emit("moveend"))
     },
+    stop() {},
     jumpTo() {},
     setCenter() {},
     setZoom() {},

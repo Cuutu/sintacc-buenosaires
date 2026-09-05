@@ -17,7 +17,13 @@ describe("mapa público WebGL", () => {
     expect(fs.existsSync(path.join(process.cwd(), "public/map/pin-dedicated.png"))).toBe(true)
     expect(fs.existsSync(path.join(process.cwd(), "public/map/pin-options.png"))).toBe(true)
     expect(src).toContain("PIN_POPUP_OFFSET")
-    expect(src).not.toContain('["!=", ["get", "id"], selectedId]')
+    expect(src).toContain("PIN_ICON_SIZE")
+    expect(src).toContain("LAYER_CLUSTER_HALO")
+    expect(src).toContain("CLUSTER_HALO_OPACITY")
+    expect(src).toContain("stackClusterLayers")
+    expect(src).toContain("moveLayer")
+    expect(src).toContain("LAYER_CLUSTER_SHADOW")
+    expect(src).toContain('["!=", ["get", "id"], selectedId]')
   })
 
   it("MapboxMap público no crea Marker HTML para pins", () => {
@@ -30,5 +36,8 @@ describe("mapa público WebGL", () => {
     expect(src).toContain("setSelectedPlaceOnMap")
     expect(src).toContain("if (!useNumberedMarkers)")
     expect(src).toContain("new mapboxgl.Marker")
+    expect(src).toContain("mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831")
+    expect(src).not.toContain("mapbox://styles/mapbox/light-v11")
+    expect(src).not.toContain("softenLightMap")
   })
 })

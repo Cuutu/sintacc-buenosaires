@@ -33,8 +33,14 @@ export function pinAssetPath(safety: CeliMapPinSafety | string): string | null {
   return null
 }
 
+function wheatTipColor(fill: string, icon: string): string {
+  if (fill === CELIMAP_PIN.dedicated) return CELIMAP_PIN.options
+  if (fill === CELIMAP_PIN.options) return CELIMAP_PIN.dedicated
+  return icon
+}
+
 /**
- * Isotipo CeliMap: gota / map-pin (punta abajo) + espiga tachada.
+ * Isotipo CeliMap: gota + espiga tachada simplificada (3 pares + punta).
  * viewBox 64×84 — ancla inferior en el mapa.
  */
 export function celimapPinSvg(opts: {
@@ -44,20 +50,21 @@ export function celimapPinSvg(opts: {
 }): string {
   const fill = opts.fill
   const icon = opts.icon
+  const tip = wheatTipColor(fill, icon)
   const wheatOrLabel = opts.label
     ? `<text x="32" y="34" text-anchor="middle" fill="${icon}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="18" font-weight="700">${opts.label}</text>`
     : `<g fill="${icon}">
-        <ellipse cx="32" cy="20.5" rx="3.1" ry="4.5"/>
-        <ellipse cx="26.4" cy="24.2" rx="2.7" ry="4" transform="rotate(-34 26.4 24.2)"/>
-        <ellipse cx="37.6" cy="24.2" rx="2.7" ry="4" transform="rotate(34 37.6 24.2)"/>
-        <ellipse cx="26.2" cy="30.4" rx="2.7" ry="4" transform="rotate(-26 26.2 30.4)"/>
-        <ellipse cx="37.8" cy="30.4" rx="2.7" ry="4" transform="rotate(26 37.8 30.4)"/>
-        <rect x="30.55" y="22" width="2.9" height="16.5" rx="1.3"/>
+        <ellipse cx="32" cy="19.2" rx="3.6" ry="5.2" fill="${tip}"/>
+        <ellipse cx="26.6" cy="25.4" rx="3.4" ry="4.6" transform="rotate(-32 26.6 25.4)"/>
+        <ellipse cx="37.4" cy="25.4" rx="3.4" ry="4.6" transform="rotate(32 37.4 25.4)"/>
+        <ellipse cx="26.8" cy="33.2" rx="3.3" ry="4.5" transform="rotate(-22 26.8 33.2)"/>
+        <ellipse cx="37.2" cy="33.2" rx="3.3" ry="4.5" transform="rotate(22 37.2 33.2)"/>
+        <rect x="30.2" y="24" width="3.6" height="18" rx="1.6"/>
       </g>
-      <path d="M23.5 18.5 L41 38" fill="none" stroke="${icon}" stroke-width="2.6" stroke-linecap="round"/>`
+      <path d="M22.5 17.5 L42 39" fill="none" stroke="${icon}" stroke-width="3.1" stroke-linecap="round"/>`
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 84" width="64" height="84">
-  <ellipse cx="32" cy="80" rx="11" ry="3.1" fill="#1F4D35" opacity="0.16"/>
+  <ellipse cx="32" cy="81" rx="12" ry="3.4" fill="#000000" opacity="0.20"/>
   <path fill="${fill}" stroke="#F6F1E8" stroke-width="1.5" stroke-linejoin="round"
     d="M32 5.5c-12 0-21.8 9.9-21.8 22.2 0 16.4 17.4 36.6 20.8 40.4a1.8 1.8 0 0 0 2 0c3.4-3.8 20.8-24 20.8-40.4C53.8 15.4 44 5.5 32 5.5z"/>
   ${wheatOrLabel}
@@ -82,8 +89,9 @@ export function celimapPinMarkup(
   })
 }
 
-export const PIN_RASTER_WIDTH = 128
-export const PIN_RASTER_HEIGHT = 168
+export const PIN_RASTER_SCALE = 3
+export const PIN_RASTER_WIDTH = 64 * PIN_RASTER_SCALE
+export const PIN_RASTER_HEIGHT = 84 * PIN_RASTER_SCALE
 
 function fillPinBody(ctx: CanvasRenderingContext2D): void {
   try {
@@ -104,29 +112,14 @@ function fillPinBody(ctx: CanvasRenderingContext2D): void {
   ctx.stroke()
 }
 
-function drawCeliMapPin(
+function drawPinGlyph(
   ctx: CanvasRenderingContext2D,
   fill: string,
   icon: string
 ): void {
-  ctx.clearRect(0, 0, PIN_RASTER_WIDTH, PIN_RASTER_HEIGHT)
-  ctx.save()
-  ctx.scale(2, 2)
-
-  ctx.fillStyle = "rgba(31,77,53,0.18)"
-  ctx.beginPath()
-  ctx.ellipse(32, 80, 11, 3.1, 0, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.fillStyle = fill
-  ctx.lineJoin = "round"
-  ctx.strokeStyle = "#F6F1E8"
-  ctx.lineWidth = 1.5
-  fillPinBody(ctx)
-
-  ctx.fillStyle = icon
-  const grain = (cx: number, cy: number, rx: number, ry: number, rot: number) => {
+  const grain = (cx: number, cy: number, rx: number, ry: number, rot: number, color: string) => {
     ctx.save()
+    ctx.fillStyle = color
     ctx.translate(cx, cy)
     ctx.rotate((rot * Math.PI) / 180)
     ctx.beginPath()
@@ -134,20 +127,48 @@ function drawCeliMapPin(
     ctx.fill()
     ctx.restore()
   }
-  grain(32, 20.5, 3.1, 4.5, 0)
-  grain(26.4, 24.2, 2.7, 4, -34)
-  grain(37.6, 24.2, 2.7, 4, 34)
-  grain(26.2, 30.4, 2.7, 4, -26)
-  grain(37.8, 30.4, 2.7, 4, 26)
-  ctx.fillRect(30.55, 22, 2.9, 16.5)
+  const tip = wheatTipColor(fill, icon)
+  grain(32, 19.2, 3.6, 5.2, 0, tip)
+  grain(26.6, 25.4, 3.4, 4.6, -32, icon)
+  grain(37.4, 25.4, 3.4, 4.6, 32, icon)
+  grain(26.8, 33.2, 3.3, 4.5, -22, icon)
+  grain(37.2, 33.2, 3.3, 4.5, 22, icon)
+  ctx.fillStyle = icon
+  ctx.fillRect(30.2, 24, 3.6, 18)
 
   ctx.strokeStyle = icon
   ctx.lineCap = "round"
-  ctx.lineWidth = 2.6
+  ctx.lineWidth = 3.1
   ctx.beginPath()
-  ctx.moveTo(23.5, 18.5)
-  ctx.lineTo(41, 38)
+  ctx.moveTo(22.5, 17.5)
+  ctx.lineTo(42, 39)
   ctx.stroke()
+}
+
+function drawCeliMapPin(
+  ctx: CanvasRenderingContext2D,
+  fill: string,
+  icon: string
+): void {
+  ctx.clearRect(0, 0, PIN_RASTER_WIDTH, PIN_RASTER_HEIGHT)
+  ctx.save()
+  ctx.scale(PIN_RASTER_SCALE, PIN_RASTER_SCALE)
+
+  ctx.fillStyle = "rgba(0,0,0,0.08)"
+  ctx.beginPath()
+  ctx.ellipse(32, 82.2, 14, 4.4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = "rgba(0,0,0,0.20)"
+  ctx.beginPath()
+  ctx.ellipse(32, 81, 12, 3.4, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = fill
+  ctx.lineJoin = "round"
+  ctx.strokeStyle = "#F6F1E8"
+  ctx.lineWidth = 1.5
+  fillPinBody(ctx)
+  drawPinGlyph(ctx, fill, icon)
   ctx.restore()
 }
 
@@ -158,39 +179,6 @@ export type CeliMapPinStyleImage = {
 }
 
 const styleImageCache = new Map<string, CeliMapPinStyleImage>()
-
-function loadHtmlImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error(src))
-    img.src = src
-  })
-}
-
-function rasterizeHtmlImage(img: HTMLImageElement): CeliMapPinStyleImage {
-  const canvas = document.createElement("canvas")
-  canvas.width = PIN_RASTER_WIDTH
-  canvas.height = PIN_RASTER_HEIGHT
-  const ctx = canvas.getContext("2d", { willReadFrequently: true })
-  if (!ctx) throw new Error("canvas")
-  const scale = Math.min(
-    PIN_RASTER_WIDTH / img.naturalWidth,
-    PIN_RASTER_HEIGHT / img.naturalHeight
-  )
-  const width = img.naturalWidth * scale
-  const height = img.naturalHeight * scale
-  const x = (PIN_RASTER_WIDTH - width) / 2
-  const y = PIN_RASTER_HEIGHT - height
-  ctx.clearRect(0, 0, PIN_RASTER_WIDTH, PIN_RASTER_HEIGHT)
-  ctx.drawImage(img, x, y, width, height)
-  const imageData = ctx.getImageData(0, 0, PIN_RASTER_WIDTH, PIN_RASTER_HEIGHT)
-  return {
-    width: imageData.width,
-    height: imageData.height,
-    data: new Uint8Array(imageData.data),
-  }
-}
 
 /** Dibuja el pin en canvas. Mapbox no rasteriza SVG de forma fiable. */
 export function rasterizeCeliMapPin(safety: CeliMapPinSafety | string): CeliMapPinStyleImage {
@@ -214,10 +202,7 @@ export async function getCeliMapPinStyleImage(
   const id = pinImageId(safety)
   const cached = styleImageCache.get(id)
   if (cached) return cached
-  const asset = pinAssetPath(safety)
-  const image = asset
-    ? rasterizeHtmlImage(await loadHtmlImage(asset))
-    : rasterizeCeliMapPin(safety)
+  const image = rasterizeCeliMapPin(safety)
   styleImageCache.set(id, image)
   return image
 }

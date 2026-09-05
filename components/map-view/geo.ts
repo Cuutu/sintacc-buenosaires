@@ -33,6 +33,20 @@ function toRad(deg: number): number {
   return deg * (Math.PI / 180)
 }
 
+export type UserLatLng = { lat: number; lng: number }
+
+/** Metros entre dos puntos. Cliente only. */
+export function metersBetween(from: UserLatLng, to: UserLatLng): number {
+  return distanceKm(from.lat, from.lng, to.lat, to.lng) * 1000
+}
+
+/** "<1 km → 400 m"; "≥1 km → 1.2 km". */
+export function formatListDistance(meters: number): string | null {
+  if (!Number.isFinite(meters) || meters < 0) return null
+  if (meters < 1000) return `${Math.round(meters)} m`
+  return `${(meters / 1000).toFixed(1)} km`
+}
+
 /** Filtrar lugares que están dentro de los bounds visibles del mapa */
 export function filterPlacesInBounds<T extends { location: { lat: number; lng: number } }>(
   places: T[],

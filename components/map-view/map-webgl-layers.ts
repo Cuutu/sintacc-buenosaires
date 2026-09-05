@@ -9,11 +9,14 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import {
   CELIMAP_PIN_SAFETIES,
   getCeliMapPinStyleImage,
+  PIN_RASTER_SCALE,
   pinImageId,
 } from "@/lib/celimap-pin"
 
 export const PLACES_SOURCE = "celimap-places"
 export const SELECTED_SOURCE = "celimap-selected"
+export const LAYER_CLUSTER_SHADOW = "celimap-cluster-shadow"
+export const LAYER_CLUSTER_HALO = "celimap-cluster-halo"
 export const LAYER_CLUSTERS = "celimap-clusters"
 export const LAYER_CLUSTER_COUNT = "celimap-cluster-count"
 export const LAYER_PIN_FALLBACK = "celimap-pin-fallback"
@@ -23,8 +26,16 @@ export const LAYER_SELECTED_PIN = "celimap-selected-pin"
 
 export const CLUSTER_MAX_ZOOM = 14
 export const PIN_FOCUS_ZOOM = 16
-/** Popup arriba del pin (gota ~56px). Sin esto la ficha tapa el pin. */
-export const PIN_POPUP_OFFSET = 68
+/** 0.58 * 0.75. Gota lógica 64×84 @ pixelRatio 3. */
+export const PIN_ICON_SIZE = 0.435
+export const PIN_SELECTED_SCALE = 1.25
+export const PIN_SELECTED_SIZE = PIN_ICON_SIZE * PIN_SELECTED_SCALE
+export const MARKER_TRANSITION_MS = 200
+export const DIMMED_OPACITY = 0.4
+export const CLUSTER_HALO_PX = 10
+export const CLUSTER_HALO_OPACITY = 0.3
+/** Popup arriba del pin. Sin esto la ficha tapa el pin. */
+export const PIN_POPUP_OFFSET = 52
 
 const SAFETY_COLOR_EXPR = [
   "match",
@@ -36,10 +47,109 @@ const SAFETY_COLOR_EXPR = [
   "#CFC9BF",
 ] as const
 
+/** 1–9 / 10–49 / 50–199 / 200+ */
+const CLUSTER_RADIUS_EXPR = [
+  "step",
+  ["get", "point_count"],
+  14,
+  10,
+  18,
+  50,
+  24,
+  200,
+  30,
+] as const
+
+/** Radio cluster + 10px. Step explícito: `+` anidado a veces no pinta. */
+const CLUSTER_HALO_RADIUS_EXPR = [
+  "step",
+  ["get", "point_count"],
+  24,
+  10,
+  28,
+  50,
+  34,
+  200,
+  40,
+] as const
+
 const emptyCollection = (): GeoJSON.FeatureCollection => ({
   type: "FeatureCollection",
   features: [],
 })
+
+type SelectionState = {
+  id: string | null
+  mode: "selected" | "hovered"
+}
+
+const selectionByMap = new WeakMap<MapboxMapType, SelectionState>()
+
+function transitionMs(reduceMotion: boolean): number {
+  return reduceMotion ? 0 : MARKER_TRANSITION_MS
+}
+
+function unselectedPinFilter(selectedId: string | null) {
+  if (!selectedId) return ["!", ["has", "point_count"]] as const
+  return [
+    "all",
+    ["!", ["has", "point_count"]],
+    ["!=", ["get", "id"], selectedId],
+  ] as const
+}
+
+function applySelectionPresentation(map: MapboxMapType, reduceMotion: boolean): void {
+  const selection = selectionByMap.get(map)
+  const selectedId = selection?.id ?? null
+  const dim =
+    selectedId && selection?.mode === "selected" ? DIMMED_OPACITY : 1
+  const fade = transitionMs(reduceMotion)
+
+  const pinFilter = unselectedPinFilter(selectedId)
+  if (map.getLayer(LAYER_PINS)) {
+    map.setFilter(LAYER_PINS, pinFilter)
+    map.setPaintProperty(LAYER_PINS, "icon-opacity", dim)
+    map.setPaintProperty(LAYER_PINS, "icon-opacity-transition", { duration: fade, delay: 0 })
+  }
+  if (map.getLayer(LAYER_PIN_FALLBACK)) {
+    map.setFilter(LAYER_PIN_FALLBACK, pinFilter)
+    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity", dim)
+    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", {
+      duration: fade,
+      delay: 0,
+    })
+  }
+
+  const clusterOpacity = {
+    duration: fade,
+    delay: 0,
+  }
+  if (map.getLayer(LAYER_CLUSTER_SHADOW)) {
+    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity", dim * 0.2)
+    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity-transition", clusterOpacity)
+  }
+  if (map.getLayer(LAYER_CLUSTER_HALO)) {
+    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", dim * CLUSTER_HALO_OPACITY)
+    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity-transition", clusterOpacity)
+  }
+  if (map.getLayer(LAYER_CLUSTERS)) {
+    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity", dim)
+    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", clusterOpacity)
+  }
+  if (map.getLayer(LAYER_CLUSTER_COUNT)) {
+    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity", dim)
+    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity-transition", clusterOpacity)
+  }
+
+  if (map.getLayer(LAYER_SELECTED_PIN)) {
+    map.setLayoutProperty(LAYER_SELECTED_PIN, "icon-size", [
+      "case",
+      ["==", ["get", "mode"], "selected"],
+      PIN_SELECTED_SIZE,
+      PIN_ICON_SIZE,
+    ])
+  }
+}
 
 export function placesToGeoJSON(places: IPlace[]): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = []
@@ -71,7 +181,7 @@ export async function loadCeliMapPinImages(map: MapboxMapType): Promise<boolean>
       try {
         const image = await getCeliMapPinStyleImage(safety)
         if (map.hasImage?.(id)) return true
-        map.addImage(id, image, { pixelRatio: 2 })
+        map.addImage(id, image, { pixelRatio: PIN_RASTER_SCALE })
         return true
       } catch {
         return false
@@ -81,12 +191,32 @@ export async function loadCeliMapPinImages(map: MapboxMapType): Promise<boolean>
   return results.every(Boolean)
 }
 
-function addLayerSafe(map: MapboxMapType, layer: AnyLayer): void {
+function addLayerSafe(map: MapboxMapType, layer: AnyLayer, beforeId?: string): void {
   if (map.getLayer(layer.id)) return
   try {
-    map.addLayer(layer)
+    if (beforeId && map.getLayer(beforeId)) {
+      map.addLayer(layer, beforeId)
+    } else {
+      map.addLayer(layer)
+    }
   } catch {
     /* estilo / font mismatch */
+  }
+}
+
+function stackClusterLayers(map: MapboxMapType): void {
+  if (!map.getLayer(LAYER_CLUSTERS)) return
+  try {
+    if (map.getLayer(LAYER_CLUSTER_HALO)) {
+      map.moveLayer(LAYER_CLUSTER_HALO, LAYER_CLUSTERS)
+    }
+    if (map.getLayer(LAYER_CLUSTER_SHADOW) && map.getLayer(LAYER_CLUSTER_HALO)) {
+      map.moveLayer(LAYER_CLUSTER_SHADOW, LAYER_CLUSTER_HALO)
+    } else if (map.getLayer(LAYER_CLUSTER_SHADOW)) {
+      map.moveLayer(LAYER_CLUSTER_SHADOW, LAYER_CLUSTERS)
+    }
+  } catch {
+    /* orden no crítico */
   }
 }
 
@@ -117,7 +247,35 @@ export function ensurePlacesLayers(
     data: emptyCollection(),
   })
 
-  const fadeMs = reduceMotion ? 0 : 280
+  const fadeMs = transitionMs(reduceMotion)
+  const sizeTransition = { duration: fadeMs, delay: 0 }
+
+  addLayerSafe(map, {
+    id: LAYER_CLUSTER_SHADOW,
+    type: "circle",
+    source: PLACES_SOURCE,
+    filter: ["has", "point_count"],
+    paint: {
+      "circle-color": "#000000",
+      "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
+      "circle-opacity": 0.2,
+      "circle-blur": 0.85,
+      "circle-translate": [0, 2],
+      "circle-translate-anchor": "viewport",
+    },
+  })
+
+  addLayerSafe(map, {
+    id: LAYER_CLUSTER_HALO,
+    type: "circle",
+    source: PLACES_SOURCE,
+    filter: ["all", ["has", "point_count"], [">=", ["get", "point_count"], 50]],
+    paint: {
+      "circle-color": "#1F4D35",
+      "circle-radius": CLUSTER_HALO_RADIUS_EXPR as unknown as number,
+      "circle-opacity": CLUSTER_HALO_OPACITY,
+    },
+  })
 
   addLayerSafe(map, {
     id: LAYER_CLUSTERS,
@@ -126,10 +284,11 @@ export function ensurePlacesLayers(
     filter: ["has", "point_count"],
     paint: {
       "circle-color": "#1F4D35",
-      "circle-radius": ["step", ["get", "point_count"], 16, 12, 18, 40, 22],
+      "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
       "circle-stroke-width": 2,
       "circle-stroke-color": "#F6F1E8",
       "circle-opacity": 1,
+      "circle-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
 
@@ -141,12 +300,13 @@ export function ensurePlacesLayers(
     layout: {
       "text-field": ["to-string", ["get", "point_count"]],
       "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-      "text-size": 13,
+      "text-size": ["step", ["get", "point_count"], 12, 10, 13, 50, 14, 200, 15],
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
     paint: {
       "text-color": "#FFFFFF",
+      "text-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
 
@@ -160,9 +320,10 @@ export function ensurePlacesLayers(
     },
     paint: {
       "circle-color": SAFETY_COLOR_EXPR as unknown as string,
-      "circle-radius": 8,
+      "circle-radius": 6,
       "circle-stroke-width": 1.5,
       "circle-stroke-color": "#F6F1E8",
+      "circle-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
 
@@ -174,7 +335,7 @@ export function ensurePlacesLayers(
     layout: {
       visibility: pinsReady ? "visible" : "none",
       "icon-image": ["get", "pin"],
-      "icon-size": 0.58,
+      "icon-size": PIN_ICON_SIZE,
       "icon-anchor": "bottom",
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
@@ -191,10 +352,10 @@ export function ensurePlacesLayers(
     type: "circle",
     source: SELECTED_SOURCE,
     paint: {
-      "circle-radius": ["case", ["==", ["get", "mode"], "selected"], 15, 11],
+      "circle-radius": ["case", ["==", ["get", "mode"], "selected"], 16, 10],
       "circle-color": SAFETY_COLOR_EXPR as unknown as string,
-      "circle-opacity": 0.22,
-      "circle-stroke-width": 2,
+      "circle-opacity": 0.14,
+      "circle-stroke-width": 1.5,
       "circle-stroke-color": "#F6F1E8",
     },
   })
@@ -205,7 +366,12 @@ export function ensurePlacesLayers(
     source: SELECTED_SOURCE,
     layout: {
       "icon-image": ["get", "pin"],
-      "icon-size": ["case", ["==", ["get", "mode"], "selected"], 0.67, 0.62],
+      "icon-size": [
+        "case",
+        ["==", ["get", "mode"], "selected"],
+        PIN_SELECTED_SIZE,
+        PIN_ICON_SIZE,
+      ],
       "icon-anchor": "bottom",
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
@@ -213,15 +379,56 @@ export function ensurePlacesLayers(
     },
     paint: {
       "icon-opacity": 1,
+      // Mapbox interpola icon-size entre updates de layout si hay transition.
+      ...( { "icon-size-transition": sizeTransition } as Record<string, unknown> ),
     },
   })
 
+  if (map.getLayer(LAYER_CLUSTER_SHADOW)) {
+    try {
+      map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
+      map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-blur", 0.85)
+      map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-translate", [0, 2])
+    } catch {
+      /* capa vieja */
+    }
+  }
+  if (map.getLayer(LAYER_CLUSTER_HALO)) {
+    try {
+      map.setFilter(LAYER_CLUSTER_HALO, [
+        "all",
+        ["has", "point_count"],
+        [">=", ["get", "point_count"], 50],
+      ])
+      map.setPaintProperty(
+        LAYER_CLUSTER_HALO,
+        "circle-radius",
+        CLUSTER_HALO_RADIUS_EXPR as unknown as number
+      )
+      map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", CLUSTER_HALO_OPACITY)
+    } catch {
+      /* capa vieja */
+    }
+  }
+  if (map.getLayer(LAYER_CLUSTERS)) {
+    try {
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
+    } catch {
+      /* capa vieja */
+    }
+  }
   if (map.getLayer(LAYER_SELECTED_HALO)) {
     try {
       map.setFilter(LAYER_SELECTED_HALO, null)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-color", SAFETY_COLOR_EXPR as unknown as string)
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-opacity", 0.22)
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-width", 2)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-radius", [
+        "case",
+        ["==", ["get", "mode"], "selected"],
+        16,
+        10,
+      ])
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-opacity", 0.14)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-width", 1.5)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-color", "#F6F1E8")
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-translate", [0, 0])
     } catch {
@@ -230,12 +437,14 @@ export function ensurePlacesLayers(
   }
   if (map.getLayer(LAYER_PIN_FALLBACK)) {
     map.setLayoutProperty(LAYER_PIN_FALLBACK, "visibility", pinsReady ? "none" : "visible")
-    map.setFilter(LAYER_PIN_FALLBACK, ["!", ["has", "point_count"]])
   }
   if (map.getLayer(LAYER_PINS)) {
     map.setLayoutProperty(LAYER_PINS, "visibility", pinsReady ? "visible" : "none")
-    map.setFilter(LAYER_PINS, ["!", ["has", "point_count"]])
+    map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE)
   }
+
+  stackClusterLayers(map)
+  applySelectionPresentation(map, reduceMotion)
 }
 
 export function setPlacesSourceData(map: MapboxMapType, places: IPlace[]): void {
@@ -246,22 +455,41 @@ export function setPlacesSourceData(map: MapboxMapType, places: IPlace[]): void 
 export function setSelectedPlaceOnMap(
   map: MapboxMapType,
   place: IPlace | null,
-  mode: "selected" | "hovered" = "selected"
+  mode: "selected" | "hovered" = "selected",
+  reduceMotion = false
 ): void {
   const source = map.getSource(SELECTED_SOURCE) as GeoJSONSource | undefined
   if (!source) return
   if (!place) {
+    selectionByMap.set(map, { id: null, mode: "hovered" })
     source.setData(emptyCollection())
+    applySelectionPresentation(map, reduceMotion)
     return
   }
+  const id = place._id != null ? String(place._id) : null
+  selectionByMap.set(map, { id, mode })
   const geo = placesToGeoJSON([place])
-  if (geo.features[0]) {
-    geo.features[0].properties = {
-      ...geo.features[0].properties,
-      mode,
+  const applyMode = (nextMode: "selected" | "hovered") => {
+    if (geo.features[0]) {
+      geo.features[0].properties = {
+        ...geo.features[0].properties,
+        mode: nextMode,
+      }
     }
+    source.setData(geo)
   }
-  source.setData(geo)
+  if (mode === "selected" && !reduceMotion) {
+    applyMode("hovered")
+    applySelectionPresentation(map, reduceMotion)
+    window.requestAnimationFrame(() => {
+      const current = selectionByMap.get(map)
+      if (current?.id !== id || current.mode !== "selected") return
+      applyMode("selected")
+    })
+    return
+  }
+  applyMode(mode)
+  applySelectionPresentation(map, reduceMotion)
 }
 
 export function expandClusterAt(
@@ -302,6 +530,8 @@ export function queryPlaceOrClusterAt(
     LAYER_SELECTED_PIN,
     LAYER_SELECTED_HALO,
     LAYER_CLUSTERS,
+    LAYER_CLUSTER_HALO,
+    LAYER_CLUSTER_SHADOW,
     LAYER_PINS,
     LAYER_PIN_FALLBACK,
   ].filter((id) => Boolean(map.getLayer(id)))

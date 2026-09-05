@@ -18,6 +18,17 @@
     --radius-xl: 24px;
     --shadow-soft: 0 8px 28px -18px rgba(45, 74, 52, 0.28);
 
+    /* Map overlay system — chrome (vidrio flotante) vs paper (ficha) */
+    --map-chrome-bg: rgba(253, 251, 247, 0.88);
+    --map-chrome-border: rgba(45, 74, 52, 0.11);
+    --map-chrome-shadow:
+      0 8px 28px -12px rgba(45, 74, 52, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    --map-paper-bg: #fdfbf7;
+    --map-paper-border: rgba(45, 74, 52, 0.08);
+    --map-paper-shadow: 0 -6px 24px -8px rgba(45, 74, 52, 0.14);
+    --map-handle: #c4bbb0;
+
     /* —— Semantic (HSL for shadcn / Tailwind) —— */
     /* cream #F7F3EB */
     --background: 40 43% 94.5%;
@@ -216,8 +227,9 @@
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
-  .celimap-nav-pill {
-    background-color: var(--color-cream) !important;
+  .celimap-nav-pill,
+  .map-chrome {
+    background-color: var(--color-cream-card) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -230,6 +242,25 @@
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
+}
+
+/* Map overlay — floating glass vs paper sheet */
+.map-chrome {
+  background: var(--map-chrome-bg);
+  border: 1px solid var(--map-chrome-border);
+  box-shadow: var(--map-chrome-shadow);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.map-paper {
+  background: var(--map-paper-bg);
+  box-shadow: var(--map-paper-shadow);
+}
+.map-handle {
+  width: 2.25rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--map-handle);
 }
 
 /* Map sidebar — cream panel */

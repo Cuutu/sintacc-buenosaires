@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { PlaceMiniCard } from "./PlaceMiniCard"
 import type { IPlace } from "@/models/Place"
+import type { UserLatLng } from "./geo"
 
 interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
@@ -19,7 +20,7 @@ interface PlacesListProps {
 function PlaceCardSkeleton() {
   return (
       <div className="flex min-h-[72px] gap-3 rounded-[20px] border border-[#E8E1D6] bg-[#F8F5EF] p-3">
-      <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-olive/5" />
+      <div className="h-16 w-16 shrink-0 animate-pulse rounded-[12px] bg-olive/5" />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
         <div className="h-4 w-3/4 animate-pulse rounded bg-olive/8" />
         <div className="h-3 w-1/2 animate-pulse rounded bg-olive/5" />
@@ -44,6 +45,26 @@ export function PlacesList({
 }: PlacesListProps) {
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
+  const [userLocation, setUserLocation] = React.useState<UserLatLng | null>(null)
+
+  React.useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return
+    let cancelled = false
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) return
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+      },
+      () => {},
+      { maximumAge: 120000, timeout: 8000, enableHighAccuracy: false }
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handlePlaceClick = React.useCallback(
     (place: IPlace) => {
@@ -133,6 +154,7 @@ export function PlacesList({
                 place={place}
                 selected={selectedPlaceId === id}
                 onSelect={() => handlePlaceClick(place)}
+                userLocation={userLocation}
               />
             </div>
           )

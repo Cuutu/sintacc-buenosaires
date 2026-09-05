@@ -7,7 +7,7 @@ import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
 import { PlacesList } from "./PlacesList"
-import { MobileMapBottomSheet, MOBILE_SHEET_COMPACT_PX } from "./MobileMapBottomSheet"
+import { MobileMapBottomSheet, MOBILE_SHEET_COMPACT_PX, MOBILE_SHEET_EXPANDED_PX, CAMERA_SHEET_GAP_PX, type PlaceSheetSnap } from "./MobileMapBottomSheet"
 import { FabButtons } from "./FabButtons"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { toast } from "sonner"
@@ -53,6 +53,16 @@ const TAG_CHIPS = [
   { id: "delivery", label: "Delivery" },
 ] as const
 
+function readCssVarPx(varName: string): number {
+  if (typeof document === "undefined") return 0
+  const probe = document.createElement("div")
+  probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;height:var(${varName})`
+  document.body.appendChild(probe)
+  const px = probe.getBoundingClientRect().height
+  probe.remove()
+  return Number.isFinite(px) ? Math.round(px) : 0
+}
+
 export function MapMobile({
   places,
   loading,
@@ -67,7 +77,7 @@ export function MapMobile({
   onPlaceDeselect,
   initialCenter,
   initialZoom,
-  placeIdToFocus,
+  placeIdToFocus: _placeIdToFocus,
   listOpen = false,
   onSheetCollapse,
   onListOpen,
@@ -75,14 +85,50 @@ export function MapMobile({
 }: MapMobileProps) {
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
-  const lastFocusedPlaceIdRef = React.useRef<string | null>(null)
+  const rootRef = React.useRef<HTMLDivElement>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const [locating, setLocating] = React.useState(false)
   const locatingRef = React.useRef(false)
   const autoLocationAttemptedRef = React.useRef(false)
   const [mapKey, setMapKey] = React.useState(0)
   const [moreOpen, setMoreOpen] = React.useState(false)
-  const [sheetHeight, setSheetHeight] = React.useState(MOBILE_SHEET_COMPACT_PX)
+  const [sheetSnap, setSheetSnap] = React.useState<PlaceSheetSnap>("compact")
+  const [snapPlaceId, setSnapPlaceId] = React.useState(selectedPlaceId)
+  const [overlayInsets, setOverlayInsets] = React.useState<{ top: number; nav: number } | null>(null)
+
+  if (selectedPlaceId !== snapPlaceId) {
+    setSnapPlaceId(selectedPlaceId)
+    setSheetSnap("compact")
+  }
+
+  const measureOverlays = React.useCallback(() => {
+    const root = rootRef.current
+    if (!root) return
+    const nav = readCssVarPx("--bottom-nav-clearance")
+    const topBar = root.querySelector("[data-map-topbar]")
+    const mapBox = root.getBoundingClientRect()
+    const top = topBar
+      ? Math.max(0, Math.round(topBar.getBoundingClientRect().bottom - mapBox.top))
+      : 0
+    setOverlayInsets((prev) =>
+      prev && prev.top === top && prev.nav === nav ? prev : { top, nav }
+    )
+  }, [])
+
+  React.useLayoutEffect(() => {
+    measureOverlays()
+    const root = rootRef.current
+    if (!root || typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(() => measureOverlays())
+    ro.observe(root)
+    const topBar = root.querySelector("[data-map-topbar]")
+    if (topBar) ro.observe(topBar)
+    window.addEventListener("resize", measureOverlays)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener("resize", measureOverlays)
+    }
+  }, [measureOverlays, listOpen])
 
   const visiblePlaces = React.useMemo(() => {
     if (searchQuery?.trim()) return places
@@ -99,6 +145,22 @@ export function MapMobile({
   const selectedPlace = React.useMemo(
     () => places.find((p) => p._id.toString() === selectedPlaceId) ?? null,
     [places, selectedPlaceId]
+  )
+
+  const sheetPx = selectedPlace
+    ? sheetSnap === "expanded"
+      ? MOBILE_SHEET_EXPANDED_PX
+      : MOBILE_SHEET_COMPACT_PX
+    : 0
+  const overlayPadding = React.useMemo(
+    () =>
+      overlayInsets
+        ? {
+            top: overlayInsets.top,
+            bottom: overlayInsets.nav + sheetPx + (sheetPx > 0 ? CAMERA_SHEET_GAP_PX : 0),
+          }
+        : false,
+    [overlayInsets, sheetPx]
   )
 
   const triggerMapboxGeolocate = () => {
@@ -218,9 +280,6 @@ export function MapMobile({
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
     if (listOpen) onSheetCollapse?.()
-    if (place.location && mapRef.current) {
-      mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
-    }
   }
 
   const handleSnapChange = React.useCallback(
@@ -240,20 +299,6 @@ export function MapMobile({
     return () => registerAndroidMapBackHandlers(null)
   }, [moreOpen, selectedPlace, onPlaceDeselect])
 
-  React.useEffect(() => {
-    if (!placeIdToFocus || !mapRef.current) {
-      lastFocusedPlaceIdRef.current = null
-      return
-    }
-    if (lastFocusedPlaceIdRef.current === placeIdToFocus) return
-
-    const place = places.find((p) => p._id.toString() === placeIdToFocus)
-    if (place?.location) {
-      lastFocusedPlaceIdRef.current = placeIdToFocus
-      mapRef.current.flyTo(place.location.lng, place.location.lat, 16)
-    }
-  }, [placeIdToFocus, places])
-
   const clearExtraFilters = () => {
     onFiltersChange({
       ...filters,
@@ -267,7 +312,7 @@ export function MapMobile({
     filters.tags.some((t) => t !== "100_gf" && t !== "opciones_sin_tacc")
 
   return (
-    <div className="relative h-full min-h-[100dvh] w-full overflow-hidden">
+    <div ref={rootRef} className="relative h-full min-h-[100dvh] w-full overflow-hidden">
       <MapTopBar
         filters={filters}
         onFiltersChange={onFiltersChange}
@@ -300,17 +345,18 @@ export function MapMobile({
             clusterMarkers
             colorBySafety
             showPopup={false}
+            overlayPadding={overlayPadding}
           />
         </MapErrorBoundary>
       </div>
 
-      {!listOpen && (
+      {!listOpen && sheetSnap !== "expanded" && (
         <FabButtons
           onNearMe={() => goToNearMe()}
           locating={locating}
           bottomOffset={
             selectedPlace
-              ? `calc(var(--bottom-nav-clearance) + ${sheetHeight + 16}px)`
+              ? `calc(var(--bottom-nav-clearance) + ${MOBILE_SHEET_COMPACT_PX + 16}px)`
               : "calc(var(--bottom-nav-clearance) + 0.5rem)"
           }
         />
@@ -324,9 +370,9 @@ export function MapMobile({
           <button
             type="button"
             onClick={() => onListOpen?.()}
-            className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
+            className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full border border-[#1F4D35]/12 bg-[#FDFBF7]/92 px-4 py-2.5 text-sm font-semibold tracking-[0.01em] text-[#1F4D35] shadow-[0_8px_24px_-12px_rgba(45,74,52,0.28)] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
           >
-            <List className="h-4 w-4" aria-hidden />
+            <List className="h-4 w-4 stroke-[1.85]" aria-hidden />
             Ver {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
           </button>
         </div>
@@ -337,7 +383,7 @@ export function MapMobile({
           place={selectedPlace}
           onClose={() => onPlaceDeselect?.()}
           reduceMotion={reduceMotion}
-          onHeightChange={setSheetHeight}
+          onSnapChange={setSheetSnap}
         />
       )}
 
@@ -380,10 +426,10 @@ export function MapMobile({
           <div
             role="dialog"
             aria-label="Más filtros"
-            className="relative z-10 flex min-h-0 max-h-full w-full max-w-md flex-col overflow-hidden rounded-3xl border border-olive/15 bg-card shadow-2xl"
+            className="map-paper relative z-10 flex min-h-0 max-h-full w-full max-w-md flex-col overflow-hidden rounded-[24px] border border-[var(--map-paper-border)]"
           >
             <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-5">
-              <h2 className="text-base font-semibold text-olive">Más filtros</h2>
+              <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#1F4D35]">Más filtros</h2>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
@@ -411,10 +457,10 @@ export function MapMobile({
                     })
                   }
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    "rounded-full border px-3 py-1.5 text-xs font-medium tracking-[0.01em]",
                     filters.type === type.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-olive/10 bg-olive/5 text-muted-foreground"
+                      ? "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]"
+                      : "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70"
                   )}
                 >
                   {type.label}
@@ -438,10 +484,10 @@ export function MapMobile({
                     onFiltersChange({ ...filters, tags })
                   }}
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    "rounded-full border px-3 py-1.5 text-xs font-medium tracking-[0.01em]",
                     filters.tags.includes(chip.id)
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-olive/10 bg-olive/5 text-muted-foreground"
+                      ? "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]"
+                      : "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70"
                   )}
                 >
                   {chip.label}
