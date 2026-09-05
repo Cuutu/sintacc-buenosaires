@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { isOpenNow } from "@/lib/opening-hours"
+import { getOpenStatusLabel, isOpenNow } from "@/lib/opening-hours"
 
 /** Viernes 14 ago 2026 15:21 en Argentina = 18:21 UTC */
 const FRIDAY_AFTERNOON = new Date("2026-08-14T18:21:00.000Z")
@@ -29,5 +29,20 @@ describe("isOpenNow", () => {
 
   it("formato corto Lun-Vie sigue andando", () => {
     expect(isOpenNow("Lun-Vie 9-18, Sáb 10-14", FRIDAY_AFTERNOON)).toBe(true)
+  })
+})
+
+describe("getOpenStatusLabel", () => {
+  it("abierto muestra hora de cierre si se puede parsear", () => {
+    expect(getOpenStatusLabel(MARTINEZ_HOURS, FRIDAY_AFTERNOON)).toBe("Cierra a las 19:30")
+  })
+
+  it("cerrado no inventa horario", () => {
+    expect(getOpenStatusLabel(MARTINEZ_HOURS, SUNDAY_NOON)).toBe("Cerrado")
+  })
+
+  it("sin dato no muestra placeholder", () => {
+    expect(getOpenStatusLabel(undefined)).toBeNull()
+    expect(getOpenStatusLabel("")).toBeNull()
   })
 })

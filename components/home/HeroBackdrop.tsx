@@ -54,9 +54,9 @@ export function HeroBackdrop() {
       aria-hidden
     >
       <div className="celimap-hero-mesh" />
-      <AtlasStreets className={`${LAYER} opacity-35 md:opacity-100`} style={far} />
+      <AtlasStreets className={`${LAYER} opacity-70 md:opacity-100`} style={far} />
       <AtlasFlora className={`${LAYER} opacity-35 md:opacity-100`} style={mid} />
-      <AtlasPlaces className={`${LAYER} opacity-40 md:opacity-100`} style={near} />
+      <AtlasPlaces className={LAYER} style={near} />
       <div className="celimap-hero-paper" />
       <div className="celimap-hero-vignette" />
     </div>

@@ -64,19 +64,26 @@ function parseDayRange(str: string): number[] | null {
   return null
 }
 
-/**
- * Parsea horarios comunes y retorna si está abierto.
- * Retorna null si no se puede interpretar.
- */
-export function isOpenNow(
+type ParsedOpenStatus = {
+  open: boolean
+  closeMinutes?: number
+}
+
+function formatClock(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60) % 24
+  const m = totalMinutes % 60
+  return `${h}:${String(m).padStart(2, "0")}`
+}
+
+function parseOpenStatus(
   openingHours: string | undefined | null,
-  now: Date = new Date()
-): boolean | null {
+  now: Date
+): ParsedOpenStatus | null {
   if (!openingHours || !openingHours.trim()) return null
 
   const s = openingHours.toLowerCase().trim()
-  if (s === "cerrado") return false
-  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return true
+  if (s === "cerrado") return { open: false }
+  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return { open: true }
 
   const nowMinutes = getLocalMinutes(now)
   const nowDay = getLocalDay(now)
@@ -94,7 +101,7 @@ export function isOpenNow(
     if (days) matchedDay = true
 
     if (/\bcerrado\b/.test(seg)) {
-      if (days?.includes(nowDay) || (!days && segments.length === 1)) return false
+      if (days?.includes(nowDay) || (!days && segments.length === 1)) return { open: false }
       continue
     }
 
@@ -112,11 +119,35 @@ export function isOpenNow(
       closeM > openM
         ? nowMinutes >= openM && nowMinutes < closeM
         : nowMinutes >= openM || nowMinutes < closeM
-    if (isOpen) return true
-    if (days) return false
+    if (isOpen) return { open: true, closeMinutes: closeM }
+    if (days) return { open: false }
   }
 
-  return matchedDay ? false : null
+  return matchedDay ? { open: false } : null
+}
+
+/**
+ * Parsea horarios comunes y retorna si está abierto.
+ * Retorna null si no se puede interpretar.
+ */
+export function isOpenNow(
+  openingHours: string | undefined | null,
+  now: Date = new Date()
+): boolean | null {
+  const status = parseOpenStatus(openingHours, now)
+  return status ? status.open : null
+}
+
+/** Etiqueta corta para ficha/lista. Null si no hay horario interpretable. */
+export function getOpenStatusLabel(
+  openingHours: string | undefined | null,
+  now: Date = new Date()
+): string | null {
+  const status = parseOpenStatus(openingHours, now)
+  if (!status) return null
+  if (!status.open) return "Cerrado"
+  if (status.closeMinutes != null) return `Cierra a las ${formatClock(status.closeMinutes)}`
+  return "Abierto ahora"
 }
 
 export const WEEK_DAYS = [

@@ -5,6 +5,8 @@ import Link from "next/link"
 import { PlaceMiniCard } from "./PlaceMiniCard"
 import type { IPlace } from "@/models/Place"
 import type { UserLatLng } from "./geo"
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import { cn } from "@/lib/utils"
 
 interface PlacesListProps {
   places: (IPlace & { stats?: { avgRating?: number; totalReviews?: number } })[]
@@ -46,6 +48,14 @@ export function PlacesList({
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
   const [userLocation, setUserLocation] = React.useState<UserLatLng | null>(null)
+  const reduceMotion = usePrefersReducedMotion()
+  const listSignature = places.map((place) => String(place._id)).join(",")
+  const prevSignatureRef = React.useRef(listSignature)
+  const [enterNonce, setEnterNonce] = React.useState(0)
+  if (prevSignatureRef.current !== listSignature) {
+    prevSignatureRef.current = listSignature
+    setEnterNonce((n) => n + 1)
+  }
 
   React.useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return
@@ -142,13 +152,16 @@ export function PlacesList({
     >
       {places
         .filter((place) => place?._id != null)
-        .map((place) => {
+        .map((place, index) => {
           const id = String(place._id)
+          const stagger = !reduceMotion && index < 8
           return (
             <div
-              key={id}
+              key={`${enterNonce}-${id}`}
               ref={selectedPlaceId === id ? selectedRef : null}
               onMouseEnter={() => onPlaceHover?.(id)}
+              className={cn(stagger && "map-card-enter")}
+              style={stagger ? { animationDelay: `${index * 30}ms` } : undefined}
             >
               <PlaceMiniCard
                 place={place}

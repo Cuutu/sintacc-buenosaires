@@ -42,13 +42,20 @@ describe("popup mapa responsive", () => {
       path.join(process.cwd(), "components/map-view/MobileMapBottomSheet.tsx"),
       "utf8"
     )
-    expect(src).toContain("MOBILE_SHEET_COMPACT_PX = 132")
+    expect(src).toContain("MOBILE_SHEET_COMPACT_PX = 168")
     expect(src).toContain("CLOSE_THRESHOLD_PX")
     expect(src).toContain('data-directions="true"')
+    expect(src).toContain('data-favorite="true"')
+    expect(src).toContain("getPlaceImageUrl")
+    expect(src).toContain("getOpenStatusLabel")
+    expect(src).toContain("FavoriteButton")
+    expect(src).toContain("getPlaceSheetDetailTags")
     expect(src).toContain("getPlaceDetailPath")
     expect(src).toContain("translate3d")
+    expect(src).toContain("animateSpring")
     expect(src).not.toContain("transition-[height]")
     expect(src).not.toContain("onHeightChange")
+    expect(src).not.toContain("cubic-bezier")
   })
 
   it("lista mobile cream, sin FAB encima de cards", () => {
@@ -65,6 +72,8 @@ describe("popup mapa responsive", () => {
       "utf8"
     )
     expect(sheet).toContain("map-paper")
+    expect(sheet).toContain("animateSpring")
+    expect(sheet).not.toContain("transition-[height]")
     expect(sheet).not.toContain("bg-black/70")
     expect(mobile).toContain("!listOpen && sheetSnap !== \"expanded\"")
     expect(mobile).toContain("<FabButtons")
@@ -90,6 +99,7 @@ describe("popup mapa responsive", () => {
     expect(mobile).not.toContain("mapRef.current.flyTo(place.location")
     expect(mobile).toContain("mapRef.current?.flyTo(longitude, latitude, 16)")
     expect(mobile).toContain("overlayPadding={overlayPadding}")
+    expect(mobile).toContain("VerLugaresCount")
     expect(map).toContain("map.current.stop()")
     expect(map).toContain("CAMERA_FOCUS_MS")
     expect(map).toContain("lastFocusedPlaceIdRef.current === selectedPlaceId")

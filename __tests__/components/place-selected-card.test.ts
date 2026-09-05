@@ -1,5 +1,5 @@
 import type { IPlace } from "@/models/Place"
-import { formatShortPlaceAddress, getPlaceRatingLine } from "@/components/map-view/place-selected-card-model"
+import { formatShortPlaceAddress, getPlaceRatingLine, getPlaceSheetDetailTags } from "@/components/map-view/place-selected-card-model"
 import { buildPlacePopupHtml } from "@/components/map-view/map-popup-html"
 
 function fakePlace(overrides: Partial<IPlace> = {}): IPlace {
@@ -54,5 +54,21 @@ describe("ficha seleccionada del mapa", () => {
     expect(html).toContain("#F8F5EF")
     expect(html).toContain("#C85A2E")
     expect(html).toContain("#1F4D35")
+  })
+
+  it("sheet solo cocina_separada y certificado, en ese orden", () => {
+    expect(
+      getPlaceSheetDetailTags([
+        "100_gf",
+        "certificado_sin_tacc",
+        "sin_info",
+        "cocina_separada",
+        "opciones_sin_tacc",
+      ]).map((tag) => tag.id)
+    ).toEqual(["cocina_separada", "certificado_sin_tacc"])
+    expect(getPlaceSheetDetailTags(["100_gf", "opciones_sin_tacc"])).toEqual([])
+    expect(getPlaceSheetDetailTags(["certificado_sin_tacc"])).toEqual([
+      { id: "certificado_sin_tacc", label: "Insumos certificados" },
+    ])
   })
 })

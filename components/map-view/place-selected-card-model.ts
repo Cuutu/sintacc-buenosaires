@@ -1,4 +1,4 @@
-import { TYPES } from "@/lib/constants"
+import { TYPES, TAG_BADGE_CONFIG } from "@/lib/constants"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getPlacePath } from "@/lib/place-url"
 import type { IPlace } from "@/models/Place"
@@ -130,4 +130,16 @@ export function getPlaceDirectionsUrl(place: Pick<IPlace, "name" | "location">):
 
 export function getPlaceDetailPath(place: IPlace): string {
   return getPlacePath(place)
+}
+
+const SHEET_DETAIL_TAG_ORDER = ["cocina_separada", "certificado_sin_tacc"] as const
+
+export function getPlaceSheetDetailTags(
+  tags: string[] | undefined | null
+): { id: (typeof SHEET_DETAIL_TAG_ORDER)[number]; label: string }[] {
+  const present = new Set(tags ?? [])
+  return SHEET_DETAIL_TAG_ORDER.filter((id) => present.has(id)).map((id) => ({
+    id,
+    label: TAG_BADGE_CONFIG[id].label,
+  }))
 }

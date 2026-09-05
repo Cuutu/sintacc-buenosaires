@@ -53,6 +53,44 @@ const TAG_CHIPS = [
   { id: "delivery", label: "Delivery" },
 ] as const
 
+function VerLugaresCount({
+  count,
+  reduceMotion,
+}: {
+  count: number
+  reduceMotion: boolean
+}) {
+  const [shown, setShown] = React.useState(count)
+  const [leaving, setLeaving] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    if (count === shown) return
+    if (reduceMotion) {
+      setShown(count)
+      setLeaving(null)
+      return
+    }
+    setLeaving(shown)
+    setShown(count)
+  }, [count, shown, reduceMotion])
+
+  return (
+    <span className="relative inline-block min-w-[1.25ch] text-right align-baseline">
+      {leaving != null ? (
+        <span
+          className="absolute inset-0 map-count-out"
+          onAnimationEnd={() => setLeaving(null)}
+        >
+          {leaving}
+        </span>
+      ) : null}
+      <span className={cn("inline-block", leaving != null && "map-count-in")}>
+        {shown}
+      </span>
+    </span>
+  )
+}
+
 function readCssVarPx(varName: string): number {
   if (typeof document === "undefined") return 0
   const probe = document.createElement("div")
@@ -370,16 +408,21 @@ export function MapMobile({
           <button
             type="button"
             onClick={() => onListOpen?.()}
-            className="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full border border-[#1F4D35]/12 bg-[#FDFBF7]/92 px-4 py-2.5 text-sm font-semibold tracking-[0.01em] text-[#1F4D35] shadow-[0_8px_24px_-12px_rgba(45,74,52,0.28)] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
+            className="pointer-events-auto inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-[#1F4D35]/12 bg-[#FDFBF7]/92 px-4 py-2.5 text-sm font-semibold tracking-[0.01em] text-[#1F4D35] shadow-[0_8px_24px_-12px_rgba(45,74,52,0.28)] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
           >
-            <List className="h-4 w-4 stroke-[1.85]" aria-hidden />
-            Ver {visiblePlaces.length} lugar{visiblePlaces.length !== 1 ? "es" : ""}
+            <List className="h-4 w-4 shrink-0 stroke-[1.85]" aria-hidden />
+            <span className="inline-flex items-baseline gap-1">
+              <span>Ver</span>
+              <VerLugaresCount count={visiblePlaces.length} reduceMotion={reduceMotion} />
+              <span>{`lugar${visiblePlaces.length !== 1 ? "es" : ""}`}</span>
+            </span>
           </button>
         </div>
       )}
 
       {selectedPlace && (
         <MobileMapBottomSheet
+          key={String(selectedPlace._id)}
           place={selectedPlace}
           onClose={() => onPlaceDeselect?.()}
           reduceMotion={reduceMotion}

@@ -70,7 +70,7 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={pressed ?? active}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[120ms] ease-out active:scale-[0.96] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         active && tone === "olive" && "border-olive bg-olive text-cream",
         active && tone === "terracotta" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
@@ -418,7 +418,7 @@ export function MapTopBar({
               onClick={(e) => handleChipClick(e, chip.id)}
               aria-pressed={active}
               className={cn(
-                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-colors active:scale-[0.98]",
+                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[120ms] ease-out active:scale-[0.96] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100",
                 active && isDedicated && "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]",
                 active && !isDedicated && "border-[#C85A2E] bg-[#C85A2E] text-white",
                 !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"

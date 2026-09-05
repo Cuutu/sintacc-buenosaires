@@ -52,12 +52,23 @@ function Leaf({
   )
 }
 
-function Pin({ x, y, scale = 0.22 }: { x: number; y: number; scale?: number }) {
+function Pin({
+  x,
+  y,
+  scale = 0.22,
+  tone = "dedicated",
+}: {
+  x: number
+  y: number
+  scale?: number
+  tone?: "dedicated" | "options"
+}) {
+  const fill = tone === "dedicated" ? "#1F4D35" : "#B64320"
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+    <g transform={`translate(${x} ${y}) scale(${scale})`} opacity="0.35">
       <path
         d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z"
-        fill="#2D4A34"
+        fill={fill}
       />
       <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E" />
       <ellipse cx="-9" cy="-42" rx="5" ry="7.5" fill="#F6F1E8" />
@@ -144,7 +155,7 @@ const SVG_PROPS = {
 export function AtlasStreets({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg {...SVG_PROPS} className={className} style={style}>
-      <g stroke="#D9DED4" strokeLinecap="round" strokeLinejoin="round">
+      <g stroke="#E8E0D0" strokeLinecap="round" strokeLinejoin="round">
         {/* Avenidas */}
         <path
           d="M40 148C220 108 380 168 520 128 680 82 860 168 1020 122 1160 86 1300 148 1460 128"
@@ -191,7 +202,7 @@ export function AtlasStreets({ className, style }: { className?: string; style?:
       </g>
 
       {/* Nodos de cruce */}
-      <g fill="#BFC8BC">
+      <g fill="#E8E0D0">
         {[
           [168, 148],
           [428, 128],
@@ -221,18 +232,10 @@ export function AtlasStreets({ className, style }: { className?: string; style?:
   )
 }
 
-/** Espigas, hojas y vínculos — capa media. */
+/** Espigas y hojas — capa media. */
 export function AtlasFlora({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg {...SVG_PROPS} className={className} style={style}>
-      <g opacity="0.32" stroke="#2D4A34" strokeWidth="1.15" strokeLinecap="round" fill="none">
-        <path d="M428 128C520 210 620 250 740 368" strokeDasharray="3 7" />
-        <path d="M1048 122C980 220 880 280 740 368" strokeDasharray="3 7" />
-        <path d="M176 588C320 520 520 460 740 368" strokeDasharray="3 7" />
-        <path d="M1286 588C1100 500 920 430 740 368" strokeDasharray="3 7" />
-        <path d="M752 778C740 620 740 500 740 368" strokeDasharray="3 7" />
-      </g>
-
       <g opacity="0.28">
         <Wheat x={96} y={96} rot={-28} scale={1.15} />
         <Wheat x={132} y={118} rot={-8} scale={0.85} />
@@ -262,13 +265,13 @@ export function AtlasFlora({ className, style }: { className?: string; style?: C
 export function AtlasPlaces({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg {...SVG_PROPS} className={className} style={style}>
-      <g opacity="0.38">
-        <Pin x={428} y={128} />
-        <Pin x={1048} y={122} />
-        <Pin x={176} y={588} />
-        <Pin x={1286} y={588} />
-        <Pin x={752} y={778} scale={0.2} />
-        <Pin x={1290} y={368} scale={0.2} />
+      <g>
+        <Pin x={428} y={128} tone="dedicated" />
+        <Pin x={1048} y={122} tone="options" />
+        <Pin x={176} y={588} tone="dedicated" />
+        <Pin x={1286} y={588} tone="options" />
+        <Pin x={752} y={778} scale={0.2} tone="dedicated" />
+        <Pin x={1290} y={368} scale={0.2} tone="options" />
       </g>
       <g opacity="0.26">
         <IconCafe x={458} y={96} />

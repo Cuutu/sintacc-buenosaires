@@ -1,19 +1,26 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, MapPin, Navigation } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
+import { FavoriteButton } from "@/components/favorite-button"
+import { getPlaceImageUrl } from "@/lib/place-image"
+import { getOpenStatusLabel } from "@/lib/opening-hours"
 import {
   formatShortPlaceAddress,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
+  getPlaceSheetDetailTags,
+  getPlaceTypeKey,
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
-import { PlaceRatingRow, PlaceSafetyBadge, PlaceTypeGlyph } from "./PlaceCardBits"
+import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
+import { animateSpring } from "./motion"
 
-export const MOBILE_SHEET_COMPACT_PX = 132
+export const MOBILE_SHEET_COMPACT_PX = 168
 export const MOBILE_SHEET_EXPANDED_PX = 320
 export const CLOSE_THRESHOLD_PX = 72
 export const CAMERA_SHEET_GAP_PX = 8
@@ -21,8 +28,6 @@ export const CAMERA_SHEET_GAP_PX = 8
 export type PlaceSheetSnap = "compact" | "expanded"
 
 const RUBBER_PX = 24
-const SNAP_MS = 300
-const SNAP_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"
 const COMPACT_Y = MOBILE_SHEET_EXPANDED_PX - MOBILE_SHEET_COMPACT_PX
 const HIDDEN_Y = MOBILE_SHEET_EXPANDED_PX
 const EXPANDED_Y = 0
@@ -54,41 +59,71 @@ export function MobileMapBottomSheet({
   const startTranslateRef = React.useRef(COMPACT_Y)
   const draggingRef = React.useRef(false)
   const draggedRef = React.useRef(false)
-  const enteredRef = React.useRef(false)
   const closingRef = React.useRef(false)
+  const velocityRef = React.useRef(0)
+  const lastMoveRef = React.useRef({ t: 0, y: 0 })
+  const stopSpringRef = React.useRef<(() => void) | null>(null)
   const [snap, setSnap] = React.useState<PlaceSheetSnap>("compact")
   const expanded = snap === "expanded"
   const onSnapChangeRef = React.useRef(onSnapChange)
   onSnapChangeRef.current = onSnapChange
+  const reduceMotionRef = React.useRef(reduceMotion)
+  reduceMotionRef.current = reduceMotion
 
-  const applyY = React.useCallback((y: number, withTransition: boolean) => {
+  const stopSpring = React.useCallback(() => {
+    stopSpringRef.current?.()
+    stopSpringRef.current = null
+  }, [])
+
+  const setYImmediate = React.useCallback((y: number) => {
     const el = sheetRef.current
-    if (!el) return
-    const animate = withTransition && !reduceMotion
-    el.style.transition = animate ? `transform ${SNAP_MS}ms ${SNAP_EASE}` : "none"
-    el.style.transform = `translate3d(0, ${y}px, 0)`
+    if (el) {
+      el.style.transition = "none"
+      el.style.transform = `translate3d(0, ${y}px, 0)`
+    }
     translateYRef.current = y
-  }, [reduceMotion])
+  }, [])
+
+  const springTo = React.useCallback(
+    (y: number, velocity = 0, onComplete?: () => void) => {
+      stopSpring()
+      if (reduceMotionRef.current) {
+        setYImmediate(y)
+        onComplete?.()
+        return
+      }
+      stopSpringRef.current = animateSpring({
+        from: translateYRef.current,
+        to: y,
+        velocity,
+        reduceMotion: false,
+        onUpdate: setYImmediate,
+        onComplete: () => {
+          stopSpringRef.current = null
+          onComplete?.()
+        },
+      })
+    },
+    [setYImmediate, stopSpring]
+  )
 
   React.useLayoutEffect(() => {
     closingRef.current = false
+    stopSpring()
     setSnap("compact")
     onSnapChangeRef.current?.("compact")
     if (reduceMotion) {
-      applyY(COMPACT_Y, false)
-      enteredRef.current = true
+      setYImmediate(COMPACT_Y)
       return
     }
-    if (!enteredRef.current) {
-      applyY(HIDDEN_Y, false)
-      const id = window.requestAnimationFrame(() => {
-        applyY(COMPACT_Y, true)
-        enteredRef.current = true
-      })
-      return () => window.cancelAnimationFrame(id)
-    }
-    applyY(COMPACT_Y, true)
-  }, [place._id, reduceMotion, applyY])
+    setYImmediate(HIDDEN_Y)
+    const id = window.requestAnimationFrame(() => {
+      springTo(COMPACT_Y)
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [place._id, reduceMotion, setYImmediate, springTo, stopSpring])
+
+  React.useEffect(() => () => stopSpring(), [stopSpring])
 
   const closeSheet = React.useCallback(() => {
     if (closingRef.current) return
@@ -97,23 +132,10 @@ export function MobileMapBottomSheet({
       onClose()
       return
     }
-    const el = sheetRef.current
-    applyY(HIDDEN_Y, true)
-    if (!el) {
-      onClose()
-      return
-    }
-    const finish = (event?: TransitionEvent) => {
-      if (event && event.propertyName !== "transform") return
-      el.removeEventListener("transitionend", finish)
-      window.clearTimeout(timeout)
-      onClose()
-    }
-    const timeout = window.setTimeout(() => finish(), SNAP_MS + 80)
-    el.addEventListener("transitionend", finish)
-  }, [applyY, onClose, reduceMotion])
+    springTo(HIDDEN_Y, velocityRef.current, onClose)
+  }, [onClose, reduceMotion, springTo])
 
-  const snapTo = React.useCallback((y: number) => {
+  const snapTo = React.useCallback((y: number, velocity = 0) => {
     const visible = MOBILE_SHEET_EXPANDED_PX - y
     if (visible < CLOSE_THRESHOLD_PX) {
       closeSheet()
@@ -123,18 +145,21 @@ export function MobileMapBottomSheet({
     const expandedDist = Math.abs(y - EXPANDED_Y)
     const next: PlaceSheetSnap = compactDist <= expandedDist ? "compact" : "expanded"
     setSnap(next)
-    applyY(yForSnap(next), true)
+    springTo(yForSnap(next), velocity)
     onSnapChangeRef.current?.(next)
-  }, [applyY, closeSheet])
+  }, [closeSheet, springTo])
 
   const onPointerDown = (event: React.PointerEvent) => {
     if (closingRef.current) return
-    if ((event.target as HTMLElement).closest("[data-directions]")) return
+    if ((event.target as HTMLElement).closest("[data-directions],[data-favorite]")) return
     draggedRef.current = false
     draggingRef.current = true
+    stopSpring()
     startYRef.current = event.clientY
     startTranslateRef.current = translateYRef.current
-    applyY(translateYRef.current, false)
+    velocityRef.current = 0
+    lastMoveRef.current = { t: performance.now(), y: translateYRef.current }
+    setYImmediate(translateYRef.current)
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
   }
 
@@ -142,19 +167,32 @@ export function MobileMapBottomSheet({
     if (!draggingRef.current) return
     const delta = event.clientY - startYRef.current
     if (Math.abs(delta) > 8) draggedRef.current = true
-    applyY(clampY(startTranslateRef.current + delta), false)
+    const nextY = clampY(startTranslateRef.current + delta)
+    const now = performance.now()
+    const dt = (now - lastMoveRef.current.t) / 1000
+    if (dt > 0 && dt < 0.08) {
+      velocityRef.current = (nextY - lastMoveRef.current.y) / dt
+    }
+    lastMoveRef.current = { t: now, y: nextY }
+    setYImmediate(nextY)
   }
 
   const onPointerUp = () => {
     if (!draggingRef.current) return
     draggingRef.current = false
-    snapTo(translateYRef.current)
+    const stale = performance.now() - lastMoveRef.current.t > 80
+    snapTo(translateYRef.current, stale ? 0 : velocityRef.current)
   }
 
-  const meta = [getPlaceTypeLabel(place), place.neighborhood].filter(Boolean).join(" • ")
+  const meta = [getPlaceTypeLabel(place), place.neighborhood].filter(Boolean).join(" · ")
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
+  const photoSrc = getPlaceImageUrl(place.photos?.[0], "thumb")
+  const TypeIcon = PLACE_TYPE_ICONS[getPlaceTypeKey(place)] ?? MapPin
+  const openLabel = getOpenStatusLabel(place.openingHours)
+  const openNow = openLabel != null && openLabel !== "Cerrado"
+  const detailTags = getPlaceSheetDetailTags(place.tags)
 
   return (
     <div
@@ -163,7 +201,7 @@ export function MobileMapBottomSheet({
     >
       <section
         ref={sheetRef}
-        className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0 motion-reduce:transition-none"
+        className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0"
         style={{ transform: `translate3d(0, ${HIDDEN_Y}px, 0)` }}
         aria-label={place.name}
         onPointerDown={onPointerDown}
@@ -175,7 +213,7 @@ export function MobileMapBottomSheet({
           <span className="map-handle" aria-hidden />
         </div>
 
-        <div className="relative h-[calc(100%-22px)] overflow-hidden px-5 pb-3">
+        <div className="relative h-[calc(100%-22px)] overflow-hidden px-4 pb-3">
           <Link
             href={detailPath}
             className="absolute inset-0 z-0"
@@ -185,56 +223,106 @@ export function MobileMapBottomSheet({
             }}
           />
 
-          <div className="pointer-events-none relative z-[1]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
+          <div className="pointer-events-none relative z-[1] flex items-start gap-3">
+            <span className="relative mt-0.5 h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] bg-[#1F4D35]/[0.08]">
+              {photoSrc ? (
+                <Image
+                  src={photoSrc}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="72px"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[#1F4D35]" aria-hidden>
+                  <TypeIcon className="h-6 w-6 stroke-[1.85]" />
+                </span>
+              )}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-2">
                 <h2
                   className={cn(
-                    "font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]",
-                    expanded ? "line-clamp-2 text-[20px]" : "line-clamp-1 text-[16px]"
+                    "min-w-0 font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]",
+                    expanded ? "line-clamp-2 text-[18px]" : "line-clamp-1 text-[16px]"
                   )}
                 >
                   {place.name}
                 </h2>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <PlaceSafetyBadge place={place} size="sm" />
-                  <PlaceRatingRow place={place} className="text-[12px]" />
+                <div
+                  data-favorite="true"
+                  className="pointer-events-auto relative z-[2] -mr-1 -mt-1 shrink-0"
+                  onClick={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  <FavoriteButton
+                    placeId={String(place._id)}
+                    className="h-9 w-9 text-[#1F4D35]/70"
+                  />
                 </div>
-                {meta ? (
-                  <p className="mt-1 truncate text-[12.5px] font-medium text-[#5F6B63]">{meta}</p>
-                ) : null}
               </div>
-              <a
-                href={directionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-directions="true"
-                onClick={(event) => event.stopPropagation()}
-                className="pointer-events-auto relative z-[2] inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35]"
-              >
-                <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                Cómo llegar
-              </a>
-            </div>
-
-            {expanded ? (
-              <div className="mt-3 border-t border-[#1F4D35]/[0.06] pt-3">
-                {address ? (
-                  <p className="flex items-start gap-2 text-[13px] leading-snug text-[#5F6B63]">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 stroke-[1.85] text-[#1F4D35]" aria-hidden />
-                    <span className="line-clamp-1">{address}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <PlaceSafetyBadge place={place} size="sm" />
+                <PlaceRatingRow place={place} className="text-[12px]" />
+              </div>
+              {meta ? (
+                <p className="mt-1 truncate text-[12.5px] font-medium text-[#5F6B63]">{meta}</p>
+              ) : null}
+              {address ? (
+                <p className="mt-0.5 truncate text-[12px] text-[#5F6B63]/90">{address}</p>
+              ) : null}
+              {detailTags.length > 0 ? (
+                <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                  {detailTags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5F6B63]"
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1F4D35]/35" aria-hidden />
+                      {tag.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-1 flex items-center justify-between gap-2">
+                {openLabel ? (
+                  <p
+                    className={cn(
+                      "min-w-0 truncate text-[12px] font-semibold",
+                      openNow ? "text-[#1F4D35]" : "text-[#5F6B63]"
+                    )}
+                  >
+                    {openLabel}
                   </p>
-                ) : null}
-                <div className="mt-3 flex items-center justify-between">
-                  <PlaceTypeGlyph place={place} />
-                  <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tracking-[0.01em] text-[#C85A2E]">
-                    Ver lugar
-                    <ArrowRight className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                  </span>
-                </div>
+                ) : (
+                  <span />
+                )}
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-directions="true"
+                  onClick={(event) => event.stopPropagation()}
+                  className="pointer-events-auto relative z-[2] inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
+                >
+                  <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                  Cómo llegar
+                </a>
               </div>
-            ) : null}
+            </div>
           </div>
+
+          {expanded ? (
+            <div className="pointer-events-none relative z-[1] mt-3 border-t border-[#1F4D35]/[0.06] pt-3">
+              <div className="flex items-center justify-end">
+                <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tracking-[0.01em] text-[#C85A2E]">
+                  Ver lugar
+                  <ArrowRight className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                </span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

@@ -8,6 +8,7 @@ import { features } from "@/lib/features"
 import { persistFavoriteToggle } from "@/lib/favorites-persist"
 import { useFavorites } from "@/components/favorites-provider"
 import { cn } from "@/lib/utils"
+import { usePrefersReducedMotion } from "@/components/map-view/usePrefersReducedMotion"
 
 interface FavoriteButtonProps {
   placeId: string
@@ -20,10 +21,16 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
   const { data: session } = useSession()
   const { isFavorite, ids, add, remove } = useFavorites()
   const [loading, setLoading] = useState(false)
+  const [pop, setPop] = useState(false)
+  const reduceMotion = usePrefersReducedMotion()
   const favorited = isFavorite(placeId)
 
   const toggleFavorite = async () => {
     if (!session) return
+
+    if (!favorited && !reduceMotion) {
+      setPop(true)
+    }
 
     setLoading(true)
     try {
@@ -47,10 +54,14 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
       aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
       aria-pressed={favorited}
     >
-        <Heart
-        className={`h-5 w-5 ${showLabel ? "mr-2" : ""} ${
-          favorited ? "fill-[#B64320] text-[#B64320]" : ""
-        }`}
+      <Heart
+        className={cn(
+          "h-5 w-5 transition-[fill,color] duration-200 motion-reduce:transition-none motion-reduce:duration-0",
+          showLabel && "mr-2",
+          favorited ? "fill-[#B64320] text-[#B64320]" : "fill-transparent",
+          pop && "fav-heart-pop"
+        )}
+        onAnimationEnd={() => setPop(false)}
       />
       {showLabel && "Guardar"}
     </Button>
