@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { pinAssetPath } from "@/lib/celimap-pin"
 
 /** Firma visual CeliMap: barrio visto desde arriba. viewBox 1440×900. */
 
@@ -55,30 +56,27 @@ function Leaf({
 function Pin({
   x,
   y,
-  scale = 0.22,
+  size = 42,
   tone = "dedicated",
 }: {
   x: number
   y: number
-  scale?: number
+  size?: number
   tone?: "dedicated" | "options"
 }) {
-  const fill = tone === "dedicated" ? "#1F4D35" : "#B64320"
+  const href = pinAssetPath(tone === "dedicated" ? "dedicated_gf" : "gf_options")
+  if (!href) return null
+  const height = size * (684 / 512)
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`} opacity="0.35">
-      <path
-        d="M0-92C-36-92-62-62-62-26c0 52 62 118 62 118s62-66 62-118C62-62 36-92 0-92Z"
-        fill={fill}
-      />
-      <ellipse cx="0" cy="-54" rx="5.5" ry="8" fill="#C85A2E" />
-      <ellipse cx="-9" cy="-42" rx="5" ry="7.5" fill="#F6F1E8" />
-      <ellipse cx="9" cy="-42" rx="5" ry="7.5" fill="#F6F1E8" />
-      <ellipse cx="-9" cy="-26" rx="5" ry="7.5" fill="#F6F1E8" />
-      <ellipse cx="9" cy="-26" rx="5" ry="7.5" fill="#F6F1E8" />
-      <ellipse cx="-9" cy="-10" rx="4.6" ry="7" fill="#F6F1E8" />
-      <ellipse cx="9" cy="-10" rx="4.6" ry="7" fill="#F6F1E8" />
-      <rect x="-1.6" y="-4" width="3.2" height="22" rx="1.6" fill="#F6F1E8" />
-    </g>
+    <image
+      href={href}
+      x={x - size / 2}
+      y={y - height}
+      width={size}
+      height={height}
+      opacity={0.55}
+      preserveAspectRatio="xMidYMax meet"
+    />
   )
 }
 
@@ -270,8 +268,8 @@ export function AtlasPlaces({ className, style }: { className?: string; style?: 
         <Pin x={1048} y={122} tone="options" />
         <Pin x={176} y={588} tone="dedicated" />
         <Pin x={1286} y={588} tone="options" />
-        <Pin x={752} y={778} scale={0.2} tone="dedicated" />
-        <Pin x={1290} y={368} scale={0.2} tone="options" />
+        <Pin x={752} y={778} size={34} tone="dedicated" />
+        <Pin x={1290} y={368} size={34} tone="options" />
       </g>
       <g opacity="0.26">
         <IconCafe x={458} y={96} />
