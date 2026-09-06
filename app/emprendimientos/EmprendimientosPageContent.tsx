@@ -1,20 +1,16 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
-import { VentureCard } from "@/components/ventures/VentureCard"
+import { VentureCard, type VentureCardData } from "@/components/ventures/VentureCard"
 import { VentureFeaturedRail } from "@/components/ventures/VentureFeaturedRail"
 import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
 import { VENTURE_CATEGORIES } from "@/lib/venture-constants"
 import { VENTURE_ZONE_LANDINGS } from "@/lib/venture-seo"
 import { matchesVentureSearch } from "@/lib/venture-search"
-import { fetchApi } from "@/lib/fetchApi"
-import type { IVenture } from "@/models/Venture"
 import { cn } from "@/lib/utils"
-
-type VentureItem = IVenture & { _id: string }
 
 const HERO_CHIPS = [
   { key: "all", label: "Todas" },
@@ -35,34 +31,21 @@ type Suggestion = {
   href?: string
 }
 
-export default function EmprendimientosPageContent() {
+export default function EmprendimientosPageContent({
+  initialVentures,
+}: {
+  initialVentures: VentureCardData[]
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
   const modalityParam = searchParams.get("modality")
   const searchParam = searchParams.get("search") ?? ""
 
-  const [ventures, setVentures] = useState<VentureItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const ventures = initialVentures
   const [searchInput, setSearchInput] = useState(searchParam)
   const [suggestOpen, setSuggestOpen] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
-
-  const fetchVentures = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await fetchApi<{ ventures: VentureItem[] }>("/api/ventures?limit=80")
-      setVentures(data.ventures ?? [])
-    } catch {
-      setVentures([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchVentures()
-  }, [fetchVentures])
 
   useEffect(() => {
     setSearchInput(searchParam)
@@ -156,7 +139,7 @@ export default function EmprendimientosPageContent() {
     return [...cats, ...zones, ...brands].slice(0, 8)
   }, [searchInput, ventures])
 
-  const showEmpty = !loading && displayedVentures.length === 0
+  const showEmpty = displayedVentures.length === 0
   const hasActiveSearch = searchParam.trim().length >= 2
   const hasFilter = Boolean(categoryParam || modalityParam || hasActiveSearch)
   const activeChip = HERO_CHIPS.find((c) => {
@@ -257,16 +240,7 @@ export default function EmprendimientosPageContent() {
           <h2 id="catalog-heading" className="mb-5 text-lg font-semibold text-[#1F4D35]">
             {hasFilter ? "Resultados" : "Todos los emprendimientos"}
           </h2>
-          {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-80 animate-pulse rounded-[24px] border border-[#E8E1D6] bg-[#E8E1D6]/50"
-                />
-              ))}
-            </div>
-          ) : showEmpty ? (
+          {showEmpty ? (
             <>
               {hasActiveSearch && (
                 <p className="mb-6 text-center text-base text-[#5F6B63]">

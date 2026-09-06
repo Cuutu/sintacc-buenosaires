@@ -24,17 +24,22 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).not.toContain("activos")
   })
 
-  it("home tiene 5 bloques y no secciones viejas", () => {
+  it("home tiene bloques actuales y no secciones viejas", () => {
     const src = read("app/page.tsx")
+    const directory = read("components/home/HomeDirectoryLinks.tsx")
     expect(src).toContain("Encontrá lugares sin gluten")
     expect(src).toContain("Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca")
     expect(src).toContain("CategoryChips")
     expect(src).toContain("HeroMetrics")
     expect(src).toContain("HomeFeatured")
+    expect(src).toContain("HomeDirectoryLinks")
     expect(src).toContain("HowItWorks")
     expect(src).toContain("CommunityBand")
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
+    expect(directory).toContain("`/${c.slug}-sin-gluten`")
+    expect(directory).toContain("`/sin-gluten/${city.slug}`")
+    expect(directory).toContain("getTop10CitySlugs")
     expect(src).not.toContain("EmprendimientosSection")
     expect(src).not.toContain("FeaturedListsSection")
     expect(src).not.toContain("Lugares sin gluten por ciudad")

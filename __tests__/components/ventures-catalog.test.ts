@@ -42,4 +42,14 @@ describe("catálogo /emprendimientos", () => {
       "Publicar emprendimiento"
     )
   })
+
+  it("índice SSR pasa marcas iniciales; HTML no espera fetch cliente", () => {
+    const page = read("app/emprendimientos/page.tsx")
+    const content = read("app/emprendimientos/EmprendimientosPageContent.tsx")
+    expect(page).toContain('getApprovedVentures({ limit: "all" })')
+    expect(page).toContain("initialVentures")
+    expect(content).toContain("initialVentures")
+    expect(content).not.toContain("fetchApi")
+    expect(content).not.toContain("/api/ventures")
+  })
 })

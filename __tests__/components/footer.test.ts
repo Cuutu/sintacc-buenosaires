@@ -35,4 +35,14 @@ describe("footer CeliMap", () => {
     expect(chrome).toContain("!hidePublicChrome && !isMapRoute && <Footer />")
     expect(chrome).not.toContain("showDesktopChrome && <Footer />")
   })
+
+  it("navbar no espera useIsMobile para montar links", () => {
+    const chrome = read("components/layout/LayoutChrome.tsx")
+    const nav = read("components/navbar.tsx")
+    expect(chrome).toContain("{!hidePublicChrome && <Navbar />}")
+    expect(chrome).not.toContain("showDesktopChrome && <Navbar />")
+    expect(nav).toContain("hidden min-[769px]:block")
+    expect(nav).toContain('href: "/emprendimientos"')
+    expect(nav).toContain('href: "/listas"')
+  })
 })

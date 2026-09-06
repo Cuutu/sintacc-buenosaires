@@ -14,6 +14,7 @@ import { HomeFeatured } from "@/components/home/HomeFeatured"
 import { HowItWorks } from "@/components/home/HowItWorks"
 import { CommunityBand } from "@/components/home/CommunityBand"
 import { TakeCeliMapWithYou } from "@/components/home/TakeCeliMapWithYou"
+import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
 
 const BASE_URL = getBaseUrl()
 
@@ -111,6 +112,8 @@ export default async function HomePage() {
           <HomeFeatured places={featuredPlaces.length ? featuredPlaces : undefined} />
         </div>
       </section>
+
+      <HomeDirectoryLinks />
 
       <section className="px-4 py-8 md:py-16">
         <div className="container mx-auto max-w-5xl">

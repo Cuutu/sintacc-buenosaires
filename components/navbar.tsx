@@ -30,7 +30,7 @@ export function Navbar() {
   }, [])
 
   return (
-    <>
+    <div className="hidden min-[769px]:block">
       <header
         className={cn(
           "fixed left-1/2 z-50 -translate-x-1/2 transition-[top,width] duration-300 ease-out",
@@ -64,7 +64,7 @@ export function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-0.5 md:flex">
+          <div className="flex items-center gap-0.5">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -122,6 +122,6 @@ export function Navbar() {
         </nav>
       </header>
       <div className="h-[var(--desktop-nav-clearance)] shrink-0" aria-hidden />
-    </>
+    </div>
   )
 }

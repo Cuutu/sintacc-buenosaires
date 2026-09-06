@@ -7,7 +7,7 @@ import { getTopPlaces, getTopNeighborhoods } from "@/lib/seo/places"
 import { getTopRankingTitle, getTopRankingDescription } from "@/lib/seo/templates"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { PlaceCard } from "@/components/place-card"
-import type { PlaceSEO } from "@/lib/seo/places"
+import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
@@ -55,21 +55,6 @@ export default async function TopSinGlutenPage({
     getTopNeighborhoods(ciudadSlug),
   ])
 
-  const placeForCard = (p: PlaceSEO) =>
-    ({
-      _id: p._id,
-      name: p.name,
-      type: p.type,
-      types: p.types,
-      neighborhood: p.neighborhood,
-      address: p.address ?? "",
-      location: { lat: 0, lng: 0 },
-      photos: p.photos ?? [],
-      tags: p.tags ?? [],
-      safetyLevel: p.safetyLevel,
-      stats: p.stats,
-    }) as unknown as React.ComponentProps<typeof PlaceCard>["place"]
-
   return (
     <div className="container py-8">
       <Breadcrumbs
@@ -106,7 +91,10 @@ export default async function TopSinGlutenPage({
       <section>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {topPlaces.map((p) => (
-            <PlaceCard key={p._id} place={placeForCard(p)} />
+            <PlaceCard
+              key={p._id}
+              place={placeSeoToCardPlace(p) as React.ComponentProps<typeof PlaceCard>["place"]}
+            />
           ))}
         </div>
       </section>

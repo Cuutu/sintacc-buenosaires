@@ -4,6 +4,7 @@ import Link from "next/link"
 import { PlaceCard } from "@/components/place-card"
 import { MapPin } from "lucide-react"
 import type { PlaceSEO } from "@/lib/seo/places"
+import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import type { IPlace } from "@/models/Place"
 import { normalizeInstagramUrl } from "@/lib/instagram-url"
 
@@ -22,28 +23,10 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Otro",
 }
 
-function toIPlace(p: PlaceSEO): IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } } {
-  return {
-    _id: p._id,
-    name: p.name,
-    type: p.type as IPlace["type"],
-    types: p.types,
-    neighborhood: p.neighborhood,
-    address: p.address,
-    photos: p.photos,
-    tags: p.tags,
-    safetyLevel: p.safetyLevel as IPlace["safetyLevel"],
-    location: { lat: 0, lng: 0 },
-    addressText: undefined,
-    status: "approved",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as unknown as IPlace & { stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number } }
-}
-
 export function ProvincialPlaceCard({ place, provinceSlug }: ProvincialPlaceCardProps) {
-  const placeForCard = toIPlace(place)
-  if (place.stats) (placeForCard as any).stats = place.stats
+  const placeForCard = placeSeoToCardPlace(place) as IPlace & {
+    stats?: { avgRating?: number; totalReviews?: number; contaminationReportsCount?: number }
+  }
 
   const instagramUrl = place.contact?.instagram
     ? normalizeInstagramUrl(place.contact.instagram)

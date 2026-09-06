@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { PlaceCard } from "@/components/place-card"
 import type { PlaceSEO } from "@/lib/seo/places"
+import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import { CATEGORIES } from "@/lib/seo/cities"
 
 interface PlaceListWithFiltersProps {
@@ -24,21 +25,6 @@ export function PlaceListWithFilters({
   provinceSlug,
   provinceName,
 }: PlaceListWithFiltersProps) {
-  const placeForCard = (p: PlaceSEO) =>
-    ({
-      _id: p._id,
-      name: p.name,
-      type: p.type,
-      types: p.types,
-      neighborhood: p.neighborhood,
-      address: p.address ?? "",
-      location: { lat: 0, lng: 0 },
-      photos: p.photos ?? [],
-      tags: p.tags ?? [],
-      safetyLevel: p.safetyLevel,
-      stats: p.stats,
-    }) as unknown as Parameters<typeof PlaceCard>[0]["place"]
-
   return (
     <div className="space-y-8">
       {topNeighborhoods.length > 0 && (
@@ -97,7 +83,7 @@ export function PlaceListWithFilters({
           {places.map((p, index) => (
             <PlaceCard
               key={p._id}
-              place={placeForCard(p)}
+              place={placeSeoToCardPlace(p) as Parameters<typeof PlaceCard>[0]["place"]}
               cityClickAnalytics={{
                 city_slug: citySlug,
                 position: index + 1,

@@ -55,7 +55,6 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/")
   const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
   const hidePublicChrome = isPrivateList || isAdminRoute
-  const showDesktopChrome = isMobile === false && !hidePublicChrome
   const showMobileChrome = isMobile === true && !hidePublicChrome
   const routeKey = pathname || "/"
 
@@ -69,7 +68,7 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
 
   return (
     <>
-      {showDesktopChrome && <Navbar />}
+      {!hidePublicChrome && <Navbar />}
 
       <main
         className={cn(

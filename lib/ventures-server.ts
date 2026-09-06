@@ -62,7 +62,7 @@ export function buildZoneMongoFilter(config: VentureZoneLandingConfig): Record<s
 export async function getApprovedVentures(options?: {
   category?: string
   zoneConfig?: VentureZoneLandingConfig
-  limit?: number
+  limit?: number | "all"
   excludeId?: string
 }): Promise<VenturePublic[]> {
   await connectDB()
@@ -73,10 +73,11 @@ export async function getApprovedVentures(options?: {
     query._id = { $ne: new mongoose.Types.ObjectId(options.excludeId) }
   }
 
-  const ventures = await Venture.find(query)
-    .sort({ createdAt: -1 })
-    .limit(options?.limit ?? 50)
-    .lean()
+  const found = Venture.find(query).sort({ createdAt: -1 })
+  const ventures =
+    options?.limit === "all"
+      ? await found.lean()
+      : await found.limit(options?.limit ?? 50).lean()
 
   const ids = ventures.map((v) => v._id as mongoose.Types.ObjectId)
   const statsMap = await getVentureReviewStatsMap(ids)
