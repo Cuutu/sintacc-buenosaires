@@ -11,6 +11,7 @@ import {
   CITIES,
 } from "./cities"
 import { getProvinceBySlug } from "./provinces"
+import { buildNationalCategoryMongoQuery } from "./argentina-place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { canonicalCityPlaceFilter } from "./city-place-match"
 
@@ -155,10 +156,7 @@ export async function getPlacesByCategory(
 
   const skip = (page - 1) * PER_PAGE
 
-  const query: any = {
-    status: "approved",
-    $or: [{ type }, { types: type }],
-  }
+  const query = buildNationalCategoryMongoQuery(type)
 
   const [places, total] = await Promise.all([
     Place.find(query).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
