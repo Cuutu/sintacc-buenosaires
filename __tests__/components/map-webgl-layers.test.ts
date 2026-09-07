@@ -30,6 +30,13 @@ describe("mapa público WebGL", () => {
     expect(src).toContain("moveLayer")
     expect(src).toContain("LAYER_CLUSTER_SHADOW")
     expect(src).toContain('["!=", ["get", "id"], selectedId]')
+    expect(src).toContain('"circle-stroke-opacity": PIN_FILL_OPACITY')
+    expect(src).toContain("setCircleFill")
+    expect(src).toContain("return 1")
+    expect(src).toContain('map.setPaintProperty(LAYER_PINS, "icon-halo-width", 0)')
+    expect(src).not.toContain("icon-halo-width\": 1.1")
+    expect(src).not.toContain("return reduceMotion ? 1 : 0")
+    expect(src).not.toMatch(/"circle-opacity": opacityExpr/)
   })
 
   it("MapboxMap público no crea Marker HTML para pins", () => {
@@ -45,5 +52,7 @@ describe("mapa público WebGL", () => {
     expect(src).toContain("mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831")
     expect(src).not.toContain("mapbox://styles/mapbox/light-v11")
     expect(src).not.toContain("softenLightMap")
+    expect(src).toContain("pinsReadyRef")
+    expect(src).toContain("ensurePlacesLayers(instance, reduceMotion, pinsReadyRef.current)")
   })
 })
