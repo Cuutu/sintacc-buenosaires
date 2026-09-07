@@ -6,6 +6,7 @@ import { getSingleVentureReviewStats, getVentureReviewStatsMap } from "@/lib/ven
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { ensureVentureSlug } from "@/lib/venture-slug"
 import type { VentureZoneLandingConfig } from "@/lib/venture-seo"
+import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
 
 export type VenturePublic = {
   _id: string
@@ -64,9 +65,12 @@ export async function getApprovedVentures(options?: {
   zoneConfig?: VentureZoneLandingConfig
   limit?: number | "all"
   excludeId?: string
+  /** Feed público AR. false = no filtrar país (detalle / landing zona extranjera). */
+  argentinaOnly?: boolean
 }): Promise<VenturePublic[]> {
   await connectDB()
   const query: Record<string, unknown> = { status: "approved" }
+  if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
   if (options?.category) query.category = options.category
   if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
   if (options?.excludeId && mongoose.Types.ObjectId.isValid(options.excludeId)) {
@@ -90,9 +94,11 @@ export async function getApprovedVentures(options?: {
 export async function countApprovedVentures(options?: {
   category?: string
   zoneConfig?: VentureZoneLandingConfig
+  argentinaOnly?: boolean
 }): Promise<number> {
   await connectDB()
   const query: Record<string, unknown> = { status: "approved" }
+  if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
   if (options?.category) query.category = options.category
   if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
   return Venture.countDocuments(query)
@@ -133,6 +139,7 @@ export async function getRelatedVentures(
     status: "approved",
     category: venture.category,
     _id: { $ne: oid },
+    ...argentinaVentureMongoFilter(),
   })
     .sort({ createdAt: -1 })
     .limit(limit)
@@ -144,6 +151,7 @@ export async function getRelatedVentures(
       status: "approved",
       _id: { $nin: [...results.map((r) => r._id), oid] },
       zone: { $regex: venture.zone.slice(0, 20), $options: "i" },
+      ...argentinaVentureMongoFilter(),
     })
       .sort({ createdAt: -1 })
       .limit(limit - results.length)

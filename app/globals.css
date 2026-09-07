@@ -121,12 +121,17 @@
   :root {
     --bottom-nav-edge: max(var(--safe-area-bottom), 2rem);
   }
+  html {
+    scroll-padding-top: calc(var(--safe-area-top) + 0.5rem);
+  }
 }
 
 @layer base {
   html {
     font-size: 16px; /* Evitar zoom iOS en inputs */
     scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--desktop-nav-clearance) + 0.75rem);
+    scroll-padding-bottom: calc(var(--bottom-nav-clearance) + 0.5rem);
   }
   @media (prefers-reduced-motion: reduce) {
     html {

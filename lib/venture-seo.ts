@@ -27,6 +27,8 @@ export type VentureZoneLandingConfig = {
   description: string
   /** Patrones regex para matchear campo zone */
   zonePatterns: RegExp[]
+  /** Default AR. Landings fuera de AR no van al feed ni al bloque “Por zona”. */
+  countryCode?: "AR" | "BR"
 }
 
 export const VENTURE_CATEGORY_LANDINGS: VentureCategoryLandingConfig[] = [
@@ -182,6 +184,7 @@ export const VENTURE_ZONE_LANDINGS: VentureZoneLandingConfig[] = [
     description:
       "Encontrá emprendimientos sin gluten en Buzios sugeridos por la comunidad de CeliMap.",
     zonePatterns: [/b[uú]zios/i],
+    countryCode: "BR",
   },
 ]
 

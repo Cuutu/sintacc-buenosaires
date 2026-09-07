@@ -3,7 +3,45 @@ import {
   VENTURE_MODALITIES,
   getCategoryLabel,
   getModalityLabel,
+  type VentureCategoryId,
 } from "@/lib/venture-constants"
+
+function normalizeQuery(term: string): string {
+  return term.trim().toLowerCase()
+}
+
+function categoryMatchesQuery(
+  category: (typeof VENTURE_CATEGORIES)[number],
+  q: string
+): boolean {
+  const label = category.label.toLowerCase()
+  return (
+    category.id === q ||
+    category.id.startsWith(q) ||
+    category.id.includes(q) ||
+    label === q ||
+    label.startsWith(q) ||
+    label.includes(q)
+  )
+}
+
+/** Categoría única para query corta ("pan" → panificados). Si hay empate, null. */
+export function resolveVentureCategoryFromQuery(term: string): VentureCategoryId | null {
+  const q = normalizeQuery(term)
+  if (q.length < 2) return null
+
+  const matches = VENTURE_CATEGORIES.filter((c) => categoryMatchesQuery(c, q))
+  if (matches.length === 1) return matches[0].id
+
+  const exact = matches.find((c) => c.id === q || c.label.toLowerCase() === q)
+  return exact?.id ?? null
+}
+
+export function getMatchingVentureCategories(term: string): VentureCategoryId[] {
+  const q = normalizeQuery(term)
+  if (q.length < 2) return []
+  return VENTURE_CATEGORIES.filter((c) => categoryMatchesQuery(c, q)).map((c) => c.id)
+}
 
 export function buildVentureSearchFilter(term: string): Record<string, unknown> | null {
   const trimmed = term.trim()

@@ -4,17 +4,17 @@ const CABA_CENTER = { latitude: -34.6037, longitude: -58.3816 }
 const RIO_CENTER = { latitude: -22.9068, longitude: -43.1729 }
 const MONTEVIDEO_CENTER = { latitude: -34.9011, longitude: -56.1645 }
 
-const BR_HINT =
+export const BR_GEO_HINT =
   /\b(brasil|brazil|brasile|búzios|buzios|rio de janeiro|s[aã]o paulo|copacabana|ipanema|florian[oó]polis|arma[cç][aã]o|niter[oó]i|cabo frio|paraty|salvador|recife|fortaleza|belo horizonte|curitiba|porto alegre|minas gerais|gramado|cambori[uú]|bras[ií]lia|\brj\b|\brua\b)\b/i
 
-const UY_HINT =
+export const UY_GEO_HINT =
   /\b(uruguay|montevideo|punta del este|colonia del sacramento|maldonado)\b/i
 
 export function inferGeoSearchCountry(input: string): GeoSearchCountry | "all" {
   const text = input.trim()
   if (!text) return "all"
-  if (BR_HINT.test(text)) return "br"
-  if (UY_HINT.test(text)) return "uy"
+  if (BR_GEO_HINT.test(text)) return "br"
+  if (UY_GEO_HINT.test(text)) return "uy"
   return "all"
 }
 

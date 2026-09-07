@@ -1,9 +1,10 @@
 "use client"
 
 import { VentureCard, type VentureCardData } from "./VentureCard"
+import { getVentureCoverPhoto } from "@/lib/venture-photo"
 
 export function pickFeaturedVentures(ventures: VentureCardData[], max = 5): VentureCardData[] {
-  return ventures.filter((v) => v.photos?.[0]).slice(0, max)
+  return ventures.filter((v) => getVentureCoverPhoto(v.photos)).slice(0, max)
 }
 
 export function VentureFeaturedRail({ ventures }: { ventures: VentureCardData[] }) {

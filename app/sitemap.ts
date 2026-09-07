@@ -7,8 +7,8 @@ import { getPlacePath, isIndexablePlaceSlug } from "@/lib/place-url"
 import { buildSeoPages, dedupeUrls, type SitemapPlace } from "@/lib/seo/sitemap-pages"
 import {
   VENTURE_CATEGORY_LANDINGS,
-  VENTURE_ZONE_LANDINGS,
 } from "@/lib/venture-seo"
+import { VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 import { getAllApprovedVentureSlugs, countApprovedVentures } from "@/lib/ventures-server"
 import { publicListsQuery } from "@/lib/lists/access"
 import { getPublishedGuides } from "@/lib/seo/guides"
@@ -213,7 +213,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }))
       ),
       Promise.all(
-        VENTURE_ZONE_LANDINGS.map(async (zone) => ({
+        VENTURE_AR_ZONE_LANDINGS.map(async (zone) => ({
           zone,
           count: await countApprovedVentures({ zoneConfig: zone }),
         }))

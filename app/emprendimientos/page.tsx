@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import EmprendimientosPageContent from "./EmprendimientosPageContent"
+import { VentureCardSkeleton } from "@/components/ventures/VentureCard"
 import { getBaseUrl } from "@/lib/base-url"
 import { getVentureIndexMetadata } from "@/lib/venture-seo"
 import { getApprovedVentures } from "@/lib/ventures-server"
@@ -38,7 +39,13 @@ export default async function EmprendimientosPage() {
   return (
     <Suspense
       fallback={
-        <div className="bg-[#F3EEE4] px-5 py-16 text-center text-[#5F6B63]">Cargando emprendimientos…</div>
+        <div className="min-h-screen bg-[#F3EEE4] px-5 py-16 md:px-8">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <VentureCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       }
     >
       <EmprendimientosPageContent initialVentures={initialVentures} />

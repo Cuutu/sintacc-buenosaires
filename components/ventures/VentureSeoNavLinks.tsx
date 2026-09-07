@@ -1,8 +1,8 @@
 import Link from "next/link"
 import {
   VENTURE_CATEGORY_LANDINGS,
-  VENTURE_ZONE_LANDINGS,
 } from "@/lib/venture-seo"
+import { VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 
 export function VentureSeoNavLinks() {
   return (
@@ -32,7 +32,7 @@ export function VentureSeoNavLinks() {
           Por zona
         </h2>
         <ul className="flex flex-wrap gap-2">
-          {VENTURE_ZONE_LANDINGS.map((z) => (
+          {VENTURE_AR_ZONE_LANDINGS.map((z) => (
             <li key={z.slug}>
               <Link
                 href={`/emprendimientos/${z.slug}`}

@@ -1,8 +1,8 @@
 import Link from "next/link"
 import {
   VENTURE_CATEGORY_LANDINGS,
-  VENTURE_ZONE_LANDINGS,
 } from "@/lib/venture-seo"
+import { VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 import { VentureCategoryIcon } from "./venture-category-icon"
 
 export function VentureExploreSections() {
@@ -36,7 +36,7 @@ export function VentureExploreSections() {
           Por zona
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {VENTURE_ZONE_LANDINGS.map((z) => (
+          {VENTURE_AR_ZONE_LANDINGS.map((z) => (
             <Link
               key={z.slug}
               href={`/emprendimientos/${z.slug}`}

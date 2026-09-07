@@ -27,6 +27,7 @@ describe("Lote 2 safe-area policy contracts", () => {
     expect(css).toContain("--mobile-header-gap:")
     expect(css).toContain("--bottom-nav-height:")
     expect(css).toContain("--bottom-nav-clearance:")
+    expect(css).toContain("scroll-padding-top:")
   })
 
   it("MapTopBar consume safe-area token + gap; sin 1.1rem", () => {

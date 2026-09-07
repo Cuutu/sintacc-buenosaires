@@ -19,15 +19,25 @@ describe("catálogo /emprendimientos", () => {
     expect(src).not.toContain("Una sección para emprendimientos que no siempre tienen local")
   })
 
-  it("cards editoriales con overlay y Ver perfil", () => {
+  it("search aplica categoría en sugerencia y Enter; nunca caja muda", () => {
+    const src = read("app/emprendimientos/EmprendimientosPageContent.tsx")
+    expect(src).toContain("applyCategory")
+    expect(src).toContain('if (e.key === "Enter")')
+    expect(src).toContain("resolveVentureCategoryFromQuery")
+    expect(src).toContain("VentureCardSkeleton")
+    expect(src).toContain("0 resultados")
+    expect(read("components/ventures/VenturesEmptyState.tsx")).toContain("Limpiar filtros")
+  })
+
+  it("cards con foto densa o placeholder Sin foto", () => {
     const src = read("components/ventures/VentureCard.tsx")
-    expect(src).toContain("100% sin gluten")
-    expect(src).toContain("#F8F5EF")
+    expect(src).toContain("getVentureCoverPhoto")
+    expect(src).toContain("Sin foto")
+    expect(src).toContain("aspect-[4/3]")
+    expect(src).toContain("getSafetyBadge")
     expect(src).toContain("rounded-[24px]")
     expect(src).toContain("Ver perfil")
-    expect(src).toContain("ventureInitials(")
-    expect(src).toContain("h-full")
-    expect(src).toContain("mt-auto")
+    expect(src).not.toContain("ventureInitials(")
     expect(src).not.toContain("placeholderWash")
   })
 
@@ -35,12 +45,14 @@ describe("catálogo /emprendimientos", () => {
     const rail = read("components/ventures/VentureFeaturedRail.tsx")
     const page = read("app/emprendimientos/EmprendimientosPageContent.tsx")
     expect(rail).toContain("Emprendimientos destacados")
-    expect(rail).toContain("photos?.[0]")
+    expect(rail).toContain("getVentureCoverPhoto")
     expect(rail).toContain("slice(0, max)")
     expect(page).toContain("xl:grid-cols-4")
     expect(read("components/ventures/VentureExploreSections.tsx")).toContain(
       "Publicar emprendimiento"
     )
+    expect(read("components/ventures/VentureExploreSections.tsx")).toContain("VENTURE_AR_ZONE_LANDINGS")
+    expect(read("components/ventures/VentureExploreSections.tsx")).not.toContain("Buzios")
   })
 
   it("índice SSR pasa marcas iniciales; HTML no espera fetch cliente", () => {
@@ -48,8 +60,18 @@ describe("catálogo /emprendimientos", () => {
     const content = read("app/emprendimientos/EmprendimientosPageContent.tsx")
     expect(page).toContain('getApprovedVentures({ limit: "all" })')
     expect(page).toContain("initialVentures")
+    expect(page).toContain("VentureCardSkeleton")
+    expect(read("lib/ventures-server.ts")).toContain("argentinaVentureMongoFilter")
+    expect(read("app/api/ventures/route.ts")).toContain("argentinaVentureMongoFilter")
     expect(content).toContain("initialVentures")
     expect(content).not.toContain("fetchApi")
     expect(content).not.toContain("/api/ventures")
+  })
+
+  it("chips tienen pista de scroll en mobile", () => {
+    const src = read("app/emprendimientos/EmprendimientosPageContent.tsx")
+    expect(src).toContain("Deslizá para ver más categorías")
+    expect(src).toContain("scroll-mt-[calc(var(--desktop-nav-clearance)")
+    expect(src).toContain("bottom-nav-clearance")
   })
 })

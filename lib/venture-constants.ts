@@ -26,11 +26,15 @@ export const VENTURE_MODALITIES = [
 
 export type VentureModalityId = (typeof VENTURE_MODALITIES)[number]["id"]
 
+/** Claim de la fuente, no sello CeliMap. Card y ficha usan el mismo `label`. */
 export const VENTURE_SAFETY_LEVELS = [
-  { id: "fully_gf", label: "100% sin gluten", dot: "🟢" },
-  { id: "gf_options", label: "Tiene opciones", dot: "🟡" },
-  { id: "to_confirm", label: "A confirmar", dot: "⚪" },
+  { id: "fully_gf", label: "Se presenta como 100% sin gluten", dot: "🟢" },
+  { id: "gf_options", label: "Se presenta con opciones sin TACC", dot: "🟡" },
+  { id: "to_confirm", label: "A confirmar · no es certificación", dot: "⚪" },
 ] as const
+
+export const VENTURE_SAFETY_DISCLAIMER =
+  "CeliMap no certifica ni garantiza. Según datos cargados; confirmá siempre ingredientes y manipulación."
 
 export type VentureSafetyLevelId = (typeof VENTURE_SAFETY_LEVELS)[number]["id"]
 

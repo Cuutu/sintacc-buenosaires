@@ -13,6 +13,7 @@ import {
   buildCategoryLandingMetadata,
   buildZoneLandingMetadata,
 } from "@/lib/venture-seo"
+import { getVentureCoverPhoto } from "@/lib/venture-photo"
 import {
   getVentureBySlug,
   getVentureById,
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       modalities: venture.modalities ?? [],
       slug: venture.slug,
       description: venture.description,
-      photo: venture.photos?.[0],
+      photo: getVentureCoverPhoto(venture.photos) ?? undefined,
     })
   }
 
@@ -66,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     modalities: venture.modalities ?? [],
     slug: venture.slug,
     description: venture.description,
-    photo: venture.photos?.[0],
+    photo: getVentureCoverPhoto(venture.photos) ?? undefined,
   })
 }
 
@@ -91,7 +92,12 @@ export default async function VentureSlugPage({ params }: Props) {
 
   const zoneLanding = getZoneLandingBySlug(slug)
   if (zoneLanding) {
-    const ventures = await getApprovedVentures({ zoneConfig: zoneLanding, limit: 50 })
+    const argentinaOnly = (zoneLanding.countryCode ?? "AR") === "AR"
+    const ventures = await getApprovedVentures({
+      zoneConfig: zoneLanding,
+      limit: 50,
+      argentinaOnly,
+    })
     return (
       <VentureLandingPage
         h1={zoneLanding.h1}

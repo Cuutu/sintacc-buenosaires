@@ -7,9 +7,11 @@ import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
   getCategoryLabel,
   getModalityLabel,
+  getSafetyBadge,
 } from "@/lib/venture-constants"
 import { parseVentureLinks } from "@/lib/venture-contact"
-import { ventureInitials } from "@/lib/venture-initials"
+import { getVentureCoverPhoto } from "@/lib/venture-photo"
+import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
 import { cn } from "@/lib/utils"
 
 export type VentureCardData = {
@@ -33,10 +35,16 @@ interface VentureCardProps {
 
 function safetyOverlay(level?: string): { label: string; className: string } | null {
   if (level === "fully_gf") {
-    return { label: "100% sin gluten", className: "bg-[#1F4D35] text-[#F8F5EF]" }
+    return {
+      label: getSafetyBadge("fully_gf").label,
+      className: "bg-[#1F4D35] text-[#F8F5EF]",
+    }
   }
   if (level === "gf_options") {
-    return { label: "Con opciones", className: "bg-[#C85A2E] text-[#F8F5EF]" }
+    return {
+      label: getSafetyBadge("gf_options").label,
+      className: "bg-[#C85A2E] text-[#F8F5EF]",
+    }
   }
   return null
 }
@@ -56,7 +64,7 @@ function CategoryPill({ label, onPhoto }: { label: string; onPhoto?: boolean }) 
 
 export function VentureCard({ venture, featured = false }: VentureCardProps) {
   const href = `/emprendimientos/${venture.slug ?? venture._id}`
-  const photo = venture.photos?.[0]
+  const photo = getVentureCoverPhoto(venture.photos)
   const safety = safetyOverlay(venture.safetyLevel)
   const category = getCategoryLabel(venture.category)
   const { instagram: igUrl, whatsapp: waUrl } = parseVentureLinks({
@@ -83,13 +91,13 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
       />
 
       <div className="relative z-[1] pointer-events-none flex h-full min-h-0 flex-1 flex-col">
-        {photo ? (
-          <div
-            className={cn(
-              "relative overflow-hidden",
-              featured ? "h-[220px]" : "aspect-[16/11] min-h-[168px]"
-            )}
-          >
+        <div
+          className={cn(
+            "relative overflow-hidden",
+            featured ? "h-[200px]" : "aspect-[4/3]"
+          )}
+        >
+          {photo ? (
             <Image
               src={photo}
               alt=""
@@ -97,61 +105,43 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
               className="object-cover"
               sizes={featured ? "320px" : "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"}
             />
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-              {safety ? (
-                <span
-                  className={cn(
-                    "inline-flex max-w-[70%] rounded-full px-3 py-1 text-xs font-semibold",
-                    safety.className
-                  )}
-                >
-                  {safety.label}
-                </span>
-              ) : (
-                <span />
-              )}
-              <CategoryPill label={category} onPhoto />
-            </div>
-          </div>
-        ) : null}
-
-        <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-          {!photo ? (
-            <div className="mb-3 flex items-center justify-between gap-2">
-              {safety ? (
-                <span
-                  className={cn(
-                    "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                    safety.className
-                  )}
-                >
-                  {safety.label}
-                </span>
-              ) : (
-                <span />
-              )}
-              <CategoryPill label={category} />
-            </div>
-          ) : null}
-
-          <div className="flex items-start gap-3">
-            {!photo ? (
-              <span
-                aria-hidden
-                className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#1F4D35] font-display text-sm font-bold text-[#F8F5EF]"
-              >
-                {ventureInitials(venture.name)}
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#1F4D35]/8">
+              <VentureCategoryIcon
+                category={venture.category}
+                className="h-7 w-7 text-[#1F4D35]/55"
+              />
+              <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B63]">
+                Sin foto
               </span>
-            ) : null}
-            <div className="min-w-0">
-              <h3 className="min-h-[2.75rem] font-display text-lg font-bold leading-snug text-[#1F4D35] line-clamp-2">
-                {venture.name}
-              </h3>
-              <p className="mt-1 truncate text-base text-[#5F6B63]">{venture.zone}</p>
             </div>
+          )}
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+            {safety ? (
+              <span
+                className={cn(
+                  "inline-flex max-w-[75%] rounded-full px-2.5 py-1 text-[11px] font-semibold leading-tight",
+                  safety.className
+                )}
+              >
+                {safety.label}
+              </span>
+            ) : (
+              <span />
+            )}
+            <CategoryPill label={category} onPhoto={Boolean(photo)} />
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+          <div className="min-w-0">
+            <h3 className="min-h-[2.5rem] font-display text-lg font-bold leading-snug text-[#1F4D35] line-clamp-2">
+              {venture.name}
+            </h3>
+            <p className="mt-1 truncate text-sm text-[#5F6B63]">{venture.zone}</p>
           </div>
 
-          <div className="mt-3 flex min-h-[52px] flex-wrap content-start gap-1.5">
+          <div className="mt-3 flex min-h-[28px] flex-wrap content-start gap-1.5">
             {chips.slice(0, 4).map((chip) => (
               <span
                 key={chip}
@@ -162,7 +152,7 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
             ))}
           </div>
 
-          <div className="mt-auto flex flex-col gap-3 pt-4">
+          <div className="mt-auto flex flex-col gap-3 pt-3">
             <div className="flex h-11 items-center gap-2">
               {igUrl ? (
                 <a
@@ -196,5 +186,21 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
         </div>
       </div>
     </article>
+  )
+}
+
+export function VentureCardSkeleton() {
+  return (
+    <div
+      className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#E8E1D6] bg-[#FDFBF7]"
+      aria-hidden
+    >
+      <div className="aspect-[4/3] animate-pulse bg-[#1F4D35]/10" />
+      <div className="flex flex-1 flex-col gap-3 px-4 py-3">
+        <div className="h-5 w-3/4 animate-pulse rounded-md bg-[#1F4D35]/10" />
+        <div className="h-4 w-1/2 animate-pulse rounded-md bg-[#1F4D35]/8" />
+        <div className="mt-auto h-11 animate-pulse rounded-2xl bg-[#C85A2E]/20" />
+      </div>
+    </div>
   )
 }
