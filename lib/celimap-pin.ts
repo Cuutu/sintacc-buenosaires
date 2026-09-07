@@ -65,7 +65,7 @@ export function celimapPinSvg(opts: {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 84" width="64" height="84">
   <ellipse cx="32" cy="81" rx="12" ry="3.4" fill="#000000" opacity="0.20"/>
-  <path fill="${fill}" stroke="#F6F1E8" stroke-width="1.5" stroke-linejoin="round"
+  <path fill="${fill}" fill-opacity="0.95" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"
     d="M32 5.5c-12 0-21.8 9.9-21.8 22.2 0 16.4 17.4 36.6 20.8 40.4a1.8 1.8 0 0 0 2 0c3.4-3.8 20.8-24 20.8-40.4C53.8 15.4 44 5.5 32 5.5z"/>
   ${wheatOrLabel}
 </svg>`
@@ -163,11 +163,13 @@ function drawCeliMapPin(
   ctx.ellipse(32, 81, 12, 3.4, 0, 0, Math.PI * 2)
   ctx.fill()
 
+  ctx.globalAlpha = 0.95
   ctx.fillStyle = fill
   ctx.lineJoin = "round"
-  ctx.strokeStyle = "#F6F1E8"
-  ctx.lineWidth = 1.5
+  ctx.strokeStyle = "#FFFFFF"
+  ctx.lineWidth = 2
   fillPinBody(ctx)
+  ctx.globalAlpha = 1
   drawPinGlyph(ctx, fill, icon)
   ctx.restore()
 }

@@ -18,7 +18,7 @@ import {
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
 import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
-import { animateSpring } from "./motion"
+import { animateSpring, EASE_OUT, MOTION_MS } from "./motion"
 
 export const MOBILE_SHEET_COMPACT_PX = 168
 export const MOBILE_SHEET_EXPANDED_PX = 320
@@ -31,6 +31,7 @@ const RUBBER_PX = 24
 const COMPACT_Y = MOBILE_SHEET_EXPANDED_PX - MOBILE_SHEET_COMPACT_PX
 const HIDDEN_Y = MOBILE_SHEET_EXPANDED_PX
 const EXPANDED_Y = 0
+const ENTER_FROM_Y = COMPACT_Y + Math.round(MOBILE_SHEET_EXPANDED_PX * 0.24)
 
 interface MobileMapBottomSheetProps {
   place: IPlace
@@ -75,14 +76,41 @@ export function MobileMapBottomSheet({
     stopSpringRef.current = null
   }, [])
 
-  const setYImmediate = React.useCallback((y: number) => {
+  const setYImmediate = React.useCallback((y: number, opacity?: number) => {
     const el = sheetRef.current
     if (el) {
       el.style.transition = "none"
       el.style.transform = `translate3d(0, ${y}px, 0)`
+      if (opacity != null) el.style.opacity = String(opacity)
     }
     translateYRef.current = y
   }, [])
+
+  const transitionTo = React.useCallback(
+    (y: number, duration: number, opacity: number, onComplete?: () => void) => {
+      const el = sheetRef.current
+      if (!el) {
+        onComplete?.()
+        return
+      }
+      if (reduceMotionRef.current) {
+        setYImmediate(y, opacity)
+        onComplete?.()
+        return
+      }
+      el.style.transition = `transform ${duration}ms ${EASE_OUT}, opacity ${duration}ms ${EASE_OUT}`
+      el.style.transform = `translate3d(0, ${y}px, 0)`
+      el.style.opacity = String(opacity)
+      translateYRef.current = y
+      const done = (event: TransitionEvent) => {
+        if (event.propertyName !== "transform") return
+        el.removeEventListener("transitionend", done)
+        onComplete?.()
+      }
+      el.addEventListener("transitionend", done)
+    },
+    [setYImmediate]
+  )
 
   const springTo = React.useCallback(
     (y: number, velocity = 0, onComplete?: () => void) => {
@@ -113,15 +141,15 @@ export function MobileMapBottomSheet({
     setSnap("compact")
     onSnapChangeRef.current?.("compact")
     if (reduceMotion) {
-      setYImmediate(COMPACT_Y)
+      setYImmediate(COMPACT_Y, 1)
       return
     }
-    setYImmediate(HIDDEN_Y)
+    setYImmediate(ENTER_FROM_Y, 0)
     const id = window.requestAnimationFrame(() => {
-      springTo(COMPACT_Y)
+      transitionTo(COMPACT_Y, MOTION_MS.sheet, 1)
     })
     return () => window.cancelAnimationFrame(id)
-  }, [place._id, reduceMotion, setYImmediate, springTo, stopSpring])
+  }, [place._id, reduceMotion, setYImmediate, stopSpring, transitionTo])
 
   React.useEffect(() => () => stopSpring(), [stopSpring])
 
@@ -132,8 +160,8 @@ export function MobileMapBottomSheet({
       onClose()
       return
     }
-    springTo(HIDDEN_Y, velocityRef.current, onClose)
-  }, [onClose, reduceMotion, springTo])
+    transitionTo(ENTER_FROM_Y, MOTION_MS.close, 0, onClose)
+  }, [onClose, reduceMotion, transitionTo])
 
   const snapTo = React.useCallback((y: number, velocity = 0) => {
     const visible = MOBILE_SHEET_EXPANDED_PX - y
@@ -202,7 +230,7 @@ export function MobileMapBottomSheet({
       <section
         ref={sheetRef}
         className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0"
-        style={{ transform: `translate3d(0, ${HIDDEN_Y}px, 0)` }}
+        style={{ transform: `translate3d(0, ${ENTER_FROM_Y}px, 0)`, opacity: 0 }}
         aria-label={place.name}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

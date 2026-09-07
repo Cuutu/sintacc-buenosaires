@@ -20,6 +20,9 @@ import {
   getLocationAutoEnabled,
   setLocationAutoEnabled,
 } from "@/lib/location-preference"
+import { CountUp } from "./CountUp"
+import { useUserLocation } from "./useUserLocation"
+import { listHasRatings, sortPlaces, type PlaceSortOption } from "./place-sort"
 import mapboxgl from "mapbox-gl"
 import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
@@ -60,35 +63,7 @@ function VerLugaresCount({
   count: number
   reduceMotion: boolean
 }) {
-  const [shown, setShown] = React.useState(count)
-  const [leaving, setLeaving] = React.useState<number | null>(null)
-
-  React.useEffect(() => {
-    if (count === shown) return
-    if (reduceMotion) {
-      setShown(count)
-      setLeaving(null)
-      return
-    }
-    setLeaving(shown)
-    setShown(count)
-  }, [count, shown, reduceMotion])
-
-  return (
-    <span className="relative inline-block min-w-[1.25ch] text-right align-baseline">
-      {leaving != null ? (
-        <span
-          className="absolute inset-0 map-count-out"
-          onAnimationEnd={() => setLeaving(null)}
-        >
-          {leaving}
-        </span>
-      ) : null}
-      <span className={cn("inline-block", leaving != null && "map-count-in")}>
-        {shown}
-      </span>
-    </span>
-  )
+  return <CountUp value={count} reduceMotion={reduceMotion} />
 }
 
 function readCssVarPx(varName: string): number {
@@ -133,6 +108,28 @@ export function MapMobile({
   const [sheetSnap, setSheetSnap] = React.useState<PlaceSheetSnap>("compact")
   const [snapPlaceId, setSnapPlaceId] = React.useState(selectedPlaceId)
   const [overlayInsets, setOverlayInsets] = React.useState<{ top: number; nav: number } | null>(null)
+  const location = useUserLocation()
+  const [sort, setSort] = React.useState<PlaceSortOption>("recommended")
+  const sortInitializedRef = React.useRef(false)
+
+  React.useEffect(() => {
+    if (sortInitializedRef.current) return
+    if (location.status === "unknown") return
+    sortInitializedRef.current = true
+    if (location.status === "granted") setSort("nearest")
+  }, [location.status])
+
+  React.useEffect(() => {
+    if (sort !== "nearest") return
+    if (location.status === "granted" && location.coords) return
+    if (location.status === "prompt" || location.status === "unknown") {
+      location.request()
+      return
+    }
+    if (location.status === "denied" || location.status === "error" || location.status === "unavailable") {
+      setSort("recommended")
+    }
+  }, [sort, location.status, location.coords, location.request])
 
   if (selectedPlaceId !== snapPlaceId) {
     setSnapPlaceId(selectedPlaceId)
@@ -179,6 +176,14 @@ export function MapMobile({
     }
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
+
+  const sortedPlaces = React.useMemo(
+    () => sortPlaces(visiblePlaces, sort, location.coords),
+    [visiblePlaces, sort, location.coords]
+  )
+  const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
+  const activeQuery = searchQuery?.trim() ?? ""
+  const showLocationCta = sort === "nearest" && !location.coords && location.status !== "denied"
 
   const selectedPlace = React.useMemo(
     () => places.find((p) => p._id.toString() === selectedPlaceId) ?? null,
@@ -238,6 +243,9 @@ export function MapMobile({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
+        location.setFromCoords({ lat: latitude, lng: longitude })
+        sortInitializedRef.current = true
+        setSort("nearest")
         mapRef.current?.showUserLocation(longitude, latitude)
         mapRef.current?.flyTo(longitude, latitude, 16)
         if (!silent) {
@@ -285,7 +293,7 @@ export function MapMobile({
         maximumAge: 30000,
       }
     )
-  }, [])
+  }, [location.setFromCoords])
 
   React.useEffect(() => {
     if (autoLocationAttemptedRef.current) return
@@ -358,6 +366,8 @@ export function MapMobile({
         onFiltersOpen={() => setMoreOpen(true)}
         compact={listOpen}
         placeholder="Buscar lugar o zona..."
+        activeQuery={activeQuery}
+        onClearQuery={activeQuery ? () => onSearchChange("") : undefined}
       />
 
       <div className="absolute inset-0">
@@ -413,21 +423,31 @@ export function MapMobile({
             <List className="h-4 w-4 shrink-0 stroke-[1.85]" aria-hidden />
             <span className="inline-flex items-baseline gap-1">
               <span>Ver</span>
-              <VerLugaresCount count={visiblePlaces.length} reduceMotion={reduceMotion} />
-              <span>{`lugar${visiblePlaces.length !== 1 ? "es" : ""}`}</span>
+              <VerLugaresCount count={sortedPlaces.length} reduceMotion={reduceMotion} />
+              <span>
+                {activeQuery
+                  ? `en ${activeQuery}`
+                  : `lugar${sortedPlaces.length !== 1 ? "es" : ""}`}
+              </span>
             </span>
           </button>
         </div>
       )}
 
       {selectedPlace && (
-        <MobileMapBottomSheet
-          key={String(selectedPlace._id)}
-          place={selectedPlace}
-          onClose={() => onPlaceDeselect?.()}
-          reduceMotion={reduceMotion}
-          onSnapChange={setSheetSnap}
-        />
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 z-[19] map-sheet-backdrop"
+            aria-hidden
+          />
+          <MobileMapBottomSheet
+            key={String(selectedPlace._id)}
+            place={selectedPlace}
+            onClose={() => onPlaceDeselect?.()}
+            reduceMotion={reduceMotion}
+            onSnapChange={setSheetSnap}
+          />
+        </>
       )}
 
       {listOpen && !selectedPlace && (
@@ -437,13 +457,31 @@ export function MapMobile({
           reduceMotion={reduceMotion}
         >
           <div className="pt-2">
+            <div className="mb-2 flex items-center justify-between gap-2 px-4">
+              <label className="relative inline-flex items-center">
+                <span className="sr-only">Ordenar resultados</span>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as PlaceSortOption)}
+                  className="h-9 appearance-none rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-[#1F4D35]/80"
+                >
+                  <option value="nearest">Más cercanos</option>
+                  <option value="recommended">Recomendados</option>
+                  {hasRatings ? <option value="rating">Mejor valorados</option> : null}
+                </select>
+              </label>
+            </div>
             <PlacesList
-              places={visiblePlaces}
+              places={sortedPlaces}
               selectedPlaceId={selectedPlaceId}
               loading={loading}
               loadError={loadError}
               onRetryLoad={onRetryLoad}
               onPlaceSelect={handlePlaceSelect}
+              userLocation={location.coords}
+              locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
+              onRequestLocation={location.request}
+              locationMessage={location.message}
               onClearFilters={hasExtraFilters || filters.tags.length > 0 ? () => {
                 onFiltersChange({
                   search: filters.search,

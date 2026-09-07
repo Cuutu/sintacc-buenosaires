@@ -32,7 +32,7 @@ describe("map motion", () => {
     expect(src).not.toContain("duration-300 ease-out")
   })
 
-  it("lista stagger, chips 0.96, corazón pop, count crossfade", () => {
+  it("lista stagger, chips press, corazón pop, count-up", () => {
     const list = fs.readFileSync(
       path.join(process.cwd(), "components/map-view/PlacesList.tsx"),
       "utf8"
@@ -53,11 +53,29 @@ describe("map motion", () => {
     expect(list).toContain("map-card-enter")
     expect(list).toContain("index * 30")
     expect(list).toContain("index < 8")
-    expect(chips).toContain("active:scale-[0.96]")
-    expect(chips).toContain("duration-[120ms]")
+    expect(list).toContain("map-list-crossfade")
+    expect(chips).toContain("active:scale-[0.97]")
+    expect(chips).toContain("duration-[180ms]")
+    expect(chips).toContain("map-query-chip")
     expect(heart).toContain("fav-heart-pop")
     expect(mobile).toContain("VerLugaresCount")
+    expect(mobile).toContain("CountUp")
     expect(css).toContain("map-card-in")
     expect(css).toContain("fav-heart-pop")
+    expect(css).toContain("--motion-fast: 180ms")
+    expect(css).toContain("scale(1.15)")
+  })
+
+  it("reduceMotion en animateEase salta al valor final", () => {
+    const { animateEase } = require("@/components/map-view/motion") as typeof import("@/components/map-view/motion")
+    const updates: number[] = []
+    animateEase({
+      from: 0,
+      to: 10,
+      duration: 240,
+      reduceMotion: true,
+      onUpdate: (value: number) => updates.push(value),
+    })
+    expect(updates).toEqual([10])
   })
 })

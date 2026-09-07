@@ -36,6 +36,7 @@ import { buildPlacePopupHtml } from "./map-popup-html"
 import {
   ensurePlacesLayers,
   expandClusterAt,
+  fadeRenderedPinsOut,
   LAYER_CLUSTERS,
   LAYER_PIN_FALLBACK,
   LAYER_PINS,
@@ -43,11 +44,13 @@ import {
   loadCeliMapPinImages,
   PIN_FOCUS_ZOOM,
   PIN_POPUP_OFFSET,
-  PLACES_SOURCE,
+  playVisiblePinEntrance,
   queryPlaceOrClusterAt,
+  resetPinEntrance,
   setPlacesSourceData,
   setSelectedPlaceOnMap,
 } from "./map-webgl-layers"
+import { easeOutUnit, MOTION_MS } from "./motion"
 import { isNativeApp } from "@/lib/native-app"
 
 export { TYPE_MARKERS } from "./map-popup-html"
@@ -191,6 +194,10 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
+    const viewBeforeSearchRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
+    const didInitLayersRef = useRef(false)
+    const hadPlacesRef = useRef(false)
+    const placesFadeTimerRef = useRef<number | null>(null)
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
     const lastOverlayPaddingKeyRef = useRef<string | null>(null)
     const selectedPlaceIdRef = useRef(selectedPlaceId)
@@ -210,6 +217,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     isPrivateGuideRef.current = isPrivateGuide
     const placesRef = useRef(places)
     placesRef.current = places
+    const reduceMotionRef = useRef(reduceMotion)
+    reduceMotionRef.current = reduceMotion
     const onBoundsChangeRef = useRef(onBoundsChange)
     onBoundsChangeRef.current = onBoundsChange
     const onMoveEndRef = useRef(onMoveEnd)
@@ -239,7 +248,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           map.current.flyTo({
             center: [lng, lat],
             zoom,
-            duration: reduceMotion ? 0 : 1000,
+            duration: reduceMotion ? 0 : MOTION_MS.pan,
+            easing: easeOutUnit,
           })
         } catch {
           /* mapa ya destruido */
@@ -267,7 +277,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             map.current.flyTo({
               center: [valid[0].location.lng, valid[0].location.lat],
               zoom: Math.min(opts?.maxZoom ?? 13, 14),
-              duration: reduceMotion ? 0 : 700,
+              duration: reduceMotion ? 0 : MOTION_MS.pan,
+              easing: easeOutUnit,
             })
             return
           }
@@ -278,7 +289,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           map.current.fitBounds(bounds, {
             padding: opts?.padding ?? 64,
             maxZoom: opts?.maxZoom ?? 13,
-            duration: reduceMotion ? 0 : 700,
+            duration: reduceMotion ? 0 : MOTION_MS.pan,
+            easing: easeOutUnit,
           })
         } catch {
           /* mapa ya destruido */
@@ -626,13 +638,31 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
     }, [enableGeolocate, onGeolocateError, onGeolocateSuccess])
 
-    // Cuando la busqueda cambia, encuadrar los lugares encontrados una sola vez.
     useEffect(() => {
       const normalizedSearch = normalizeSearchValue(searchQuery ?? "")
-      if (!normalizedSearch || !places.length || !map.current) {
+      if (!map.current) {
         if (!normalizedSearch) lastCenteredSearchRef.current = null
         return
       }
+      if (!normalizedSearch) {
+        if (lastCenteredSearchRef.current && viewBeforeSearchRef.current) {
+          const prev = viewBeforeSearchRef.current
+          try {
+            map.current.easeTo({
+              center: prev.center,
+              zoom: prev.zoom,
+              duration: reduceMotion ? 0 : MOTION_MS.pan,
+              easing: easeOutUnit,
+            })
+          } catch {
+            /* mapa destruido */
+          }
+        }
+        lastCenteredSearchRef.current = null
+        viewBeforeSearchRef.current = null
+        return
+      }
+      if (!places.length) return
       if (lastCenteredSearchRef.current === normalizedSearch) return
 
       const firstPlace = places[0]
@@ -658,7 +688,16 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         : normalizedSearch.split(/\s+/).every((word) => normalizedSearchableText.includes(word))
       if (!matchesSearch) return
 
+      if (!viewBeforeSearchRef.current) {
+        const center = map.current.getCenter()
+        viewBeforeSearchRef.current = {
+          center: [center.lng, center.lat],
+          zoom: map.current.getZoom(),
+        }
+      }
+
       lastCenteredSearchRef.current = normalizedSearch
+      const cameraMs = reduceMotion ? 0 : MOTION_MS.pan
       const validPlaces = places.filter(
         (place) =>
           Number.isFinite(place.location?.lng) &&
@@ -672,15 +711,17 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         map.current.fitBounds(bounds, {
           padding: 80,
           maxZoom: 14,
-          duration: reduceMotion ? 0 : 1000,
+          duration: cameraMs,
+          easing: easeOutUnit,
         })
         return
       }
 
-      map.current.flyTo({
+      map.current.easeTo({
         center: [firstPlace.location.lng, firstPlace.location.lat],
         zoom: PIN_FOCUS_ZOOM,
-        duration: reduceMotion ? 0 : 1000,
+        duration: cameraMs,
+        easing: easeOutUnit,
       })
     }, [searchQuery, places, reduceMotion])
 
@@ -694,6 +735,9 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           const b = m.getBounds()
           if (!b) return
           onBoundsChangeRef.current?.(b)
+          if (!useNumberedMarkersRef.current && !isE2eMapboxMockEnabled()) {
+            playVisiblePinEntrance(m, reduceMotionRef.current)
+          }
         } catch {
           /* mapa destruido */
         }
@@ -751,17 +795,51 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const setup = () => {
         if (disposedRef.current || !map.current) return
         const instance = map.current
-        ensurePlacesLayers(instance, reduceMotion, false)
-        setPlacesSourceData(instance, placesRef.current)
-        void loadCeliMapPinImages(instance).then((pinsReady) => {
-          if (disposedRef.current || map.current !== instance) return
-          ensurePlacesLayers(instance, reduceMotion, pinsReady)
+        const playEntrance = (pulse: boolean) => {
+          const run = () => {
+            if (disposedRef.current || map.current !== instance) return
+            playVisiblePinEntrance(instance, reduceMotion, { pulse })
+          }
+          try {
+            if (instance.loaded?.() && !instance.isMoving?.()) run()
+            else instance.once("idle", run)
+          } catch {
+            run()
+          }
+        }
+        const applyData = (pulse: boolean) => {
           setPlacesSourceData(instance, placesRef.current)
-        })
+          resetPinEntrance(instance)
+          playEntrance(pulse)
+        }
+        ensurePlacesLayers(instance, reduceMotion, false)
+        if (!didInitLayersRef.current) {
+          didInitLayersRef.current = true
+          applyData(false)
+          void loadCeliMapPinImages(instance).then((pinsReady) => {
+            if (disposedRef.current || map.current !== instance) return
+            ensurePlacesLayers(instance, reduceMotion, pinsReady)
+            applyData(false)
+            hadPlacesRef.current = placesRef.current.length > 0
+          })
+          hadPlacesRef.current = placesRef.current.length > 0
+          return
+        }
+        const pulse = hadPlacesRef.current
+        fadeRenderedPinsOut(instance, reduceMotion)
+        if (placesFadeTimerRef.current) window.clearTimeout(placesFadeTimerRef.current)
+        const delay = reduceMotion ? 0 : MOTION_MS.filterFade
+        placesFadeTimerRef.current = window.setTimeout(() => {
+          applyData(pulse)
+          hadPlacesRef.current = placesRef.current.length > 0
+        }, delay)
       }
 
       if (m.isStyleLoaded?.() ?? m.loaded?.()) setup()
       else m.once("load", setup)
+      return () => {
+        if (placesFadeTimerRef.current) window.clearTimeout(placesFadeTimerRef.current)
+      }
     }, [places, reduceMotion, useNumberedMarkers])
 
     useEffect(() => {

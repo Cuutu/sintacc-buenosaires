@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
 import { MapLegend } from "./MapLegend"
+import { CountUp } from "./CountUp"
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import type { PlaceSortOption } from "./place-sort"
 
 const TAG_CHIPS = [
   { id: "cocina_separada", label: "Cocina separada" },
@@ -31,7 +34,7 @@ export interface MapFilters {
   safetyLevel?: string
 }
 
-export type SortOption = "default" | "rating" | "newest"
+export type SortOption = PlaceSortOption
 
 interface MapTopBarProps {
   filters: MapFilters
@@ -45,8 +48,15 @@ interface MapTopBarProps {
   compact?: boolean
   /** Contador visible en sidebar (ej. "208 lugares en esta zona") */
   resultCountLabel?: string
+  resultCount?: number
   onClearFilters?: () => void
   hasActiveFilters?: boolean
+  activeQuery?: string
+  onClearQuery?: () => void
+  hasRatings?: boolean
+  locationCta?: string | null
+  onRequestLocation?: () => void
+  locationMessage?: string | null
 }
 
 function FilterChip({
@@ -70,7 +80,7 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={pressed ?? active}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[120ms] ease-out active:scale-[0.96] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         active && tone === "olive" && "border-olive bg-olive text-cream",
         active && tone === "terracotta" && "border-[#C85A2E] bg-[#C85A2E] text-white",
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
@@ -103,13 +113,20 @@ export function MapTopBar({
   onSearchChange,
   onFiltersOpen,
   placeholder = "Buscar lugar o zona...",
-  sort = "default",
+  sort = "recommended",
   onSortChange,
   variant = "overlay",
   compact = false,
   resultCountLabel,
+  resultCount,
   onClearFilters,
   hasActiveFilters = false,
+  activeQuery,
+  onClearQuery,
+  hasRatings = false,
+  locationCta,
+  onRequestLocation,
+  locationMessage,
 }: MapTopBarProps) {
   const chipsRef = React.useRef<HTMLDivElement>(null)
   const moreRef = React.useRef<HTMLDivElement>(null)
@@ -119,6 +136,8 @@ export function MapTopBar({
   const scrollLeftRef = React.useRef(0)
   const [moreOpen, setMoreOpen] = React.useState(false)
   const isSidebar = variant === "sidebar"
+  const reduceMotion = usePrefersReducedMotion()
+  const queryLabel = activeQuery?.trim() ?? ""
 
   const toggleTag = (tagId: string) => {
     const tags = filters.tags.includes(tagId)
@@ -204,6 +223,27 @@ export function MapTopBar({
             className="h-11 rounded-2xl border-olive/10 bg-olive/5 pl-10 text-sm text-olive placeholder:text-muted-foreground focus-visible:ring-primary/60"
           />
         </div>
+
+        {queryLabel ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn(
+              "inline-flex items-center gap-1 rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/8 py-1 pl-3 pr-1 text-[12px] font-semibold text-[#1F4D35]",
+              !reduceMotion && "map-query-chip"
+            )}>
+              {queryLabel}
+              {onClearQuery && (
+                <button
+                  type="button"
+                  onClick={onClearQuery}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#1F4D35]/70 hover:bg-[#1F4D35]/10 hover:text-[#1F4D35]"
+                  aria-label={`Quitar búsqueda ${queryLabel}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </span>
+          </div>
+        ) : null}
 
         <div ref={moreRef} className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -320,36 +360,59 @@ export function MapTopBar({
         </div>
 
         {(resultCountLabel || onSortChange || hasActiveFilters) && (
-          <div className="flex items-center justify-between gap-3 pt-1">
-            <p className="min-w-0 truncate text-sm text-muted-foreground">
-              {resultCountLabel}
-            </p>
-            <div className="flex shrink-0 items-center gap-2">
-              {hasActiveFilters && onClearFilters && (
-                <button
-                  type="button"
-                  onClick={onClearFilters}
-                  className="text-xs font-medium text-muted-foreground transition hover:text-olive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                >
-                  Limpiar filtros
-                </button>
-              )}
-              {onSortChange && (
-                <label className="relative inline-flex items-center">
-                  <span className="sr-only">Ordenar resultados</span>
-                  <select
-                    value={sort}
-                    onChange={(e) => onSortChange(e.target.value as SortOption)}
-                    className="h-9 appearance-none rounded-full border border-olive/15 bg-olive/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-olive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-sm text-muted-foreground">
+                {typeof resultCount === "number" ? (
+                  <>
+                    <CountUp value={resultCount} reduceMotion={reduceMotion} />
+                    {queryLabel
+                      ? ` en ${queryLabel}`
+                      : ` lugar${resultCount !== 1 ? "es" : ""} en esta zona`}
+                  </>
+                ) : (
+                  resultCountLabel
+                )}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                {hasActiveFilters && onClearFilters && (
+                  <button
+                    type="button"
+                    onClick={onClearFilters}
+                    className="text-xs font-medium text-muted-foreground transition hover:text-olive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   >
-                    <option value="default">Recomendados</option>
-                    <option value="rating">Mejor valorados</option>
-                    <option value="newest">Más recientes</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                </label>
-              )}
+                    Limpiar filtros
+                  </button>
+                )}
+                {onSortChange && (
+                  <label className="relative inline-flex items-center">
+                    <span className="sr-only">Ordenar resultados</span>
+                    <select
+                      value={sort}
+                      onChange={(e) => onSortChange(e.target.value as SortOption)}
+                      className="h-9 appearance-none rounded-full border border-olive/15 bg-olive/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-olive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    >
+                      <option value="nearest">Más cercanos</option>
+                      <option value="recommended">Recomendados</option>
+                      {hasRatings ? <option value="rating">Mejor valorados</option> : null}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  </label>
+                )}
+              </div>
             </div>
+            {locationCta && onRequestLocation ? (
+              <button
+                type="button"
+                onClick={onRequestLocation}
+                className="text-left text-xs font-semibold text-[#C85A2E] hover:underline"
+              >
+                {locationCta}
+              </button>
+            ) : null}
+            {locationMessage ? (
+              <p className="text-xs text-muted-foreground">{locationMessage}</p>
+            ) : null}
           </div>
         )}
       </div>
@@ -397,6 +460,27 @@ export function MapTopBar({
         )}
       </div>
 
+      {queryLabel ? (
+        <div className="mb-2 flex items-center gap-2">
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full border border-[#1F4D35]/12 bg-[#1F4D35]/8 py-0.5 pl-2.5 pr-0.5 text-[12px] font-semibold text-[#1F4D35]",
+            !reduceMotion && "map-query-chip"
+          )}>
+            {queryLabel}
+            {onClearQuery && (
+              <button
+                type="button"
+                onClick={onClearQuery}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#1F4D35]/70"
+                aria-label={`Quitar búsqueda ${queryLabel}`}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </span>
+        </div>
+      ) : null}
+
       <div
         ref={chipsRef}
         role="region"
@@ -418,7 +502,7 @@ export function MapTopBar({
               onClick={(e) => handleChipClick(e, chip.id)}
               aria-pressed={active}
               className={cn(
-                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[120ms] ease-out active:scale-[0.96] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100",
+                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100",
                 active && isDedicated && "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]",
                 active && !isDedicated && "border-[#C85A2E] bg-[#C85A2E] text-white",
                 !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"

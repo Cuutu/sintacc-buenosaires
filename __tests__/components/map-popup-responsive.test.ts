@@ -107,8 +107,8 @@ describe("popup mapa responsive", () => {
   })
 
   it("distancia lista: metros o km con un decimal", () => {
-    expect(formatListDistance(400)).toBe("400 m")
-    expect(formatListDistance(1200)).toBe("1.2 km")
+    expect(formatListDistance(400)).toBe("a 400 m")
+    expect(formatListDistance(1200)).toBe("a 1,2 km")
     expect(formatListDistance(-1)).toBeNull()
     const meters = metersBetween(
       { lat: -34.6037, lng: -58.3816 },

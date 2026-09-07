@@ -24,7 +24,6 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
-const CLEAR_NEIGHBORHOOD_SEARCH_ZOOM = 12
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
 
@@ -294,21 +293,6 @@ function MapaContent() {
       const params = new URLSearchParams(searchParams.toString())
       let shouldReplaceUrl = false
 
-      const activeSearch = filters.search.trim() || debouncedSearch.trim()
-      if (
-        zoom < CLEAR_NEIGHBORHOOD_SEARCH_ZOOM &&
-        activeSearch &&
-        findKnownNeighborhoodSearch(activeSearch)
-      ) {
-        setFilters((current) => (
-          current.search ? { ...current, search: "" } : current
-        ))
-        setDebouncedSearch("")
-        lastSyncedUrlSearchRef.current = ""
-        params.delete("search")
-        shouldReplaceUrl = true
-      }
-
       if ((citySlugsFromUrl || provinceSlugsFromUrl || localitySlugsFromUrl) && zoom < 8) {
         params.delete("citySlugs")
         params.delete("provinceSlugs")
@@ -320,7 +304,7 @@ function MapaContent() {
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [citySlugsFromUrl, provinceSlugsFromUrl, localitySlugsFromUrl, debouncedSearch, filters.search, pathname, places, router, searchParams]
+    [citySlugsFromUrl, provinceSlugsFromUrl, localitySlugsFromUrl, pathname, places, router, searchParams]
   )
 
   const handleSheetCollapse = useCallback(() => {
