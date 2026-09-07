@@ -1,8 +1,38 @@
 import type { IPlace } from "@/models/Place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { metersBetween, type UserLatLng } from "./geo"
+import type { LocationStatus } from "./useUserLocation"
 
 export type PlaceSortOption = "nearest" | "recommended" | "rating"
+
+export const MAP_SORT_STORAGE_KEY = "celimap_map_place_sort"
+export const LOCATION_SORT_CTA = "Usar mi ubicación para ordenar por cercanía"
+export const LOCATION_SORT_FAIL = "No pudimos usar tu ubicación"
+
+export function parseStoredSort(raw: string | null | undefined): PlaceSortOption | null {
+  if (raw === "nearest" || raw === "recommended" || raw === "rating") return raw
+  return null
+}
+
+export function defaultSortForLocation(
+  status: LocationStatus,
+  stored: PlaceSortOption | null
+): PlaceSortOption {
+  if (stored) return stored
+  return status === "granted" ? "nearest" : "recommended"
+}
+
+export function shouldShowLocationCta(options: {
+  sort: PlaceSortOption
+  status: LocationStatus
+  hasCoords: boolean
+}): boolean {
+  if (options.hasCoords) return false
+  if (options.status === "denied" || options.status === "unavailable" || options.status === "error") {
+    return false
+  }
+  return options.sort === "recommended" || options.sort === "nearest"
+}
 
 export type PlaceWithListStats = IPlace & {
   stats?: {
