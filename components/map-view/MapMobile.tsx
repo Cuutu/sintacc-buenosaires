@@ -448,6 +448,7 @@ export function MapMobile({
                 <span className="sr-only">Ordenar resultados</span>
                 <select
                   value={sort}
+                  name="map-place-sort"
                   onChange={(e) => setSort(e.target.value as PlaceSortOption)}
                   className="h-9 appearance-none rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-[#1F4D35]/80"
                 >

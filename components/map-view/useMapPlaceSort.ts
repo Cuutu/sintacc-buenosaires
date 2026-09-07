@@ -5,8 +5,9 @@ import type { LocationStatus } from "./useUserLocation"
 import type { UserLatLng } from "./geo"
 import {
   MAP_SORT_STORAGE_KEY,
-  defaultSortForLocation,
   parseStoredSort,
+  shouldAskLocationForNearest,
+  shouldFallbackNearestToRecommended,
   shouldShowLocationCta,
   type PlaceSortOption,
 } from "./place-sort"
@@ -38,51 +39,52 @@ type LocationApi = {
 export function useMapPlaceSort(location: LocationApi) {
   const storedOnMount = React.useRef(readStoredSort())
   const userPickedRef = React.useRef(storedOnMount.current != null)
-  const askedForNearestRef = React.useRef(false)
   const [sort, setSortState] = React.useState<PlaceSortOption>(
     () => storedOnMount.current ?? "recommended"
   )
+  const coords = location.coords
+  const status = location.status
+  const requestLocation = location.request
 
   React.useEffect(() => {
     if (userPickedRef.current) return
-    if (location.status !== "granted") return
+    if (status !== "granted") return
     setSortState("nearest")
-  }, [location.status])
+  }, [status])
 
-  const setSort = React.useCallback((next: PlaceSortOption) => {
-    userPickedRef.current = true
-    writeStoredSort(next)
-    setSortState(next)
-  }, [])
+  const setSort = React.useCallback(
+    (next: PlaceSortOption) => {
+      userPickedRef.current = true
+      writeStoredSort(next)
+      setSortState(next)
+      // Pedir geolocation acá (gesto del select/CTA). Desde useEffect el browser
+      // traga el prompt y el sort se revierte a Recomendados.
+      if (shouldAskLocationForNearest({ sort: next, hasCoords: Boolean(coords) })) {
+        requestLocation()
+      }
+    },
+    [coords, requestLocation]
+  )
 
   React.useEffect(() => {
-    if (sort !== "nearest") {
-      askedForNearestRef.current = false
-      return
-    }
-    if (location.coords) return
     if (
-      location.status === "denied" ||
-      location.status === "error" ||
-      location.status === "unavailable"
+      !shouldFallbackNearestToRecommended({
+        sort,
+        status,
+        hasCoords: Boolean(coords),
+      })
     ) {
-      userPickedRef.current = true
-      writeStoredSort("recommended")
-      setSortState("recommended")
       return
     }
-    if (location.status === "granted") return
-    if (askedForNearestRef.current) return
-    if (location.status === "prompt" || location.status === "unknown") {
-      askedForNearestRef.current = true
-      location.request()
-    }
-  }, [sort, location.coords, location.status, location.request])
+    userPickedRef.current = true
+    writeStoredSort("recommended")
+    setSortState("recommended")
+  }, [sort, coords, status])
 
   const showLocationCta = shouldShowLocationCta({
     sort,
-    status: location.status,
-    hasCoords: Boolean(location.coords),
+    status,
+    hasCoords: Boolean(coords),
   })
 
   return { sort, setSort, showLocationCta }

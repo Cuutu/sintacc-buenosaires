@@ -22,6 +22,27 @@ export function defaultSortForLocation(
   return status === "granted" ? "nearest" : "recommended"
 }
 
+export function shouldFallbackNearestToRecommended(options: {
+  sort: PlaceSortOption
+  status: LocationStatus
+  hasCoords: boolean
+}): boolean {
+  if (options.sort !== "nearest") return false
+  if (options.hasCoords) return false
+  return (
+    options.status === "denied" ||
+    options.status === "error" ||
+    options.status === "unavailable"
+  )
+}
+
+export function shouldAskLocationForNearest(options: {
+  sort: PlaceSortOption
+  hasCoords: boolean
+}): boolean {
+  return options.sort === "nearest" && !options.hasCoords
+}
+
 export function shouldShowLocationCta(options: {
   sort: PlaceSortOption
   status: LocationStatus

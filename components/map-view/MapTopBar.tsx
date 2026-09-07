@@ -389,6 +389,7 @@ export function MapTopBar({
                     <span className="sr-only">Ordenar resultados</span>
                     <select
                       value={sort}
+                      name="map-place-sort"
                       onChange={(e) => onSortChange(e.target.value as SortOption)}
                       className="h-9 appearance-none rounded-full border border-olive/15 bg-olive/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-olive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                     >

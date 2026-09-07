@@ -3,6 +3,8 @@ import {
   listHasRatings,
   defaultSortForLocation,
   shouldShowLocationCta,
+  shouldAskLocationForNearest,
+  shouldFallbackNearestToRecommended,
   parseStoredSort,
   type PlaceWithListStats,
 } from "@/components/map-view/place-sort"
@@ -33,6 +35,21 @@ describe("place sort + distancia", () => {
   it("Más cercanos ordena por distancia real", () => {
     const sorted = sortPlaces([far, near, rated], "nearest", origin)
     expect(sorted.map((item) => String(item._id))).toEqual(["near", "rated", "far"])
+  })
+
+  it("primeras 5 cards con mock coords van de cerca a lejos", () => {
+    const extra = [
+      place({ id: "a", name: "A", lat: -34.605, lng: -58.383 }),
+      place({ id: "b", name: "B", lat: -34.61, lng: -58.39 }),
+    ]
+    const sorted = sortPlaces([far, extra[1], rated, extra[0], near], "nearest", origin)
+    expect(sorted.slice(0, 5).map((item) => String(item._id))).toEqual([
+      "near",
+      "a",
+      "b",
+      "rated",
+      "far",
+    ])
   })
 
   it("sin ubicación nearest no inventa orden de distancia", () => {
@@ -77,7 +94,34 @@ describe("place sort + distancia", () => {
     ).toBe(false)
   })
 
-  it("desktop y mobile usan el mismo hook de sort y no traban el default en prompt", () => {
+  it("nearest pide ubicación solo sin coords; fallback solo tras deny/error", () => {
+    expect(shouldAskLocationForNearest({ sort: "nearest", hasCoords: false })).toBe(true)
+    expect(shouldAskLocationForNearest({ sort: "nearest", hasCoords: true })).toBe(false)
+    expect(shouldAskLocationForNearest({ sort: "recommended", hasCoords: false })).toBe(false)
+    expect(
+      shouldFallbackNearestToRecommended({
+        sort: "nearest",
+        status: "prompt",
+        hasCoords: false,
+      })
+    ).toBe(false)
+    expect(
+      shouldFallbackNearestToRecommended({
+        sort: "nearest",
+        status: "denied",
+        hasCoords: false,
+      })
+    ).toBe(true)
+    expect(
+      shouldFallbackNearestToRecommended({
+        sort: "nearest",
+        status: "denied",
+        hasCoords: true,
+      })
+    ).toBe(false)
+  })
+
+  it("desktop y mobile usan el mismo hook; pedir GPS en setSort no en effect", () => {
     const fs = require("fs") as typeof import("fs")
     const path = require("path") as typeof import("path")
     const desktop = fs.readFileSync(
@@ -88,12 +132,19 @@ describe("place sort + distancia", () => {
       path.join(process.cwd(), "components/map-view/MapMobile.tsx"),
       "utf8"
     )
+    const hook = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/useMapPlaceSort.ts"),
+      "utf8"
+    )
     expect(desktop).toContain("useMapPlaceSort")
     expect(mobile).toContain("useMapPlaceSort")
     expect(desktop).not.toContain("sortInitializedRef")
     expect(mobile).not.toContain("sortInitializedRef")
     expect(desktop).toContain("LOCATION_SORT_CTA")
     expect(mobile).toContain("LOCATION_SORT_CTA")
+    expect(hook).toContain("shouldAskLocationForNearest")
+    expect(hook).toContain("requestLocation()")
+    expect(hook).not.toContain("askedForNearestRef")
     const loc = fs.readFileSync(
       path.join(process.cwd(), "components/map-view/useUserLocation.ts"),
       "utf8"
