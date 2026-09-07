@@ -19,6 +19,23 @@ function patchDeadLocalDns() {
   dns.setServers(["8.8.8.8", "1.1.1.1"])
 }
 
+function isSrvDnsFail(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error)
+  return /querySrv|ENOTFOUND.*mongodb/i.test(msg)
+}
+
+const MONGO_OPTS = {
+  bufferCommands: false,
+  maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 1),
+  minPoolSize: 0,
+  maxIdleTimeMS: 10_000,
+  serverSelectionTimeoutMS: 5_000,
+  socketTimeoutMS: 12_000,
+  connectTimeoutMS: 5_000,
+  family: 4 as const,
+  autoSelectFamily: false,
+}
+
 interface MongooseCache {
   conn: typeof mongoose | null
   promise: Promise<typeof mongoose> | null
@@ -53,20 +70,7 @@ async function connectDB() {
 
   if (!cached.promise) {
     // 1 socket por lambda. Sin retry/disconnect: eso disparaba picos en Atlas.
-    const opts = {
-      bufferCommands: false,
-      maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 1),
-      minPoolSize: 0,
-      maxIdleTimeMS: 10_000,
-      serverSelectionTimeoutMS: 5_000,
-      socketTimeoutMS: 12_000,
-      connectTimeoutMS: 5_000,
-      family: 4 as const,
-      autoSelectFamily: false,
-    }
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-      // Evita sockets zombie cuando Vercel congela la lambda.
+    cached.promise = mongoose.connect(MONGODB_URI, MONGO_OPTS).then((m) => {
       attachDatabasePool(m.connection.getClient())
       return m
     })
@@ -77,7 +81,22 @@ async function connectDB() {
   } catch (e) {
     cached.promise = null
     cached.conn = null
-    throw e
+    if (process.env.NODE_ENV !== "production" && isSrvDnsFail(e)) {
+      dns.setServers(["8.8.8.8", "1.1.1.1"])
+      cached.promise = mongoose.connect(MONGODB_URI, MONGO_OPTS).then((m) => {
+        attachDatabasePool(m.connection.getClient())
+        return m
+      })
+      try {
+        cached.conn = await cached.promise
+      } catch (retryError) {
+        cached.promise = null
+        cached.conn = null
+        throw retryError
+      }
+    } else {
+      throw e
+    }
   }
 
   return cached.conn

@@ -44,6 +44,25 @@ export type AdminCounts = {
   featuredCount: number
 }
 
+export const EMPTY_ADMIN_COUNTS: AdminCounts = {
+  suggestionsPending: 0,
+  ventureSuggestionsPending: 0,
+  contactsTotal: 0,
+  contactsPending: 0,
+  placesTotal: 0,
+  placesApproved: 0,
+  placesNoPhoto: 0,
+  placesNoHours: 0,
+  placesNoInstagram: 0,
+  placesNoPhone: 0,
+  placesNoWeb: 0,
+  placesNoDescription: 0,
+  placesNoCoords: 0,
+  placesIncomplete: 0,
+  reviewsHidden: 0,
+  featuredCount: 0,
+}
+
 export type AdminActivityItem = {
   id: string
   kind: "place" | "suggestion" | "venture" | "review" | "message"

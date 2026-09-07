@@ -1,4 +1,4 @@
-import { parseAnalyticsIngestBody, detectDeviceFromUa } from "@/lib/analytics-ingest"
+import { parseAnalyticsIngestBody, detectDeviceFromUa, isAnalyticsIngestContentType } from "@/lib/analytics-ingest"
 
 describe("parseAnalyticsIngestBody", () => {
   const base = {
@@ -78,5 +78,15 @@ describe("parseAnalyticsIngestBody", () => {
     })
     if ("error" in bad) throw new Error(bad.error)
     expect(bad.events[0].appVersion).toBe("")
+  })
+})
+
+describe("isAnalyticsIngestContentType", () => {
+  it("acepta json, text/plain y vacío (sendBeacon)", () => {
+    expect(isAnalyticsIngestContentType("application/json")).toBe(true)
+    expect(isAnalyticsIngestContentType("application/json; charset=UTF-8")).toBe(true)
+    expect(isAnalyticsIngestContentType("text/plain;charset=UTF-8")).toBe(true)
+    expect(isAnalyticsIngestContentType("")).toBe(true)
+    expect(isAnalyticsIngestContentType("text/html")).toBe(false)
   })
 })

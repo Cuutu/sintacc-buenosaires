@@ -11,6 +11,13 @@ import {
 export const ANALYTICS_INGEST_MAX_BYTES = 8 * 1024
 export const ANALYTICS_INGEST_MAX_EVENTS = 8
 
+/** sendBeacon a veces manda text/plain o sin content-type. */
+export function isAnalyticsIngestContentType(contentType: string): boolean {
+  const ct = contentType.toLowerCase()
+  if (!ct) return true
+  return ct.includes("application/json") || ct.includes("text/plain")
+}
+
 export type IngestedProductEvent = {
   name: AnalyticsEvent
   distinctId: string

@@ -126,16 +126,23 @@ function ActivityRecentTable({
   rangeLabel: string
   now: number
 }) {
+  const activity = data.activity ?? {
+    available: false,
+    android: 0,
+    ios: 0,
+    web: 0,
+    activeNow: 0,
+    rows: [],
+  }
   const [filter, setFilter] = useState<ActivityFilter>("all")
-  const rows = data.activity.rows.filter((row) => matchesActivityFilter(row, filter))
   const filters: Array<{ id: ActivityFilter; label: string; count: number }> = [
-    { id: "all", label: "Todos", count: data.activity.rows.length },
-    { id: "android", label: "Android", count: data.activity.android },
-    { id: "ios", label: "iOS", count: data.activity.ios },
-    { id: "web", label: "Web", count: data.activity.web },
+    { id: "all", label: "Todos", count: activity.rows.length },
+    { id: "android", label: "Android", count: activity.android },
+    { id: "ios", label: "iOS", count: activity.ios },
+    { id: "web", label: "Web", count: activity.web },
   ]
 
-  if (!data.activity.available) {
+  if (!activity.available) {
     return (
       <EmptyState
         title="Todavía no hay actividad"
@@ -144,13 +151,15 @@ function ActivityRecentTable({
     )
   }
 
+  const rows = activity.rows.filter((row) => matchesActivityFilter(row, filter))
+
   return (
     <article className={`${adminUi.card} overflow-hidden p-0`}>
       <div className="flex flex-col gap-3 border-b border-[#E8E1D6] px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className={adminUi.label}>Actividad reciente</h2>
           <p className="mt-1 text-sm text-[#6B746C]">
-            {rangeLabel} · {data.activity.android} Android · {data.activity.activeNow} activos ahora
+            {rangeLabel} · {activity.android} Android · {activity.activeNow} activos ahora
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -284,7 +293,13 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/insights?range=${nextRange}`)
+      const res = await fetch(`/api/admin/insights?range=${nextRange}`, {
+        credentials: "same-origin",
+      })
+      if (res.status === 401 || res.status === 403) {
+        setError("Entrá como admin para ver insights.")
+        return
+      }
       if (!res.ok) throw new Error("fail")
       const json = (await res.json()) as AdminInsightsPayload
       setData(json)

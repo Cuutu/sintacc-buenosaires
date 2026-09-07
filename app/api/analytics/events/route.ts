@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { ProductEvent } from "@/models/ProductEvent"
 import { checkRateLimitByIp } from "@/lib/rate-limit"
+import { logApiError } from "@/lib/logger"
 import {
   ANALYTICS_INGEST_MAX_BYTES,
   detectDeviceFromUa,
   geoFromRequest,
+  isAnalyticsIngestContentType,
   parseAnalyticsIngestBody,
 } from "@/lib/analytics-ingest"
 
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const contentType = request.headers.get("content-type") || ""
-    if (!contentType.toLowerCase().includes("application/json")) {
+    if (!isAnalyticsIngestContentType(contentType)) {
       return new NextResponse(null, { status: 204 })
     }
 
@@ -83,10 +85,15 @@ export async function POST(request: NextRequest) {
       device,
     }))
 
-    await connectDB()
-    await ProductEvent.insertMany(docs, { ordered: false })
+    try {
+      await connectDB()
+      await ProductEvent.insertMany(docs, { ordered: false })
+    } catch (error) {
+      logApiError("/api/analytics/events", error, { request })
+    }
     return new NextResponse(null, { status: 204 })
-  } catch {
+  } catch (error) {
+    logApiError("/api/analytics/events", error, { request })
     return new NextResponse(null, { status: 204 })
   }
 }

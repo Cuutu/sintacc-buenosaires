@@ -24,7 +24,7 @@ const ProductEventSchema = new Schema<IProductEvent>(
   {
     name: { type: String, required: true, index: true },
     distinctId: { type: String, required: true, index: true },
-    ts: { type: Date, required: true, index: true },
+    ts: { type: Date, required: true },
     platform: { type: String, default: "web" },
     authenticated: { type: Boolean, default: false },
     source: { type: String, default: "direct" },

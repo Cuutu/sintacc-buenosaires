@@ -6,7 +6,7 @@ import { Favorite } from "@/models/Favorite"
 import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
-import { getOrSetApiCache } from "@/lib/api-cache"
+import { logger } from "@/lib/logger"
 import { ACTIVITY_ACTIVE_MS } from "@/lib/format-relative-activity"
 import type {
   AdminInsightsPayload,
@@ -34,6 +34,19 @@ const RANGE_DAYS: Record<InsightsRangeKey, number> = {
 
 const TYPE_LABEL = Object.fromEntries(TYPES.map((t) => [t.value, t.label]))
 const DAY_MS = 24 * 60 * 60 * 1000
+const QUERY_CHUNK = 3
+
+async function runInChunks<T>(
+  fns: Array<() => T | Promise<T>>,
+  chunkSize = QUERY_CHUNK
+): Promise<T[]> {
+  const out: T[] = []
+  for (let i = 0; i < fns.length; i += chunkSize) {
+    const part = await Promise.all(fns.slice(i, i + chunkSize).map((fn) => Promise.resolve(fn())))
+    out.push(...part)
+  }
+  return out
+}
 
 function metric(value: number, previous: number, source: InsightsMetric["source"]): InsightsMetric {
   if (previous === 0) {
@@ -128,98 +141,253 @@ async function retentionRate(
   return Math.round((kept / cohort.length) * 100)
 }
 
+function emptyInsights(range: InsightsRangeKey, from: Date, to: Date): AdminInsightsPayload {
+  const eventsZero = metric(0, 0, "events")
+  const dbZero = metric(0, 0, "database")
+  return {
+    range,
+    from: from.toISOString(),
+    to: to.toISOString(),
+    hasEventData: false,
+    eventCount: 0,
+    overview: {
+      activeToday: eventsZero,
+      activeRange: eventsZero,
+      newAccounts: dbZero,
+      newDevices: eventsZero,
+      returning: eventsZero,
+      placeViews: eventsZero,
+      searches: eventsZero,
+      reviews: dbZero,
+      favorites: dbZero,
+      suggestions: dbZero,
+      directions: eventsZero,
+    },
+    acquisition: {
+      available: false,
+      note: "País/ciudad vienen de Vercel (IP), no de GPS. En local casi siempre vacío. Campaña solo si hay utm_campaign.",
+      sources: [],
+      mediums: [],
+      campaigns: [],
+      entryPaths: [],
+      countries: [],
+      regions: [],
+      cities: [],
+      devices: [],
+      platforms: [],
+    },
+    behavior: {
+      available: false,
+      topPlaces: [],
+      topCategories: [],
+      topCities: [],
+      topFilters: [],
+      topSearches: [],
+      zeroSearches: [],
+      directions: 0,
+      favorites: 0,
+      reviews: 0,
+    },
+    retention: {
+      available: false,
+      note: "Retención por dispositivo anónimo, no por cuenta Google/Apple. Pedimos ≥5 dispositivos en la cohorte.",
+      newDevices: 0,
+      returning: 0,
+      d1: null,
+      d7: null,
+      d30: null,
+    },
+    errors: {
+      available: false,
+      login: 0,
+      mapLoad: 0,
+      placeLoad: 0,
+      recent: [],
+    },
+    activity: {
+      available: false,
+      android: 0,
+      ios: 0,
+      web: 0,
+      activeNow: 0,
+      rows: [],
+    },
+  }
+}
+
 export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminInsightsPayload> {
-  await connectDB()
   const { from, to, prevFrom, prevTo, todayFrom } = rangeWindow(range)
+  try {
+    await connectDB()
+  } catch (error) {
+    logger.error({
+      route: "getAdminInsights",
+      error: error instanceof Error ? error.message : String(error),
+      message: "mongo connect failed",
+    })
+    return emptyInsights(range, from, to)
+  }
   const period = { ts: { $gte: from, $lt: to } }
   const prev = { ts: { $gte: prevFrom, $lt: prevTo } }
   const today = { ts: { $gte: todayFrom, $lt: to } }
 
-  const [
-    eventCount,
-    activeToday,
-    activeRange,
-    activePrev,
-    newDevices,
-    newDevicesPrev,
-    placeViews,
-    placeViewsPrev,
-    searches,
-    searchesPrev,
-    directions,
-    directionsPrev,
-    loginErrors,
-    mapErrors,
-    placeErrors,
-    dbNewUsers,
-    dbNewUsersPrev,
-    dbReviews,
-    dbReviewsPrev,
-    dbFavorites,
-    dbFavoritesPrev,
-    dbSuggestions,
-    dbSuggestionsPrev,
-  ] = await Promise.all([
-    countEvents(period),
-    countDistinct(today),
-    countDistinct(period),
-    countDistinct(prev),
-    countEvents({ ...period, name: "first_open" }),
-    countEvents({ ...prev, name: "first_open" }),
-    countEvents({ ...period, name: "place_view" }),
-    countEvents({ ...prev, name: "place_view" }),
-    countEvents({ ...period, name: "search_performed" }),
-    countEvents({ ...prev, name: "search_performed" }),
-    countEvents({ ...period, name: "directions_clicked" }),
-    countEvents({ ...prev, name: "directions_clicked" }),
-    countEvents({ ...period, name: "login_error" }),
-    countEvents({ ...period, name: "map_load_error" }),
-    countEvents({ ...period, name: "place_load_error" }),
-    User.countDocuments({ createdAt: { $gte: from, $lt: to } }),
-    User.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
-    Review.countDocuments({ createdAt: { $gte: from, $lt: to } }),
-    Review.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
-    Favorite.countDocuments({ createdAt: { $gte: from, $lt: to } }),
-    Favorite.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
-    Suggestion.countDocuments({ createdAt: { $gte: from, $lt: to } }),
-    Suggestion.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
-  ])
+  let eventCount = 0
+  try {
+    eventCount = await countEvents(period)
+  } catch (error) {
+    logger.error({
+      route: "getAdminInsights",
+      error: error instanceof Error ? error.message : String(error),
+      message: "productevents count failed",
+    })
+  }
+  const hasEventData = eventCount > 0
+
+  let dbNewUsers = 0
+  let dbNewUsersPrev = 0
+  let dbReviews = 0
+  let dbReviewsPrev = 0
+  let dbFavorites = 0
+  let dbFavoritesPrev = 0
+  let dbSuggestions = 0
+  let dbSuggestionsPrev = 0
+  try {
+    ;[
+      dbNewUsers,
+      dbNewUsersPrev,
+      dbReviews,
+      dbReviewsPrev,
+      dbFavorites,
+      dbFavoritesPrev,
+      dbSuggestions,
+      dbSuggestionsPrev,
+    ] = await runInChunks(
+      [
+        () => User.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+        () => User.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
+        () => Review.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+        () => Review.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
+        () => Favorite.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+        () => Favorite.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
+        () => Suggestion.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+        () => Suggestion.countDocuments({ createdAt: { $gte: prevFrom, $lt: prevTo } }),
+      ],
+      4
+    )
+  } catch (error) {
+    logger.error({
+      route: "getAdminInsights",
+      error: error instanceof Error ? error.message : String(error),
+      message: "database metrics failed",
+    })
+  }
+
+  let activeToday = 0
+  let activeRange = 0
+  let activePrev = 0
+  let newDevices = 0
+  let newDevicesPrev = 0
+  let placeViews = 0
+  let placeViewsPrev = 0
+  let searches = 0
+  let searchesPrev = 0
+  let directions = 0
+  let directionsPrev = 0
+  let loginErrors = 0
+  let mapErrors = 0
+  let placeErrors = 0
+
+  if (hasEventData) {
+    try {
+      ;[
+        activeToday,
+        activeRange,
+        activePrev,
+        newDevices,
+        newDevicesPrev,
+        placeViews,
+        placeViewsPrev,
+        searches,
+        searchesPrev,
+        directions,
+        directionsPrev,
+        loginErrors,
+        mapErrors,
+        placeErrors,
+      ] = await runInChunks([
+        () => countDistinct(today),
+        () => countDistinct(period),
+        () => countDistinct(prev),
+        () => countEvents({ ...period, name: "first_open" }),
+        () => countEvents({ ...prev, name: "first_open" }),
+        () => countEvents({ ...period, name: "place_view" }),
+        () => countEvents({ ...prev, name: "place_view" }),
+        () => countEvents({ ...period, name: "search_performed" }),
+        () => countEvents({ ...prev, name: "search_performed" }),
+        () => countEvents({ ...period, name: "directions_clicked" }),
+        () => countEvents({ ...prev, name: "directions_clicked" }),
+        () => countEvents({ ...period, name: "login_error" }),
+        () => countEvents({ ...period, name: "map_load_error" }),
+        () => countEvents({ ...period, name: "place_load_error" }),
+      ])
+    } catch (error) {
+      logger.error({
+        route: "getAdminInsights",
+        error: error instanceof Error ? error.message : String(error),
+        message: "event metrics failed",
+      })
+    }
+  }
 
   const returning = Math.max(0, activeRange - newDevices)
   const returningPrev = Math.max(0, activePrev - newDevicesPrev)
-  const hasEventData = eventCount > 0
 
-  const [androidUsers, iosUsers, webUsers, activeNow, activityRowsRaw] = hasEventData
-    ? await Promise.all([
-        countDistinct({ ...period, platform: "android_native" }),
-        countDistinct({ ...period, platform: "ios_native" }),
-        countDistinct({ ...period, platform: { $in: ["web", "pwa"] } }),
-        countDistinct({
-          ts: { $gte: new Date(to.getTime() - ACTIVITY_ACTIVE_MS), $lt: to },
-        }),
-        ProductEvent.aggregate<{
-          _id: string
-          lastTs: Date
-          platform: string
-          device: string
-          appVersion: string
-        }>([
-          { $match: period },
-          { $sort: { distinctId: 1, ts: -1 } },
-          {
-            $group: {
-              _id: "$distinctId",
-              lastTs: { $first: "$ts" },
-              platform: { $first: "$platform" },
-              device: { $first: "$device" },
-              appVersion: { $first: "$appVersion" },
-            },
-          },
-          { $sort: { lastTs: -1 } },
-          { $limit: 80 },
-        ]),
+  let androidUsers = 0
+  let iosUsers = 0
+  let webUsers = 0
+  let activeNow = 0
+  let activityRowsRaw: Array<{
+    _id: string
+    lastTs: Date
+    platform: string
+    device: string
+    appVersion: string
+  }> = []
+
+  if (hasEventData) {
+    try {
+      ;[androidUsers, iosUsers, webUsers, activeNow] = await runInChunks([
+        () => countDistinct({ ...period, platform: "android_native" }),
+        () => countDistinct({ ...period, platform: "ios_native" }),
+        () => countDistinct({ ...period, platform: { $in: ["web", "pwa"] } }),
+        () =>
+          countDistinct({
+            ts: { $gte: new Date(to.getTime() - ACTIVITY_ACTIVE_MS), $lt: to },
+          }),
       ])
-    : [0, 0, 0, 0, []]
+      activityRowsRaw = await ProductEvent.aggregate([
+        { $match: period },
+        { $sort: { distinctId: 1, ts: -1 } },
+        {
+          $group: {
+            _id: "$distinctId",
+            lastTs: { $first: "$ts" },
+            platform: { $first: "$platform" },
+            device: { $first: "$device" },
+            appVersion: { $first: "$appVersion" },
+          },
+        },
+        { $sort: { lastTs: -1 } },
+        { $limit: 80 },
+      ])
+    } catch (error) {
+      logger.error({
+        route: "getAdminInsights",
+        error: error instanceof Error ? error.message : String(error),
+        message: "activity query failed",
+      })
+    }
+  }
 
   const activityRows: InsightsActivityRow[] = activityRowsRaw.map((row) => ({
     id: String(row._id).slice(0, 8),
@@ -231,22 +399,47 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
 
   const [sources, mediums, campaigns, entryPaths, countries, regions, cities, devices, platforms] =
     hasEventData
-      ? await Promise.all([
-          uniqueGroupField(period, "source"),
-          uniqueGroupField(period, "medium"),
-          uniqueGroupField(period, "campaign"),
-          uniqueGroupField(period, "entryPath"),
-          uniqueGroupField(period, "country"),
-          uniqueGroupField(period, "region"),
-          uniqueGroupField(period, "city"),
-          uniqueGroupField(period, "device"),
-          uniqueGroupField(period, "platform"),
-        ])
+      ? await runInChunks([
+          () => uniqueGroupField(period, "source"),
+          () => uniqueGroupField(period, "medium"),
+          () => uniqueGroupField(period, "campaign"),
+          () => uniqueGroupField(period, "entryPath"),
+          () => uniqueGroupField(period, "country"),
+          () => uniqueGroupField(period, "region"),
+          () => uniqueGroupField(period, "city"),
+          () => uniqueGroupField(period, "device"),
+          () => uniqueGroupField(period, "platform"),
+        ]).catch((error) => {
+          logger.error({
+            route: "getAdminInsights",
+            error: error instanceof Error ? error.message : String(error),
+            message: "acquisition query failed",
+          })
+          return [[], [], [], [], [], [], [], [], []] as InsightsCountRow[][]
+        })
       : [[], [], [], [], [], [], [], [], []]
 
-  const [topPlaceRows, topCategories, topCities, topFilters, topSearches, zeroSearches, recentErrors] =
-    hasEventData
-      ? await Promise.all([
+  let topPlaceRows: Array<{ _id: string; views: number; city: string; category: string }> = []
+  let topCategories: Array<{ _id: string; count: number }> = []
+  let topCities: Array<{ _id: string; count: number }> = []
+  let topFilters: Array<{ _id: string; count: number }> = []
+  let topSearches: Array<{ _id: string; count: number; avg: number }> = []
+  let zeroSearches: Array<{ _id: string; count: number }> = []
+  let recentErrors: Array<{ name?: string; ts?: Date; props?: { reason?: string }; platform?: string }> =
+    []
+
+  if (hasEventData) {
+    try {
+      ;[
+        topPlaceRows,
+        topCategories,
+        topCities,
+        topFilters,
+        topSearches,
+        zeroSearches,
+        recentErrors,
+      ] = (await runInChunks<unknown>([
+        () =>
           ProductEvent.aggregate<{ _id: string; views: number; city: string; category: string }>([
             { $match: { ...period, name: "place_view", "props.placeId": { $type: "string", $ne: "" } } },
             {
@@ -260,12 +453,14 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
             { $sort: { views: -1 } },
             { $limit: 8 },
           ]),
+        () =>
           ProductEvent.aggregate<{ _id: string; count: number }>([
             { $match: { ...period, name: "place_view", "props.category": { $type: "string", $ne: "" } } },
             { $group: { _id: "$props.category", count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 8 },
           ]),
+        () =>
           ProductEvent.aggregate<{ _id: string; count: number }>([
             {
               $match: {
@@ -278,6 +473,7 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
             { $sort: { count: -1 } },
             { $limit: 8 },
           ]),
+        () =>
           ProductEvent.aggregate<{ _id: string; count: number }>([
             { $match: { ...period, name: "map_filter" } },
             {
@@ -297,6 +493,7 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
             { $sort: { count: -1 } },
             { $limit: 8 },
           ]),
+        () =>
           ProductEvent.aggregate<{ _id: string; count: number; avg: number }>([
             { $match: { ...period, name: "search_performed", "props.query": { $type: "string", $ne: "" } } },
             {
@@ -309,12 +506,14 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
             { $sort: { count: -1 } },
             { $limit: 10 },
           ]),
+        () =>
           ProductEvent.aggregate<{ _id: string; count: number }>([
             { $match: { ...period, name: "search_no_results", "props.query": { $type: "string", $ne: "" } } },
             { $group: { _id: "$props.query", count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 10 },
           ]),
+        () =>
           ProductEvent.find({
             ...period,
             name: { $in: ["login_error", "map_load_error", "place_load_error"] },
@@ -323,8 +522,23 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
             .limit(8)
             .select("name ts props platform")
             .lean(),
-        ])
-      : [[], [], [], [], [], [], []]
+      ])) as [
+        typeof topPlaceRows,
+        typeof topCategories,
+        typeof topCities,
+        typeof topFilters,
+        typeof topSearches,
+        typeof zeroSearches,
+        typeof recentErrors,
+      ]
+    } catch (error) {
+      logger.error({
+        route: "getAdminInsights",
+        error: error instanceof Error ? error.message : String(error),
+        message: "behavior query failed",
+      })
+    }
+  }
 
   const placeIds = topPlaceRows
     .map((row) => row._id)
@@ -334,6 +548,14 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
       ? await Place.find({ _id: { $in: placeIds } })
           .select("name type locality neighborhood")
           .lean()
+          .catch((error) => {
+            logger.error({
+              route: "getAdminInsights",
+              error: error instanceof Error ? error.message : String(error),
+              message: "place lookup failed",
+            })
+            return []
+          })
       : []
   const placeById = new Map(places.map((p) => [String(p._id), p]))
 
@@ -349,11 +571,27 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
   })
 
   const [d1, d7, d30] = hasEventData
-    ? await Promise.all([
-        retentionRate(new Date(to.getTime() - 8 * DAY_MS), new Date(to.getTime() - DAY_MS), 1),
-        retentionRate(new Date(to.getTime() - 21 * DAY_MS), new Date(to.getTime() - 8 * DAY_MS), 7),
-        retentionRate(new Date(to.getTime() - 51 * DAY_MS), new Date(to.getTime() - 31 * DAY_MS), 30),
-      ])
+    ? await runInChunks(
+        [
+          () => retentionRate(new Date(to.getTime() - 8 * DAY_MS), new Date(to.getTime() - DAY_MS), 1),
+          () =>
+            retentionRate(new Date(to.getTime() - 21 * DAY_MS), new Date(to.getTime() - 8 * DAY_MS), 7),
+          () =>
+            retentionRate(
+              new Date(to.getTime() - 51 * DAY_MS),
+              new Date(to.getTime() - 31 * DAY_MS),
+              30
+            ),
+        ],
+        1
+      ).catch((error) => {
+        logger.error({
+          route: "getAdminInsights",
+          error: error instanceof Error ? error.message : String(error),
+          message: "retention query failed",
+        })
+        return [null, null, null] as Array<number | null>
+      })
     : [null, null, null]
 
   return {
@@ -443,7 +681,7 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
       placeLoad: placeErrors,
       recent: recentErrors.map((row) => ({
         name: String(row.name),
-        ts: new Date(row.ts).toISOString(),
+        ts: new Date(row.ts ?? 0).toISOString(),
         reason: String((row as { props?: { reason?: string } }).props?.reason || ""),
         platform: String(row.platform || ""),
       })),
@@ -462,7 +700,7 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
 export async function getAdminInsightsCached(
   range: InsightsRangeKey
 ): Promise<AdminInsightsPayload> {
-  return getOrSetApiCache(`admin:insights:${range}`, 20 * 1000, () => getAdminInsights(range))
+  return getAdminInsights(range)
 }
 
 export { parseInsightsRange } from "@/lib/admin-insights-types"

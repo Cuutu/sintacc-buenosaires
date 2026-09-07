@@ -7,7 +7,7 @@ import {
 } from "@/lib/analytics-catalog"
 
 const DISTINCT_KEY = "celimap_aid"
-const FLUSH_MS = 2000
+const FLUSH_MS = 400
 const MAX_BATCH = 8
 
 export type FirstPartyEventPayload = {
@@ -123,26 +123,29 @@ export function enqueueFirstPartyEvent(
   scheduleFlush()
 }
 
-export function flushFirstPartyQueue(keepalive: boolean): void {
+export function flushFirstPartyQueue(_keepalive: boolean): void {
   if (typeof window === "undefined") return
   if (queue.length === 0) return
   const batch = queue.splice(0, MAX_BATCH)
   const body = JSON.stringify({ events: batch })
 
   try {
-    if (keepalive && typeof navigator.sendBeacon === "function") {
-      const blob = new Blob([body], { type: "application/json" })
-      navigator.sendBeacon("/api/analytics/events", blob)
-      return
-    }
     void fetch("/api/analytics/events", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
       keepalive: true,
+      credentials: "same-origin",
     }).catch(() => undefined)
   } catch {
-    /* analytics nunca rompe UX */
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        const blob = new Blob([body], { type: "application/json" })
+        navigator.sendBeacon("/api/analytics/events", blob)
+      }
+    } catch {
+      /* analytics nunca rompe UX */
+    }
   }
 }
 
