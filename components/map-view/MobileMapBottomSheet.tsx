@@ -11,6 +11,7 @@ import { getPlaceImageUrl } from "@/lib/place-image"
 import { getOpenStatusLabel } from "@/lib/opening-hours"
 import {
   formatShortPlaceAddress,
+  getCanonicalPlaceArea,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
   getPlaceSheetDetailTags,
@@ -212,7 +213,7 @@ export function MobileMapBottomSheet({
     snapTo(translateYRef.current, stale ? 0 : velocityRef.current)
   }
 
-  const meta = [getPlaceTypeLabel(place), place.neighborhood].filter(Boolean).join(" · ")
+  const meta = [getPlaceTypeLabel(place), getCanonicalPlaceArea(place)].filter(Boolean).join(" · ")
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)

@@ -8,6 +8,7 @@ import type { MapboxMapRef } from "./MapboxMap"
 import { computePopoverPlacement, type PopoverPlacement } from "./popover-placement"
 import {
   formatShortPlaceAddress,
+  getCanonicalPlaceArea,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
   getPlaceTypeLabel,
@@ -91,7 +92,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
     }
   }, [onClose])
 
-  const meta = [getPlaceTypeLabel(place), place.neighborhood].filter(Boolean).join(" • ")
+  const meta = [getPlaceTypeLabel(place), getCanonicalPlaceArea(place)].filter(Boolean).join(" • ")
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)

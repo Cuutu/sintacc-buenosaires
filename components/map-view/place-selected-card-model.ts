@@ -1,7 +1,14 @@
 import { TYPES, TAG_BADGE_CONFIG } from "@/lib/constants"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import {
+  formatShortPlaceAddress as formatCanonicalShortAddress,
+  getCanonicalPlaceArea,
+  type PlaceLocationFields,
+} from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 import type { IPlace } from "@/models/Place"
+
+export { getCanonicalPlaceArea }
 
 export const PLACE_CARD = {
   olive: "#1F4D35",
@@ -19,19 +26,9 @@ export type PlaceCardSafety = {
   badgeText: string
 }
 
-export type PlaceCardRating = {
-  score: string
-  source: string
-  countLabel: string
-}
-
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(
   TYPES.map((item) => [item.value, item.label])
 )
-
-const POSTAL_RE = /^(c?\d{4}[a-z]{0,3})$/i
-const REGION_RE =
-  /^(argentina|ciudad aut[oó]noma de buenos aires|caba|buenos aires|provincia de buenos aires)$/i
 
 export function getPlaceTypeKey(place: Pick<IPlace, "type" | "types">): string {
   return String(place.types?.[0] ?? place.type ?? "other")
@@ -71,52 +68,8 @@ export function getPlaceSafety(place: IPlace): PlaceCardSafety {
   }
 }
 
-export function formatShortPlaceAddress(place: Pick<IPlace, "address" | "addressText" | "neighborhood">): string {
-  const neighborhood = String(place.neighborhood || "").trim()
-  const raw = String(place.addressText || place.address || "").trim()
-  const parts = raw
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .filter((part) => !POSTAL_RE.test(part) && !REGION_RE.test(part))
-
-  const street =
-    parts.find((part) => part.toLowerCase() !== neighborhood.toLowerCase()) ??
-    parts[0] ??
-    ""
-
-  if (street && neighborhood && street.toLowerCase() !== neighborhood.toLowerCase()) {
-    return `${street}, ${neighborhood}`
-  }
-  return street || neighborhood
-}
-
-export function getPlaceRatingLine(
-  place: IPlace & {
-    stats?: { avgRating?: number; totalReviews?: number }
-    googleSnapshot?: { rating?: number; userRatingCount?: number } | null
-  }
-): PlaceCardRating | null {
-  const totalReviews = place.stats?.totalReviews ?? 0
-  const avgRating = place.stats?.avgRating ?? 0
-  if (totalReviews > 0 && avgRating > 0) {
-    return {
-      score: avgRating.toFixed(1),
-      source: "CeliMap",
-      countLabel: `(${totalReviews} reseña${totalReviews === 1 ? "" : "s"})`,
-    }
-  }
-  const googleRating = place.googleSnapshot?.rating
-  const googleCount = place.googleSnapshot?.userRatingCount
-  if (googleRating != null) {
-    const count = googleCount != null ? `(${googleCount} reseñas)` : ""
-    return {
-      score: googleRating.toFixed(1),
-      source: "Google",
-      countLabel: count,
-    }
-  }
-  return null
+export function formatShortPlaceAddress(place: PlaceLocationFields): string {
+  return formatCanonicalShortAddress(place)
 }
 
 export function getPlaceDirectionsUrl(place: Pick<IPlace, "name" | "location">): string {

@@ -9,6 +9,8 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { FavoriteButton } from "@/components/favorite-button"
 import { TYPES } from "@/lib/constants"
 import { getPlaceImageUrl } from "@/lib/place-image"
+import { getCanonicalPlaceArea } from "@/lib/place-location-display"
+import { getPlaceReviewLines } from "@/lib/place-review-display"
 import { formatListDistance, metersBetween, type UserLatLng } from "./geo"
 
 interface PlaceMiniCardProps {
@@ -44,23 +46,11 @@ export function PlaceMiniCard({
   const primaryType = String(place.types?.[0] ?? place.type ?? "")
   const TypeIcon = TYPE_ICONS[primaryType] || MapPin
   const typeLabel = primaryType && primaryType !== "other" ? TYPE_LABELS[primaryType] : undefined
-  const stats = place.stats ?? { avgRating: 0, totalReviews: 0 }
   const safetyLevel = inferSafetyLevel(place) ?? "unknown"
   const photoSrc = getPlaceImageUrl(place.photos?.[0], "thumb")
-
-  const googleRating = place.googleSnapshot?.rating
-  const googleCount = place.googleSnapshot?.userRatingCount
-  const hasCommunityReviews = (stats.totalReviews ?? 0) > 0
-  const ratingLabel = hasCommunityReviews
-    ? `${stats.avgRating?.toFixed(1)}`
-    : googleRating != null
-      ? `${googleRating.toFixed(1)}`
-      : null
-  const ratingCount = hasCommunityReviews
-    ? stats.totalReviews
-    : googleCount != null
-      ? googleCount
-      : null
+  const reviewLine =
+    getPlaceReviewLines(place, { emptyCommunity: "never" }).find((line) => line.hasScore) ?? null
+  const ratingLabel = reviewLine?.text ?? null
 
   const placeLat = place.location?.lat
   const placeLng = place.location?.lng
@@ -71,7 +61,7 @@ export function PlaceMiniCard({
         )
       : null
 
-  const metaParts = [typeLabel, place.neighborhood, distanceLabel].filter(Boolean)
+  const metaParts = [typeLabel, getCanonicalPlaceArea(place), distanceLabel].filter(Boolean)
 
   return (
     <div
@@ -134,9 +124,6 @@ export function PlaceMiniCard({
               <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1F4D35]">
                 <Star className="h-3.5 w-3.5 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
                 {ratingLabel}
-                {ratingCount != null && (
-                  <span className="font-medium text-[#5F6B63]">({ratingCount})</span>
-                )}
               </span>
             )}
           </span>

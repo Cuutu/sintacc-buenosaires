@@ -1,9 +1,10 @@
 import type { IPlace } from "@/models/Place"
+import { getPlaceReviewLines } from "@/lib/place-review-display"
 import {
   formatShortPlaceAddress,
+  getCanonicalPlaceArea,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
-  getPlaceRatingLine,
   getPlaceSafety,
   getPlaceTypeKey,
   getPlaceTypeLabel,
@@ -57,21 +58,29 @@ export function buildPlacePopupHtml(place: IPlace): string {
   const safety = getPlaceSafety(place)
   const typeLabel = escapeHtml(getPlaceTypeLabel(place))
   const name = escapeHtml(place.name)
-  const neighborhood = escapeHtml(place.neighborhood || "")
-  const meta = [typeLabel, neighborhood].filter(Boolean).join(" • ")
+  const area = escapeHtml(getCanonicalPlaceArea(place))
+  const meta = [typeLabel, area].filter(Boolean).join(" • ")
   const address = escapeHtml(formatShortPlaceAddress(place))
-  const rating = getPlaceRatingLine(place)
+  const reviewLines = getPlaceReviewLines(place)
   const directionsUrl = escapeHtml(getPlaceDirectionsUrl(place))
   const detailPath = escapeHtml(getPlaceDetailPath(place))
   const typePath = TYPE_ICON_PATHS[typeKey] ?? TYPE_ICON_PATHS.other
 
-  const ratingHtml = rating
-    ? `<p style="margin:12px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:${PLACE_CARD.muted};font-size:13.5px;line-height:1">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="${PLACE_CARD.terracotta}" style="width:16px;height:16px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>
-        <span style="font-weight:800;color:${PLACE_CARD.olive}">${escapeHtml(rating.score)}</span>
-        <span style="font-weight:600">${escapeHtml(rating.source)}</span>
-        ${rating.countLabel ? `<span>${escapeHtml(rating.countLabel)}</span>` : ""}
+  const ratingHtml = reviewLines.length
+    ? `<div style="margin:12px 0 0;display:flex;flex-direction:column;gap:4px;color:${PLACE_CARD.muted};font-size:13.5px;line-height:1.3">
+        ${reviewLines
+          .map(
+            (line) => `<p style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+        ${
+          line.hasScore
+            ? `<svg aria-hidden="true" viewBox="0 0 24 24" fill="${PLACE_CARD.terracotta}" style="width:16px;height:16px;display:block"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.2 6.4 20.2l1.1-6.3-4.6-4.5 6.3-.9L12 2.8Z"/></svg>`
+            : ""
+        }
+        <span style="font-weight:${line.hasScore ? "600" : "500"}">${escapeHtml(line.text)}</span>
       </p>`
+          )
+          .join("")}
+      </div>`
     : ""
 
   return `

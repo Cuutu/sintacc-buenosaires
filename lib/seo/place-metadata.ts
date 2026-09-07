@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getBaseUrl } from "@/lib/base-url"
+import { getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 
 export const PLACE_TYPE_LABELS: Record<string, string> = {
@@ -21,8 +22,10 @@ export type PlaceMetadataInput = {
   type: string
   types?: string[]
   address?: string | null
+  addressText?: string | null
   province?: string | null
   locality?: string | null
+  location?: { lat?: number | null; lng?: number | null } | null
   photos?: string[]
   tags?: string[]
   safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown" | null
@@ -41,10 +44,8 @@ export function placeTypeLabel(place: Pick<PlaceMetadataInput, "type" | "types">
 }
 
 export function shortPlaceLabel(place: PlaceMetadataInput): string {
-  if (!isWeakPlaceLabel(place.neighborhood)) return place.neighborhood!.trim()
-  if (!isWeakPlaceLabel(place.locality)) {
-    return place.locality!.trim().replace(/-/g, " ")
-  }
+  const area = getCanonicalPlaceArea(place)
+  if (!isWeakPlaceLabel(area)) return area
   return ""
 }
 

@@ -40,6 +40,7 @@ export default async function LugarLayout({ params, children }: LugarLayoutProps
           province: place.province,
           locality: place.locality,
           address: place.address,
+          addressText: place.addressText,
           location: place.location,
           photos: place.photos,
           contact: place.contact,

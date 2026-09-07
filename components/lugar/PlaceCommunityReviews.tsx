@@ -55,7 +55,7 @@ export function PlaceCommunityReviews({
     <section id="reviews-section" aria-labelledby="reviews-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id="reviews-heading" className="text-lg font-semibold text-[#1F4D35]">
-          Reseñas de la comunidad
+          Reseñas CeliMap
         </h2>
         {!showReviewForm && reviews.length > 0 && (
           <button
@@ -92,7 +92,7 @@ export function PlaceCommunityReviews({
             height={72}
             className="mx-auto mb-4 h-16 w-auto object-contain"
           />
-          <p className="text-base text-[#5F6B63]">Todavía no hay reseñas de la comunidad.</p>
+          <p className="text-base text-[#5F6B63]">Todavía no hay reseñas de la comunidad</p>
           <button
             type="button"
             onClick={() => onShowReviewForm(true)}

@@ -85,6 +85,21 @@ describe("place metadata titles", () => {
     expect(title).toMatch(/opciones sin TACC/)
     expect(title).not.toMatch(/100%/)
   })
+
+  it("neighborhood CABA stale no gana si address+coords son otra ciudad", () => {
+    const title = buildPlaceTitle({
+      name: "New Life Gluten Free",
+      type: "store",
+      neighborhood: "Belgrano",
+      locality: "campana",
+      province: "buenos-aires",
+      address: "Gral. Belgrano 294, B2804 Campana, Provincia de Buenos Aires, Argentina",
+      addressText: "Gral. Belgrano 294, B2804 Campana, Provincia de Buenos Aires, Argentina",
+      location: { lat: -34.163, lng: -58.959 },
+    })
+    expect(title).toContain("Campana")
+    expect(title).not.toMatch(/en Belgrano/)
+  })
 })
 
 describe("T2 missing place intacta", () => {

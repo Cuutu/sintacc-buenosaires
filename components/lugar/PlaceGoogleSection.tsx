@@ -26,10 +26,10 @@ export function PlaceGoogleSection({ snapshot }: Props) {
       {snapshot.rating != null && (
         <p className="mt-4 flex items-center gap-2 text-base text-[#1F4D35]">
           <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-          <span className="font-semibold">{snapshot.rating.toFixed(1)}</span>
+          <span className="font-semibold">Google {snapshot.rating.toFixed(1)}</span>
           {snapshot.userRatingCount != null ? (
             <span className="text-[#5F6B63]">
-              ({snapshot.userRatingCount.toLocaleString("es-AR")} reseñas)
+              · {snapshot.userRatingCount.toLocaleString("es-AR")} reseñas
             </span>
           ) : null}
         </p>
