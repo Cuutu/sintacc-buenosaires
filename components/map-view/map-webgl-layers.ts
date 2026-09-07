@@ -87,8 +87,9 @@ const CLUSTER_HALO_RADIUS_EXPR = [
 const appearedIdsByMap = new WeakMap<MapboxMapType, Set<string>>()
 const pulseTimerByMap = new WeakMap<MapboxMapType, number>()
 
-function enterDefault(reduceMotion: boolean): number {
-  return reduceMotion ? 1 : 0
+/** Pins visibles si stagger/feature-state no corre. Nunca 0: eso deja stroke blanco sin fill. */
+function enterDefault(_reduceMotion: boolean): number {
+  return 1
 }
 
 function opacityExpr(dim: number, reduceMotion: boolean) {
@@ -97,6 +98,22 @@ function opacityExpr(dim: number, reduceMotion: boolean) {
     dim,
     ["coalesce", ["feature-state", "enter"], enterDefault(reduceMotion)],
   ]
+}
+
+function setCircleFill(
+  map: MapboxMapType,
+  layerId: string,
+  fill: number,
+  fadeProps: { duration: number; delay: number },
+  withStroke = false
+): void {
+  if (!map.getLayer(layerId)) return
+  map.setPaintProperty(layerId, "circle-opacity", fill)
+  map.setPaintProperty(layerId, "circle-opacity-transition", fadeProps)
+  if (withStroke) {
+    map.setPaintProperty(layerId, "circle-stroke-opacity", fill)
+    map.setPaintProperty(layerId, "circle-stroke-opacity-transition", fadeProps)
+  }
 }
 
 const emptyCollection = (): GeoJSON.FeatureCollection => ({
@@ -140,44 +157,14 @@ function applySelectionPresentation(map: MapboxMapType, reduceMotion: boolean): 
   }
   if (map.getLayer(LAYER_PIN_FALLBACK)) {
     map.setFilter(LAYER_PIN_FALLBACK, pinFilter)
-    map.setPaintProperty(
-      LAYER_PIN_FALLBACK,
-      "circle-opacity",
-      opacityExpr(dim * PIN_FILL_OPACITY, reduceMotion) as unknown as number
-    )
-    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", fadeProps)
+    setCircleFill(map, LAYER_PIN_FALLBACK, dim * PIN_FILL_OPACITY, fadeProps, true)
   }
 
-  if (map.getLayer(LAYER_CLUSTER_SHADOW)) {
-    map.setPaintProperty(
-      LAYER_CLUSTER_SHADOW,
-      "circle-opacity",
-      opacityExpr(dim * 0.2, reduceMotion) as unknown as number
-    )
-    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity-transition", fadeProps)
-  }
-  if (map.getLayer(LAYER_CLUSTER_HALO)) {
-    map.setPaintProperty(
-      LAYER_CLUSTER_HALO,
-      "circle-opacity",
-      opacityExpr(dim * CLUSTER_HALO_OPACITY, reduceMotion) as unknown as number
-    )
-    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity-transition", fadeProps)
-  }
-  if (map.getLayer(LAYER_CLUSTERS)) {
-    map.setPaintProperty(
-      LAYER_CLUSTERS,
-      "circle-opacity",
-      opacityExpr(dim * PIN_FILL_OPACITY, reduceMotion) as unknown as number
-    )
-    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", fadeProps)
-  }
+  setCircleFill(map, LAYER_CLUSTER_SHADOW, dim * 0.2, fadeProps)
+  setCircleFill(map, LAYER_CLUSTER_HALO, dim * CLUSTER_HALO_OPACITY, fadeProps)
+  setCircleFill(map, LAYER_CLUSTERS, dim * PIN_FILL_OPACITY, fadeProps, true)
   if (map.getLayer(LAYER_CLUSTER_COUNT)) {
-    map.setPaintProperty(
-      LAYER_CLUSTER_COUNT,
-      "text-opacity",
-      opacityExpr(dim, reduceMotion) as unknown as number
-    )
+    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity", dim)
     map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity-transition", fadeProps)
   }
 
@@ -299,7 +286,7 @@ export function ensurePlacesLayers(
     paint: {
       "circle-color": "#000000",
       "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
-      "circle-opacity": opacityExpr(0.2, reduceMotion) as unknown as number,
+      "circle-opacity": 0.2,
       "circle-blur": 0.85,
       "circle-translate": [0, 2],
       "circle-translate-anchor": "viewport",
@@ -314,7 +301,7 @@ export function ensurePlacesLayers(
     paint: {
       "circle-color": "#1F4D35",
       "circle-radius": CLUSTER_HALO_RADIUS_EXPR as unknown as number,
-      "circle-opacity": opacityExpr(CLUSTER_HALO_OPACITY, reduceMotion) as unknown as number,
+      "circle-opacity": CLUSTER_HALO_OPACITY,
     },
   })
 
@@ -328,8 +315,10 @@ export function ensurePlacesLayers(
       "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
       "circle-stroke-width": CLUSTER_STROKE_WIDTH,
       "circle-stroke-color": PIN_STROKE_COLOR,
-      "circle-opacity": opacityExpr(PIN_FILL_OPACITY, reduceMotion) as unknown as number,
+      "circle-stroke-opacity": PIN_FILL_OPACITY,
+      "circle-opacity": PIN_FILL_OPACITY,
       "circle-opacity-transition": { duration: fadeMs, delay: 0 },
+      "circle-stroke-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
 
@@ -349,7 +338,7 @@ export function ensurePlacesLayers(
       "text-color": "#FFFFFF",
       "text-halo-color": "#1F4D35",
       "text-halo-width": 0.8,
-      "text-opacity": opacityExpr(1, reduceMotion) as unknown as number,
+      "text-opacity": 1,
       "text-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
@@ -367,8 +356,10 @@ export function ensurePlacesLayers(
       "circle-radius": FALLBACK_PIN_RADIUS,
       "circle-stroke-width": CLUSTER_STROKE_WIDTH,
       "circle-stroke-color": PIN_STROKE_COLOR,
-      "circle-opacity": opacityExpr(PIN_FILL_OPACITY, reduceMotion) as unknown as number,
+      "circle-stroke-opacity": PIN_FILL_OPACITY,
+      "circle-opacity": PIN_FILL_OPACITY,
       "circle-opacity-transition": { duration: fadeMs, delay: 0 },
+      "circle-stroke-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
 
@@ -389,8 +380,6 @@ export function ensurePlacesLayers(
     paint: {
       "icon-opacity": opacityExpr(1, reduceMotion) as unknown as number,
       "icon-opacity-transition": { duration: fadeMs, delay: 0 },
-      "icon-halo-color": PIN_STROKE_COLOR,
-      "icon-halo-width": 1.1,
     },
   })
 
@@ -404,6 +393,7 @@ export function ensurePlacesLayers(
       "circle-opacity": 0.14,
       "circle-stroke-width": 1.5,
       "circle-stroke-color": "#F6F1E8",
+      "circle-stroke-opacity": 0.14,
     },
   })
 
@@ -436,6 +426,7 @@ export function ensurePlacesLayers(
       map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
       map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-blur", 0.85)
       map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-translate", [0, 2])
+      map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity", 0.2)
     } catch {
       /* capa vieja */
     }
@@ -452,6 +443,7 @@ export function ensurePlacesLayers(
         "circle-radius",
         CLUSTER_HALO_RADIUS_EXPR as unknown as number
       )
+      map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", CLUSTER_HALO_OPACITY)
     } catch {
       /* capa vieja */
     }
@@ -461,6 +453,8 @@ export function ensurePlacesLayers(
       map.setPaintProperty(LAYER_CLUSTERS, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
       map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-width", CLUSTER_STROKE_WIDTH)
       map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-color", PIN_STROKE_COLOR)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity", PIN_FILL_OPACITY)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-opacity", PIN_FILL_OPACITY)
     } catch {
       /* capa vieja */
     }
@@ -470,6 +464,8 @@ export function ensurePlacesLayers(
       map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-radius", FALLBACK_PIN_RADIUS)
       map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-stroke-width", CLUSTER_STROKE_WIDTH)
       map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-stroke-color", PIN_STROKE_COLOR)
+      map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity", PIN_FILL_OPACITY)
+      map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-stroke-opacity", PIN_FILL_OPACITY)
     } catch {
       /* capa vieja */
     }
@@ -489,6 +485,7 @@ export function ensurePlacesLayers(
       ])
       map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-color", "#1F4D35")
       map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-width", 0.8)
+      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity", 1)
     } catch {
       /* capa vieja */
     }
@@ -506,6 +503,7 @@ export function ensurePlacesLayers(
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-opacity", 0.14)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-width", 1.5)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-color", "#F6F1E8")
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-opacity", 0.14)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-translate", [0, 0])
     } catch {
       /* capa vieja */
@@ -517,6 +515,11 @@ export function ensurePlacesLayers(
   if (map.getLayer(LAYER_PINS)) {
     map.setLayoutProperty(LAYER_PINS, "visibility", pinsReady ? "visible" : "none")
     map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE)
+    try {
+      map.setPaintProperty(LAYER_PINS, "icon-halo-width", 0)
+    } catch {
+      /* capa vieja */
+    }
   }
 
   stackClusterLayers(map)
@@ -548,9 +551,7 @@ export function playVisiblePinEntrance(
   const seen = appearedIdsByMap.get(map) ?? new Set<string>()
   appearedIdsByMap.set(map, seen)
 
-  const layers = [LAYER_PINS, LAYER_PIN_FALLBACK, LAYER_CLUSTERS].filter((id) =>
-    Boolean(map.getLayer(id))
-  )
+  const layers = [LAYER_PINS].filter((id) => Boolean(map.getLayer(id)))
   if (layers.length === 0) return
 
   let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
@@ -655,9 +656,7 @@ export function pulseMatchingPins(map: MapboxMapType): void {
 
 export function fadeRenderedPinsOut(map: MapboxMapType, reduceMotion: boolean): void {
   if (reduceMotion) return
-  const layers = [LAYER_PINS, LAYER_PIN_FALLBACK, LAYER_CLUSTERS].filter((id) =>
-    Boolean(map.getLayer(id))
-  )
+  const layers = [LAYER_PINS].filter((id) => Boolean(map.getLayer(id)))
   if (layers.length === 0) return
   let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
   try {
@@ -668,12 +667,6 @@ export function fadeRenderedPinsOut(map: MapboxMapType, reduceMotion: boolean): 
   const fade = { duration: MOTION_MS.filterFade, delay: 0 }
   if (map.getLayer(LAYER_PINS)) {
     map.setPaintProperty(LAYER_PINS, "icon-opacity-transition", fade)
-  }
-  if (map.getLayer(LAYER_PIN_FALLBACK)) {
-    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", fade)
-  }
-  if (map.getLayer(LAYER_CLUSTERS)) {
-    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", fade)
   }
   for (const feature of features) {
     const id = featureIdOf(feature)

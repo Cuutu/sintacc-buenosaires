@@ -196,6 +196,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const lastCenteredSearchRef = useRef<string | null>(null)
     const viewBeforeSearchRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
     const didInitLayersRef = useRef(false)
+    const pinsReadyRef = useRef(false)
     const hadPlacesRef = useRef(false)
     const placesFadeTimerRef = useRef<number | null>(null)
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
@@ -513,6 +514,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             setPlacesSourceData(instance, placesRef.current)
             void loadCeliMapPinImages(instance).then((pinsReady) => {
               if (disposedRef.current || map.current !== instance) return
+              pinsReadyRef.current = pinsReady
               ensurePlacesLayers(instance, reduceMotion, pinsReady)
               setPlacesSourceData(instance, placesRef.current)
             })
@@ -812,12 +814,13 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           resetPinEntrance(instance)
           playEntrance(pulse)
         }
-        ensurePlacesLayers(instance, reduceMotion, false)
         if (!didInitLayersRef.current) {
           didInitLayersRef.current = true
+          ensurePlacesLayers(instance, reduceMotion, false)
           applyData(false)
           void loadCeliMapPinImages(instance).then((pinsReady) => {
             if (disposedRef.current || map.current !== instance) return
+            pinsReadyRef.current = pinsReady
             ensurePlacesLayers(instance, reduceMotion, pinsReady)
             applyData(false)
             hadPlacesRef.current = placesRef.current.length > 0
@@ -825,6 +828,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           hadPlacesRef.current = placesRef.current.length > 0
           return
         }
+        ensurePlacesLayers(instance, reduceMotion, pinsReadyRef.current)
         const pulse = hadPlacesRef.current
         fadeRenderedPinsOut(instance, reduceMotion)
         if (placesFadeTimerRef.current) window.clearTimeout(placesFadeTimerRef.current)
