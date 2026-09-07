@@ -78,6 +78,20 @@ export function floorDisplayCount(
   }
 }
 
+/** Prefijo + y miles es-AR, igual que HeroMetrics/CommunityBand: "+1.100" */
+export function formatFlooredPrefix(floored: FloorDisplayCount): string {
+  const compact = / M\+$/.test(floored.formatted)
+    ? floored.formatted.replace(/ M\+$/, " M")
+    : floored.formatted.replace(/\+$/, "")
+  return floored.showPlus ? `+${compact}` : compact
+}
+
+export function formatPlacesInArgentinaLine(placesCount: unknown): string {
+  const floored = floorDisplayCount(placesCount)
+  if (!floored) return "Lugares en Argentina"
+  return `${formatFlooredPrefix(floored)} lugares en Argentina`
+}
+
 /**
  * Display conservador para reseñas Google en home:
  * si hay ≥1000, mostrar "1000+" (nunca más que el total real).

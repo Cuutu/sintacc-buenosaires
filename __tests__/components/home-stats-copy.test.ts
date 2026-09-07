@@ -49,6 +49,13 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).not.toContain("Verificá el nivel de seguridad")
   })
 
+  it("modal de bienvenida usa /api/stats, no +400 hardcode", () => {
+    const src = read("components/onboarding/OnboardingModal.tsx")
+    expect(src).toContain("/api/stats")
+    expect(src).toContain("formatPlacesInArgentinaLine")
+    expect(src).not.toContain("+400")
+  })
+
   it("cómo funciona usa 3 pasos numerados", () => {
     const src = read("components/home/HowItWorks.tsx")
     expect(src).toContain("Abrí el mapa")

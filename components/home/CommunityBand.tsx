@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { floorDisplayCount, floorGoogleReviewsDisplay } from "@/lib/stats/floor-display-count"
+import { floorDisplayCount, floorGoogleReviewsDisplay, formatFlooredPrefix } from "@/lib/stats/floor-display-count"
 
 type StatsApi = {
   placesCount?: number
@@ -14,8 +14,7 @@ function line(raw: number | undefined, label: string, google?: boolean) {
   if (typeof raw !== "number") return null
   const floored = google ? floorGoogleReviewsDisplay(raw) : floorDisplayCount(raw)
   if (!floored) return null
-  const value = `${floored.showPlus ? "+" : ""}${floored.formatted.replace(/\+$/, "").replace(/ M\+$/, " M")}`
-  return { value, label }
+  return { value: formatFlooredPrefix(floored), label }
 }
 
 export function CommunityBand({ stats }: { stats?: StatsApi | null }) {

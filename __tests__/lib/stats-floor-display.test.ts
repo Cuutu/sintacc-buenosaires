@@ -2,7 +2,11 @@ import {
   aggregateReviewCounts,
   sanitizeGoogleUserRatingCount,
 } from "@/lib/stats/aggregate-reviews"
-import { floorDisplayCount, floorGoogleReviewsDisplay } from "@/lib/stats/floor-display-count"
+import {
+  floorDisplayCount,
+  floorGoogleReviewsDisplay,
+  formatPlacesInArgentinaLine,
+} from "@/lib/stats/floor-display-count"
 
 describe("floorDisplayCount", () => {
   it("964 → 900+", () => {
@@ -33,6 +37,13 @@ describe("floorDisplayCount", () => {
     expect(floorDisplayCount(2_008_153)?.formatted).toBe("2 M+")
     expect(floorDisplayCount(2_999_999)?.formatted).toBe("2 M+")
     expect(floorDisplayCount(1_000_000)?.formatted).toBe("1 M+")
+  })
+
+  it("línea onboarding usa el mismo piso es-AR que la home", () => {
+    expect(formatPlacesInArgentinaLine(1396)).toBe("+1.300 lugares en Argentina")
+    expect(formatPlacesInArgentinaLine(1100)).toBe("+1.100 lugares en Argentina")
+    expect(formatPlacesInArgentinaLine(964)).toBe("+900 lugares en Argentina")
+    expect(formatPlacesInArgentinaLine(null)).toBe("Lugares en Argentina")
   })
 
   it("reseñas Google UI: piso conservador 1000+", () => {
