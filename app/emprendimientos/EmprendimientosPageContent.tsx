@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { VentureCard, VentureCardSkeleton, type VentureCardData } from "@/components/ventures/VentureCard"
-import { VentureFeaturedRail } from "@/components/ventures/VentureFeaturedRail"
 import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
+import { SuggestVentureCta } from "@/components/ventures/SuggestVentureCta"
 import { VENTURE_CATEGORIES, getCategoryLabel, VENTURE_CATALOG_INTRO } from "@/lib/venture-constants"
 import { isArgentinaVentureZone, VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 import { matchesVentureSearch, resolveVentureCategoryFromQuery } from "@/lib/venture-search"
@@ -20,8 +20,6 @@ const HERO_CHIPS = [
   { key: "congelados", label: "Congelados", category: "congelados" },
   { key: "premezclas", label: "Premezclas", category: "premezclas" },
   { key: "catering", label: "Catering", category: "catering" },
-  { key: "delivery", label: "Delivery", modality: "delivery" },
-  { key: "retiro", label: "Retiro", modality: "retiro" },
 ] as const
 
 type Suggestion = {
@@ -122,7 +120,6 @@ export default function EmprendimientosPageContent({
       params.delete("category")
       params.delete("modality")
       if ("category" in chip && chip.category) params.set("category", chip.category)
-      if ("modality" in chip && chip.modality) params.set("modality", chip.modality)
     })
   }
 
@@ -206,7 +203,6 @@ export default function EmprendimientosPageContent({
     searchInput.trim() !== searchParam.trim() && searchInput.trim().length >= 2
   const activeChip = HERO_CHIPS.find((c) => {
     if ("category" in c && c.category && c.category === categoryParam) return true
-    if ("modality" in c && c.modality && c.modality === modalityParam) return true
     return false
   })
 
@@ -221,25 +217,20 @@ export default function EmprendimientosPageContent({
   return (
     <div className="min-h-screen scroll-mt-[var(--desktop-nav-clearance)] bg-[#F3EEE4] pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-16">
       <div className="mx-auto max-w-6xl px-5 pb-8 pt-6 md:px-8 md:pt-10">
-        <header className="mb-10 max-w-2xl">
-          <h1 className="font-display font-bold tracking-tight text-[#1F4D35]">
-            <span className="block text-base font-medium tracking-[0.04em] text-[#5F6B63] md:text-lg">
-              Descubrí
-            </span>
-            <span className="mt-1 block font-display text-[2.05rem] leading-[0.95] tracking-[-0.04em] text-[#C85A2E] md:text-[3.75rem]">
-              emprendimientos
-            </span>
-            <span className="mt-1 block text-[1.65rem] leading-tight md:text-[2.25rem]">sin gluten</span>
+        <header className="mb-8 max-w-3xl">
+          <h1 className="font-display text-[2rem] font-bold leading-[1.05] tracking-tight text-[#1F4D35] md:text-[2.75rem]">
+            Emprendimientos <span className="text-[#C85A2E]">100% sin gluten</span>
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-[#5F6B63]">
-            Pastelería, panificados, viandas, congelados y productos artesanales. {VENTURE_CATALOG_INTRO}
+          <p className="mt-3 max-w-xl text-base leading-relaxed text-[#5F6B63]">
+            {VENTURE_CATALOG_INTRO} ¿Falta alguno? Sugerilo, lo revisamos.
           </p>
 
-          <div ref={boxRef} className="relative mt-6">
-            <label htmlFor="venture-search" className="sr-only">
-              Buscar emprendimientos
-            </label>
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5F6B63]" />
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+            <div ref={boxRef} className="relative min-w-0 flex-1">
+              <label htmlFor="venture-search" className="sr-only">
+                Buscar emprendimientos
+              </label>
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5F6B63]" />
             <input
               id="venture-search"
               type="search"
@@ -285,6 +276,8 @@ export default function EmprendimientosPageContent({
                 ))}
               </ul>
             )}
+            </div>
+            <SuggestVentureCta className="w-full sm:w-auto" />
           </div>
 
           <p className="mt-3 text-xs text-[#5F6B63] md:hidden">Deslizá para ver más categorías</p>
@@ -319,8 +312,6 @@ export default function EmprendimientosPageContent({
             />
           </div>
         </header>
-
-        {!hasFilter && <VentureFeaturedRail ventures={ventures} />}
 
         <section
           id="listado"

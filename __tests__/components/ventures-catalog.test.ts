@@ -10,12 +10,13 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8")
 describe("catálogo /emprendimientos", () => {
   it("hero compacto centrado en emprendimientos, no landing informativa", () => {
     const src = read("app/emprendimientos/EmprendimientosPageContent.tsx")
-    expect(src).toContain("Descubrí")
-    expect(src).toContain("emprendimientos")
-    expect(src).toContain("sin gluten")
+    expect(src).toContain("Emprendimientos")
+    expect(src).toContain("100% sin gluten")
     expect(src).toContain("h-14")
     expect(src).toContain("Buscar viandas, panificados, pastelería o una ciudad")
+    expect(src).toContain("SuggestVentureCta")
     expect(src).not.toContain("VenturesExplainer")
+    expect(src).not.toContain("VentureFeaturedRail")
     expect(src).not.toContain("Una sección para emprendimientos que no siempre tienen local")
   })
 
@@ -27,6 +28,7 @@ describe("catálogo /emprendimientos", () => {
     expect(src).toContain("VentureCardSkeleton")
     expect(src).toContain("0 resultados")
     expect(read("components/ventures/VenturesEmptyState.tsx")).toContain("Limpiar filtros")
+    expect(read("components/ventures/VenturesEmptyState.tsx")).toContain("SuggestVentureCta")
   })
 
   it("cards con foto densa o placeholder Sin foto", () => {
@@ -41,18 +43,19 @@ describe("catálogo /emprendimientos", () => {
     expect(src).not.toContain("placeholderWash")
   })
 
-  it("destacadas y grid 4 columnas", () => {
-    const rail = read("components/ventures/VentureFeaturedRail.tsx")
+  it("grid 4 columnas y CTA sugerir visible, no banner de dueño", () => {
     const page = read("app/emprendimientos/EmprendimientosPageContent.tsx")
-    expect(rail).toContain("Emprendimientos destacados")
-    expect(rail).toContain("getVentureCoverPhoto")
-    expect(rail).toContain("slice(0, max)")
+    const explore = read("components/ventures/VentureExploreSections.tsx")
+    const cta = read("components/ventures/SuggestVentureCta.tsx")
     expect(page).toContain("xl:grid-cols-4")
-    expect(read("components/ventures/VentureExploreSections.tsx")).toContain(
-      "Publicar emprendimiento"
-    )
-    expect(read("components/ventures/VentureExploreSections.tsx")).toContain("VENTURE_AR_ZONE_LANDINGS")
-    expect(read("components/ventures/VentureExploreSections.tsx")).not.toContain("Buzios")
+    expect(page).toContain("SuggestVentureCta")
+    expect(cta).toContain("/sugerir-emprendimiento")
+    expect(cta).toContain("Sugerir emprendimiento")
+    expect(explore).toContain("¿Falta un emprendimiento?")
+    expect(explore).toContain("SuggestVentureCta")
+    expect(explore).not.toContain("Publicar emprendimiento")
+    expect(explore).toContain("VENTURE_AR_ZONE_LANDINGS")
+    expect(explore).not.toContain("Buzios")
   })
 
   it("índice SSR pasa marcas iniciales; HTML no espera fetch cliente", () => {

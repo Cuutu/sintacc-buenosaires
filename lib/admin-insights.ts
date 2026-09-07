@@ -7,8 +7,10 @@ import { Suggestion } from "@/models/Suggestion"
 import { Place } from "@/models/Place"
 import { TYPES } from "@/lib/constants"
 import { getOrSetApiCache } from "@/lib/api-cache"
+import { ACTIVITY_ACTIVE_MS } from "@/lib/format-relative-activity"
 import type {
   AdminInsightsPayload,
+  InsightsActivityRow,
   InsightsCountRow,
   InsightsMetric,
   InsightsPlaceRow,
@@ -186,6 +188,46 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
   const returning = Math.max(0, activeRange - newDevices)
   const returningPrev = Math.max(0, activePrev - newDevicesPrev)
   const hasEventData = eventCount > 0
+
+  const [androidUsers, iosUsers, webUsers, activeNow, activityRowsRaw] = hasEventData
+    ? await Promise.all([
+        countDistinct({ ...period, platform: "android_native" }),
+        countDistinct({ ...period, platform: "ios_native" }),
+        countDistinct({ ...period, platform: { $in: ["web", "pwa"] } }),
+        countDistinct({
+          ts: { $gte: new Date(to.getTime() - ACTIVITY_ACTIVE_MS), $lt: to },
+        }),
+        ProductEvent.aggregate<{
+          _id: string
+          lastTs: Date
+          platform: string
+          device: string
+          appVersion: string
+        }>([
+          { $match: period },
+          { $sort: { distinctId: 1, ts: -1 } },
+          {
+            $group: {
+              _id: "$distinctId",
+              lastTs: { $first: "$ts" },
+              platform: { $first: "$platform" },
+              device: { $first: "$device" },
+              appVersion: { $first: "$appVersion" },
+            },
+          },
+          { $sort: { lastTs: -1 } },
+          { $limit: 80 },
+        ]),
+      ])
+    : [0, 0, 0, 0, []]
+
+  const activityRows: InsightsActivityRow[] = activityRowsRaw.map((row) => ({
+    id: String(row._id).slice(0, 8),
+    lastTs: new Date(row.lastTs).toISOString(),
+    platform: String(row.platform || "web"),
+    device: String(row.device || ""),
+    appVersion: String(row.appVersion || ""),
+  }))
 
   const [sources, mediums, campaigns, entryPaths, countries, regions, cities, devices, platforms] =
     hasEventData
@@ -406,13 +448,21 @@ export async function getAdminInsights(range: InsightsRangeKey): Promise<AdminIn
         platform: String(row.platform || ""),
       })),
     },
+    activity: {
+      available: hasEventData,
+      android: androidUsers,
+      ios: iosUsers,
+      web: webUsers,
+      activeNow,
+      rows: activityRows,
+    },
   }
 }
 
 export async function getAdminInsightsCached(
   range: InsightsRangeKey
 ): Promise<AdminInsightsPayload> {
-  return getOrSetApiCache(`admin:insights:${range}`, 60 * 1000, () => getAdminInsights(range))
+  return getOrSetApiCache(`admin:insights:${range}`, 20 * 1000, () => getAdminInsights(range))
 }
 
 export { parseInsightsRange } from "@/lib/admin-insights-types"

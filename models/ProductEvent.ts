@@ -15,8 +15,9 @@ export interface IProductEvent extends Document {
   country: string
   region: string
   city: string
-  device: string
-  props: Record<string, string | number | boolean>
+    device: string
+    appVersion: string
+    props: Record<string, string | number | boolean>
 }
 
 const ProductEventSchema = new Schema<IProductEvent>(
@@ -35,6 +36,7 @@ const ProductEventSchema = new Schema<IProductEvent>(
     region: { type: String, default: "" },
     city: { type: String, default: "" },
     device: { type: String, default: "" },
+    appVersion: { type: String, default: "" },
     props: { type: Schema.Types.Mixed, default: {} },
   },
   { collection: "productevents" }

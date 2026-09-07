@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { sanitizeAnalyticsProps } from "@/lib/analytics-sanitize"
+import { sanitizeAppVersion } from "@/lib/analytics-app-version"
 import {
   ALLOWED_EVENT_PROP_KEYS,
   FIRST_PARTY_EVENTS,
@@ -25,6 +26,7 @@ export type IngestedProductEvent = {
   region: string
   city: string
   device: string
+  appVersion: string
   props: Record<string, string | number | boolean>
 }
 
@@ -116,6 +118,7 @@ export function parseAnalyticsIngestBody(
       entryPath: (clip(row.entryPath, 120) || "/").startsWith("/admin")
         ? "/"
         : clip(row.entryPath, 120) || "/",
+      appVersion: sanitizeAppVersion(row.appVersion),
       props: pickProps(row.props),
     })
   }

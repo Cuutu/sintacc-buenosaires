@@ -1,81 +1,39 @@
 import Link from "next/link"
-import {
-  VENTURE_CATEGORY_LANDINGS,
-} from "@/lib/venture-seo"
 import { VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
-import { VentureCategoryIcon } from "./venture-category-icon"
+import { SuggestVentureCta } from "./SuggestVentureCta"
 
 export function VentureExploreSections() {
   return (
-    <div className="space-y-12">
-      <section aria-labelledby="explore-category-heading">
-        <h2
-          id="explore-category-heading"
-          className="mb-5 text-lg font-semibold text-[#1F4D35]"
-        >
-          Explorá por categoría
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {VENTURE_CATEGORY_LANDINGS.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/emprendimientos/${c.slug}`}
-              className="flex min-h-[108px] flex-col items-start justify-between rounded-[20px] border border-[#E8E1D6] bg-[#FDFBF7] p-4 transition-transform hover:-translate-y-0.5"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1F4D35]/8 text-[#1F4D35]">
-                <VentureCategoryIcon category={c.categoryId} className="h-5 w-5" />
-              </span>
-              <span className="mt-3 text-base font-semibold text-[#1F4D35]">{c.h1.replace(" sin gluten", "")}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
+    <div className="space-y-8 border-t border-[#E8E1D6] pt-10">
       <section aria-labelledby="explore-zone-heading">
-        <h2 id="explore-zone-heading" className="mb-5 text-lg font-semibold text-[#1F4D35]">
+        <h2 id="explore-zone-heading" className="mb-3 text-sm font-semibold text-[#5F6B63]">
           Por zona
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <ul className="flex flex-wrap gap-2">
           {VENTURE_AR_ZONE_LANDINGS.map((z) => (
-            <Link
-              key={z.slug}
-              href={`/emprendimientos/${z.slug}`}
-              className="flex min-h-[72px] items-center justify-center rounded-[20px] border border-[#E8E1D6] bg-[#FDFBF7] px-4 py-5 text-center text-base font-semibold text-[#1F4D35] transition-transform hover:-translate-y-0.5"
-            >
-              {z.label}
-            </Link>
+            <li key={z.slug}>
+              <Link
+                href={`/emprendimientos/${z.slug}`}
+                className="inline-flex h-11 items-center rounded-full border border-[#E8E1D6] bg-white px-4 text-sm font-semibold text-[#1F4D35] hover:border-[#1F4D35]/30"
+              >
+                {z.label}
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section
-        className="rounded-[24px] border border-[#E8E1D6] bg-[#F8F5EF] px-5 py-10 md:px-10 md:py-16"
-        aria-labelledby="publish-venture-heading"
+        className="flex flex-col gap-4 rounded-2xl border border-[#E8E1D6] bg-[#FDFBF7] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
+        aria-labelledby="suggest-venture-heading"
       >
-        <h2
-          id="publish-venture-heading"
-          className="max-w-xl font-display text-[1.75rem] font-semibold leading-tight text-[#1F4D35] md:text-[2rem]"
-        >
-          ¿Tenés un emprendimiento sin gluten?
-        </h2>
-        <p className="mt-3 max-w-lg text-base leading-relaxed text-[#5F6B63]">
-          Publicá tu emprendimiento en CeliMap y llegá a miles de personas que buscan productos sin
-          gluten todos los días.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/sugerir-emprendimiento"
-            className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#C85A2E] px-6 text-base font-bold text-[#F8F5EF] hover:bg-[#B44F27]"
-          >
-            Publicar emprendimiento
-          </Link>
-          <Link
-            href="/como-funciona"
-            className="inline-flex h-[52px] items-center justify-center rounded-2xl border-2 border-[#1F4D35] px-6 text-base font-semibold text-[#1F4D35] hover:bg-[#1F4D35]/5"
-          >
-            Cómo funciona
-          </Link>
+        <div>
+          <h2 id="suggest-venture-heading" className="text-base font-semibold text-[#1F4D35]">
+            ¿Falta un emprendimiento?
+          </h2>
+          <p className="mt-1 text-sm text-[#5F6B63]">Lo revisamos antes de publicarlo.</p>
         </div>
+        <SuggestVentureCta />
       </section>
     </div>
   )

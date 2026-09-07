@@ -32,6 +32,14 @@ export type InsightsPlaceRow = {
   views: number
 }
 
+export type InsightsActivityRow = {
+  id: string
+  lastTs: string
+  platform: string
+  device: string
+  appVersion: string
+}
+
 export type AdminInsightsPayload = {
   range: InsightsRangeKey
   from: string
@@ -91,5 +99,13 @@ export type AdminInsightsPayload = {
     mapLoad: number
     placeLoad: number
     recent: Array<{ name: string; ts: string; reason: string; platform: string }>
+  }
+  activity: {
+    available: boolean
+    android: number
+    ios: number
+    web: number
+    activeNow: number
+    rows: InsightsActivityRow[]
   }
 }

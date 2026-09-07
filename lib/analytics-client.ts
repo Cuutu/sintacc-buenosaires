@@ -1,5 +1,6 @@
 import { getAnalyticsPlatform } from "@/lib/analytics-platform"
 import { captureAnalyticsAttribution, getAnalyticsAttribution } from "@/lib/analytics-attribution"
+import { getAnalyticsAppVersion } from "@/lib/analytics-app-version"
 import {
   FIRST_PARTY_EVENTS,
   type AnalyticsEvent,
@@ -21,6 +22,7 @@ export type FirstPartyEventPayload = {
   campaign: string
   referrerHost: string
   entryPath: string
+  appVersion: string
 }
 
 let authenticated = false
@@ -110,6 +112,7 @@ export function enqueueFirstPartyEvent(
     campaign: attr.campaign,
     referrerHost: attr.referrerHost,
     entryPath: attr.entryPath,
+    appVersion: getAnalyticsAppVersion(),
   })
 
   if (queue.length >= MAX_BATCH) {

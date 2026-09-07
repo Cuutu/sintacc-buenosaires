@@ -1,8 +1,8 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { VentureCard } from "@/components/ventures/VentureCard"
 import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
+import { SuggestVentureCta } from "@/components/ventures/SuggestVentureCta"
 import type { VenturePublic } from "@/lib/ventures-server"
 import { ArrowLeft } from "lucide-react"
 
@@ -42,9 +42,7 @@ export function VentureLandingPage({
           <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-3xl">
             {intro}
           </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/sugerir-emprendimiento">Publicar emprendimiento</Link>
-          </Button>
+          <SuggestVentureCta className="h-12" />
         </header>
 
         {ventures.length > 0 ? (
@@ -57,7 +55,7 @@ export function VentureLandingPage({
           <p className="mb-12 py-12 text-center text-[#5F6B63]">
             Todavía no hay emprendimientos publicados en esta sección.{" "}
             <Link href="/sugerir-emprendimiento" className="text-[#C85A2E] hover:underline">
-              Publicá la tuya
+              Sugerilo
             </Link>
             .
           </p>

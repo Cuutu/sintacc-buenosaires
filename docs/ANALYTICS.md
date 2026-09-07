@@ -19,7 +19,7 @@ Si más adelante hace falta funnels visuales tipo PostHog, el lugar es un sink o
 | Capa | Para qué | Dónde se ve |
 |------|----------|-------------|
 | Vercel Analytics | Pageviews, web vitals, eventos custom históricos | Dashboard de Vercel |
-| First-party `productevents` | Insights de producto (búsquedas, fichas, indicaciones, retención anónima) | `/admin/analytics` |
+| First-party `productevents` | Insights de producto + actividad reciente (plataforma/versión) | `/admin/analytics` |
 | Mongo operativo | Cuentas, reseñas, favoritos, sugerencias | `/admin/analytics` (mismas tarjetas) |
 | `/api/client-errors` | Crashes / errores de UI sanitizados | Logs de Vercel. No Sentry. |
 
@@ -74,6 +74,16 @@ No se manda:
 TTL Mongo: 180 días. Rate limit ingest: 120 eventos / 15 min por IP.
 
 Admin (`/admin`) no genera eventos.
+
+## Actividad reciente (Play Store)
+
+Tabla en `/admin/analytics` → **Actividad**.
+
+Columnas: dispositivo anónimo, última actividad, plataforma (Android / iOS / Web), versión nativa, activo/inactivo (5 min).
+
+**No** muestra nombre, email ni user id. Filtro Android = evidencia de uso de la app para revisión de Play.
+
+Versión sale de Capacitor `App.getInfo()` en nativo. Eventos viejos o web pueden tener versión vacía (`—`).
 
 ## Variables de entorno
 

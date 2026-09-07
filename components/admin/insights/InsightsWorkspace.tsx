@@ -6,15 +6,22 @@ import { cn } from "@/lib/utils"
 import type { AdminCounts } from "@/lib/admin-ops"
 import type {
   AdminInsightsPayload,
+  InsightsActivityRow,
   InsightsCountRow,
   InsightsMetric,
   InsightsRangeKey,
 } from "@/lib/admin-insights-types"
+import {
+  ACTIVITY_ACTIVE_MS,
+  formatRelativeActivity,
+  platformActivityLabel,
+} from "@/lib/format-relative-activity"
 
-type TabId = "resumen" | "adquisicion" | "comportamiento" | "retencion" | "errores" | "catalogo"
+type TabId = "resumen" | "actividad" | "adquisicion" | "comportamiento" | "retencion" | "errores" | "catalogo"
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: "resumen", label: "Resumen" },
+  { id: "actividad", label: "Actividad" },
   { id: "adquisicion", label: "Adquisición" },
   { id: "comportamiento", label: "Comportamiento" },
   { id: "retencion", label: "Retención" },
@@ -101,6 +108,122 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   )
 }
 
+type ActivityFilter = "all" | "android" | "ios" | "web"
+
+function matchesActivityFilter(row: InsightsActivityRow, filter: ActivityFilter): boolean {
+  if (filter === "all") return true
+  if (filter === "android") return row.platform === "android_native"
+  if (filter === "ios") return row.platform === "ios_native"
+  return row.platform === "web" || row.platform === "pwa"
+}
+
+function ActivityRecentTable({
+  data,
+  rangeLabel,
+  now,
+}: {
+  data: AdminInsightsPayload
+  rangeLabel: string
+  now: number
+}) {
+  const [filter, setFilter] = useState<ActivityFilter>("all")
+  const rows = data.activity.rows.filter((row) => matchesActivityFilter(row, filter))
+  const filters: Array<{ id: ActivityFilter; label: string; count: number }> = [
+    { id: "all", label: "Todos", count: data.activity.rows.length },
+    { id: "android", label: "Android", count: data.activity.android },
+    { id: "ios", label: "iOS", count: data.activity.ios },
+    { id: "web", label: "Web", count: data.activity.web },
+  ]
+
+  if (!data.activity.available) {
+    return (
+      <EmptyState
+        title="Todavía no hay actividad"
+        body="Cuando alguien abra CeliMap (web, Android o iOS), acá ves dispositivos anónimos, plataforma y versión. Sirve para Play Store: uso real en Android, sin nombres ni emails."
+      />
+    )
+  }
+
+  return (
+    <article className={`${adminUi.card} overflow-hidden p-0`}>
+      <div className="flex flex-col gap-3 border-b border-[#E8E1D6] px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className={adminUi.label}>Actividad reciente</h2>
+          <p className="mt-1 text-sm text-[#6B746C]">
+            {rangeLabel} · {data.activity.android} Android · {data.activity.activeNow} activos ahora
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {filters.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={item.id === filter ? adminUi.chipActive : adminUi.chip}
+            >
+              {item.label}
+              <span className="ml-1.5 tabular-nums opacity-70">{item.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-5 py-8 text-sm text-[#6B746C]">
+          {filter === "android"
+            ? "Nadie usó la app Android en este período. Cuando un tester abra el APK/AAB contra producción, aparece acá."
+            : "Sin sesiones para este filtro."}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-[#E8E1D6] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B746C]">
+                <th className="px-5 py-3 font-semibold">Dispositivo</th>
+                <th className="px-5 py-3 font-semibold">Última actividad</th>
+                <th className="px-5 py-3 font-semibold">Plataforma</th>
+                <th className="px-5 py-3 font-semibold">Versión</th>
+                <th className="px-5 py-3 font-semibold">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const last = new Date(row.lastTs).getTime()
+                const active = now - last <= ACTIVITY_ACTIVE_MS
+                return (
+                  <tr key={`${row.id}-${row.lastTs}`} className="border-b border-[#E8E1D6] last:border-0">
+                    <td className="px-5 py-3 font-medium tabular-nums text-[#234A33]">
+                      {platformActivityLabel(row.platform, row.device).split(" / ")[0]} {row.id}
+                    </td>
+                    <td className="px-5 py-3 text-[#6B746C]">{formatRelativeActivity(last, now)}</td>
+                    <td className="px-5 py-3 text-[#234A33]">
+                      {platformActivityLabel(row.platform, row.device)}
+                    </td>
+                    <td className="px-5 py-3 font-mono text-[13px] text-[#6B746C]">
+                      {row.appVersion || "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={cn(
+                          "inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold",
+                          active
+                            ? "bg-[#234A33]/10 text-[#234A33]"
+                            : "bg-[#E8E1D6] text-[#6B746C]"
+                        )}
+                      >
+                        {active ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </article>
+  )
+}
+
 function RankList({
   title,
   rows,
@@ -155,6 +278,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
   const [data, setData] = useState<AdminInsightsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [now, setNow] = useState(() => Date.now())
 
   const load = useCallback(async (nextRange: InsightsRangeKey) => {
     setLoading(true)
@@ -174,6 +298,11 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
   useEffect(() => {
     void load(range)
   }, [load, range])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const catalogRows = [
     { label: "Lugares publicados", value: catalog.placesApproved, note: "Fichas con status aprobado." },
@@ -245,7 +374,13 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
         ) : loading || !data ? (
           <SkeletonGrid />
         ) : tab === "resumen" ? (
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <section className="space-y-6">
+            <ActivityRecentTable
+              data={data}
+              rangeLabel={range === "1d" ? "hoy" : `últimos ${range === "7d" ? "7" : "30"} días`}
+              now={now}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard
               label="Activos en el período"
               metric={data.overview.activeRange}
@@ -290,7 +425,14 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
               hint="Sugerencias enviadas, no el click del CTA."
             />
             <MetricCard label="Clics en cómo llegar" metric={data.overview.directions} />
+            </div>
           </section>
+        ) : tab === "actividad" ? (
+          <ActivityRecentTable
+            data={data}
+            rangeLabel={range === "1d" ? "hoy" : `últimos ${range === "7d" ? "7" : "30"} días`}
+            now={now}
+          />
         ) : tab === "adquisicion" ? (
           !data.acquisition.available ? (
             <EmptyState

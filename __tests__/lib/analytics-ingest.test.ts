@@ -64,4 +64,19 @@ describe("parseAnalyticsIngestBody", () => {
     expect(detectDeviceFromUa("Mozilla/5.0 (iPad; CPU OS 17_0")).toBe("tablet")
     expect(detectDeviceFromUa("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toBe("desktop")
   })
+
+  it("acepta version nativa y descarta basura", () => {
+    const ok = parseAnalyticsIngestBody({
+      events: [{ ...base, platform: "android_native", appVersion: "1.0.0 (12)" }],
+    })
+    if ("error" in ok) throw new Error(ok.error)
+    expect(ok.events[0].appVersion).toBe("1.0.0 (12)")
+    expect(ok.events[0].platform).toBe("android_native")
+
+    const bad = parseAnalyticsIngestBody({
+      events: [{ ...base, appVersion: "user@mail.com" }],
+    })
+    if ("error" in bad) throw new Error(bad.error)
+    expect(bad.events[0].appVersion).toBe("")
+  })
 })

@@ -14,6 +14,7 @@ import { trackEvent } from "@/lib/analytics"
 import { isNativeApp } from "@/lib/native-app"
 import { captureAnalyticsAttribution } from "@/lib/analytics-attribution"
 import { setAnalyticsAuthenticated } from "@/lib/analytics-client"
+import { warmAnalyticsAppVersion } from "@/lib/analytics-app-version"
 
 const SESSION_ONLY_KEYS = new Set([
   ANALYTICS_COLD_START_KEY,
@@ -100,6 +101,7 @@ export function AnalyticsSessionInit() {
     } catch {
       /* ignore */
     }
+    warmAnalyticsAppVersion()
   }, [])
 
   useEffect(() => {
