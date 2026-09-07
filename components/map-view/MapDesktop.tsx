@@ -9,18 +9,10 @@ import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { DesktopMapPopover } from "./DesktopMapPopover"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import { useUserLocation } from "./useUserLocation"
 import { filterPlacesInBounds } from "./geo"
-import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import { listHasRatings, sortPlaces } from "./place-sort"
 import type { IPlace } from "@/models/Place"
-
-type PlaceWithStats = IPlace & {
-  stats?: {
-    avgRating?: number
-    totalReviews?: number
-    contaminationReportsCount?: number
-  }
-  createdAt?: Date | string
-}
 
 interface MapDesktopProps {
   places: IPlace[]
@@ -49,38 +41,6 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Otro",
 }
 
-function getPlaceTimestamp(place: PlaceWithStats): number {
-  const createdAt = place.createdAt ? new Date(place.createdAt).getTime() : 0
-  if (Number.isFinite(createdAt) && createdAt > 0) return createdAt
-
-  const id = place._id?.toString()
-  if (id && /^[a-f\d]{24}$/i.test(id)) {
-    return parseInt(id.slice(0, 8), 16) * 1000
-  }
-
-  return 0
-}
-
-function getRating(place: PlaceWithStats): number {
-  return place.stats?.avgRating ?? 0
-}
-
-function getReviewCount(place: PlaceWithStats): number {
-  return place.stats?.totalReviews ?? 0
-}
-
-function getSafetyRank(place: IPlace): number {
-  const level = inferSafetyLevel(place)
-  if (level === "dedicated_gf") return 3
-  if (level === "gf_options") return 2
-  if (level === "unknown") return 1
-  return 0
-}
-
-function compareName(a: IPlace, b: IPlace): number {
-  return a.name.localeCompare(b.name, "es", { sensitivity: "base" })
-}
-
 export function MapDesktop({
   places,
   loading,
@@ -100,9 +60,32 @@ export function MapDesktop({
   const reduceMotion = usePrefersReducedMotion()
   const mapRef = React.useRef<MapboxMapRef>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
-  const [sort, setSort] = React.useState<SortOption>("default")
+  const location = useUserLocation()
+  const [sort, setSort] = React.useState<SortOption>("recommended")
+  const sortInitializedRef = React.useRef(false)
   const [mapKey, setMapKey] = React.useState(0)
   const [hoveredPlaceId, setHoveredPlaceId] = React.useState<string | null>(null)
+  const [popoverPlace, setPopoverPlace] = React.useState<IPlace | null>(null)
+  const [popoverOpen, setPopoverOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    if (sortInitializedRef.current) return
+    if (location.status === "unknown") return
+    sortInitializedRef.current = true
+    if (location.status === "granted") setSort("nearest")
+  }, [location.status])
+
+  React.useEffect(() => {
+    if (sort !== "nearest") return
+    if (location.status === "granted" && location.coords) return
+    if (location.status === "prompt" || location.status === "unknown") {
+      location.request()
+      return
+    }
+    if (location.status === "denied" || location.status === "error" || location.status === "unavailable") {
+      setSort("recommended")
+    }
+  }, [sort, location.status, location.coords, location.request])
 
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
@@ -139,58 +122,30 @@ export function MapDesktop({
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
 
-  const sortedPlaces = React.useMemo(() => {
-    const list = [...visiblePlaces] as PlaceWithStats[]
-
-    if (sort === "rating") {
-      return list.sort((a, b) => {
-        const reviewDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
-        if (reviewDelta !== 0) return reviewDelta
-
-        const ratingDelta = getRating(b) - getRating(a)
-        if (ratingDelta !== 0) return ratingDelta
-
-        const countDelta = getReviewCount(b) - getReviewCount(a)
-        if (countDelta !== 0) return countDelta
-
-        const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
-        if (safetyDelta !== 0) return safetyDelta
-
-        return compareName(a, b)
-      })
-    }
-
-    if (sort === "newest") {
-      return list.sort((a, b) => {
-        const dateDelta = getPlaceTimestamp(b) - getPlaceTimestamp(a)
-        if (dateDelta !== 0) return dateDelta
-        return compareName(a, b)
-      })
-    }
-
-    if (searchQuery?.trim()) {
-      return list.sort((a, b) => {
-        const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
-        if (safetyDelta !== 0) return safetyDelta
-
-        const reviewPresenceDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
-        if (reviewPresenceDelta !== 0) return reviewPresenceDelta
-
-        return compareName(a, b)
-      })
-    }
-
-    return list
-  }, [searchQuery, visiblePlaces, sort])
+  const sortedPlaces = React.useMemo(
+    () => sortPlaces(visiblePlaces, sort, location.coords),
+    [visiblePlaces, sort, location.coords]
+  )
+  const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
+  const activeQuery = searchQuery?.trim() ?? ""
+  const showLocationCta = sort === "nearest" && !location.coords && location.status !== "denied"
 
   const selectedPlace = React.useMemo(
     () => places.find((place) => place._id.toString() === selectedPlaceId) ?? null,
     [places, selectedPlaceId]
   )
 
-  const resultCountLabel = `${sortedPlaces.length} lugar${sortedPlaces.length !== 1 ? "es" : ""}${
-    searchQuery?.trim() ? "" : " en esta zona"
-  }`
+  React.useEffect(() => {
+    if (selectedPlace) {
+      setPopoverPlace(selectedPlace)
+      setPopoverOpen(true)
+      return
+    }
+    setPopoverOpen(false)
+    if (!popoverPlace) return
+    const timer = window.setTimeout(() => setPopoverPlace(null), reduceMotion ? 0 : 280)
+    return () => window.clearTimeout(timer)
+  }, [selectedPlace, popoverPlace, reduceMotion])
 
   return (
     <div className="flex h-full w-full bg-cream">
@@ -218,10 +173,11 @@ export function MapDesktop({
           />
         </MapErrorBoundary>
 
-        {selectedPlace && (
+        {popoverPlace && (
           <DesktopMapPopover
-            place={selectedPlace}
+            place={popoverPlace}
             mapRef={mapRef}
+            closing={!popoverOpen}
             onClose={() => onPlaceDeselect?.()}
           />
         )}
@@ -255,7 +211,13 @@ export function MapDesktop({
           onSearchChange={onSearchChange}
           sort={sort}
           onSortChange={setSort}
-          resultCountLabel={resultCountLabel}
+          resultCount={sortedPlaces.length}
+          activeQuery={activeQuery}
+          onClearQuery={activeQuery ? () => onSearchChange("") : undefined}
+          hasRatings={hasRatings}
+          locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
+          onRequestLocation={location.request}
+          locationMessage={location.message}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearAllFilters}
           placeholder="Buscar lugar o zona..."
@@ -271,6 +233,10 @@ export function MapDesktop({
             onPlaceSelect={onPlaceSelect}
             onPlaceHover={setHoveredPlaceId}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
+            userLocation={location.coords}
+            locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
+            onRequestLocation={location.request}
+            locationMessage={location.message}
           />
         </div>
       </aside>

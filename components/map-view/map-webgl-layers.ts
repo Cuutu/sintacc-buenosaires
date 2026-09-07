@@ -12,6 +12,11 @@ import {
   PIN_RASTER_SCALE,
   pinImageId,
 } from "@/lib/celimap-pin"
+import {
+  MOTION_MS,
+  PIN_STAGGER_MAX,
+  STAGGER_PIN_MS,
+} from "./motion"
 
 export const PLACES_SOURCE = "celimap-places"
 export const SELECTED_SOURCE = "celimap-selected"
@@ -26,16 +31,22 @@ export const LAYER_SELECTED_PIN = "celimap-selected-pin"
 
 export const CLUSTER_MAX_ZOOM = 14
 export const PIN_FOCUS_ZOOM = 16
-/** 0.58 * 0.75. Gota lógica 64×84 @ pixelRatio 3. */
-export const PIN_ICON_SIZE = 0.435
+/** Gota lógica 64×84 @ pixelRatio 3. Desktop ≥ mobile. */
+export const PIN_ICON_SIZE = 0.58
+export const PIN_ENTER_SCALE = 0.85
+export const PIN_PULSE_SCALE = 1.06
 export const PIN_SELECTED_SCALE = 1.25
 export const PIN_SELECTED_SIZE = PIN_ICON_SIZE * PIN_SELECTED_SCALE
-export const MARKER_TRANSITION_MS = 200
+export const PIN_FILL_OPACITY = 0.95
+export const MARKER_TRANSITION_MS = MOTION_MS.base
 export const DIMMED_OPACITY = 0.4
 export const CLUSTER_HALO_PX = 10
 export const CLUSTER_HALO_OPACITY = 0.3
+export const CLUSTER_STROKE_WIDTH = 2
+export const FALLBACK_PIN_RADIUS = 9
+export const PIN_STROKE_COLOR = "#FFFFFF"
 /** Popup arriba del pin. Sin esto la ficha tapa el pin. */
-export const PIN_POPUP_OFFSET = 52
+export const PIN_POPUP_OFFSET = 64
 
 const SAFETY_COLOR_EXPR = [
   "match",
@@ -51,27 +62,42 @@ const SAFETY_COLOR_EXPR = [
 const CLUSTER_RADIUS_EXPR = [
   "step",
   ["get", "point_count"],
-  14,
-  10,
   18,
+  10,
+  22,
   50,
-  24,
+  28,
   200,
-  30,
+  34,
 ] as const
 
 /** Radio cluster + 10px. Step explícito: `+` anidado a veces no pinta. */
 const CLUSTER_HALO_RADIUS_EXPR = [
   "step",
   ["get", "point_count"],
-  24,
-  10,
   28,
+  10,
+  32,
   50,
-  34,
+  38,
   200,
-  40,
+  44,
 ] as const
+
+const appearedIdsByMap = new WeakMap<MapboxMapType, Set<string>>()
+const pulseTimerByMap = new WeakMap<MapboxMapType, number>()
+
+function enterDefault(reduceMotion: boolean): number {
+  return reduceMotion ? 1 : 0
+}
+
+function opacityExpr(dim: number, reduceMotion: boolean) {
+  return [
+    "*",
+    dim,
+    ["coalesce", ["feature-state", "enter"], enterDefault(reduceMotion)],
+  ]
+}
 
 const emptyCollection = (): GeoJSON.FeatureCollection => ({
   type: "FeatureCollection",
@@ -106,39 +132,53 @@ function applySelectionPresentation(map: MapboxMapType, reduceMotion: boolean): 
   const fade = transitionMs(reduceMotion)
 
   const pinFilter = unselectedPinFilter(selectedId)
+  const fadeProps = { duration: fade, delay: 0 }
   if (map.getLayer(LAYER_PINS)) {
     map.setFilter(LAYER_PINS, pinFilter)
-    map.setPaintProperty(LAYER_PINS, "icon-opacity", dim)
-    map.setPaintProperty(LAYER_PINS, "icon-opacity-transition", { duration: fade, delay: 0 })
+    map.setPaintProperty(LAYER_PINS, "icon-opacity", opacityExpr(dim, reduceMotion) as unknown as number)
+    map.setPaintProperty(LAYER_PINS, "icon-opacity-transition", fadeProps)
   }
   if (map.getLayer(LAYER_PIN_FALLBACK)) {
     map.setFilter(LAYER_PIN_FALLBACK, pinFilter)
-    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity", dim)
-    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", {
-      duration: fade,
-      delay: 0,
-    })
+    map.setPaintProperty(
+      LAYER_PIN_FALLBACK,
+      "circle-opacity",
+      opacityExpr(dim * PIN_FILL_OPACITY, reduceMotion) as unknown as number
+    )
+    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", fadeProps)
   }
 
-  const clusterOpacity = {
-    duration: fade,
-    delay: 0,
-  }
   if (map.getLayer(LAYER_CLUSTER_SHADOW)) {
-    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity", dim * 0.2)
-    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity-transition", clusterOpacity)
+    map.setPaintProperty(
+      LAYER_CLUSTER_SHADOW,
+      "circle-opacity",
+      opacityExpr(dim * 0.2, reduceMotion) as unknown as number
+    )
+    map.setPaintProperty(LAYER_CLUSTER_SHADOW, "circle-opacity-transition", fadeProps)
   }
   if (map.getLayer(LAYER_CLUSTER_HALO)) {
-    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", dim * CLUSTER_HALO_OPACITY)
-    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity-transition", clusterOpacity)
+    map.setPaintProperty(
+      LAYER_CLUSTER_HALO,
+      "circle-opacity",
+      opacityExpr(dim * CLUSTER_HALO_OPACITY, reduceMotion) as unknown as number
+    )
+    map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity-transition", fadeProps)
   }
   if (map.getLayer(LAYER_CLUSTERS)) {
-    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity", dim)
-    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", clusterOpacity)
+    map.setPaintProperty(
+      LAYER_CLUSTERS,
+      "circle-opacity",
+      opacityExpr(dim * PIN_FILL_OPACITY, reduceMotion) as unknown as number
+    )
+    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", fadeProps)
   }
   if (map.getLayer(LAYER_CLUSTER_COUNT)) {
-    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity", dim)
-    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity-transition", clusterOpacity)
+    map.setPaintProperty(
+      LAYER_CLUSTER_COUNT,
+      "text-opacity",
+      opacityExpr(dim, reduceMotion) as unknown as number
+    )
+    map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity-transition", fadeProps)
   }
 
   if (map.getLayer(LAYER_SELECTED_PIN)) {
@@ -241,6 +281,7 @@ export function ensurePlacesLayers(
     clusterRadius: 44,
     clusterMaxZoom: CLUSTER_MAX_ZOOM,
     clusterMinPoints: 2,
+    promoteId: "id",
   })
   addSourceSafe(map, SELECTED_SOURCE, {
     type: "geojson",
@@ -258,7 +299,7 @@ export function ensurePlacesLayers(
     paint: {
       "circle-color": "#000000",
       "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
-      "circle-opacity": 0.2,
+      "circle-opacity": opacityExpr(0.2, reduceMotion) as unknown as number,
       "circle-blur": 0.85,
       "circle-translate": [0, 2],
       "circle-translate-anchor": "viewport",
@@ -273,7 +314,7 @@ export function ensurePlacesLayers(
     paint: {
       "circle-color": "#1F4D35",
       "circle-radius": CLUSTER_HALO_RADIUS_EXPR as unknown as number,
-      "circle-opacity": CLUSTER_HALO_OPACITY,
+      "circle-opacity": opacityExpr(CLUSTER_HALO_OPACITY, reduceMotion) as unknown as number,
     },
   })
 
@@ -285,9 +326,9 @@ export function ensurePlacesLayers(
     paint: {
       "circle-color": "#1F4D35",
       "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
-      "circle-stroke-width": 2,
-      "circle-stroke-color": "#F6F1E8",
-      "circle-opacity": 1,
+      "circle-stroke-width": CLUSTER_STROKE_WIDTH,
+      "circle-stroke-color": PIN_STROKE_COLOR,
+      "circle-opacity": opacityExpr(PIN_FILL_OPACITY, reduceMotion) as unknown as number,
       "circle-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
@@ -300,12 +341,15 @@ export function ensurePlacesLayers(
     layout: {
       "text-field": ["to-string", ["get", "point_count"]],
       "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-      "text-size": ["step", ["get", "point_count"], 12, 10, 13, 50, 14, 200, 15],
+      "text-size": ["step", ["get", "point_count"], 13, 10, 14, 50, 15, 200, 16],
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
     paint: {
       "text-color": "#FFFFFF",
+      "text-halo-color": "#1F4D35",
+      "text-halo-width": 0.8,
+      "text-opacity": opacityExpr(1, reduceMotion) as unknown as number,
       "text-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
@@ -320,9 +364,10 @@ export function ensurePlacesLayers(
     },
     paint: {
       "circle-color": SAFETY_COLOR_EXPR as unknown as string,
-      "circle-radius": 6,
-      "circle-stroke-width": 1.5,
-      "circle-stroke-color": "#F6F1E8",
+      "circle-radius": FALLBACK_PIN_RADIUS,
+      "circle-stroke-width": CLUSTER_STROKE_WIDTH,
+      "circle-stroke-color": PIN_STROKE_COLOR,
+      "circle-opacity": opacityExpr(PIN_FILL_OPACITY, reduceMotion) as unknown as number,
       "circle-opacity-transition": { duration: fadeMs, delay: 0 },
     },
   })
@@ -342,8 +387,10 @@ export function ensurePlacesLayers(
       "icon-padding": 0,
     },
     paint: {
-      "icon-opacity": 1,
+      "icon-opacity": opacityExpr(1, reduceMotion) as unknown as number,
       "icon-opacity-transition": { duration: fadeMs, delay: 0 },
+      "icon-halo-color": PIN_STROKE_COLOR,
+      "icon-halo-width": 1.1,
     },
   })
 
@@ -405,7 +452,6 @@ export function ensurePlacesLayers(
         "circle-radius",
         CLUSTER_HALO_RADIUS_EXPR as unknown as number
       )
-      map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", CLUSTER_HALO_OPACITY)
     } catch {
       /* capa vieja */
     }
@@ -413,6 +459,36 @@ export function ensurePlacesLayers(
   if (map.getLayer(LAYER_CLUSTERS)) {
     try {
       map.setPaintProperty(LAYER_CLUSTERS, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-width", CLUSTER_STROKE_WIDTH)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-color", PIN_STROKE_COLOR)
+    } catch {
+      /* capa vieja */
+    }
+  }
+  if (map.getLayer(LAYER_PIN_FALLBACK)) {
+    try {
+      map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-radius", FALLBACK_PIN_RADIUS)
+      map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-stroke-width", CLUSTER_STROKE_WIDTH)
+      map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-stroke-color", PIN_STROKE_COLOR)
+    } catch {
+      /* capa vieja */
+    }
+  }
+  if (map.getLayer(LAYER_CLUSTER_COUNT)) {
+    try {
+      map.setLayoutProperty(LAYER_CLUSTER_COUNT, "text-size", [
+        "step",
+        ["get", "point_count"],
+        13,
+        10,
+        14,
+        50,
+        15,
+        200,
+        16,
+      ])
+      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-color", "#1F4D35")
+      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-width", 0.8)
     } catch {
       /* capa vieja */
     }
@@ -450,6 +526,164 @@ export function ensurePlacesLayers(
 export function setPlacesSourceData(map: MapboxMapType, places: IPlace[]): void {
   const source = map.getSource(PLACES_SOURCE) as GeoJSONSource | undefined
   source?.setData(placesToGeoJSON(places))
+}
+
+export function resetPinEntrance(map: MapboxMapType): void {
+  appearedIdsByMap.set(map, new Set())
+}
+
+function featureIdOf(feature: { id?: unknown; properties?: Record<string, unknown> | null }): string | number | null {
+  if (feature.id != null) return feature.id as string | number
+  const props = feature.properties
+  if (props?.id != null) return props.id as string | number
+  if (props?.cluster_id != null) return props.cluster_id as string | number
+  return null
+}
+
+export function playVisiblePinEntrance(
+  map: MapboxMapType,
+  reduceMotion: boolean,
+  options?: { pulse?: boolean }
+): void {
+  const seen = appearedIdsByMap.get(map) ?? new Set<string>()
+  appearedIdsByMap.set(map, seen)
+
+  const layers = [LAYER_PINS, LAYER_PIN_FALLBACK, LAYER_CLUSTERS].filter((id) =>
+    Boolean(map.getLayer(id))
+  )
+  if (layers.length === 0) return
+
+  let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+  try {
+    features = map.queryRenderedFeatures(undefined, { layers })
+  } catch {
+    return
+  }
+
+  const newcomers: Array<string | number> = []
+  for (const feature of features) {
+    const id = featureIdOf(feature)
+    if (id == null) continue
+    const key = String(id)
+    if (seen.has(key)) continue
+    seen.add(key)
+    newcomers.push(id)
+  }
+
+  const applyEnter = (id: string | number, enter: number) => {
+    try {
+      map.setFeatureState({ source: PLACES_SOURCE, id }, { enter })
+    } catch {
+      /* feature already gone */
+    }
+  }
+
+  if (newcomers.length === 0) {
+    if (options?.pulse && !reduceMotion) pulseMatchingPins(map)
+    return
+  }
+
+  if (reduceMotion) {
+    newcomers.forEach((id) => applyEnter(id, 1))
+    return
+  }
+
+  applySelectionPresentation(map, reduceMotion)
+
+  if (map.getLayer(LAYER_PINS)) {
+    try {
+      map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE * PIN_ENTER_SCALE)
+      window.requestAnimationFrame(() => {
+        try {
+          map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE)
+        } catch {
+          /* capa fuera */
+        }
+      })
+    } catch {
+      /* layout */
+    }
+  }
+
+  newcomers.forEach((id, index) => {
+    applyEnter(id, 0)
+    const delay =
+      index < PIN_STAGGER_MAX ? index * STAGGER_PIN_MS : PIN_STAGGER_MAX * STAGGER_PIN_MS
+    window.setTimeout(() => applyEnter(id, 1), delay)
+  })
+
+  const flushMs = MOTION_MS.base + PIN_STAGGER_MAX * STAGGER_PIN_MS + 80
+  window.setTimeout(() => {
+    let later: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+    try {
+      later = map.queryRenderedFeatures(undefined, { layers })
+    } catch {
+      return
+    }
+    for (const feature of later) {
+      const id = featureIdOf(feature)
+      if (id == null) continue
+      applyEnter(id, 1)
+      seen.add(String(id))
+    }
+  }, flushMs)
+
+  if (options?.pulse) {
+    window.setTimeout(() => pulseMatchingPins(map), MOTION_MS.filterFade)
+  }
+}
+
+export function pulseMatchingPins(map: MapboxMapType): void {
+  if (!map.getLayer(LAYER_PINS)) return
+  const previous = pulseTimerByMap.get(map)
+  if (previous) window.clearTimeout(previous)
+  try {
+    map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE * PIN_PULSE_SCALE)
+  } catch {
+    return
+  }
+  const timer = window.setTimeout(() => {
+    try {
+      map.setLayoutProperty(LAYER_PINS, "icon-size", PIN_ICON_SIZE)
+    } catch {
+      /* capa fuera */
+    }
+    pulseTimerByMap.delete(map)
+  }, MOTION_MS.fast)
+  pulseTimerByMap.set(map, timer)
+}
+
+export function fadeRenderedPinsOut(map: MapboxMapType, reduceMotion: boolean): void {
+  if (reduceMotion) return
+  const layers = [LAYER_PINS, LAYER_PIN_FALLBACK, LAYER_CLUSTERS].filter((id) =>
+    Boolean(map.getLayer(id))
+  )
+  if (layers.length === 0) return
+  let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+  try {
+    features = map.queryRenderedFeatures(undefined, { layers })
+  } catch {
+    return
+  }
+  const fade = { duration: MOTION_MS.filterFade, delay: 0 }
+  if (map.getLayer(LAYER_PINS)) {
+    map.setPaintProperty(LAYER_PINS, "icon-opacity-transition", fade)
+  }
+  if (map.getLayer(LAYER_PIN_FALLBACK)) {
+    map.setPaintProperty(LAYER_PIN_FALLBACK, "circle-opacity-transition", fade)
+  }
+  if (map.getLayer(LAYER_CLUSTERS)) {
+    map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity-transition", fade)
+  }
+  for (const feature of features) {
+    const id = featureIdOf(feature)
+    if (id == null) continue
+    try {
+      map.setFeatureState({ source: PLACES_SOURCE, id }, { enter: 0 })
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export function setSelectedPlaceOnMap(
@@ -509,7 +743,7 @@ export function expandClusterAt(
     map.easeTo({
       center: lngLat,
       zoom: fallbackZoom,
-      duration: reduceMotion ? 0 : 500,
+      duration: reduceMotion ? 0 : MOTION_MS.pan,
     })
     return
   }
@@ -517,7 +751,7 @@ export function expandClusterAt(
     map.easeTo({
       center: lngLat,
       zoom: err || zoom == null ? fallbackZoom : Math.max(zoom, CLUSTER_MAX_ZOOM + 1),
-      duration: reduceMotion ? 0 : 500,
+      duration: reduceMotion ? 0 : MOTION_MS.pan,
     })
   })
 }

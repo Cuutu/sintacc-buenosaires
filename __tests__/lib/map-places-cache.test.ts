@@ -74,10 +74,11 @@ describe("prefetch barrios", () => {
 })
 
 describe("pin CeliMap", () => {
-  it("gota + borde cream + paleta de 3 colores", () => {
+  it("gota + borde blanco + paleta de 3 colores", () => {
     const svg = celimapPinSvg({ fill: pinFillForSafety("dedicated_gf"), icon: "#FFFFFF" })
-    expect(svg).toContain("#F6F1E8")
-    expect(svg).toContain("stroke-width=\"1.5\"")
+    expect(svg).toContain('stroke="#FFFFFF"')
+    expect(svg).toContain("stroke-width=\"2\"")
+    expect(svg).toContain('fill-opacity="0.95"')
     expect(pinFillForSafety("dedicated_gf")).toBe("#1F4D35")
     expect(pinFillForSafety("gf_options")).toBe("#C85A2E")
     expect(pinFillForSafety("unknown")).toBe("#CFC9BF")

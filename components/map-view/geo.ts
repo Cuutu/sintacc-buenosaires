@@ -40,11 +40,11 @@ export function metersBetween(from: UserLatLng, to: UserLatLng): number {
   return distanceKm(from.lat, from.lng, to.lat, to.lng) * 1000
 }
 
-/** "<1 km → 400 m"; "≥1 km → 1.2 km". */
+/** "<1 km → a 400 m"; "≥1 km → a 1,2 km". Sin ubicación no llamar. */
 export function formatListDistance(meters: number): string | null {
   if (!Number.isFinite(meters) || meters < 0) return null
-  if (meters < 1000) return `${Math.round(meters)} m`
-  return `${(meters / 1000).toFixed(1)} km`
+  if (meters < 1000) return `a ${Math.round(meters)} m`
+  return `a ${(meters / 1000).toFixed(1).replace(".", ",")} km`
 }
 
 /** Filtrar lugares que están dentro de los bounds visibles del mapa */

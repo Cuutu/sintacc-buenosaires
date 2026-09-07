@@ -18,9 +18,10 @@ interface DesktopMapPopoverProps {
   place: IPlace
   mapRef: React.RefObject<MapboxMapRef | null>
   onClose: () => void
+  closing?: boolean
 }
 
-export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverProps) {
+export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: DesktopMapPopoverProps) {
   const cardRef = React.useRef<HTMLElement>(null)
   const [placement, setPlacement] = React.useState<PopoverPlacement | null>(null)
 
@@ -100,7 +101,9 @@ export function DesktopMapPopover({ place, mapRef, onClose }: DesktopMapPopoverP
       ref={cardRef}
       role="dialog"
       aria-label={place.name}
-      className="pointer-events-auto absolute z-30 w-[min(340px,calc(100%-24px))] overflow-visible"
+      className={`pointer-events-auto absolute z-30 w-[min(340px,calc(100%-24px))] overflow-visible ${
+        closing ? "map-popover-leave" : "map-popover-enter"
+      }`}
       style={
         placement
           ? { left: placement.left, top: placement.top }

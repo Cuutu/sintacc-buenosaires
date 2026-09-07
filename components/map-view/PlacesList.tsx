@@ -17,6 +17,10 @@ interface PlacesListProps {
   onPlaceSelect?: (place: IPlace) => void
   onPlaceHover?: (placeId: string | null) => void
   onClearFilters?: () => void
+  userLocation?: UserLatLng | null
+  locationCta?: string | null
+  onRequestLocation?: () => void
+  locationMessage?: string | null
 }
 
 function PlaceCardSkeleton() {
@@ -44,37 +48,29 @@ export function PlacesList({
   onPlaceSelect,
   onPlaceHover,
   onClearFilters,
+  userLocation = null,
+  locationCta,
+  onRequestLocation,
+  locationMessage,
 }: PlacesListProps) {
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
-  const [userLocation, setUserLocation] = React.useState<UserLatLng | null>(null)
   const reduceMotion = usePrefersReducedMotion()
   const listSignature = places.map((place) => String(place._id)).join(",")
   const prevSignatureRef = React.useRef(listSignature)
   const [enterNonce, setEnterNonce] = React.useState(0)
+  const [leaving, setLeaving] = React.useState(false)
   if (prevSignatureRef.current !== listSignature) {
     prevSignatureRef.current = listSignature
     setEnterNonce((n) => n + 1)
+    if (!reduceMotion) setLeaving(true)
   }
 
   React.useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return
-    let cancelled = false
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (cancelled) return
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-      },
-      () => {},
-      { maximumAge: 120000, timeout: 8000, enableHighAccuracy: false }
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    if (!leaving) return
+    const timer = window.setTimeout(() => setLeaving(false), 120)
+    return () => window.clearTimeout(timer)
+  }, [leaving, enterNonce])
 
   const handlePlaceClick = React.useCallback(
     (place: IPlace) => {
@@ -147,9 +143,21 @@ export function PlacesList({
   return (
     <div
       ref={listRef}
-      className="space-y-2.5 px-3 pb-4"
+      className={cn("space-y-2.5 px-3 pb-4 map-list-crossfade", leaving && "is-leaving")}
       onMouseLeave={() => onPlaceHover?.(null)}
     >
+      {locationCta && onRequestLocation ? (
+        <button
+          type="button"
+          onClick={onRequestLocation}
+          className="w-full rounded-2xl border border-[#C85A2E]/20 bg-[#C85A2E]/8 px-3 py-2 text-left text-[12.5px] font-semibold text-[#C85A2E]"
+        >
+          {locationCta}
+        </button>
+      ) : null}
+      {locationMessage ? (
+        <p className="px-1 text-[12px] text-muted-foreground">{locationMessage}</p>
+      ) : null}
       {places
         .filter((place) => place?._id != null)
         .map((place, index) => {
