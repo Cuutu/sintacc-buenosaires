@@ -225,6 +225,7 @@ export const ventureSchema = z.object({
 export const ventureSuggestionSchema = ventureSchema.extend({
   suggesterComment: z.string().max(1500).optional(),
   shipsNationwide: z.boolean().optional(),
+  safetyLevel: z.enum(["fully_gf", "to_confirm"]).default("fully_gf"),
 })
 
 export const ventureDraftUpdateSchema = ventureSchema.partial()

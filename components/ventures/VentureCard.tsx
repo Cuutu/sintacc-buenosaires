@@ -34,19 +34,11 @@ interface VentureCardProps {
 }
 
 function safetyOverlay(level?: string): { label: string; className: string } | null {
-  if (level === "fully_gf") {
-    return {
-      label: getSafetyBadge("fully_gf").label,
-      className: "bg-[#1F4D35] text-[#F8F5EF]",
-    }
+  if (level === "gf_options") return null
+  return {
+    label: getSafetyBadge("fully_gf").label,
+    className: "bg-[#1F4D35] text-[#F8F5EF]",
   }
-  if (level === "gf_options") {
-    return {
-      label: getSafetyBadge("gf_options").label,
-      className: "bg-[#C85A2E] text-[#F8F5EF]",
-    }
-  }
-  return null
 }
 
 function CategoryPill({ label, onPhoto }: { label: string; onPhoto?: boolean }) {

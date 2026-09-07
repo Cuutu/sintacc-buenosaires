@@ -12,7 +12,8 @@ import { ImageUpload } from "@/components/image-upload"
 import {
   VENTURE_CATEGORIES,
   VENTURE_MODALITIES,
-  VENTURE_SAFETY_LEVELS,
+  VENTURE_SUGGEST_SAFETY_LEVELS,
+  VENTURE_CATALOG_INTRO,
   ventureCategoryIds,
 } from "@/lib/venture-constants"
 import type { VentureModalityId, VentureSafetyLevelId } from "@/lib/venture-constants"
@@ -36,7 +37,7 @@ export default function SugerirEmprendimientoContent() {
   const [zone, setZone] = useState("")
   const [shipsNationwide, setShipsNationwide] = useState(false)
   const [category, setCategory] = useState<VentureCategoryId | "">("")
-  const [safetyLevel, setSafetyLevel] = useState<VentureSafetyLevelId | "">("")
+  const [safetyLevel, setSafetyLevel] = useState<VentureSafetyLevelId | "">("fully_gf")
   const [certifiedProducts, setCertifiedProducts] = useState(false)
   const [modalities, setModalities] = useState<VentureModalityId[]>([])
   const [purchaseChannels, setPurchaseChannels] = useState("")
@@ -261,9 +262,10 @@ export default function SugerirEmprendimientoContent() {
         </div>
 
         <div className="space-y-2">
-          <Label>¿Es 100% sin gluten? *</Label>
+          <Label>Confirmá que es 100% sin gluten *</Label>
+          <p className="text-xs text-muted-foreground leading-relaxed">{VENTURE_CATALOG_INTRO}</p>
           <div className="flex flex-wrap gap-2">
-            {VENTURE_SAFETY_LEVELS.map((s) => (
+            {VENTURE_SUGGEST_SAFETY_LEVELS.map((s) => (
               <button
                 key={s.id}
                 type="button"

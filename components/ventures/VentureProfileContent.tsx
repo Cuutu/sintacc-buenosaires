@@ -8,6 +8,7 @@ import {
   getModalityLabel,
   getSafetyBadge,
   VENTURE_SAFETY_DISCLAIMER,
+  VENTURE_CATALOG_INTRO,
 } from "@/lib/venture-constants"
 import {
   parseVentureLinks,
@@ -70,7 +71,7 @@ type VentureProfileContentProps = {
 export function VentureProfileContent({ venture, related = [] }: VentureProfileContentProps) {
   const photo = getVentureCoverPhoto(venture.photos)
   const categoryLabel = getCategoryLabel(venture.category)
-  const { label: safetyLabel, dot: safetyDot } = getSafetyBadge(venture.safetyLevel)
+  const { label: safetyLabel, dot: safetyDot } = getSafetyBadge("fully_gf")
   const links = parseVentureLinks({
     contact: venture.contact,
     purchaseChannels: venture.purchaseChannels,
@@ -151,7 +152,9 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               ))}
             </div>
 
-            <p className="text-xs leading-relaxed text-[#5F6B63]">{VENTURE_SAFETY_DISCLAIMER}</p>
+            <p className="text-xs leading-relaxed text-[#5F6B63]">
+              {VENTURE_CATALOG_INTRO} {VENTURE_SAFETY_DISCLAIMER}
+            </p>
 
             <div>
               <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl">

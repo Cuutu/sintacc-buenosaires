@@ -80,7 +80,7 @@ export const VENTURE_CATEGORY_LANDINGS: VentureCategoryLandingConfig[] = [
       "Encontrá emprendimientos que venden premezclas y bases sin gluten para cocinar en casa. Sugeridos por la comunidad de CeliMap.",
     title: "Premezclas sin gluten | Emprendimientos recomendados",
     description:
-      "Encontrá premezclas sin gluten y bases con opciones Sin TACC. Emprendimientos sugeridos por la comunidad de CeliMap.",
+      "Encontrá premezclas y bases 100% sin gluten para cocinar en casa. Sugeridos por la comunidad de CeliMap.",
   },
   {
     categoryId: "catering",
@@ -366,7 +366,7 @@ export function getVentureIndexMetadata(): Metadata {
   const canonical = `${base}/emprendimientos`
   const title = "Emprendimientos sin gluten"
   const description =
-    "Marcas, cocineros y proyectos con opciones Sin TACC: viandas, pastelería, panificados, congelados y más. Recomendados por la comunidad."
+    "Emprendimientos 100% sin gluten: viandas, pastelería, panificados, congelados y más. No listamos marcas que también vendan con gluten."
   return {
     title,
     description,

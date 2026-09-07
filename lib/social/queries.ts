@@ -9,6 +9,7 @@ import {
   getCategoryLabel,
   getModalityLabels,
   getSafetyBadge as getVentureSafetyBadge,
+  dedicatedVentureMongoFilter,
 } from "@/lib/venture-constants"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import type {
@@ -224,7 +225,11 @@ export async function fetchSocialItems(options: SocialQueryOptions): Promise<{
   const dateFilter = buildDateFilter(days)
 
   if (preset === "latest_ventures") {
-    const query: Record<string, unknown> = { status: "approved", ...dateFilter }
+    const query: Record<string, unknown> = {
+      status: "approved",
+      ...dedicatedVentureMongoFilter(),
+      ...dateFilter,
+    }
     if (communityOnly) query.source = "suggestion"
 
     const ventures = await Venture.find(query)

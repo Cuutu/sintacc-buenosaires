@@ -73,5 +73,8 @@ describe("catálogo /emprendimientos", () => {
     expect(src).toContain("Deslizá para ver más categorías")
     expect(src).toContain("scroll-mt-[calc(var(--desktop-nav-clearance)")
     expect(src).toContain("bottom-nav-clearance")
+    expect(src).toContain("VENTURE_CATALOG_INTRO")
+    expect(read("lib/ventures-server.ts")).toContain("dedicatedVentureMongoFilter")
+    expect(read("app/api/ventures/route.ts")).toContain("dedicatedVentureMongoFilter")
   })
 })

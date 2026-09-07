@@ -7,6 +7,7 @@ import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { ensureVentureSlug } from "@/lib/venture-slug"
 import type { VentureZoneLandingConfig } from "@/lib/venture-seo"
 import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
+import { dedicatedVentureMongoFilter, isCatalogDedicatedVenture } from "@/lib/venture-constants"
 
 export type VenturePublic = {
   _id: string
@@ -69,7 +70,10 @@ export async function getApprovedVentures(options?: {
   argentinaOnly?: boolean
 }): Promise<VenturePublic[]> {
   await connectDB()
-  const query: Record<string, unknown> = { status: "approved" }
+  const query: Record<string, unknown> = {
+    status: "approved",
+    ...dedicatedVentureMongoFilter(),
+  }
   if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
   if (options?.category) query.category = options.category
   if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
@@ -97,7 +101,10 @@ export async function countApprovedVentures(options?: {
   argentinaOnly?: boolean
 }): Promise<number> {
   await connectDB()
-  const query: Record<string, unknown> = { status: "approved" }
+  const query: Record<string, unknown> = {
+    status: "approved",
+    ...dedicatedVentureMongoFilter(),
+  }
   if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
   if (options?.category) query.category = options.category
   if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
@@ -108,6 +115,7 @@ export async function getVentureBySlug(slug: string): Promise<VenturePublic | nu
   await connectDB()
   const venture = await Venture.findOne({ slug, status: "approved" }).lean()
   if (!venture) return null
+  if (!isCatalogDedicatedVenture((venture as { safetyLevel?: string }).safetyLevel)) return null
   const stats = await getSingleVentureReviewStats(venture._id as mongoose.Types.ObjectId)
   return serializeVenture(venture as Record<string, unknown> & { _id: mongoose.Types.ObjectId }, stats)
 }
@@ -118,6 +126,7 @@ export async function getVentureById(id: string): Promise<VenturePublic | null> 
   const oid = new mongoose.Types.ObjectId(id)
   const venture = await Venture.findOne({ _id: oid, status: "approved" }).lean()
   if (!venture) return null
+  if (!isCatalogDedicatedVenture((venture as { safetyLevel?: string }).safetyLevel)) return null
   const stats = await getSingleVentureReviewStats(oid)
   const v = venture as Record<string, unknown> & {
     _id: mongoose.Types.ObjectId
@@ -140,6 +149,7 @@ export async function getRelatedVentures(
     category: venture.category,
     _id: { $ne: oid },
     ...argentinaVentureMongoFilter(),
+    ...dedicatedVentureMongoFilter(),
   })
     .sort({ createdAt: -1 })
     .limit(limit)
@@ -152,6 +162,7 @@ export async function getRelatedVentures(
       _id: { $nin: [...results.map((r) => r._id), oid] },
       zone: { $regex: venture.zone.slice(0, 20), $options: "i" },
       ...argentinaVentureMongoFilter(),
+      ...dedicatedVentureMongoFilter(),
     })
       .sort({ createdAt: -1 })
       .limit(limit - results.length)
@@ -170,7 +181,10 @@ export async function getAllApprovedVentureSlugs(): Promise<
   { slug: string; updatedAt?: Date }[]
 > {
   await connectDB()
-  const ventures = await Venture.find({ status: "approved" }, { slug: 1, name: 1, zone: 1, updatedAt: 1 }).lean()
+  const ventures = await Venture.find(
+    { status: "approved", ...dedicatedVentureMongoFilter() },
+    { slug: 1, name: 1, zone: 1, updatedAt: 1 }
+  ).lean()
 
   const out: { slug: string; updatedAt?: Date }[] = []
   for (const v of ventures) {

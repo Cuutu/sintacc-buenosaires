@@ -4,6 +4,7 @@ import { Venture } from "@/models/Venture"
 import { parseVenturesSearchParams } from "@/lib/validations"
 import { buildVentureSearchFilter } from "@/lib/venture-search"
 import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
+import { dedicatedVentureMongoFilter } from "@/lib/venture-constants"
 import { logApiError } from "@/lib/logger"
 import { getOrSetApiCache } from "@/lib/api-cache"
 import { getVentureReviewStatsMap } from "@/lib/venture-review-stats"
@@ -27,7 +28,11 @@ export async function GET(request: NextRequest) {
     const { page, limit, category, search } = parsed
     const skip = (page - 1) * limit
 
-    const query: Record<string, unknown> = { status: "approved", ...argentinaVentureMongoFilter() }
+    const query: Record<string, unknown> = {
+      status: "approved",
+      ...argentinaVentureMongoFilter(),
+      ...dedicatedVentureMongoFilter(),
+    }
     if (category) query.category = category
     const searchFilter = search ? buildVentureSearchFilter(search) : null
     if (searchFilter) {

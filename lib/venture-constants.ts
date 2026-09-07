@@ -36,6 +36,22 @@ export const VENTURE_SAFETY_LEVELS = [
 export const VENTURE_SAFETY_DISCLAIMER =
   "CeliMap no certifica ni garantiza. Según datos cargados; confirmá siempre ingredientes y manipulación."
 
+export const VENTURE_CATALOG_INTRO =
+  "Solo emprendimientos 100% sin gluten. No listamos marcas que también vendan con gluten."
+
+/** Suggest form: este catálogo no acepta “opciones”. Enum gf_options queda en DB/admin. */
+export const VENTURE_SUGGEST_SAFETY_LEVELS = VENTURE_SAFETY_LEVELS.filter(
+  (s) => s.id !== "gf_options"
+)
+
+export function isCatalogDedicatedVenture(safetyLevel?: string | null): boolean {
+  return safetyLevel !== "gf_options"
+}
+
+export function dedicatedVentureMongoFilter(): { safetyLevel: { $ne: "gf_options" } } {
+  return { safetyLevel: { $ne: "gf_options" } }
+}
+
 export type VentureSafetyLevelId = (typeof VENTURE_SAFETY_LEVELS)[number]["id"]
 
 export const ventureCategoryIds = VENTURE_CATEGORIES.map((c) => c.id)

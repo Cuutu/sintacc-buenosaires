@@ -7,7 +7,7 @@ import { VentureCard, VentureCardSkeleton, type VentureCardData } from "@/compon
 import { VentureFeaturedRail } from "@/components/ventures/VentureFeaturedRail"
 import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
-import { VENTURE_CATEGORIES, getCategoryLabel } from "@/lib/venture-constants"
+import { VENTURE_CATEGORIES, getCategoryLabel, VENTURE_CATALOG_INTRO } from "@/lib/venture-constants"
 import { isArgentinaVentureZone, VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 import { matchesVentureSearch, resolveVentureCategoryFromQuery } from "@/lib/venture-search"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,10 @@ export default function EmprendimientosPageContent({
   const searchParam = searchParams.get("search") ?? ""
 
   const ventures = useMemo(
-    () => initialVentures.filter((v) => isArgentinaVentureZone(v.zone)),
+    () =>
+      initialVentures.filter(
+        (v) => isArgentinaVentureZone(v.zone) && v.safetyLevel !== "gf_options"
+      ),
     [initialVentures]
   )
   const [searchInput, setSearchInput] = useState(searchParam)
@@ -229,8 +232,7 @@ export default function EmprendimientosPageContent({
             <span className="mt-1 block text-[1.65rem] leading-tight md:text-[2.25rem]">sin gluten</span>
           </h1>
           <p className="mt-4 text-base leading-relaxed text-[#5F6B63]">
-            Pastelería, panificados, viandas, congelados y productos artesanales recomendados por la
-            comunidad.
+            Pastelería, panificados, viandas, congelados y productos artesanales. {VENTURE_CATALOG_INTRO}
           </p>
 
           <div ref={boxRef} className="relative mt-6">
