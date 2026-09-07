@@ -16,6 +16,8 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
+import { fetchApi } from "@/lib/fetchApi"
+import { formatPlacesInArgentinaLine } from "@/lib/stats/floor-display-count"
 import { isNativeApp } from "@/lib/native-app"
 import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
 import { usePathname } from "next/navigation"
@@ -42,7 +44,7 @@ const STEPS: OnboardingStep[] = [
     description:
       "CeliMap es el mapa colaborativo para celíacos. Lugares aportados por la comunidad, con reseñas cuando existen.",
     tips: [
-      "+400 lugares en Argentina",
+      "Lugares en Argentina",
       "Gratis para explorar el mapa",
       "Actualizado por usuarios como vos",
     ],
@@ -240,6 +242,27 @@ export function OnboardingModal() {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "back">("forward")
+  const [placesTip, setPlacesTip] = useState("Lugares en Argentina")
+
+  useEffect(() => {
+    if (onPrivateList) return
+    try {
+      if (isNativeApp() || localStorage.getItem(STORAGE_KEY) === "1") return
+    } catch {
+      // localStorage bloqueado: igual pedimos stats por si el modal se muestra
+    }
+    let cancelled = false
+    fetchApi<{ placesCount?: number }>("/api/stats")
+      .then((data) => {
+        if (!cancelled) setPlacesTip(formatPlacesInArgentinaLine(data.placesCount))
+      })
+      .catch(() => {
+        if (!cancelled) setPlacesTip("Lugares en Argentina")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [onPrivateList])
 
   useEffect(() => {
     if (onPrivateList) {
@@ -285,6 +308,10 @@ export function OnboardingModal() {
   const isFirst = step === 0
   const isLast = step === STEPS.length - 1
   const Icon = current.icon
+  const tips =
+    current.id === "welcome"
+      ? [placesTip, ...current.tips.slice(1)]
+      : current.tips
 
   const handleOpenChange = (next: boolean) => {
     if (!next) finish()
@@ -332,7 +359,7 @@ export function OnboardingModal() {
           <p className="mb-4 text-sm leading-relaxed text-[#5F6B63]">{current.description}</p>
 
           <ul className="space-y-2 rounded-[16px] border border-[#E8E1D6] bg-[#FDFBF7] p-3">
-            {current.tips.map((tip) => (
+            {tips.map((tip) => (
               <li key={tip} className="flex items-start gap-2 text-xs text-[#2D4A34]">
                 <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C85A2E]" />
                 <span>{tip}</span>
