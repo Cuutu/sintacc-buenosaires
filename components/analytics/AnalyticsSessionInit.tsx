@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { getAnalyticsPlatform } from "@/lib/analytics-platform"
 import {
   ANALYTICS_COLD_START_KEY,
@@ -11,6 +12,8 @@ import {
 } from "@/lib/analytics-session"
 import { trackEvent } from "@/lib/analytics"
 import { isNativeApp } from "@/lib/native-app"
+import { captureAnalyticsAttribution } from "@/lib/analytics-attribution"
+import { setAnalyticsAuthenticated } from "@/lib/analytics-client"
 
 const SESSION_ONLY_KEYS = new Set([
   ANALYTICS_COLD_START_KEY,
@@ -74,6 +77,43 @@ function createLifecycleStorage(): {
  * Montado una vez en el root layout — no se re-ejecuta por navegación interna.
  */
 export function AnalyticsSessionInit() {
+  const { status } = useSession()
+
+  useEffect(() => {
+    setAnalyticsAuthenticated(status === "authenticated")
+    if (status !== "authenticated") return
+    try {
+      if (sessionStorage.getItem("celimap_login_pending") === "1") {
+        sessionStorage.removeItem("celimap_login_pending")
+        const provider = sessionStorage.getItem("celimap_login_provider") || ""
+        sessionStorage.removeItem("celimap_login_provider")
+        trackEvent("login_completed", provider ? { provider } : undefined)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [status])
+
+  useEffect(() => {
+    try {
+      captureAnalyticsAttribution()
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const link = target.closest("[data-directions]")
+      if (!link) return
+      const placeId = link.getAttribute("data-place-id") || ""
+      trackEvent("directions_clicked", placeId ? { placeId } : undefined)
+    }
+    document.addEventListener("click", onClick)
+    return () => document.removeEventListener("click", onClick)
+  }, [])
   useEffect(() => {
     const { storage, available } = createLifecycleStorage()
     if (!available) return

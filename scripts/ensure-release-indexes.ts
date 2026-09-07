@@ -121,6 +121,25 @@ export const RELEASE_INDEXES: IndexSpec[] = [
     },
     reason: "TTL remove terminal deletion jobs after 7d",
   },
+  {
+    collection: "productevents",
+    keys: { ts: 1 },
+    name: "ts_ttl",
+    expireAfterSeconds: 60 * 60 * 24 * 180,
+    reason: "TTL 180d first-party product analytics",
+  },
+  {
+    collection: "productevents",
+    keys: { name: 1, ts: -1 },
+    name: "name_1_ts_-1",
+    reason: "Admin insights by event name + time",
+  },
+  {
+    collection: "productevents",
+    keys: { distinctId: 1, ts: -1 },
+    name: "distinctId_1_ts_-1",
+    reason: "Unique users and retention by anonymous device",
+  },
 ]
 
 function redactUri(uri: string): { host: string; db: string } {

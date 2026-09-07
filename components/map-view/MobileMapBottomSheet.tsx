@@ -332,6 +332,7 @@ export function MobileMapBottomSheet({
                   target="_blank"
                   rel="noopener noreferrer"
                   data-directions="true"
+                  data-place-id={String(place._id)}
                   onClick={(event) => event.stopPropagation()}
                   className="pointer-events-auto relative z-[2] inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
                 >

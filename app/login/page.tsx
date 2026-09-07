@@ -14,6 +14,7 @@ import { AppleSignInButton } from "@/components/auth/AppleSignInButton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BrandLogo } from "@/components/brand/BrandLogo"
+import { trackEvent } from "@/lib/analytics"
 
 export default function LoginPage() {
   return (
@@ -84,9 +85,17 @@ function LoginContent() {
     setError(null)
     setSigningGoogle(true)
     try {
+      sessionStorage.setItem("celimap_login_pending", "1")
+      sessionStorage.setItem("celimap_login_provider", "google")
+    } catch {
+      /* ignore */
+    }
+    trackEvent("login_started", { provider: "google" })
+    try {
       await signInWithGoogle(callbackUrl)
     } catch {
       setError("No pudimos iniciar sesión con Google. Probá de nuevo.")
+      trackEvent("login_error", { provider: "google", reason: "google_failed" })
     } finally {
       googleLock.current = false
       setSigningGoogle(false)
@@ -99,6 +108,13 @@ function LoginContent() {
     setError(null)
     setSigningApple(true)
     try {
+      sessionStorage.setItem("celimap_login_pending", "1")
+      sessionStorage.setItem("celimap_login_provider", "apple")
+    } catch {
+      /* ignore */
+    }
+    trackEvent("login_started", { provider: "apple" })
+    try {
       await signInWithApple(callbackUrl)
     } catch (err) {
       if (err instanceof NativeAppleSignInError && err.code === "cancelled") {
@@ -106,9 +122,11 @@ function LoginContent() {
       }
       if (err instanceof NativeAppleSignInError && err.code === "other_provider") {
         setError(err.message)
+        trackEvent("login_error", { provider: "apple", reason: "other_provider" })
         return
       }
       setError("No pudimos iniciar sesión con Apple. Probá de nuevo.")
+      trackEvent("login_error", { provider: "apple", reason: "apple_failed" })
     } finally {
       appleLock.current = false
       setSigningApple(false)

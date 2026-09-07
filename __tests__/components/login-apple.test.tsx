@@ -42,6 +42,10 @@ jest.mock("@/lib/native-sign-in", () => ({
   },
 }))
 
+jest.mock("@/lib/analytics", () => ({
+  trackEvent: jest.fn(),
+}))
+
 import LoginPage from "@/app/login/page"
 
 async function mount(): Promise<{ root: Root; el: HTMLDivElement }> {

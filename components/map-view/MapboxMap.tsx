@@ -29,6 +29,7 @@ import {
   isE2eMapboxMockEnabled,
 } from "@/lib/e2e-mapbox-adapter"
 import { createMapInstanceTeardown, type MapboxTeardownMap } from "@/lib/mapbox-teardown"
+import { trackEvent } from "@/lib/analytics"
 import { reportClientError } from "@/lib/client-error-reporter"
 import { MAP_MOVE_DEBOUNCE_MS } from "@/lib/map-places-cache"
 import { celimapPinMarkup } from "@/lib/celimap-pin"
@@ -496,6 +497,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           if (!token) {
             console.error("MAPBOX_TOKEN no configurado")
             safeSetInitError("Mapa no configurado")
+            trackEvent("map_load_error", { reason: "missing_token" })
             return
           }
           mapboxgl.accessToken = token
@@ -554,6 +556,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           : message
         console.error("[MapboxMap] init failed", friendly)
         safeSetInitError(friendly)
+        trackEvent("map_load_error", { reason: "init_failed" })
         // NO rethrow: Error Boundary no atrapa useEffect
       }
 

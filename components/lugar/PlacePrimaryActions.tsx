@@ -39,6 +39,8 @@ export function PlacePrimaryActions({
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
+        data-directions="true"
+        data-place-id={placeId}
         className={placePrimaryBtnClass}
       >
         <MapPinned className="h-5 w-5" />

@@ -20,6 +20,9 @@
 | List | `{ privateAccessToken: 1 }` (unique sparse) | Lookup enlace privado |
 | List | `{ visibility: 1, linkStatus: 1, updatedAt: -1 }` | Filtrado privado / estado |
 | ListLike | `{ listId: 1, userId: 1 }` (unique) | Un like por usuario por lista |
+| ProductEvent | `{ ts: 1 }` (TTL 180 días) | Limpieza de analytics first-party |
+| ProductEvent | `{ name: 1, ts: -1 }` | Insights por evento |
+| ProductEvent | `{ distinctId: 1, ts: -1 }` | Usuarios anónimos y retención |
 
 ## Verificación
 

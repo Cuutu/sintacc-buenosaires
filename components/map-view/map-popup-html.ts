@@ -64,6 +64,7 @@ export function buildPlacePopupHtml(place: IPlace): string {
   const reviewLines = getPlaceReviewLines(place)
   const directionsUrl = escapeHtml(getPlaceDirectionsUrl(place))
   const detailPath = escapeHtml(getPlaceDetailPath(place))
+  const placeId = escapeHtml(String(place._id ?? ""))
   const typePath = TYPE_ICON_PATHS[typeKey] ?? TYPE_ICON_PATHS.other
 
   const ratingHtml = reviewLines.length
@@ -114,7 +115,7 @@ export function buildPlacePopupHtml(place: IPlace): string {
           Ver lugar
           ${svgIcon('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 16)}
         </a>
-        <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border-radius:16px;background:transparent;border:1px solid ${PLACE_CARD.olive};color:${PLACE_CARD.olive};text-decoration:none;font-size:14px;font-weight:800" onclick="event.stopPropagation()">
+        <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" data-directions="true" data-place-id="${placeId}" style="display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border-radius:16px;background:transparent;border:1px solid ${PLACE_CARD.olive};color:${PLACE_CARD.olive};text-decoration:none;font-size:14px;font-weight:800" onclick="event.stopPropagation()">
           ${svgIcon('<polygon points="3 11 22 2 13 21 11 13 3 11"/>', 16)}
           Cómo llegar
         </a>

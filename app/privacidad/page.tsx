@@ -4,7 +4,7 @@ import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
-const UPDATED_AT = "25 de agosto de 2026"
+const UPDATED_AT = "7 de septiembre de 2026"
 const CONTACT_MAIL = "hola@celimap.com.ar"
 
 export const metadata: Metadata = {
@@ -78,8 +78,11 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
         </li>
         <li>
           <strong className="text-foreground">Uso del producto:</strong> eventos
-          anónimos de interacción (por ejemplo ver un lugar) vía Vercel
-          Analytics, sin enviar tu email ni ID de cuenta.
+          anónimos de interacción (por ejemplo ver un lugar, buscar, pedir
+          indicaciones) para mejorar el mapa. Van a Vercel Analytics y, por
+          separado, a nuestra base con un identificador de dispositivo local
+          (no es tu email ni el ID de cuenta). No usamos esa data para
+          publicidad.
         </li>
         <li>
           <strong className="text-foreground">Datos técnicos:</strong> logs
@@ -99,7 +102,7 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
         <li>Identificarte en favoritos, listas, reseñas y sugerencias.</li>
         <li>Moderar contenido y prevenir abuso.</li>
         <li>Responder consultas (email vía Resend).</li>
-        <li>Entender qué funciones se usan (analytics sin vincular a tu cuenta).</li>
+        <li>Entender qué funciones se usan (analytics anónimo, sin vincular a tu cuenta).</li>
       </ul>
     ),
   },
@@ -151,8 +154,9 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
             datos.
           </li>
           <li>
-            <strong className="text-foreground">Vercel:</strong> hosting y
-            Analytics de producto (sin publicidad de CeliMap).
+            <strong className="text-foreground">Vercel:</strong> hosting,
+            Analytics de producto y, en producción, país/ciudad aproximados
+            según IP del request (no usamos el GPS del mapa para esto).
           </li>
           <li>
             <strong className="text-foreground">Cloudinary:</strong> imágenes
@@ -191,10 +195,13 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
       <p>
         Conservamos cuenta y contenido mientras la cuenta esté activa, o el
         tiempo necesario para moderación, seguridad u obligaciones legales. Los
-        lugares del mapa público pueden permanecer publicados sin tu identidad.
-        Los códigos temporales de login caducan en minutos. Tras borrar la
-        cuenta, puede quedar un trabajo técnico breve para terminar de borrar
-        fotos en Cloudinary; no guardamos ahí tu nombre, email ni textos.
+        eventos anónimos de uso se borran a los 180 días. Los lugares del mapa
+        público pueden permanecer publicados sin tu identidad. Los códigos
+        temporales de login caducan en minutos. Tras borrar la cuenta, puede
+        quedar un trabajo técnico breve para terminar de borrar fotos en
+        Cloudinary; no guardamos ahí tu nombre, email ni textos. El identificador
+        anónimo de analytics vive en tu dispositivo; borrar datos del navegador
+        o reinstalá la app lo elimina.
       </p>
     ),
   },

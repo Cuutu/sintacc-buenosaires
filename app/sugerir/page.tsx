@@ -16,6 +16,7 @@ import { TYPES, PLACE_TAGS } from "@/lib/constants"
 import { MapPin, Link2, ChevronDown, ChevronUp, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { trackEvent } from "@/lib/analytics"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -110,7 +111,7 @@ export default function SugerirPage() {
       const res = await fetch("/api/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body:         JSON.stringify({
           sourceLink: quickData.sourceLink.trim(),
           safetyLevel: quickData.safetyLevel,
           name: quickData.name.trim() || undefined,
@@ -118,6 +119,7 @@ export default function SugerirPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al crear sugerencia")
+      trackEvent("place_submitted", { mode: "quick" })
       setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al enviar")
@@ -191,6 +193,7 @@ export default function SugerirPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al crear sugerencia")
+      trackEvent("place_submitted", { mode: "full" })
       setStep(2)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al enviar")

@@ -5,6 +5,7 @@ const TAG_BY_PREFIX: Record<string, string> = {
   "public:stats": "public:stats",
   "admin:places:": "admin:places",
   "admin:counts": "admin:counts",
+  "admin:insights:": "admin:insights",
   "seo:province:": "seo:province",
 }
 

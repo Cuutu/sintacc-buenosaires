@@ -9,6 +9,7 @@ import { fetchApi } from "@/lib/fetchApi"
 import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
+import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
@@ -70,6 +71,7 @@ function MapaContent() {
   const forceRefreshRef = useRef(false)
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
+  const lastSearchTrackKey = useRef("")
 
   useEffect(() => {
     if (mapOpenTracked.current) return
@@ -89,8 +91,11 @@ function MapaContent() {
     if (key === lastFilterTrackKey.current) return
     lastFilterTrackKey.current = key
     trackEvent("map_filter", {
-      hasType: Boolean(next.type),
+      type: next.type || "",
       tagCount: next.tags?.length ?? 0,
+      neighborhood: next.neighborhood || "",
+      safetyLevel: next.safetyLevel || "",
+      hasType: Boolean(next.type),
       hasNeighborhood: Boolean(next.neighborhood),
       hasSafety: Boolean(next.safetyLevel),
       hasSearch: Boolean(next.search?.trim()),
@@ -150,6 +155,20 @@ function MapaContent() {
 
     const applyMerged = (primaryKey: string, extraKeys: string[] = []) => {
       setPlaces(mergeCachedPlaces([primaryKey, ...extraKeys]))
+    }
+
+    const reportSearch = (resultCount: number) => {
+      const query = sanitizeSearchQuery(search)
+      if (!query) return
+      const key = `${filterKey}|${resultCount}`
+      if (lastSearchTrackKey.current === key) return
+      lastSearchTrackKey.current = key
+      const kind = searchNeighborhood ? "neighborhood" : "text"
+      const city = searchNeighborhood || localitySlugsFromUrl || ""
+      trackEvent("search_performed", { query, resultCount, kind, city })
+      if (resultCount === 0) {
+        trackEvent("search_no_results", { query, kind, city })
+      }
     }
 
     const buildParams = (neighborhood: string, searchText: string) => {
@@ -215,6 +234,7 @@ function MapaContent() {
     if (cached?.places?.length) {
       lastFetchedFilterKeyRef.current = filterKey
       applyMerged(filterKey)
+      reportSearch(mergeCachedPlaces([filterKey]).length)
       setPlacesError(null)
       setLoading(false)
       if (!isPlacesCacheFresh(filterKey)) {
@@ -240,6 +260,7 @@ function MapaContent() {
       if (requestSeq !== fetchRequestSeqRef.current) return
       lastFetchedFilterKeyRef.current = filterKey
       applyMerged(filterKey)
+      reportSearch(mergeCachedPlaces([filterKey]).length)
       setPlacesError(null)
       prefetchAdjacent(filterKey)
     } catch (error: any) {
@@ -248,6 +269,7 @@ function MapaContent() {
       toast.error(message)
       setPlaces([])
       setPlacesError(message)
+      trackEvent("map_load_error", { reason: "places_fetch" })
     } finally {
       if (requestSeq === fetchRequestSeqRef.current) setLoading(false)
     }

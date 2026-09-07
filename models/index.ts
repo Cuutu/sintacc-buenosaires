@@ -13,6 +13,7 @@ export { PushToken, type IPushToken } from "./PushToken"
 export { Venture, type IVenture } from "./Venture"
 export { VentureSuggestion, type IVentureSuggestion } from "./VentureSuggestion"
 export { VentureReview, type IVentureReview } from "./VentureReview"
+export { ProductEvent, type IProductEvent } from "./ProductEvent"
 
 // Fase 2 models (scaffolded)
 import mongoose from "mongoose"

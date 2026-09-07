@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AlertTriangle, Home, RefreshCw } from "lucide-react"
 import { reportClientError } from "@/lib/client-error-reporter"
+import { trackEvent } from "@/lib/analytics"
 
 export default function RouteError({
   error,
@@ -20,6 +21,16 @@ export default function RouteError({
       digest: error.digest,
     })
     if (id) setEventId(id)
+    try {
+      const path = window.location.pathname || ""
+      if (path.startsWith("/lugar/")) {
+        trackEvent("place_load_error", { reason: "route_error" })
+      } else if (path.startsWith("/mapa")) {
+        trackEvent("map_load_error", { reason: "route_error" })
+      }
+    } catch {
+      /* ignore */
+    }
   }, [error])
 
   return (

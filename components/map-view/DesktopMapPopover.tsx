@@ -145,6 +145,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
               target="_blank"
               rel="noopener noreferrer"
               data-directions="true"
+              data-place-id={String(place._id)}
               onClick={(event) => event.stopPropagation()}
               className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
             >

@@ -43,6 +43,11 @@ async function main() {
       { keys: { ip: 1, type: 1, windowStart: 1 }, options: { unique: true } },
       { keys: { windowStart: 1 }, options: { expireAfterSeconds: 86400 * 8 } },
     ],
+    productevents: [
+      { keys: { ts: 1 }, options: { expireAfterSeconds: 86400 * 180, name: "ts_ttl" } },
+      { keys: { name: 1, ts: -1 } },
+      { keys: { distinctId: 1, ts: -1 } },
+    ],
   }
 
   console.log("📋 Checklist de índices MongoDB\n")

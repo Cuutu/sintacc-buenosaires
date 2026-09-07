@@ -74,7 +74,15 @@ export default async function LugarPage({ params }: LugarPageProps) {
 
   return (
     <div className="min-h-full bg-[#F8F5EF] pb-8 lg:pb-16">
-      <TrackPageView event="place_view" properties={{ placeId }} />
+      <TrackPageView
+        event="place_view"
+        properties={{
+          placeId,
+          city: place.locality || place.neighborhood || "",
+          province: place.province || "",
+          category: place.type,
+        }}
+      />
       <div className="lg:mx-auto lg:grid lg:max-w-[1100px] lg:grid-cols-[minmax(0,760px)_minmax(280px,320px)] lg:items-start lg:gap-10 lg:px-8 lg:pt-8">
         <div className="min-w-0">
           <PlaceHero
