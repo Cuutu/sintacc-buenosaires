@@ -1,6 +1,7 @@
 import type { IPlace } from "@/models/Place"
-import { formatShortPlaceAddress, getPlaceRatingLine, getPlaceSheetDetailTags } from "@/components/map-view/place-selected-card-model"
+import { formatShortPlaceAddress, getPlaceSheetDetailTags } from "@/components/map-view/place-selected-card-model"
 import { buildPlacePopupHtml } from "@/components/map-view/map-popup-html"
+import { getPlaceReviewLines } from "@/lib/place-review-display"
 
 function fakePlace(overrides: Partial<IPlace> = {}): IPlace {
   return {
@@ -22,17 +23,16 @@ describe("ficha seleccionada del mapa", () => {
     expect(formatShortPlaceAddress(fakePlace())).toBe("Avenida Boedo 605, Almagro")
   })
 
-  it("rating Google en una línea", () => {
-    const rating = getPlaceRatingLine(
+  it("rating Google en una línea etiquetada, empty CeliMap al lado", () => {
+    const lines = getPlaceReviewLines(
       fakePlace({
         googleSnapshot: { rating: 4, userRatingCount: 101 },
       } as Partial<IPlace>)
     )
-    expect(rating).toEqual({
-      score: "4.0",
-      source: "Google",
-      countLabel: "(101 reseñas)",
-    })
+    expect(lines.map((line) => line.text)).toEqual([
+      "Google 4.0 · 101 reseñas",
+      "Todavía no hay reseñas de la comunidad",
+    ])
   })
 
   it("popup HTML compacto: sin imagen, badge, botones 48px", () => {
@@ -47,7 +47,9 @@ describe("ficha seleccionada del mapa", () => {
     expect(html).toContain("La Cocina de Don Pablo")
     expect(html).toContain("Restaurante • Almagro")
     expect(html).toContain("Avenida Boedo 605, Almagro")
-    expect(html).toContain("Google")
+    expect(html).toContain("Google 4.0 · 101 reseñas")
+    expect(html).toContain("Todavía no hay reseñas de la comunidad")
+    expect(html).not.toContain("Todavía no hay reseñas</")
     expect(html).toContain("Ver lugar")
     expect(html).toContain("Cómo llegar")
     expect(html).toContain("min-height:48px")

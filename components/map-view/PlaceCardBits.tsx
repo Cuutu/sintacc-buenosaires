@@ -2,8 +2,8 @@ import type { ComponentType } from "react"
 import { Coffee, MapPin, ShoppingBasket, Star, Store, Utensils } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
+import { getPlaceReviewLines } from "@/lib/place-review-display"
 import {
-  getPlaceRatingLine,
   getPlaceSafety,
   getPlaceTypeKey,
 } from "./place-selected-card-model"
@@ -61,14 +61,21 @@ export function PlaceRatingRow({
   place: IPlace
   className?: string
 }) {
-  const rating = getPlaceRatingLine(place)
-  if (!rating) return null
+  const lines = getPlaceReviewLines(place)
+  if (lines.length === 0) return null
   return (
-    <p className={cn("flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[13px] leading-none text-[#5F6B63]", className)}>
-      <Star className="h-3 w-3 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
-      <span className="font-semibold text-[#1F4D35]">{rating.score}</span>
-      <span className="font-medium">{rating.source}</span>
-      {rating.countLabel ? <span>{rating.countLabel}</span> : null}
-    </p>
+    <div className={cn("flex flex-col gap-1", className)}>
+      {lines.map((line) => (
+        <p
+          key={line.kind}
+          className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[13px] leading-snug text-[#5F6B63]"
+        >
+          {line.hasScore ? (
+            <Star className="h-3 w-3 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
+          ) : null}
+          <span className={line.hasScore ? "font-medium" : undefined}>{line.text}</span>
+        </p>
+      ))}
+    </div>
   )
 }

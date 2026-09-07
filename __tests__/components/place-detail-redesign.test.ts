@@ -58,6 +58,15 @@ describe("rediseño ficha lugar", () => {
     expect(aside).not.toContain("avgRating")
   })
 
+  it("header no dice Todavía no hay reseñas a secas", () => {
+    const page = read("app/lugar/[id]/page.tsx")
+    const community = read("components/lugar/PlaceCommunityReviews.tsx")
+    expect(page).not.toMatch(/Todavía no hay reseñas(?! de la comunidad)/)
+    expect(page).toContain("getPlaceReviewLines")
+    expect(community).toContain("Reseñas CeliMap")
+    expect(community).toContain("Todavía no hay reseñas de la comunidad")
+  })
+
   it("cercanos máximo 5 en rail horizontal", () => {
     const rail = read("components/lugar/PlaceNearbyRail.tsx")
     expect(rail).toContain("slice(0, 5)")

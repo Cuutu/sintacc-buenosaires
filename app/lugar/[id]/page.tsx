@@ -7,6 +7,8 @@ import { getBaseUrl } from "@/lib/base-url"
 import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 import { getPlaceLiveStats } from "@/lib/place-stats"
 import { getNearbyPlacesForPlace } from "@/lib/place-nearby"
+import { formatFullPlaceAddress } from "@/lib/place-location-display"
+import { getPlaceReviewLines } from "@/lib/place-review-display"
 import { placeCategoryLine } from "@/lib/seo/place-metadata"
 import { PlaceHero } from "@/components/lugar/PlaceHero"
 import { PlaceTrustCard } from "@/components/lugar/PlaceTrustCard"
@@ -60,10 +62,15 @@ export default async function LugarPage({ params }: LugarPageProps) {
   const reportCount = liveStats.contaminationReportsCount
   const effectiveSafety = inferSafetyLevel(place)
   const isDedicated = effectiveSafety === "dedicated_gf"
-  const addressText = place.addressText || place.address || ""
-  const totalReviews = liveStats.totalReviews
-  const avgRating = liveStats.avgRating
+  const addressText = formatFullPlaceAddress(place)
   const categoryLine = placeCategoryLine(place)
+  const reviewLines = getPlaceReviewLines(
+    {
+      stats: { avgRating: liveStats.avgRating, totalReviews: liveStats.totalReviews },
+      googleSnapshot: place.googleSnapshot,
+    },
+    { emptyCommunity: "always" }
+  )
 
   return (
     <div className="min-h-full bg-[#F8F5EF] pb-8 lg:pb-16">
@@ -87,17 +94,19 @@ export default async function LugarPage({ params }: LugarPageProps) {
               {categoryLine ? (
                 <p className="mt-2 text-base text-[#5F6B63]">{categoryLine}</p>
               ) : null}
-              {totalReviews > 0 ? (
-                <p className="mt-2 flex items-center gap-1.5 text-base text-[#1F4D35]">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="font-semibold">{avgRating.toFixed(1)}</span>
-                  <span className="text-[#5F6B63]">
-                    ({totalReviews} {totalReviews === 1 ? "reseña" : "reseñas"})
+              {reviewLines.map((line) => (
+                <p
+                  key={line.kind}
+                  className="mt-2 flex items-center gap-1.5 text-base text-[#1F4D35]"
+                >
+                  {line.hasScore ? (
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  ) : null}
+                  <span className={line.hasScore ? "font-semibold" : "text-[#5F6B63]"}>
+                    {line.text}
                   </span>
                 </p>
-              ) : (
-                <p className="mt-2 text-base text-[#5F6B63]">Todavía no hay reseñas</p>
-              )}
+              ))}
             </header>
 
             <PlaceTrustCard reportCount={reportCount} isDedicated={isDedicated} />
@@ -125,8 +134,8 @@ export default async function LugarPage({ params }: LugarPageProps) {
 
             <PlaceCommunityReviewsClient
               placeId={placeId}
-              totalReviews={totalReviews}
-              avgRating={avgRating}
+              totalReviews={liveStats.totalReviews}
+              avgRating={liveStats.avgRating}
             />
 
             <PlaceGoogleSection snapshot={place.googleSnapshot} />

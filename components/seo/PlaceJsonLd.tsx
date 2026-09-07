@@ -1,4 +1,5 @@
 import { getBaseUrl } from "@/lib/base-url"
+import { getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getCityBySlug } from "@/lib/seo/cities"
@@ -39,6 +40,7 @@ interface PlaceJsonLdProps {
     province?: string
     locality?: string
     address?: string
+    addressText?: string
     location?: { lat: number; lng: number }
     photos?: string[]
     contact?: { url?: string; phone?: string; instagram?: string }
@@ -54,18 +56,19 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   const schemaType = SCHEMA_TYPES[place.type] || "LocalBusiness"
   const sameAs = [place.contact?.url, normalizeInstagramUrl(place.contact?.instagram)].filter(Boolean)
 
+  const area = getCanonicalPlaceArea(place)
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: place.name,
-    description: `${place.name} - ${typeLabel} con opciones Sin TACC en ${place.neighborhood}, según la información cargada en CeliMap.`,
+    description: `${place.name} - ${typeLabel} con opciones Sin TACC${area ? ` en ${area}` : ""}, según la información cargada en CeliMap.`,
     url: placeUrl,
     image: imageUrl,
     address: place.address
       ? {
           "@type": "PostalAddress",
           streetAddress: place.address,
-          addressLocality: place.neighborhood,
+          addressLocality: area || place.neighborhood,
           addressCountry: "AR",
         }
       : undefined,
@@ -79,7 +82,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
         : undefined,
     areaServed: {
       "@type": "Place",
-      name: place.neighborhood,
+      name: area || place.neighborhood,
     },
     servesCuisine: "Comida sin gluten",
     telephone: place.contact?.phone || undefined,
