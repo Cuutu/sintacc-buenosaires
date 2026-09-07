@@ -5,13 +5,14 @@ import mapboxgl from "mapbox-gl"
 import { X } from "lucide-react"
 import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
 import { MapErrorBoundary } from "./MapErrorBoundary"
-import { MapTopBar, type MapFilters, type SortOption } from "./MapTopBar"
+import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"
 import { DesktopMapPopover } from "./DesktopMapPopover"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import { useUserLocation } from "./useUserLocation"
 import { filterPlacesInBounds } from "./geo"
-import { listHasRatings, sortPlaces } from "./place-sort"
+import { listHasRatings, sortPlaces, LOCATION_SORT_CTA } from "./place-sort"
+import { useMapPlaceSort } from "./useMapPlaceSort"
 import type { IPlace } from "@/models/Place"
 
 interface MapDesktopProps {
@@ -61,31 +62,11 @@ export function MapDesktop({
   const mapRef = React.useRef<MapboxMapRef>(null)
   const [bounds, setBounds] = React.useState<mapboxgl.LngLatBounds | null>(null)
   const location = useUserLocation()
-  const [sort, setSort] = React.useState<SortOption>("recommended")
-  const sortInitializedRef = React.useRef(false)
+  const { sort, setSort, showLocationCta } = useMapPlaceSort(location)
   const [mapKey, setMapKey] = React.useState(0)
   const [hoveredPlaceId, setHoveredPlaceId] = React.useState<string | null>(null)
   const [popoverPlace, setPopoverPlace] = React.useState<IPlace | null>(null)
   const [popoverOpen, setPopoverOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    if (sortInitializedRef.current) return
-    if (location.status === "unknown") return
-    sortInitializedRef.current = true
-    if (location.status === "granted") setSort("nearest")
-  }, [location.status])
-
-  React.useEffect(() => {
-    if (sort !== "nearest") return
-    if (location.status === "granted" && location.coords) return
-    if (location.status === "prompt" || location.status === "unknown") {
-      location.request()
-      return
-    }
-    if (location.status === "denied" || location.status === "error" || location.status === "unavailable") {
-      setSort("recommended")
-    }
-  }, [sort, location.status, location.coords, location.request])
 
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
@@ -128,7 +109,7 @@ export function MapDesktop({
   )
   const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
   const activeQuery = searchQuery?.trim() ?? ""
-  const showLocationCta = sort === "nearest" && !location.coords && location.status !== "denied"
+  const locationCta = showLocationCta ? LOCATION_SORT_CTA : null
 
   const selectedPlace = React.useMemo(
     () => places.find((place) => place._id.toString() === selectedPlaceId) ?? null,
@@ -215,8 +196,8 @@ export function MapDesktop({
           activeQuery={activeQuery}
           onClearQuery={activeQuery ? () => onSearchChange("") : undefined}
           hasRatings={hasRatings}
-          locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
-          onRequestLocation={location.request}
+          locationCta={locationCta}
+          onRequestLocation={() => setSort("nearest")}
           locationMessage={location.message}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearAllFilters}
@@ -234,8 +215,8 @@ export function MapDesktop({
             onPlaceHover={setHoveredPlaceId}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
             userLocation={location.coords}
-            locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
-            onRequestLocation={location.request}
+            locationCta={locationCta}
+            onRequestLocation={() => setSort("nearest")}
             locationMessage={location.message}
           />
         </div>

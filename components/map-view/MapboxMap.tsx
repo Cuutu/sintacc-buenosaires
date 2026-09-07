@@ -133,7 +133,7 @@ interface MapboxMapProps {
   /** Callback cuando falla la geolocalización (ej. permiso denegado) */
   onGeolocateError?: (error: GeolocationPositionError) => void
   /** Callback cuando se obtiene la ubicación correctamente */
-  onGeolocateSuccess?: () => void
+  onGeolocateSuccess?: (position?: GeolocationPosition) => void
   clusterMarkers?: boolean
   /** Oliva = 100% sin TACC; terracota = opciones; gris = sin info */
   colorBySafety?: boolean
@@ -621,15 +621,15 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         showButton: false, // Usamos nuestro FAB para activar
       })
       const onError = (e: GeolocationPositionError) => onGeolocateError?.(e)
-      const onSuccess = () => onGeolocateSuccess?.()
+      const onSuccess = (e: GeolocationPosition) => onGeolocateSuccess?.(e)
       geolocate.on("error", onError)
-      geolocate.on("trackuserlocationstart", onSuccess)
+      geolocate.on("geolocate", onSuccess)
       m.addControl(geolocate, "top-right")
       geolocateControlRef.current = geolocate
 
       return () => {
         geolocate.off("error", onError)
-        geolocate.off("trackuserlocationstart", onSuccess)
+        geolocate.off("geolocate", onSuccess)
         if (geolocateControlRef.current === geolocate) {
           geolocateControlRef.current = null
         }

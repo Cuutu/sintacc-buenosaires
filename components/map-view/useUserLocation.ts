@@ -41,11 +41,7 @@ export function useUserLocation() {
           const denied = error.code === error.PERMISSION_DENIED
           setStatus(denied ? "denied" : "error")
           if (!options?.silent) {
-            setMessage(
-              denied
-                ? "Sin ubicación. Mostramos recomendados."
-                : "No pudimos obtener tu ubicación. Mostramos recomendados."
-            )
+            setMessage("No pudimos usar tu ubicación")
           }
         },
         { maximumAge: 120000, timeout: 8000, enableHighAccuracy: false }

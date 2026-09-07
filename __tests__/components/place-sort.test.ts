@@ -1,4 +1,11 @@
-import { sortPlaces, listHasRatings, type PlaceWithListStats } from "@/components/map-view/place-sort"
+import {
+  sortPlaces,
+  listHasRatings,
+  defaultSortForLocation,
+  shouldShowLocationCta,
+  parseStoredSort,
+  type PlaceWithListStats,
+} from "@/components/map-view/place-sort"
 import { formatListDistance } from "@/components/map-view/geo"
 
 function place(partial: Partial<PlaceWithListStats> & { id: string; lat: number; lng: number }): PlaceWithListStats {
@@ -43,5 +50,54 @@ describe("place sort + distancia", () => {
   it("distancia usa a + coma es-AR", () => {
     expect(formatListDistance(350)).toBe("a 350 m")
     expect(formatListDistance(1200)).toBe("a 1,2 km")
+  })
+
+  it("parseStoredSort ignora valores raros", () => {
+    expect(parseStoredSort("nearest")).toBe("nearest")
+    expect(parseStoredSort("nope")).toBeNull()
+    expect(parseStoredSort(null)).toBeNull()
+  })
+
+  it("default Más cercanos solo si geolocation granted y no hay sort guardado", () => {
+    expect(defaultSortForLocation("granted", null)).toBe("nearest")
+    expect(defaultSortForLocation("prompt", null)).toBe("recommended")
+    expect(defaultSortForLocation("denied", null)).toBe("recommended")
+    expect(defaultSortForLocation("granted", "rating")).toBe("rating")
+  })
+
+  it("CTA de ubicación aparece en Recomendados sin coords", () => {
+    expect(
+      shouldShowLocationCta({ sort: "recommended", status: "prompt", hasCoords: false })
+    ).toBe(true)
+    expect(
+      shouldShowLocationCta({ sort: "recommended", status: "prompt", hasCoords: true })
+    ).toBe(false)
+    expect(
+      shouldShowLocationCta({ sort: "recommended", status: "denied", hasCoords: false })
+    ).toBe(false)
+  })
+
+  it("desktop y mobile usan el mismo hook de sort y no traban el default en prompt", () => {
+    const fs = require("fs") as typeof import("fs")
+    const path = require("path") as typeof import("path")
+    const desktop = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MapDesktop.tsx"),
+      "utf8"
+    )
+    const mobile = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MapMobile.tsx"),
+      "utf8"
+    )
+    expect(desktop).toContain("useMapPlaceSort")
+    expect(mobile).toContain("useMapPlaceSort")
+    expect(desktop).not.toContain("sortInitializedRef")
+    expect(mobile).not.toContain("sortInitializedRef")
+    expect(desktop).toContain("LOCATION_SORT_CTA")
+    expect(mobile).toContain("LOCATION_SORT_CTA")
+    const loc = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/useUserLocation.ts"),
+      "utf8"
+    )
+    expect(loc).toContain("No pudimos usar tu ubicación")
   })
 })

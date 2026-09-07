@@ -22,7 +22,8 @@ import {
 } from "@/lib/location-preference"
 import { CountUp } from "./CountUp"
 import { useUserLocation } from "./useUserLocation"
-import { listHasRatings, sortPlaces, type PlaceSortOption } from "./place-sort"
+import { listHasRatings, sortPlaces, type PlaceSortOption, LOCATION_SORT_CTA } from "./place-sort"
+import { useMapPlaceSort } from "./useMapPlaceSort"
 import mapboxgl from "mapbox-gl"
 import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
@@ -109,27 +110,8 @@ export function MapMobile({
   const [snapPlaceId, setSnapPlaceId] = React.useState(selectedPlaceId)
   const [overlayInsets, setOverlayInsets] = React.useState<{ top: number; nav: number } | null>(null)
   const location = useUserLocation()
-  const [sort, setSort] = React.useState<PlaceSortOption>("recommended")
-  const sortInitializedRef = React.useRef(false)
-
-  React.useEffect(() => {
-    if (sortInitializedRef.current) return
-    if (location.status === "unknown") return
-    sortInitializedRef.current = true
-    if (location.status === "granted") setSort("nearest")
-  }, [location.status])
-
-  React.useEffect(() => {
-    if (sort !== "nearest") return
-    if (location.status === "granted" && location.coords) return
-    if (location.status === "prompt" || location.status === "unknown") {
-      location.request()
-      return
-    }
-    if (location.status === "denied" || location.status === "error" || location.status === "unavailable") {
-      setSort("recommended")
-    }
-  }, [sort, location.status, location.coords, location.request])
+  const { sort, setSort, showLocationCta } = useMapPlaceSort(location)
+  const locationCta = showLocationCta ? LOCATION_SORT_CTA : null
 
   if (selectedPlaceId !== snapPlaceId) {
     setSnapPlaceId(selectedPlaceId)
@@ -183,7 +165,6 @@ export function MapMobile({
   )
   const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
   const activeQuery = searchQuery?.trim() ?? ""
-  const showLocationCta = sort === "nearest" && !location.coords && location.status !== "denied"
 
   const selectedPlace = React.useMemo(
     () => places.find((p) => p._id.toString() === selectedPlaceId) ?? null,
@@ -244,7 +225,6 @@ export function MapMobile({
       (position) => {
         const { latitude, longitude } = position.coords
         location.setFromCoords({ lat: latitude, lng: longitude })
-        sortInitializedRef.current = true
         setSort("nearest")
         mapRef.current?.showUserLocation(longitude, latitude)
         mapRef.current?.flyTo(longitude, latitude, 16)
@@ -293,7 +273,7 @@ export function MapMobile({
         maximumAge: 30000,
       }
     )
-  }, [location.setFromCoords])
+  }, [location.setFromCoords, setSort])
 
   React.useEffect(() => {
     if (autoLocationAttemptedRef.current) return
@@ -319,9 +299,15 @@ export function MapMobile({
     }
   }, [])
 
-  const handleGeolocateSuccess = React.useCallback(() => {
+  const handleGeolocateSuccess = React.useCallback((position?: GeolocationPosition) => {
+    if (position?.coords) {
+      location.setFromCoords({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      })
+    }
     toast.success("Ubicación encontrada", { id: "location" })
-  }, [])
+  }, [location.setFromCoords])
 
   const handlePlaceSelect = (place: IPlace) => {
     onPlaceSelect(place)
@@ -479,8 +465,8 @@ export function MapMobile({
               onRetryLoad={onRetryLoad}
               onPlaceSelect={handlePlaceSelect}
               userLocation={location.coords}
-              locationCta={showLocationCta ? "Usar mi ubicación para ordenar por cercanía" : null}
-              onRequestLocation={location.request}
+              locationCta={locationCta}
+              onRequestLocation={() => setSort("nearest")}
               locationMessage={location.message}
               onClearFilters={hasExtraFilters || filters.tags.length > 0 ? () => {
                 onFiltersChange({

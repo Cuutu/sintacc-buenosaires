@@ -6,6 +6,7 @@ import { PlaceMiniCard } from "./PlaceMiniCard"
 import type { IPlace } from "@/models/Place"
 import type { UserLatLng } from "./geo"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
+import { MOTION_MS } from "./motion"
 import { cn } from "@/lib/utils"
 
 interface PlacesListProps {
@@ -68,9 +69,9 @@ export function PlacesList({
 
   React.useEffect(() => {
     if (!leaving) return
-    const timer = window.setTimeout(() => setLeaving(false), 120)
+    const timer = window.setTimeout(() => setLeaving(false), reduceMotion ? 0 : MOTION_MS.listOut)
     return () => window.clearTimeout(timer)
-  }, [leaving, enterNonce])
+  }, [leaving, enterNonce, reduceMotion])
 
   const handlePlaceClick = React.useCallback(
     (place: IPlace) => {
