@@ -5,6 +5,8 @@ import { getPlacesByCityAndCategory, getTopNeighborhoods } from "@/lib/seo/place
 import {
   getCategoryTitle,
   getCategoryDescription,
+  getCategoryH1,
+  getCategoryIntro,
   getSEOTextBlock,
   buildCityFaqs,
 } from "@/lib/seo/templates"
@@ -123,11 +125,10 @@ export default async function SinGlutenCiudadCategoriaPage({
         faqs={faqs}
       />
       <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
-        {catName} sin gluten en {city.name}
+        {getCategoryH1(city, categoriaSlug)}
       </h1>
       <p className="mb-6 max-w-3xl text-muted-foreground">
-        {total} {catName.toLowerCase()} en {city.name} según datos de CeliMap. Confirmá siempre
-        en el local protocolos y contaminación cruzada.
+        {getCategoryIntro(city, categoriaSlug, total)}
       </p>
       <PlaceListWithFilters
         places={places}

@@ -3,6 +3,7 @@ import { PlaceCard } from "@/components/place-card"
 import type { PlaceSEO } from "@/lib/seo/places"
 import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import { CATEGORIES } from "@/lib/seo/cities"
+import { getCityCategoryNavLabel } from "@/lib/seo/templates"
 
 interface PlaceListWithFiltersProps {
   places: PlaceSEO[]
@@ -54,7 +55,7 @@ export function PlaceListWithFilters({
                 href={citySlug ? `${basePath}/${citySlug}/${cat.slug}` : `/${cat.slug}-sin-gluten`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium"
               >
-                {cat.emoji} {cat.name} sin gluten
+                {cat.emoji} {getCityCategoryNavLabel(citySlug, cat.slug, `${cat.name} sin gluten`)}
               </Link>
             ))}
           </div>

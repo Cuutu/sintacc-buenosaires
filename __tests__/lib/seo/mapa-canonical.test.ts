@@ -36,6 +36,10 @@ describe("T3 mapa canónico", () => {
     expect(meta.robots).toEqual({ index: true, follow: true })
     expect(mapaLayout.alternates?.canonical).toBe(canonical)
     expect(mapaCanonicalUrl()).toBe(canonical)
+    expect(String(mapaLayout.title)).toBe("Mapa de lugares sin TACC cerca tuyo")
+    expect(String(mapaLayout.title)).not.toContain("| CeliMap")
+    expect(String(mapaLayout.description)).toMatch(/opciones sin TACC cerca tuyo/)
+    expect(String(mapaLayout.description)).not.toMatch(/Tucumán|Rosario/i)
   })
 
   it("/mapa?place= y ?citySlugs= → noindex + canonical /mapa", () => {
@@ -58,7 +62,14 @@ describe("T3 mapa canónico", () => {
       "utf8"
     )
     expect(src).toContain("<h1")
-    expect(src).toContain("Mapa interactivo para celíacos en Argentina")
+    expect(src).toContain("Mapa de lugares sin TACC cerca tuyo")
+    expect(src).not.toContain("/sin-gluten/san-miguel-de-tucuman")
+    expect(src).not.toContain("/sin-gluten/rosario")
+    expect(src).toContain("/sin-gluten/buenos-aires")
+    expect(src).toContain("/sin-gluten/la-plata")
+    expect(src).toContain("/sin-gluten/cordoba")
+    expect(src).toContain("/sin-gluten-argentina")
+    expect(src).toContain("/restaurantes-sin-gluten")
     expect(src).toContain("sr-only")
     const h1Open = src.match(/<h1[^>]*>/)
     expect(h1Open?.[0]).toBeTruthy()

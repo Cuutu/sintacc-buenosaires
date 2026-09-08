@@ -5,9 +5,9 @@ import { MapaSeoIntro } from "@/components/mapa/MapaSeoIntro";
 const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
-  title: "Mapa para celíacos - Lugares sin tacc",
+  title: "Mapa de lugares sin TACC cerca tuyo",
   description:
-    "Mapa interactivo para celíacos en Argentina. Restaurantes, cafés y panaderías sin tacc en Buenos Aires, La Plata, Tucumán y más. Filtros por zona y nivel de seguridad.",
+    "Encontrá restaurantes, panaderías y cafés con opciones sin TACC cerca tuyo. Mapa colaborativo para celíacos en Argentina.",
   keywords: [
     "mapa sin tacc",
     "mapa celiaco",
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: `${BASE_URL}/mapa` },
   openGraph: {
-    title: "Mapa para celíacos - Lugares sin tacc",
+    title: "Mapa de lugares sin TACC cerca tuyo",
     description:
-      "Mapa interactivo con restaurantes, cafés y panaderías sin tacc en Argentina.",
+      "Encontrá restaurantes, panaderías y cafés con opciones sin TACC cerca tuyo. Mapa colaborativo para celíacos en Argentina.",
     url: `${BASE_URL}/mapa`,
     type: "website",
   },

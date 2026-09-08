@@ -59,7 +59,27 @@ export function getCityDescription(city: City, stats?: CityStatsLike): string {
   return `${lead}${mid} según datos de CeliMap; confirmá en el local.`
 }
 
+export function getCategoryH1(city: City | null, categorySlug: string): string {
+  if (!city && categorySlug === "restaurantes") return "Restaurantes sin TACC en Argentina"
+  if (!city && categorySlug === "panaderias") return "Panaderías sin TACC en Argentina"
+  if (city?.slug === "buenos-aires" && categorySlug === "restaurantes") {
+    return "Restaurantes sin TACC en CABA"
+  }
+  if (city?.slug === "la-plata" && categorySlug === "panaderias") {
+    return "Panaderías sin TACC en La Plata"
+  }
+  return getCategoryTitle(city, categorySlug)
+}
+
 export function getCategoryTitle(city: City | null, categorySlug: string): string {
+  if (!city && categorySlug === "restaurantes") return "Restaurantes sin TACC en Argentina"
+  if (!city && categorySlug === "panaderias") return "Panaderías sin TACC en Argentina"
+  if (city?.slug === "buenos-aires" && categorySlug === "restaurantes") {
+    return "Restaurantes sin TACC en CABA (Buenos Aires)"
+  }
+  if (city?.slug === "la-plata" && categorySlug === "panaderias") {
+    return "Panaderías sin TACC en La Plata"
+  }
   const cat = getCategoryBySlug(categorySlug)
   const catName = cat?.name ?? categorySlug
   if (city) {
@@ -69,6 +89,18 @@ export function getCategoryTitle(city: City | null, categorySlug: string): strin
 }
 
 export function getCategoryDescription(city: City | null, categorySlug: string, total?: number): string {
+  if (!city && categorySlug === "restaurantes") {
+    return "Encontrá restaurantes con opciones sin TACC / sin gluten en Argentina. Mapa y fichas colaborativas en CeliMap."
+  }
+  if (!city && categorySlug === "panaderias") {
+    return "Panaderías con opciones sin TACC en Argentina. Explorá el mapa CeliMap y filtrá por ciudad."
+  }
+  if (city?.slug === "buenos-aires" && categorySlug === "restaurantes") {
+    return "Restaurantes con opciones sin TACC en CABA. Fichas y mapa colaborativo CeliMap para celíacos en Buenos Aires."
+  }
+  if (city?.slug === "la-plata" && categorySlug === "panaderias") {
+    return "Panaderías con opciones sin TACC en La Plata. Listado y mapa en CeliMap, con datos de la comunidad."
+  }
   const cat = getCategoryBySlug(categorySlug)
   const catName = cat?.name ?? categorySlug
   const count = total != null ? `${total} ` : ""
@@ -76,6 +108,40 @@ export function getCategoryDescription(city: City | null, categorySlug: string, 
     return `Donde comer sin gluten en ${city.name}. ${count}${catName.toLowerCase()} con información de la comunidad en CeliMap.`
   }
   return `Encontrá ${count}${catName.toLowerCase()} sin gluten en Argentina en el mapa colaborativo CeliMap.`
+}
+
+/** Intro visible. Count live cuando el data layer ya lo trae. */
+export function getCategoryIntro(
+  city: City | null,
+  categorySlug: string,
+  total: number
+): string | null {
+  const cat = getCategoryBySlug(categorySlug)
+  const catName = (cat?.name ?? categorySlug).toLowerCase()
+  if (!city && (categorySlug === "restaurantes" || categorySlug === "panaderias")) {
+    return `${total} ${catName} con opciones sin TACC en Argentina según datos de CeliMap. Filtrá por ciudad; confirmá siempre en el local.`
+  }
+  if (city?.slug === "buenos-aires" && categorySlug === "restaurantes") {
+    return "En CeliMap, CABA usa el slug buenos-aires: esta página lista restaurantes con opciones sin TACC en la Ciudad de Buenos Aires. Confirmá siempre en el local."
+  }
+  if (city?.slug === "la-plata" && categorySlug === "panaderias") {
+    return `${total} panaderías con opciones sin TACC en La Plata según datos de CeliMap. Este listado es la categoría; la guía general de la ciudad está en el hub. Confirmá siempre en el local.`
+  }
+  if (city) {
+    return `${total} ${catName} en ${city.name} según datos de CeliMap. Confirmá siempre en el local protocolos y contaminación cruzada.`
+  }
+  return null
+}
+
+export function getCityCategoryNavLabel(
+  citySlug: string,
+  categorySlug: string,
+  fallback: string
+): string {
+  if (citySlug === "la-plata" && categorySlug === "panaderias") {
+    return "Panaderías sin TACC en La Plata"
+  }
+  return fallback
 }
 
 export function buildCityFaqs(city: City, stats: CityStatsLike) {
@@ -132,11 +198,11 @@ export function getSEOTextBlock(
 }
 
 export function getArgentinaLandingTitle(): string {
-  return "Lugares sin gluten en Argentina"
+  return "Lugares sin TACC en Argentina"
 }
 
 export function getArgentinaLandingDescription(): string {
-  return "Encontrá restaurantes, panaderías, cafés y más opciones sin gluten en toda Argentina. Mapa colaborativo con datos aportados por la comunidad celíaca."
+  return "Listado y mapa de lugares con opciones sin TACC en Argentina: restaurantes, panaderías, cafés y más. Datos de la comunidad CeliMap."
 }
 
 export function getTopRankingTitle(city: City): string {

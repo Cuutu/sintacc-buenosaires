@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import type { City } from "@/lib/seo/cities"
+import { getCityCategoryNavLabel } from "@/lib/seo/templates"
 import type { CityPageStats, CityRecentReview } from "@/lib/seo/places"
 import type { Guide } from "@/lib/seo/guides"
 import { CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
@@ -85,7 +86,7 @@ export function CityPageExtras({
                   href={`/sin-gluten/${city.slug}/${cat.slug}`}
                   className="text-primary hover:underline"
                 >
-                  {cat.name} ({cat.count})
+                  {getCityCategoryNavLabel(city.slug, cat.slug, cat.name)} ({cat.count})
                 </Link>
               </li>
             ))}

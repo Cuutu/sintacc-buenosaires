@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getPlacesByCategory } from "@/lib/seo/places"
-import { getCategoryTitle, getCategoryDescription } from "@/lib/seo/templates"
+import { getCategoryTitle, getCategoryDescription, getCategoryH1, getCategoryIntro } from "@/lib/seo/templates"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { Pagination } from "@/components/seo/Pagination"
@@ -60,6 +60,7 @@ export default async function CategoryGlobalPage({
   const { places, total, pages } = await getPlacesByCategory(category, page)
 
   const catName = CATEGORIES.find((c) => c.slug === category)?.name ?? category
+  const intro = getCategoryIntro(null, category, total)
 
   if (total === 0) {
     return (
@@ -80,8 +81,11 @@ export default async function CategoryGlobalPage({
         ]}
       />
       <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
-        {catName} sin gluten en Argentina
+        {getCategoryH1(null, category)}
       </h1>
+      {intro ? (
+        <p className="mb-6 max-w-3xl text-muted-foreground">{intro}</p>
+      ) : null}
       <PlaceListWithFilters
         places={places}
         citySlug=""

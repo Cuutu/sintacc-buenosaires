@@ -38,7 +38,7 @@ export function ArgentinaLandingJsonLd({ cities }: ArgentinaLandingJsonLdProps) 
         name: "¿Dónde comer sin gluten en Argentina?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "En CeliMap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más ciudades. Restaurantes, panaderías y cafés con datos aportados por la comunidad.",
+          text: "En CeliMap encontrás el mapa y el listado de lugares con opciones sin TACC. Hay guías de Buenos Aires, La Plata y Córdoba, más el mapa para filtrar por tipo y zona. Restaurantes, panaderías y cafés con datos aportados por la comunidad.",
         },
       },
       {
@@ -46,7 +46,7 @@ export function ArgentinaLandingJsonLd({ cities }: ArgentinaLandingJsonLdProps) 
         name: "¿Hay restaurantes sin TACC en Buenos Aires?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Hay restaurantes con opciones Sin TACC cargados en Buenos Aires. CeliMap reúne lugares 100% libres de gluten y locales con menú adaptado según la información cargada. Confirmá siempre en el local.",
+          text: "Hay restaurantes con opciones Sin TACC cargados en Buenos Aires. CeliMap reúne locales con menú adaptado según la información cargada. Confirmá siempre en el local.",
         },
       },
       {

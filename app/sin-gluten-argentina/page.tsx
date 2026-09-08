@@ -50,11 +50,11 @@ export default async function SinGlutenArgentinaPage() {
     <div className="container py-8">
       <ArgentinaLandingJsonLd cities={CITIES} />
       <h1 className="text-2xl md:text-4xl font-bold mb-6">
-        Lugares sin gluten en Argentina
+        {getArgentinaLandingTitle()}
       </h1>
       <p className="text-muted-foreground mb-6 max-w-2xl">
-        Encontrá restaurantes, panaderías, cafés y más opciones sin gluten en toda Argentina.
-        Explorá el{" "}
+        Listado y mapa de lugares con opciones sin TACC en Argentina: restaurantes, panaderías,
+        cafés y más, con datos de la comunidad. Explorá el{" "}
         <Link href="/mapa" className="text-primary hover:underline">
           mapa para celíacos
         </Link>
@@ -64,7 +64,8 @@ export default async function SinGlutenArgentinaPage() {
       <section className="mb-12 max-w-2xl">
         <h2 className="text-lg font-semibold mb-3">Restaurantes y lugares con opciones Sin TACC</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          Donde comer sin gluten en Buenos Aires, Córdoba, Rosario, Mendoza y más. Restaurantes sin TACC, panaderías sin gluten y cafés con datos aportados por la comunidad.
+          Empezá por ciudades con fichas en el mapa: Buenos Aires, La Plata y Córdoba. Restaurantes
+          sin TACC, panaderías y cafés con datos aportados por la comunidad.
         </p>
       </section>
 
@@ -123,17 +124,16 @@ export default async function SinGlutenArgentinaPage() {
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Dónde comer sin gluten en Argentina?</h3>
             <p>
-              En CeliMap encontrás el mapa de lugares sin gluten en Buenos Aires, Córdoba, Rosario,
-              Mendoza y más ciudades. Restaurantes, panaderías y cafés con datos aportados por la
-              comunidad.
+              En CeliMap encontrás el mapa y el listado de lugares con opciones sin TACC. Hay guías
+              de Buenos Aires, La Plata y Córdoba, más el mapa para filtrar por tipo y zona.
+              Restaurantes, panaderías y cafés con datos aportados por la comunidad.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-foreground mb-1">¿Hay restaurantes sin TACC en Buenos Aires?</h3>
             <p>
               Hay restaurantes con opciones Sin TACC cargados en Buenos Aires. CeliMap reúne
-              lugares 100% libres de gluten y locales con menú adaptado según la información
-              cargada. Confirmá siempre en el local.
+              locales con menú adaptado según la información cargada. Confirmá siempre en el local.
             </p>
           </div>
           <div>

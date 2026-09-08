@@ -48,6 +48,7 @@ describe("city/category page structure — sin FAQs duplicadas", () => {
     expect(src).toMatch(/<h1[\s\S]*?\{getCityH1\(city, stats\)\}/)
     expect(src).toContain("/sin-gluten/la-plata/restaurantes")
     expect(src).toContain("/sin-gluten/la-plata/panaderias")
+    expect(src).toContain("Panaderías sin TACC en La Plata")
     expect(src).toContain("/sin-gluten/la-plata/cafes")
     expect(src).toContain("localitySlugs=${citySlug}")
     expect(src).toContain("decideCityPageIndexing")
@@ -63,6 +64,8 @@ describe("city/category page structure — sin FAQs duplicadas", () => {
     const src = read("app/sin-gluten/[ciudadSlug]/[categoriaSlug]/page.tsx")
     const faqSections = src.match(/Preguntas frecuentes/g) || []
     expect(faqSections.length).toBe(1)
+    expect(src).toContain("getCategoryH1")
+    expect(src).toContain("getCategoryIntro")
   })
 
   it("home FAQ_ITEMS honestas y sin verificación falsa", () => {

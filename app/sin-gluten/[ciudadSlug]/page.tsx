@@ -77,7 +77,7 @@ function LaPlataHubIntro({
       </Link>
       {", "}
       <Link href="/sin-gluten/la-plata/panaderias" className={linkClass}>
-        panaderías
+        Panaderías sin TACC en La Plata
       </Link>
       {" y "}
       <Link href="/sin-gluten/la-plata/cafes" className={linkClass}>
