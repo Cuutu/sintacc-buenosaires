@@ -1,5 +1,5 @@
 import { getCityBySlug } from "@/lib/seo/cities"
-import { getCityTitle, getCityDescription } from "@/lib/seo/templates"
+import { getCityTitle, getCityDescription, getCityH1 } from "@/lib/seo/templates"
 import { decideCityPageIndexing } from "@/lib/seo/indexing-rules"
 
 const laPlata = getCityBySlug("la-plata")!
@@ -8,26 +8,21 @@ const cordoba = getCityBySlug("cordoba")!
 describe("getCityTitle / getCityDescription", () => {
   const laPlataLive = { total: 8, dedicatedGf: 6, gfOptions: 2 }
 
-  it("La Plata-like: title con sin TACC + ciudad; description interpola 8; sin verificado", () => {
+  it("La Plata hub: title CTR sin marca (layout agrega | CeliMap); H1 corto; description pedida", () => {
     const title = getCityTitle(laPlata, laPlataLive)
     const description = getCityDescription(laPlata, laPlataLive)
-    expect(title).toMatch(/sin TACC/)
-    expect(title).toContain("La Plata")
+    const h1 = getCityH1(laPlata, laPlataLive)
+    expect(title).toBe("Lugares sin TACC en La Plata: mapa y guía")
+    expect(h1).toBe("Lugares sin TACC en La Plata")
     expect(title).not.toContain("| CeliMap")
-    expect(title).not.toMatch(/mapa y recomendaciones/i)
     expect(title.length).toBeLessThanOrEqual(60)
-    expect(description).toContain("8")
-    expect(description).toContain("6")
-    expect(description).toContain("2")
-    expect(description).toMatch(/restaurantes/i)
-    expect(description).toMatch(/panader/i)
-    expect(description).toMatch(/caf/i)
-    expect(description).toMatch(/según datos de CeliMap; confirmá en el local/)
+    expect(description).toBe(
+      "Encontrá restaurantes, panaderías y cafés con opciones sin TACC en La Plata. Mapa colaborativo CeliMap para celíacos."
+    )
     expect(description).not.toMatch(/verificado/i)
     expect(description).not.toMatch(/certificado/i)
+    expect(description).not.toMatch(/100%\s*libres de gluten/i)
     expect(description).not.toMatch(/100%\s*seguro/i)
-    expect(description.length).toBeGreaterThanOrEqual(150)
-    expect(description.length).toBeLessThanOrEqual(160)
   })
 
   it("stats.total 0 no usa copy rico de inventario", () => {
@@ -54,13 +49,22 @@ describe("getCityTitle / getCityDescription", () => {
     expect(description).not.toContain("La Plata")
   })
 
-  it("ciudad de nombre largo no mete | CeliMap y no usa if la-plata", () => {
+  it("ciudad de nombre largo no hereda copy de La Plata ni | CeliMap", () => {
     const smt = getCityBySlug("san-miguel-de-tucuman")!
-    const title = getCityTitle(smt, { total: 4, dedicatedGf: 1, gfOptions: 1 })
+    const stats = { total: 4, dedicatedGf: 1, gfOptions: 1 }
+    const title = getCityTitle(smt, stats)
     expect(title).toContain("San Miguel de Tucumán")
     expect(title).toMatch(/sin TACC/)
     expect(title).not.toContain("| CeliMap")
     expect(title).not.toContain("La Plata")
+    expect(title).not.toBe("Lugares sin TACC en La Plata: mapa y guía")
+    expect(getCityH1(smt, stats)).toBe(title)
+    expect(getCityDescription(smt, stats)).not.toContain("La Plata")
+  })
+
+  it("otras ciudades no separan H1 del title", () => {
+    const stats = { total: 12, dedicatedGf: 3, gfOptions: 4 }
+    expect(getCityH1(cordoba, stats)).toBe(getCityTitle(cordoba, stats))
   })
 })
 

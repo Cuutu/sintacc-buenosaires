@@ -13,7 +13,20 @@ type CityStatsLike = {
   gfOptions: number
 }
 
+const LA_PLATA_HUB_TITLE = "Lugares sin TACC en La Plata: mapa y guía"
+const LA_PLATA_HUB_H1 = "Lugares sin TACC en La Plata"
+const LA_PLATA_HUB_DESCRIPTION =
+  "Encontrá restaurantes, panaderías y cafés con opciones sin TACC en La Plata. Mapa colaborativo CeliMap para celíacos."
+
+export function getCityH1(city: City, stats?: CityStatsLike): string {
+  if (city.slug === "la-plata") return LA_PLATA_HUB_H1
+  return getCityTitle(city, stats)
+}
+
 export function getCityTitle(city: City, stats?: CityStatsLike): string {
+  if (city.slug === "la-plata" && stats && stats.total > 0) {
+    return LA_PLATA_HUB_TITLE
+  }
   if (!stats || stats.total === 0) {
     return `Lugares sin TACC en ${city.name} — Guía para celíacos`
   }
@@ -23,6 +36,9 @@ export function getCityTitle(city: City, stats?: CityStatsLike): string {
 }
 
 export function getCityDescription(city: City, stats?: CityStatsLike): string {
+  if (city.slug === "la-plata" && stats && stats.total > 0) {
+    return LA_PLATA_HUB_DESCRIPTION
+  }
   if (!stats || stats.total === 0) {
     return `Todavía no hay lugares aprobados para mostrar en ${city.name}. CeliMap es un mapa colaborativo: cuando la comunidad cargue opciones sin TACC, van a aparecer acá.`
   }

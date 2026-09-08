@@ -2,14 +2,20 @@ import { notFound } from "next/navigation"
 import { cache } from "react"
 import { Metadata } from "next"
 import Link from "next/link"
-import { getCityBySlug, getTop10CitySlugs, CITIES } from "@/lib/seo/cities"
+import { getCityBySlug, getCityCenter, getTop10CitySlugs, CITIES } from "@/lib/seo/cities"
 import {
   getPlacesByCity,
   getTopNeighborhoods,
   getCityPageStats,
   getRecentReviewsForCity,
 } from "@/lib/seo/places"
-import { getCityTitle, getCityDescription, getSEOTextBlock, buildCityFaqs } from "@/lib/seo/templates"
+import {
+  getCityTitle,
+  getCityDescription,
+  getCityH1,
+  getSEOTextBlock,
+  buildCityFaqs,
+} from "@/lib/seo/templates"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
@@ -37,6 +43,54 @@ import { canonicalCityPlaceFilter } from "@/lib/seo/city-place-match"
 const BASE_URL = getBaseUrl()
 
 const getCityPageStatsCached = cache(getCityPageStats)
+
+function getCityMapHref(citySlug: string): string {
+  const city = getCityBySlug(citySlug)
+  const center = getCityCenter(citySlug)
+  if (city && center) {
+    return `/mapa?provinceSlugs=${city.provinceSlug}&localitySlugs=${citySlug}&lng=${center.center[0]}&lat=${center.center[1]}&zoom=${center.zoom}`
+  }
+  return `/mapa?localitySlugs=${citySlug}`
+}
+
+function LaPlataHubIntro({
+  stats,
+}: {
+  stats: { total: number; dedicatedGf: number; gfOptions: number }
+}) {
+  const lugares = stats.total === 1 ? "lugar" : "lugares"
+  const linkClass = "text-primary hover:underline"
+
+  return (
+    <p className="mb-6 max-w-3xl text-muted-foreground">
+      CeliMap es un mapa colaborativo para celíacos: acá ves lugares cargados por la
+      comunidad, no un listado certificado. En La Plata hay {stats.total} {lugares}
+      {stats.dedicatedGf > 0
+        ? `, de los cuales ${stats.dedicatedGf} figuran como dedicados sin gluten según la clasificación del mapa`
+        : ""}
+      {stats.gfOptions > 0
+        ? `${stats.dedicatedGf > 0 ? " y" : ","} ${stats.gfOptions} con opciones sin TACC`
+        : ""}
+      . Para encontrarlos, filtrá{" "}
+      <Link href="/sin-gluten/la-plata/restaurantes" className={linkClass}>
+        restaurantes
+      </Link>
+      {", "}
+      <Link href="/sin-gluten/la-plata/panaderias" className={linkClass}>
+        panaderías
+      </Link>
+      {" y "}
+      <Link href="/sin-gluten/la-plata/cafes" className={linkClass}>
+        cafés
+      </Link>
+      {" o abrí el "}
+      <Link href={getCityMapHref("la-plata")} className={linkClass}>
+        mapa de La Plata
+      </Link>
+      . Usá las fichas como guía y confirmá siempre en el local.
+    </p>
+  )
+}
 
 export const dynamicParams = true
 export const revalidate = 3600
@@ -177,18 +231,22 @@ export default async function SinGlutenCiudadPage({
       />
       <CityPageJsonLd city={city} places={places} totalPlaces={total} faqs={faqs} />
       <h1 className="mt-4 mb-3 text-2xl font-bold md:text-3xl">
-        {getCityTitle(city, stats)}
+        {getCityH1(city, stats)}
       </h1>
-      <p className="mb-6 max-w-3xl text-muted-foreground">
-        En {city.name} hay {stats.total} lugar{stats.total === 1 ? "" : "es"} en CeliMap
-        {stats.dedicatedGf > 0
-          ? `, de los cuales ${stats.dedicatedGf} figuran como 100% libres de gluten`
-          : ""}
-        {stats.gfOptions > 0
-          ? `${stats.dedicatedGf > 0 ? " y" : ","} ${stats.gfOptions} con opciones sin TACC`
-          : ""}
-        . Usá el mapa y las fichas como guía; confirmá siempre en el local.
-      </p>
+      {ciudadSlug === "la-plata" ? (
+        <LaPlataHubIntro stats={stats} />
+      ) : (
+        <p className="mb-6 max-w-3xl text-muted-foreground">
+          En {city.name} hay {stats.total} lugar{stats.total === 1 ? "" : "es"} en CeliMap
+          {stats.dedicatedGf > 0
+            ? `, de los cuales ${stats.dedicatedGf} figuran como 100% libres de gluten`
+            : ""}
+          {stats.gfOptions > 0
+            ? `${stats.dedicatedGf > 0 ? " y" : ","} ${stats.gfOptions} con opciones sin TACC`
+            : ""}
+          . Usá el mapa y las fichas como guía; confirmá siempre en el local.
+        </p>
+      )}
       <ScrollReveal>
         <div className="mb-12">
           <CityMapEmbed citySlug={ciudadSlug} cityName={city.name} />
