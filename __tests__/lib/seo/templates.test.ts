@@ -46,18 +46,19 @@ describe("getCityTitle / getCityDescription", () => {
     expect(description).not.toMatch(/mapa y recomendaciones/i)
   })
 
-  it("Córdoba interpola sus números, no el 8 de La Plata", () => {
+  it("Córdoba hub: title mapa y guía; H1 corto; meta sin 100%", () => {
     const stats = { total: 12, dedicatedGf: 3, gfOptions: 4 }
     const title = getCityTitle(cordoba, stats)
     const description = getCityDescription(cordoba, stats)
-    expect(title).toContain("Córdoba")
-    expect(title).toMatch(/sin TACC/)
+    expect(title).toBe("Dónde comer sin TACC en Córdoba: mapa y guía")
+    expect(getCityH1(cordoba, stats)).toBe("Dónde comer sin TACC en Córdoba")
     expect(title).not.toContain("| CeliMap")
-    expect(description).toContain("12")
-    expect(description).toContain("3")
-    expect(description).toContain("4")
-    expect(description).not.toMatch(/(^|[^0-9])8([^0-9]|$)/)
+    expect(description).toBe(
+      "Encontrá restaurantes, panaderías y cafés con opciones sin TACC en Córdoba. Mapa colaborativo CeliMap para celíacos."
+    )
+    expect(description).not.toMatch(/100%\s*libres de gluten/i)
     expect(description).not.toContain("La Plata")
+    expect(description).not.toMatch(/(^|[^0-9])8([^0-9]|$)/)
   })
 
   it("ciudad de nombre largo no hereda copy de La Plata ni | CeliMap", () => {
@@ -73,9 +74,10 @@ describe("getCityTitle / getCityDescription", () => {
     expect(getCityDescription(smt, stats)).not.toContain("La Plata")
   })
 
-  it("otras ciudades no separan H1 del title", () => {
+  it("ciudades sin override de H1 siguen el title", () => {
     const stats = { total: 12, dedicatedGf: 3, gfOptions: 4 }
-    expect(getCityH1(cordoba, stats)).toBe(getCityTitle(cordoba, stats))
+    const mendoza = getCityBySlug("mendoza")!
+    expect(getCityH1(mendoza, stats)).toBe(getCityTitle(mendoza, stats))
   })
 })
 
@@ -101,15 +103,25 @@ describe("P1 copy: Argentina, categorías nacionales y spokes", () => {
     expect(getArgentinaLandingDescription()).not.toMatch(/verificado/i)
   })
 
-  it("restaurantes AR: title/H1/meta; cafés nacional no hereda override P2", () => {
+  it("restaurantes AR: title/H1/meta; cafés y bares nacionales con sin TACC", () => {
     expect(getCategoryTitle(null, "restaurantes")).toBe("Restaurantes sin TACC en Argentina")
     expect(getCategoryH1(null, "restaurantes")).toBe("Restaurantes sin TACC en Argentina")
     expect(getCategoryDescription(null, "restaurantes")).toBe(
       "Encontrá restaurantes con opciones sin TACC / sin gluten en Argentina. Mapa y fichas colaborativas en CeliMap."
     )
     expect(getCategoryIntro(null, "restaurantes", 12)).toContain("12")
-    expect(getCategoryTitle(null, "cafes")).toBe("Cafés sin gluten en Argentina")
-    expect(getCategoryH1(null, "cafes")).toBe("Cafés sin gluten en Argentina")
+    expect(getCategoryTitle(null, "cafes")).toBe("Cafés sin TACC en Argentina")
+    expect(getCategoryH1(null, "cafes")).toBe("Cafés sin TACC en Argentina")
+    expect(getCategoryDescription(null, "cafes")).toBe(
+      "Cafés y cafeterías con opciones sin TACC en Argentina. Explorá el mapa CeliMap y filtrá por ciudad."
+    )
+    expect(getCategoryIntro(null, "cafes", 7)).toContain("7")
+    expect(getCategoryTitle(null, "bares")).toBe("Bares sin TACC en Argentina")
+    expect(getCategoryH1(null, "bares")).toBe("Bares sin TACC en Argentina")
+    expect(getCategoryDescription(null, "bares")).toBe(
+      "Bares con opciones sin TACC en Argentina. Mapa colaborativo CeliMap."
+    )
+    expect(getCategoryTitle(null, "heladerias")).toBe("Heladerías sin gluten en Argentina")
   })
 
   it("panaderías AR: title/H1/meta", () => {
@@ -120,7 +132,7 @@ describe("P1 copy: Argentina, categorías nacionales y spokes", () => {
     )
   })
 
-  it("spoke CABA restaurantes: title con CABA+Buenos Aires; H1 CABA; slug en intro; sin path caba", () => {
+  it("spoke CABA restaurantes y cafés: title con CABA+Buenos Aires; H1 CABA; slug en intro; sin path caba", () => {
     expect(getCategoryTitle(ba, "restaurantes")).toBe(
       "Restaurantes sin TACC en CABA (Buenos Aires)"
     )
@@ -128,29 +140,79 @@ describe("P1 copy: Argentina, categorías nacionales y spokes", () => {
     expect(getCategoryDescription(ba, "restaurantes")).toBe(
       "Restaurantes con opciones sin TACC en CABA. Fichas y mapa colaborativo CeliMap para celíacos en Buenos Aires."
     )
-    const intro = getCategoryIntro(ba, "restaurantes", 9)
-    expect(intro).toMatch(/slug buenos-aires/)
-    expect(intro).not.toMatch(/\/caba/)
+    expect(getCategoryTitle(ba, "cafes")).toBe("Cafés sin TACC en CABA (Buenos Aires)")
+    expect(getCategoryH1(ba, "cafes")).toBe("Cafés sin TACC en CABA")
+    expect(getCategoryDescription(ba, "cafes")).toBe(
+      "Cafés con opciones sin TACC en CABA. Fichas y mapa colaborativo CeliMap."
+    )
+    const introRest = getCategoryIntro(ba, "restaurantes", 9)
+    const introCafe = getCategoryIntro(ba, "cafes", 3)
+    expect(introRest).toMatch(/slug buenos-aires/)
+    expect(introCafe).toMatch(/slug buenos-aires/)
+    expect(introRest).not.toMatch(/\/caba/)
     expect(getCategoryTitle(ba, "restaurantes")).not.toContain("| CeliMap")
   })
 
-  it("spoke La Plata panaderías descanibaliza vs hub; otras categorías de LP no cambian", () => {
+  it("spoke La Plata restaurantes/panaderías/cafés descanibalizan vs hub", () => {
+    expect(getCategoryTitle(laPlata, "restaurantes")).toBe("Restaurantes sin TACC en La Plata")
+    expect(getCategoryH1(laPlata, "restaurantes")).toBe("Restaurantes sin TACC en La Plata")
+    expect(getCategoryDescription(laPlata, "restaurantes")).toBe(
+      "Restaurantes con opciones sin TACC en La Plata. Listado y mapa en CeliMap, con datos de la comunidad."
+    )
     expect(getCategoryTitle(laPlata, "panaderias")).toBe("Panaderías sin TACC en La Plata")
     expect(getCategoryH1(laPlata, "panaderias")).toBe("Panaderías sin TACC en La Plata")
     expect(getCategoryDescription(laPlata, "panaderias")).toBe(
       "Panaderías con opciones sin TACC en La Plata. Listado y mapa en CeliMap, con datos de la comunidad."
     )
     expect(getCategoryIntro(laPlata, "panaderias", 4)).toContain("4")
-    expect(getCategoryTitle(laPlata, "restaurantes")).toBe("Restaurantes sin gluten en La Plata")
+    expect(getCategoryTitle(laPlata, "cafes")).toBe("Cafés sin TACC en La Plata")
+    expect(getCategoryH1(laPlata, "cafes")).toBe("Cafés sin TACC en La Plata")
+    expect(getCategoryDescription(laPlata, "cafes")).toBe(
+      "Cafés con opciones sin TACC en La Plata. Listado y mapa en CeliMap."
+    )
+    expect(getCityCategoryNavLabel("la-plata", "restaurantes", "Restaurantes sin gluten")).toBe(
+      "Restaurantes sin TACC en La Plata"
+    )
     expect(getCityCategoryNavLabel("la-plata", "panaderias", "Panaderías sin gluten")).toBe(
       "Panaderías sin TACC en La Plata"
     )
-    expect(getCityCategoryNavLabel("la-plata", "cafes", "Cafés sin gluten")).toBe("Cafés sin gluten")
+    expect(getCityCategoryNavLabel("la-plata", "cafes", "Cafés sin gluten")).toBe(
+      "Cafés sin TACC en La Plata"
+    )
   })
 
-  it("otras ciudades/categorías no heredan copy CABA ni La Plata panadería", () => {
-    expect(getCategoryTitle(cordoba, "restaurantes")).toBe("Restaurantes sin gluten en Córdoba")
-    expect(getCategoryH1(cordoba, "restaurantes")).toBe(getCategoryTitle(cordoba, "restaurantes"))
+  it("BA hub meta sin 100%; anchors CABA; Córdoba spokes sin TACC", () => {
+    const baStats = { total: 20, dedicatedGf: 4, gfOptions: 6 }
+    expect(getCityDescription(ba, baStats)).toBe(
+      "Encontrá lugares con opciones sin TACC en Buenos Aires / CABA: restaurantes, panaderías y cafés. Mapa colaborativo CeliMap."
+    )
+    expect(getCityDescription(ba, baStats)).not.toMatch(/100%\s*libres de gluten/i)
+    expect(getCityTitle(ba, baStats)).toMatch(/sin TACC/)
+    expect(getCityTitle(ba, baStats)).not.toContain("| CeliMap")
+    expect(getCityCategoryNavLabel("buenos-aires", "restaurantes", "x")).toBe(
+      "Restaurantes sin TACC en CABA"
+    )
+    expect(getCityCategoryNavLabel("buenos-aires", "panaderias", "x")).toBe(
+      "Panaderías sin TACC en CABA"
+    )
+    expect(getCityCategoryNavLabel("buenos-aires", "cafes", "x")).toBe("Cafés sin TACC en CABA")
+    expect(getCategoryTitle(cordoba, "restaurantes")).toBe("Restaurantes sin TACC en Córdoba")
+    expect(getCategoryH1(cordoba, "restaurantes")).toBe("Restaurantes sin TACC en Córdoba")
+    expect(getCategoryDescription(cordoba, "restaurantes")).toBe(
+      "Restaurantes con opciones sin TACC en Córdoba. Listado y mapa CeliMap."
+    )
+    expect(getCategoryTitle(cordoba, "cafes")).toBe("Cafés sin TACC en Córdoba")
+    expect(getCategoryH1(cordoba, "cafes")).toBe("Cafés sin TACC en Córdoba")
+    expect(getCategoryDescription(cordoba, "cafes")).toBe(
+      "Cafés con opciones sin TACC en Córdoba. Listado y mapa CeliMap."
+    )
+  })
+
+  it("otras ciudades/categorías no heredan copy CABA ni La Plata", () => {
+    expect(getCategoryTitle(cordoba, "panaderias")).toBe("Panaderías sin gluten en Córdoba")
     expect(getCategoryTitle(ba, "panaderias")).toBe("Panaderías sin gluten en Buenos Aires")
+    const mendoza = getCityBySlug("mendoza")!
+    expect(getCategoryTitle(mendoza, "restaurantes")).toBe("Restaurantes sin gluten en Mendoza")
+    expect(getCategoryH1(mendoza, "restaurantes")).toBe(getCategoryTitle(mendoza, "restaurantes"))
   })
 })

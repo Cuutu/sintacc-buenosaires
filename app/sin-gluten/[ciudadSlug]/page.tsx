@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { cache } from "react"
 import { Metadata } from "next"
 import Link from "next/link"
-import { getCityBySlug, getCityCenter, getTop10CitySlugs, CITIES } from "@/lib/seo/cities"
+import { getCityBySlug, getCityCenter, getTop10CitySlugs, CITIES, getCategoryBySlug } from "@/lib/seo/cities"
 import {
   getPlacesByCity,
   getTopNeighborhoods,
@@ -13,6 +13,7 @@ import {
   getCityTitle,
   getCityDescription,
   getCityH1,
+  getCityCategoryNavLabel,
   getSEOTextBlock,
   buildCityFaqs,
 } from "@/lib/seo/templates"
@@ -53,18 +54,40 @@ function getCityMapHref(citySlug: string): string {
   return `/mapa?localitySlugs=${citySlug}`
 }
 
-function LaPlataHubIntro({
+const HUB_SPOKE_SLUGS: Record<string, string[]> = {
+  "la-plata": ["restaurantes", "panaderias", "cafes"],
+  "buenos-aires": ["restaurantes", "panaderias", "cafes"],
+  cordoba: ["restaurantes", "cafes"],
+}
+
+function CityHubIntro({
+  city,
   stats,
 }: {
+  city: { slug: string; name: string }
   stats: { total: number; dedicatedGf: number; gfOptions: number }
 }) {
   const lugares = stats.total === 1 ? "lugar" : "lugares"
   const linkClass = "text-primary hover:underline"
+  const spokeSlugs = HUB_SPOKE_SLUGS[city.slug] ?? []
+  const spokeLinks = spokeSlugs.map((catSlug) => {
+    const cat = getCategoryBySlug(catSlug)
+    const fallback = cat ? `${cat.name} sin TACC` : catSlug
+    return (
+      <Link
+        key={catSlug}
+        href={`/sin-gluten/${city.slug}/${catSlug}`}
+        className={linkClass}
+      >
+        {getCityCategoryNavLabel(city.slug, catSlug, fallback)}
+      </Link>
+    )
+  })
 
   return (
     <p className="mb-6 max-w-3xl text-muted-foreground">
       CeliMap es un mapa colaborativo para celíacos: acá ves lugares cargados por la
-      comunidad, no un listado certificado. En La Plata hay {stats.total} {lugares}
+      comunidad, no un listado certificado. En {city.name} hay {stats.total} {lugares}
       {stats.dedicatedGf > 0
         ? `, de los cuales ${stats.dedicatedGf} figuran como dedicados sin gluten según la clasificación del mapa`
         : ""}
@@ -72,20 +95,15 @@ function LaPlataHubIntro({
         ? `${stats.dedicatedGf > 0 ? " y" : ","} ${stats.gfOptions} con opciones sin TACC`
         : ""}
       . Para encontrarlos, filtrá{" "}
-      <Link href="/sin-gluten/la-plata/restaurantes" className={linkClass}>
-        restaurantes
-      </Link>
-      {", "}
-      <Link href="/sin-gluten/la-plata/panaderias" className={linkClass}>
-        Panaderías sin TACC en La Plata
-      </Link>
-      {" y "}
-      <Link href="/sin-gluten/la-plata/cafes" className={linkClass}>
-        cafés
-      </Link>
+      {spokeLinks.map((link, i) => (
+        <span key={spokeSlugs[i]}>
+          {i > 0 ? (i === spokeLinks.length - 1 ? " y " : ", ") : null}
+          {link}
+        </span>
+      ))}
       {" o abrí el "}
-      <Link href={getCityMapHref("la-plata")} className={linkClass}>
-        mapa de La Plata
+      <Link href={getCityMapHref(city.slug)} className={linkClass}>
+        mapa de {city.name}
       </Link>
       . Usá las fichas como guía y confirmá siempre en el local.
     </p>
@@ -233,8 +251,8 @@ export default async function SinGlutenCiudadPage({
       <h1 className="mt-4 mb-3 text-2xl font-bold md:text-3xl">
         {getCityH1(city, stats)}
       </h1>
-      {ciudadSlug === "la-plata" ? (
-        <LaPlataHubIntro stats={stats} />
+      {HUB_SPOKE_SLUGS[ciudadSlug] ? (
+        <CityHubIntro city={city} stats={stats} />
       ) : (
         <p className="mb-6 max-w-3xl text-muted-foreground">
           En {city.name} hay {stats.total} lugar{stats.total === 1 ? "" : "es"} en CeliMap
