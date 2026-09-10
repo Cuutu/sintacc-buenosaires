@@ -4,7 +4,9 @@ import { MapPin, PlusCircle } from "lucide-react"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPublicStatsSafe } from "@/lib/stats/get-public-stats"
 import { getHomeFeaturedPlaces } from "@/lib/home/get-home-featured-places"
-import { CELIMAP_DESCRIPTION_SHORT } from "@/lib/seo/brand"
+import type { Metadata } from "next"
+import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME } from "@/lib/seo/brand"
+import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 import { FAQ_ITEMS, FaqSection } from "@/components/home/FaqSection"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroBackdrop } from "@/components/home/HeroBackdrop"
@@ -18,13 +20,23 @@ import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
 
 const BASE_URL = getBaseUrl()
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Mapa para celíacos en Argentina",
   description: CELIMAP_DESCRIPTION_SHORT,
   openGraph: {
+    type: "website",
+    locale: "es_AR",
+    siteName: CELIMAP_NAME,
+    url: BASE_URL,
     title: "Mapa para celíacos en Argentina | CeliMap",
     description: CELIMAP_DESCRIPTION_SHORT,
-    url: BASE_URL,
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mapa para celíacos en Argentina | CeliMap",
+    description: CELIMAP_DESCRIPTION_SHORT,
+    images: [OG_IMAGE_PATH],
   },
   alternates: { canonical: BASE_URL },
 }

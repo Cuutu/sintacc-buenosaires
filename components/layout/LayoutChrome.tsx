@@ -68,9 +68,16 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
 
   return (
     <>
+      <a
+        href="#contenido-principal"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-[#1F4D35] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+      >
+        Saltar al contenido
+      </a>
       {!hidePublicChrome && <Navbar />}
 
       <main
+        id="contenido-principal"
         className={cn(
           "min-h-screen",
           showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
