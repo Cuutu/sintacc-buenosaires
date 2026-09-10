@@ -82,6 +82,16 @@ export function buildSitemapStaticPages(
       changeFrequency: "monthly",
       priority: 0.8,
     }),
+    entry(`${base}/contacto`, {
+      lastModified: staticPageLastModified("/contacto"),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    }),
+    entry(`${base}/sobre-nosotros`, {
+      lastModified: staticPageLastModified("/sobre-nosotros"),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    }),
     ...(publishedGuides.length > 0
       ? [
           entry(`${base}/guias`, {
