@@ -9,6 +9,7 @@ import { fetchApi } from "@/lib/fetchApi"
 import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
+import { recordIntentSignal } from "@/lib/analytics-discovery"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
@@ -105,6 +106,7 @@ function MapaContent() {
       hasSafety: Boolean(next.safetyLevel),
       hasSearch: Boolean(next.search?.trim()),
     })
+    recordIntentSignal("map_filter")
   }, [])
 
   useEffect(() => {
@@ -173,6 +175,7 @@ function MapaContent() {
       const kind = searchNeighborhood ? "neighborhood" : "text"
       const city = searchNeighborhood || localitySlugsFromUrl || ""
       trackEvent("search_performed", { query, resultCount, kind, city })
+      recordIntentSignal("search_performed")
       if (resultCount === 0) {
         trackEvent("search_no_results", { query, kind, city })
       }

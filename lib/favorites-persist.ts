@@ -1,4 +1,5 @@
 import { trackEvent } from "@/lib/analytics"
+import { recordCommitment } from "@/lib/analytics-discovery"
 import { considerInAppReview } from "@/lib/native-review"
 
 type FavoriteMutators = {
@@ -35,6 +36,7 @@ export async function persistFavoriteToggle(
     const countAfterAdd = wasNew ? ids.size + 1 : ids.size
     mutators.add(placeId)
     trackEvent("favorite_add", { placeId })
+    recordCommitment("favorite_add", placeId)
     if (wasNew && countAfterAdd >= 2) {
       considerInAppReview("favorite")
     }

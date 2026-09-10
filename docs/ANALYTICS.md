@@ -32,7 +32,8 @@ Se **mantienen** los nombres viejos (`place_view`, no `place_viewed`) para no ro
 First-party (Mongo), además de Vercel:
 
 - `first_open`, `session_start`
-- `place_view`, `place_share`, `directions_clicked`
+- `place_view`, `place_dwell_qualified`, `place_share`, `directions_clicked`
+- `useful_discovery` (métrica Core — ver sección Useful Discovery)
 - `favorite_add`, `favorite_remove`, `review_submit`, `place_submitted`
 - `map_open`, `map_filter`, `search_performed`, `search_no_results`
 - `login_started`, `login_completed`, `login_error`
@@ -45,6 +46,45 @@ Solo Vercel (no Mongo, poco valor en Admin):
 - `store_banner_*`, `install_prompt_shown`
 - clicks SEO `city_to_*` / `guide_to_*`
 - `suggest_place_click` (intención; el envío real es `place_submitted`)
+
+### Useful Discovery
+
+**Métrica Core:** mide entrega de valor al usuario en la web.
+
+Se emite `useful_discovery` cuando en la misma sesión el usuario demuestra:
+
+1. **Intent:** `search_performed` | `map_filter` (NO `map_open` solo; NO `list_open`)
+2. **Qualified dwell:** `place_dwell_qualified` para placeId X (≥8s visible)
+3. **Core commitment:** `favorite_add` | `place_share` | `directions_clicked` en el mismo placeId X
+
+**Deduplicación:** máximo un `useful_discovery` por (sesión, placeId).
+
+**Ciclo de sesión:** La señal de Intent, lugares visitados (dwell) y descubrimientos emitidos se resetean cuando `session_start` se dispara (timeout de inactividad de 30 min). Esto previene que estado de sesiones previas contamine la métrica.
+
+**Props:** `placeId`, `commitmentType`, `intentType`, `dwellMs`, `dwellThresholdMs`, más contexto estándar de lugar (ciudad/provincia/categoría).
+
+**Nota:** `list_open` se trackea como evento de producto para diagnóstico, pero NO cuenta como señal de Intent para Useful Discovery (Test C7).
+
+**ASSUMPTION:** El umbral de 8s dwell es una hipótesis, no verdad de producto validada.
+
+### Place Dwell Qualified
+
+Se emite `place_dwell_qualified` cuando el usuario acumula ≥8000ms de tiempo *visible* en la misma ficha de lugar (`document.visibilityState === 'visible'`; se pausa cuando tab oculta).
+
+- Se cancela si el usuario navega a otra ficha o página antes del umbral.
+- Máximo una emisión por (sesión, placeId).
+- **ASSUMPTION:** El umbral de 8s es una hipótesis, no verdad de producto validada.
+
+**Props:** `placeId`, `dwellMs`, `dwellThresholdMs: 8000`, más contexto estándar de lugar (ciudad/provincia/categoría).
+
+### Mapeo Framework de Analytics → Product Events
+
+Los nombres de los eventos en el código del Framework pueden diferir de los nombres almacenados:
+
+- Framework: `share_place` → Product: `place_share`
+- Framework: `directions_or_external_nav` → Product: `directions_clicked`
+
+Internamente todos los eventos pasan por `trackEvent(name, props)` que normaliza nombres según el catálogo (`analytics-catalog.ts`).
 
 No trackeamos:
 

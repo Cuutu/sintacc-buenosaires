@@ -3,6 +3,7 @@
 import { MapPinned, Share2 } from "lucide-react"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
+import { recordCommitment } from "@/lib/analytics-discovery"
 import { PlaceSaveButton } from "./PlaceSaveButton"
 import { placePrimaryBtnClass, placeSecondaryBtnClass } from "./place-detail-ui"
 
@@ -28,6 +29,7 @@ export function PlacePrimaryActions({
         toast.success("Link copiado")
       }
       trackEvent("place_share", { placeId })
+      recordCommitment("place_share", placeId)
     } catch {
       /* cancelado */
     }
