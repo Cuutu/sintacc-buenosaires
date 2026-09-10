@@ -36,7 +36,7 @@ function serialize(doc: {
   }
 }
 
-/** Hasta 3 lugares reales para el carrusel de home. [] si Mongo falla. */
+/** Hasta 6 lugares reales para el carrusel de home. [] si Mongo falla. */
 export async function getHomeFeaturedPlaces(): Promise<PlaceWithStats[]> {
   try {
     await connectDB()
@@ -45,10 +45,10 @@ export async function getHomeFeaturedPlaces(): Promise<PlaceWithStats[]> {
         "name slug neighborhood locality type photos tags safetyLevel googlePlaceId featured featuredOrder googleSnapshot.rating googleSnapshot.userRatingCount"
       )
       .sort({ featured: -1, featuredOrder: 1, "googleSnapshot.userRatingCount": -1 })
-      .limit(8)
+      .limit(6)
       .lean()
 
-    return (docs as Parameters<typeof serialize>[0][]).slice(0, 3).map(serialize)
+    return (docs as Parameters<typeof serialize>[0][]).slice(0, 6).map(serialize)
   } catch (error) {
     console.error("[home] getHomeFeaturedPlaces failed:", error)
     return []
