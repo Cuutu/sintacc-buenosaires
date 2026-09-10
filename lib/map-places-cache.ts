@@ -183,6 +183,33 @@ export async function writePlacesCache(filterKey: string, places: IPlace[]): Pro
   await idbPut(STORE_PLACES, entry)
 }
 
+export async function mergeIntoPlacesCache(
+  filterKey: string,
+  incoming: IPlace[]
+): Promise<IPlace[]> {
+  const existing = memoryPlaces.get(filterKey)?.places ?? []
+  const byId = new Map<string, IPlace>()
+  for (const place of existing) {
+    const id = place._id != null ? String(place._id) : ""
+    if (id) byId.set(id, place)
+  }
+  for (const place of incoming) {
+    const id = place._id != null ? String(place._id) : ""
+    if (id) byId.set(id, place)
+  }
+  const merged = [...byId.values()]
+  await writePlacesCache(filterKey, merged)
+  return merged
+}
+
+export function viewportTileCacheKey(
+  filterKey: string,
+  bounds: MapViewportBounds,
+  zoom: number
+): string {
+  return `${filterKey}|${quantizeViewportTile(bounds, zoom)}`
+}
+
 export function mergeCachedPlaces(keys: string[]): IPlace[] {
   const byId = new Map<string, IPlace>()
   for (const key of keys) {

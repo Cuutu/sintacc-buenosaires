@@ -7,6 +7,7 @@ import {
   rememberViewportTile,
   writePlacesCache,
   mergeCachedPlaces,
+  mergeIntoPlacesCache,
   getPlacesFromMemory,
   _resetMapPlacesCacheForTests,
   _viewportLruSize,
@@ -46,6 +47,12 @@ describe("map places cache", () => {
     const merged = mergeCachedPlaces(["k1", "k2"])
     expect(merged.map((p) => String(p._id)).sort()).toEqual(["1", "2", "3"])
     expect(getPlacesFromMemory("k1")?.places).toHaveLength(2)
+  })
+
+  it("mergeIntoPlacesCache une incoming en la misma key", async () => {
+    await writePlacesCache("k1", [fakePlace("1", "A")])
+    const merged = await mergeIntoPlacesCache("k1", [fakePlace("2", "B")])
+    expect(merged.map((p) => String(p._id)).sort()).toEqual(["1", "2"])
   })
 
   it("LRU de viewport tiles no crece sin bound", () => {

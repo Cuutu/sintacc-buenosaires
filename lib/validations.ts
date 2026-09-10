@@ -128,13 +128,13 @@ function parseBbox(value: unknown): z.infer<typeof bboxSchema> | undefined {
 }
 
 /**
- * Máximo oficial de `limit` en GET /api/places.
- * Motivo comprobable: el mapa nacional (`MAP_PLACES_LIMIT`) y embeds de ciudad
- * piden hasta ~todos los lugares aprobados en una sola respuesta; el techo
- * evita requests unbounded (DoS) sin romper el mapa.
- * No subir “por conveniencia” sin revisar clientes reales.
+ * Máximo de `limit` en GET /api/places.
+ * El mapa pide por viewport (bbox) + este techo; no hay dump del catálogo.
  */
-export const PUBLIC_PLACES_MAX_LIMIT = 5000
+export const PUBLIC_PLACES_MAX_LIMIT = 100
+
+/** Máximo de `limit` en GET /api/ventures. */
+export const PUBLIC_VENTURES_MAX_LIMIT = 100
 
 export const publicPlacesQuerySchema = z.object({
   search: z.string().optional(),
@@ -238,9 +238,9 @@ export const venturesPublicQuerySchema = z.object({
     (value) => {
       const n = Number(value)
       if (!Number.isFinite(n)) return 20
-      return Math.min(100, Math.max(1, Math.trunc(n)))
+      return Math.min(PUBLIC_VENTURES_MAX_LIMIT, Math.max(1, Math.trunc(n)))
     },
-    z.number().int().min(1).max(100)
+    z.number().int().min(1).max(PUBLIC_VENTURES_MAX_LIMIT)
   ).default(20),
 })
 

@@ -25,8 +25,8 @@ const ONLY = (process.env.BENCH_ONLY || "")
 
 const endpoints: EndpointDef[] = [
   { name: "public:places:list", path: "/api/places?limit=20&page=1" },
-  { name: "public:places:buenos-aires", path: "/api/places?limit=200&citySlugs=buenos-aires" },
-  { name: "public:places:salta", path: "/api/places?limit=200&citySlugs=salta" },
+  { name: "public:places:buenos-aires", path: "/api/places?limit=100&citySlugs=buenos-aires" },
+  { name: "public:places:salta", path: "/api/places?limit=100&citySlugs=salta" },
   { name: "public:stats", path: "/api/stats" },
   { name: "admin:counts", path: "/api/admin/counts", requiresAdmin: true },
   {

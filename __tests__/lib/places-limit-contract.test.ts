@@ -1,8 +1,8 @@
 import { PUBLIC_PLACES_MAX_LIMIT, parsePublicPlacesSearchParams } from "@/lib/validations"
 
 describe("PUBLIC_PLACES_MAX_LIMIT contract", () => {
-  it("is documented map ceiling (5000), not legacy 100", () => {
-    expect(PUBLIC_PLACES_MAX_LIMIT).toBe(5000)
+  it("caps list requests at 100 so the catalog cannot dump in one shot", () => {
+    expect(PUBLIC_PLACES_MAX_LIMIT).toBe(100)
   })
 
   it("clamps over-max limit", () => {
@@ -13,7 +13,7 @@ describe("PUBLIC_PLACES_MAX_LIMIT contract", () => {
   })
 
   it("keeps within-max limit", () => {
-    const parsed = parsePublicPlacesSearchParams(new URLSearchParams("limit=500"))
-    expect(parsed.limit).toBe(500)
+    const parsed = parsePublicPlacesSearchParams(new URLSearchParams("limit=50"))
+    expect(parsed.limit).toBe(50)
   })
 })

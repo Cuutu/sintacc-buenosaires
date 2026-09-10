@@ -5,6 +5,7 @@ import "@/models/Place"
 import "@/models/User"
 import { requireAuth } from "@/lib/middleware"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { LIST_VISIBILITY } from "@/lib/lists/constants"
@@ -59,6 +60,9 @@ export async function GET(request: NextRequest) {
         }
       )
     }
+
+    const limited = await enforcePublicReadRateLimit(request, "list")
+    if (limited) return limited
 
     // Top listas públicas (sin auth). ?limit= con cap 20
     const limitParam = request.nextUrl.searchParams.get("limit")

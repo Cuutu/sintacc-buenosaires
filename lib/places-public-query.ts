@@ -120,5 +120,26 @@ export function buildPublicPlacesMongoQuery(
     query.featured = true
   }
 
+  if (params.bbox) {
+    appendBboxToQuery(query, params.bbox)
+  }
+
   return query
+}
+
+function appendBboxToQuery(
+  query: FilterQuery<IPlace>,
+  bbox: { west: number; south: number; east: number; north: number }
+): void {
+  query["location.lat"] = { $gte: bbox.south, $lte: bbox.north }
+  if (bbox.west <= bbox.east) {
+    query["location.lng"] = { $gte: bbox.west, $lte: bbox.east }
+    return
+  }
+  appendAnd(query, {
+    $or: [
+      { "location.lng": { $gte: bbox.west } },
+      { "location.lng": { $lte: bbox.east } },
+    ],
+  })
 }
