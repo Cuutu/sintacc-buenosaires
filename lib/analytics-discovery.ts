@@ -3,14 +3,15 @@ import { trackEvent } from "@/lib/analytics"
 /**
  * Useful Discovery: Core product metric for measuring value delivery.
  * Emitted when in the same session the user demonstrates:
- * 1. Intent (search_performed | map_filter | list_open)
+ * 1. Intent (search_performed | map_filter)
  * 2. Qualified dwell (place_dwell_qualified for placeId X)
  * 3. Core commitment (favorite_add | place_share | directions_clicked on same placeId X)
  *
  * Deduplicated: at most one useful_discovery per (session, placeId).
+ * Note: list_open is tracked as a product event but does NOT count as Useful Discovery intent.
  */
 
-type IntentType = "search_performed" | "map_filter" | "list_open"
+type IntentType = "search_performed" | "map_filter"
 type CommitmentType = "favorite_add" | "place_share" | "directions_clicked"
 
 type SessionState = {
@@ -112,14 +113,22 @@ export function __getDiscoverySessionState(): SessionState {
 }
 
 /**
- * Reset session state for testing.
- * @internal
+ * Reset discovery state on session boundary.
+ * Called when session_start fires (30 min inactivity rollover).
  */
-export function __resetDiscoveryForTests(): void {
+export function resetDiscoverySession(): void {
   sessionState = {
     hasIntent: false,
     intentType: null,
     dwelledPlaces: new Map(),
     emittedDiscoveries: new Set(),
   }
+}
+
+/**
+ * Reset session state for testing.
+ * @internal
+ */
+export function __resetDiscoveryForTests(): void {
+  resetDiscoverySession()
 }

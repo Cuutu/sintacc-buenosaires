@@ -11,7 +11,7 @@ import {
   runAnalyticsLifecycleOpen,
 } from "@/lib/analytics-session"
 import { trackEvent } from "@/lib/analytics"
-import { recordCommitment } from "@/lib/analytics-discovery"
+import { recordCommitment, resetDiscoverySession } from "@/lib/analytics-discovery"
 import { isNativeApp } from "@/lib/native-app"
 import { captureAnalyticsAttribution } from "@/lib/analytics-attribution"
 import { setAnalyticsAuthenticated } from "@/lib/analytics-client"
@@ -129,6 +129,9 @@ export function AnalyticsSessionInit() {
       properties: { platform: ReturnType<typeof getAnalyticsPlatform> }
     ) => {
       trackEvent(event, properties)
+      if (event === "session_start") {
+        resetDiscoverySession()
+      }
     }
 
     runAnalyticsLifecycleOpen({

@@ -53,13 +53,17 @@ Solo Vercel (no Mongo, poco valor en Admin):
 
 Se emite `useful_discovery` cuando en la misma sesión el usuario demuestra:
 
-1. **Intent:** `search_performed` | `map_filter` | `list_open` (NO `map_open` solo)
+1. **Intent:** `search_performed` | `map_filter` (NO `map_open` solo; NO `list_open`)
 2. **Qualified dwell:** `place_dwell_qualified` para placeId X (≥8s visible)
 3. **Core commitment:** `favorite_add` | `place_share` | `directions_clicked` en el mismo placeId X
 
 **Deduplicación:** máximo un `useful_discovery` por (sesión, placeId).
 
+**Ciclo de sesión:** La señal de Intent, lugares visitados (dwell) y descubrimientos emitidos se resetean cuando `session_start` se dispara (timeout de inactividad de 30 min). Esto previene que estado de sesiones previas contamine la métrica.
+
 **Props:** `placeId`, `commitmentType`, `intentType`, `dwellMs`, `dwellThresholdMs`, más contexto estándar de lugar (ciudad/provincia/categoría).
+
+**Nota:** `list_open` se trackea como evento de producto para diagnóstico, pero NO cuenta como señal de Intent para Useful Discovery (Test C7).
 
 **ASSUMPTION:** El umbral de 8s dwell es una hipótesis, no verdad de producto validada.
 
