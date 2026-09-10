@@ -2,8 +2,9 @@
  * @jest-environment node
  */
 import { GET } from "@/app/api/places/route"
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
+import { PUBLIC_PLACE_LIST_SELECT } from "@/lib/places-public-select"
 
 jest.mock("next/cache", () => ({
   unstable_cache: (loader: () => Promise<unknown>) => () => loader(),
@@ -14,6 +15,9 @@ jest.mock("@/lib/api-cache", () => ({
   getOrSetApiCache: (_key: string, _ttl: number, loader: () => Promise<unknown>) =>
     loader(),
   invalidateApiCache: jest.fn(),
+}))
+jest.mock("@/lib/public-read-limit", () => ({
+  enforcePublicReadRateLimit: jest.fn().mockResolvedValue(null),
 }))
 jest.mock("@/models/Place")
 jest.mock("@/models/Review")
@@ -37,6 +41,7 @@ function mockFind(places: unknown[], onLimit?: (n: number) => void) {
 describe("GET /api/places", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    require("@/lib/public-read-limit").enforcePublicReadRateLimit.mockResolvedValue(null)
     require("@/models/Review").Review.aggregate = jest.fn().mockResolvedValue([])
     require("@/models/ContaminationReport").ContaminationReport.aggregate = jest
       .fn()
@@ -132,23 +137,27 @@ describe("GET /api/places", () => {
     expect(data.places).toHaveLength(1)
   })
 
-  it("does not send bbox to Mongo and filters in memory", async () => {
+  it("sends bbox to Mongo and still filters in memory", async () => {
     const mockPlaces = [
       { _id: "in", name: "In", location: { lat: -34.6, lng: -58.4 } },
       { _id: "out", name: "Out", location: { lat: -38.4, lng: -63.6 } },
     ]
     let capturedQuery: Record<string, unknown> = {}
+    let capturedSelect = ""
     require("@/models/Place").Place.find = jest.fn().mockImplementation((q) => {
       capturedQuery = q
       return {
-        select: jest.fn().mockReturnValue({
-          sort: jest.fn().mockReturnValue({
-            skip: jest.fn().mockReturnValue({
-              limit: jest.fn().mockReturnValue({
-                lean: jest.fn().mockResolvedValue(mockPlaces),
+        select: jest.fn().mockImplementation((sel: string) => {
+          capturedSelect = sel
+          return {
+            sort: jest.fn().mockReturnValue({
+              skip: jest.fn().mockReturnValue({
+                limit: jest.fn().mockReturnValue({
+                  lean: jest.fn().mockResolvedValue(mockPlaces),
+                }),
               }),
             }),
-          }),
+          }
         }),
       }
     })
@@ -161,8 +170,48 @@ describe("GET /api/places", () => {
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(capturedQuery["location.lat"]).toBeUndefined()
-    expect(capturedQuery["location.lng"]).toBeUndefined()
+    expect(capturedQuery["location.lat"]).toEqual({ $gte: -34.8, $lte: -34.4 })
+    expect(capturedQuery["location.lng"]).toEqual({ $gte: -58.5, $lte: -58.3 })
+    expect(capturedSelect).toBe(PUBLIC_PLACE_LIST_SELECT)
+    expect(capturedSelect).not.toContain("contact")
     expect(data.places.map((p: { _id: string }) => p._id)).toEqual(["in"])
+  })
+
+  it("returns lean list items without clone-friendly contact fields", async () => {
+    mockFind([
+      {
+        _id: "place1",
+        name: "Test Place",
+        type: "restaurant",
+        neighborhood: "Palermo",
+        contact: { phone: "111", whatsapp: "222" },
+        description: "texto largo",
+        editLog: [{ at: new Date(), fields: ["name"] }],
+      },
+    ])
+    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(1)
+
+    const response = await GET(new NextRequest("http://localhost:3000/api/places?limit=20"))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.places[0].name).toBe("Test Place")
+    expect(data.places[0].contact).toBeUndefined()
+    expect(data.places[0].description).toBeUndefined()
+    expect(data.places[0].editLog).toBeUndefined()
+  })
+
+  it("returns 429 with Retry-After when the public list limiter trips", async () => {
+    require("@/lib/public-read-limit").enforcePublicReadRateLimit.mockResolvedValue(
+      NextResponse.json(
+        { error: "Demasiadas solicitudes. Probá de nuevo en un momento." },
+        { status: 429, headers: { "Retry-After": "12" } }
+      )
+    )
+
+    const response = await GET(new NextRequest("http://localhost:3000/api/places"))
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get("Retry-After")).toBe("12")
   })
 })

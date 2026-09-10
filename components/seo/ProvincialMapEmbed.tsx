@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { MapScreen, type MapFilters } from "@/components/map-view"
 import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
@@ -31,7 +32,7 @@ export function ProvincialMapEmbed({ provinceSlug, provinceName }: ProvincialMap
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      params.append("limit", "999")
+      params.append("limit", String(PUBLIC_PLACES_MAX_LIMIT))
       params.append("provinceSlugs", provinceSlug)
       const data = await fetchApi<{ places: IPlace[] }>(`/api/places?${params.toString()}`)
       setPlaces(data.places || [])

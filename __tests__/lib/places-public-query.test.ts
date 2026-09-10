@@ -87,14 +87,14 @@ describe("buildPublicPlacesMongoQuery", () => {
     expect(query.featured).toBe(true)
   })
 
-  it("does not put bbox into the Mongo query", () => {
+  it("puts bbox into the Mongo query", () => {
     const query = buildPublicPlacesMongoQuery({
       bbox: { west: -58.5, south: -34.8, east: -58.3, north: -34.4 },
       page: 1,
-      limit: 5000,
+      limit: 100,
     })
-    expect(query["location.lat"]).toBeUndefined()
-    expect(query["location.lng"]).toBeUndefined()
+    expect(query["location.lat"]).toEqual({ $gte: -34.8, $lte: -34.4 })
+    expect(query["location.lng"]).toEqual({ $gte: -58.5, $lte: -58.3 })
   })
 
   it("filters places by bbox in memory", () => {
