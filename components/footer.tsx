@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ChevronDown, Instagram, PlusCircle } from "lucide-react"
 import { BrandLogo } from "@/components/brand/BrandLogo"
-import { ContactFooterButton } from "@/components/ContactFooterButton"
 import { CELIMAP_SAME_AS } from "@/lib/seo/brand"
 
 const INSTAGRAM_URL = CELIMAP_SAME_AS[0]
@@ -17,6 +16,7 @@ const EXPLORE_LINKS = [
 
 const INFO_LINKS = [
   { href: "/que-es-celimap", label: "Qué es CeliMap" },
+  { href: "/sobre-nosotros", label: "Sobre nosotros" },
   { href: "/como-funciona", label: "Cómo funciona" },
   { href: "/como-verificamos-los-lugares", label: "Cómo verificamos la información" },
   { href: "/por-que-usar-celimap", label: "Por qué usar CeliMap" },
@@ -159,12 +159,17 @@ export function Footer() {
               el local.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <ContactFooterButton className={linkClass} />
+              <Link href="/contacto" className={linkClass}>
+                Contacto
+              </Link>
+              <Link href="/sobre-nosotros" className={linkClass}>
+                Sobre nosotros
+              </Link>
               <Link href="/privacidad" className={linkClass}>
                 Privacidad
               </Link>
               <Link href="/terminos" className={linkClass}>
-                Términos
+                Aviso legal
               </Link>
             </div>
           </div>
