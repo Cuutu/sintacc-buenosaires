@@ -14,6 +14,7 @@ import { IPlace } from "@/models/Place"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
+import { recordIntentSignal } from "@/lib/analytics-discovery"
 
 export default function ListaDetailPage() {
   const params = useParams()
@@ -45,6 +46,7 @@ export default function ListaDetailPage() {
     const visibility =
       list.visibility === "PRIVATE_LINK" || list.isPublic === false ? "private" : "public"
     trackEvent("list_open", { listId: id, visibility })
+    recordIntentSignal("list_open")
   }, [list, id])
 
   useEffect(() => {

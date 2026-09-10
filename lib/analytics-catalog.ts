@@ -8,6 +8,8 @@ export const ANALYTICS_EVENTS = [
   "app_open",
   "session_start",
   "place_view",
+  "place_dwell_qualified",
+  "useful_discovery",
   "place_share",
   "favorite_add",
   "favorite_remove",
@@ -55,6 +57,8 @@ export const FIRST_PARTY_EVENTS = new Set<AnalyticsEvent>([
   "first_open",
   "session_start",
   "place_view",
+  "place_dwell_qualified",
+  "useful_discovery",
   "place_share",
   "favorite_add",
   "favorite_remove",
@@ -103,6 +107,10 @@ export const ALLOWED_EVENT_PROP_KEYS = new Set([
   "provider",
   "reason",
   "mode",
+  "dwellMs",
+  "dwellThresholdMs",
+  "commitmentType",
+  "intentType",
 ])
 
 export const PRODUCT_EVENT_TTL_SECONDS = 60 * 60 * 24 * 180

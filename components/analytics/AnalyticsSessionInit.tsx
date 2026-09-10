@@ -11,6 +11,7 @@ import {
   runAnalyticsLifecycleOpen,
 } from "@/lib/analytics-session"
 import { trackEvent } from "@/lib/analytics"
+import { recordCommitment } from "@/lib/analytics-discovery"
 import { isNativeApp } from "@/lib/native-app"
 import { captureAnalyticsAttribution } from "@/lib/analytics-attribution"
 import { setAnalyticsAuthenticated } from "@/lib/analytics-client"
@@ -112,6 +113,7 @@ export function AnalyticsSessionInit() {
       if (!link) return
       const placeId = link.getAttribute("data-place-id") || ""
       trackEvent("directions_clicked", placeId ? { placeId } : undefined)
+      recordCommitment("directions_clicked", placeId || undefined)
     }
     document.addEventListener("click", onClick)
     return () => document.removeEventListener("click", onClick)
