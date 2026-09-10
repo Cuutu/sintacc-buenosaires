@@ -9,6 +9,8 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
+import { PUBLIC_PLACE_DETAIL_SELECT } from "@/lib/places-public-select"
+import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +18,9 @@ export async function GET(
 ) {
   const id = params?.id
   try {
+    const limited = await enforcePublicReadRateLimit(request, "detail")
+    if (limited) return limited
+
     if (!id) {
       return NextResponse.json(
         { error: "ID inválido" },
@@ -32,7 +37,9 @@ export async function GET(
     const place = await Place.findOne({
       ...placeQuery,
       status: "approved",
-    }).lean()
+    })
+      .select(PUBLIC_PLACE_DETAIL_SELECT)
+      .lean()
 
     if (!place) {
       console.error(`[api/places] No se encontró lugar con id: ${id}`)

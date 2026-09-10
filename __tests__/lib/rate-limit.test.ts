@@ -80,6 +80,7 @@ describe("rate-limit", () => {
       const result = await checkRateLimitByIp(request, "stats", 120, 15)
       expect(result.allowed).toBe(false)
       expect(result.remaining).toBe(0)
+      expect(result.retryAfterSeconds).toBeGreaterThan(0)
     })
   })
 })

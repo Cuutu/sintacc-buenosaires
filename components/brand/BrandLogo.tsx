@@ -34,6 +34,7 @@ export function BrandLogo({
   markOnly = false,
   showTagline = false,
   size = "md",
+  loading,
 }: {
   className?: string
   inverse?: boolean
@@ -41,6 +42,8 @@ export function BrandLogo({
   /** Tagline ya viene en el lockup oficial. Se conserva por API. */
   showTagline?: boolean
   size?: "xs" | "sm" | "md" | "lg"
+  /** Solo logos bajo el fold (footer). No usar en el hero. */
+  loading?: "lazy" | "eager"
 }) {
   void showTagline
 
@@ -53,6 +56,7 @@ export function BrandLogo({
           alt="CeliMap"
           width={MARK.width}
           height={MARK.height}
+          loading={loading}
           className={cn(HEIGHT[size], "w-auto bg-transparent")}
         />
       </span>
@@ -64,13 +68,14 @@ export function BrandLogo({
   return (
     <span className={cn("inline-flex items-center bg-transparent", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={lockup.src}
-        alt="CeliMap — tu mapa sin gluten"
-        width={lockup.width}
-        height={lockup.height}
-        className={cn(HEIGHT[size], "w-auto max-w-[min(100%,18rem)] bg-transparent object-contain object-left")}
-      />
+        <img
+          src={lockup.src}
+          alt="CeliMap — tu mapa sin gluten"
+          width={lockup.width}
+          height={lockup.height}
+          loading={loading}
+          className={cn(HEIGHT[size], "w-auto max-w-[min(100%,18rem)] bg-transparent object-contain object-left")}
+        />
     </span>
   )
 }

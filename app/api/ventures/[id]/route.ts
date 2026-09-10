@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { logApiError } from "@/lib/logger"
 import { getSingleVentureReviewStats } from "@/lib/venture-review-stats"
+import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 import mongoose from "mongoose"
 
 export async function GET(
@@ -11,6 +12,9 @@ export async function GET(
 ) {
   const idOrSlug = params?.id
   try {
+    const limited = await enforcePublicReadRateLimit(request, "detail")
+    if (limited) return limited
+
     if (!idOrSlug?.trim()) {
       return NextResponse.json({ error: "Parámetro inválido" }, { status: 400 })
     }

@@ -24,6 +24,7 @@ import {
   CELIMAP_DESCRIPTION_SHORT,
   CELIMAP_NAME,
 } from "@/lib/seo/brand";
+import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -85,7 +86,7 @@ export const metadata: Metadata = {
     title: "Mapa para celíacos en Argentina | CeliMap",
     description: CELIMAP_DESCRIPTION_SHORT,
     images: [
-      { url: "/brand/logo-principal.png", width: 1200, height: 366, alt: "CeliMap - tu mapa sin gluten" },
+      OG_IMAGE,
       { url: "/brand/app-icon.png", width: 512, height: 512, alt: "CeliMap" },
     ],
   },
@@ -93,6 +94,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Mapa para celíacos en Argentina | CeliMap",
     description: CELIMAP_DESCRIPTION_SHORT,
+    images: [OG_IMAGE_PATH],
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",

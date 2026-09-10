@@ -9,6 +9,9 @@ jest.mock("@/lib/mongodb")
 jest.mock("@/lib/api-cache", () => ({
   invalidateApiCache: jest.fn(),
 }))
+jest.mock("@/lib/public-read-limit", () => ({
+  enforcePublicReadRateLimit: jest.fn().mockResolvedValue(null),
+}))
 jest.mock("@/models/Place")
 jest.mock("@/models/Review")
 jest.mock("@/models/ContaminationReport")
@@ -18,6 +21,7 @@ describe("GET /api/places/[id]", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    require("@/lib/public-read-limit").enforcePublicReadRateLimit.mockResolvedValue(null)
     require("@/models/Review").Review.aggregate = jest.fn().mockResolvedValue([])
     require("@/models/ContaminationReport").ContaminationReport.countDocuments = jest
       .fn()
@@ -26,7 +30,9 @@ describe("GET /api/places/[id]", () => {
 
   it("filters public GET by approved status", async () => {
     const findOne = jest.fn().mockReturnValue({
-      lean: jest.fn().mockResolvedValue(null),
+      select: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue(null),
+      }),
     })
     require("@/models/Place").Place.findOne = findOne
 

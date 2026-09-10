@@ -117,6 +117,43 @@ const nextConfig = {
       "/api/admin/social/generate-image": ["./assets/fonts/**"],
     },
   },
+  async headers() {
+    // CSP conservador: Next (inline), Vercel Analytics, Mapbox, OAuth, Cloudinary, avatares Google.
+    // Si algo de mapa/login se rompe en prod, bajar a report-only y dejar nosniff/frame/referrer.
+    const contentSecurityPolicy = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://api.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://accounts.google.com https://appleid.apple.com https://places.googleapis.com https://res.cloudinary.com",
+      "worker-src 'self' blob:",
+      "frame-src 'self' https://accounts.google.com https://appleid.apple.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self' https://accounts.google.com https://appleid.apple.com",
+      "frame-ancestors 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ")
+
+    const securityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=()",
+      },
+      { key: "Content-Security-Policy", value: contentSecurityPolicy },
+    ]
+
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ]
+  },
 }
 
 module.exports = withPWA(nextConfig)

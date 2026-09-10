@@ -64,7 +64,7 @@ function BrandBlock() {
   return (
     <div className="max-w-md">
       <Link href="/" className="inline-flex items-center">
-        <BrandLogo inverse size="sm" />
+        <BrandLogo inverse size="sm" loading="lazy" />
       </Link>
       <p className="mt-6 text-base leading-relaxed text-[#C9D9CE]">
         Descubrí restaurantes, cafeterías, panaderías y lugares sin gluten recomendados por la

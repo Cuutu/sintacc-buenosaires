@@ -20,6 +20,9 @@ jest.mock("@/lib/middleware", () => ({
 }))
 jest.mock("@/lib/rate-limit", () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+  checkRateLimitByIp: jest
+    .fn()
+    .mockResolvedValue({ allowed: true, remaining: 90, retryAfterSeconds: 60 }),
 }))
 jest.mock("@/lib/logger", () => ({
   logApiError: jest.fn(),
