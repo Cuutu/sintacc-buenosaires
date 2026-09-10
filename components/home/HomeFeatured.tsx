@@ -16,7 +16,7 @@ import type { PlaceWithStats } from "@/components/featured/featured-utils"
 import { HomeFeaturedCard } from "@/components/home/HomeFeaturedCard"
 import { FeaturedSkeleton } from "@/components/featured/FeaturedSkeleton"
 
-const SHOW = 3
+const SHOW = 6
 
 export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[] }) {
   const [places, setPlaces] = useState<PlaceWithStats[] | null>(placesProp ?? null)
