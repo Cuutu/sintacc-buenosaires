@@ -17,7 +17,7 @@ import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
 import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import { parseChatClientErrorMessage } from "@/lib/chat/errors"
 import { isCercaMioQuery } from "@/lib/chat/normalize-zona"
-import { extractChatPlaceLinks } from "@/lib/chat/place-links"
+import { extractChatPlaceLinks, stripChatPlaceLinkMarkdown } from "@/lib/chat/place-links"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import { cn } from "@/lib/utils"
 import type { UIMessage } from "ai"
@@ -70,16 +70,18 @@ function formatClock(date: Date): string {
   return date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
 }
 
+const CELIBOT_SRC = "/brand/celibot.png"
+
 function ChatAvatar() {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35]">
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F7F3EB] shadow-[0_1px_3px_rgba(31,77,53,0.18)]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/brand/mark.png?v2"
+        src={CELIBOT_SRC}
         alt=""
-        width={22}
-        height={28}
-        className="h-[22px] w-auto brightness-0 invert"
+        width={44}
+        height={44}
+        className="h-[42px] w-[42px] object-contain"
       />
     </span>
   )
@@ -222,7 +224,7 @@ function ChatPanelLive({
         variant === "widget" && "md:rounded-[20px] md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
-      aria-label="Asistente CeliMap"
+      aria-label="CeliBOT"
       aria-modal={variant === "widget" || undefined}
     >
       <header
@@ -243,16 +245,18 @@ function ChatPanelLive({
             <span className="text-[13px] font-semibold">Volver</span>
           </Link>
         ) : null}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/mark.png?v2"
-          alt=""
-          width={28}
-          height={36}
-          className="mt-0.5 h-7 w-auto shrink-0 brightness-0 invert"
-        />
+        <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F7F3EB]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={CELIBOT_SRC}
+            alt=""
+            width={44}
+            height={44}
+            className="h-10 w-10 object-contain"
+          />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[16px] font-bold leading-tight text-white">Asistente CeliMap</p>
+          <p className="truncate text-[16px] font-bold leading-tight text-white">CeliBOT</p>
           <p className="mt-0.5 text-[11px] leading-snug text-white/60">
             Puede cometer errores · Confirmá siempre en el lugar
           </p>
@@ -262,7 +266,7 @@ function ChatPanelLive({
             type="button"
             onClick={onClose}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-            aria-label="Cerrar asistente"
+            aria-label="Cerrar CeliBOT"
           >
             <X className="h-5 w-5" strokeWidth={2.2} />
           </button>
@@ -335,23 +339,27 @@ function ChatPanelLive({
                 getChatToolInput<BuscarLugaresInput>(message, "buscarLugares")
               )
               const miniPlaces = mergePlaceCards(places, extractChatPlaceLinks(text))
+              const visibleText =
+                miniPlaces.length > 0 ? stripChatPlaceLinkMarkdown(text) : text
 
               return (
                 <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
-                  <span className="flex w-9 shrink-0 justify-center pt-1">
+                  <span className="flex w-11 shrink-0 justify-center pt-1">
                     {firstInGroup ? <ChatAvatar /> : null}
                   </span>
                   <div className="min-w-0 flex-1">
-                    {text || miniPlaces.length > 0 ? (
+                    {visibleText || miniPlaces.length > 0 ? (
                       <div
                         className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[85%]")}
                       >
-                        {text ? <ChatMarkdown text={text} /> : null}
-                        <ChatPlaceMiniCards lugares={miniPlaces} />
+                        {visibleText ? (
+                          <ChatMarkdown text={visibleText} onNavigate={onClose} />
+                        ) : null}
+                        <ChatPlaceMiniCards lugares={miniPlaces} onNavigate={onClose} />
                       </div>
                     ) : null}
                     {lastInGroup ? <BubbleTime at={at} side="left" /> : null}
-                    {lists ? <ChatListCards result={lists} /> : null}
+                    {lists ? <ChatListCards result={lists} onNavigate={onClose} /> : null}
                     {places ? <ChatPlaceCards result={places} zona={zona} /> : null}
                   </div>
                 </div>
@@ -498,21 +506,21 @@ export function ChatFab({
     <button
       type="button"
       onClick={onToggle}
-      aria-label={open ? "Cerrar asistente" : "Abrir asistente CeliMap"}
+      aria-label={open ? "Cerrar CeliBOT" : "Abrir CeliBOT"}
       aria-expanded={open}
       className={cn(
-        "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
-        open ? "bg-[#1F4D35] text-white" : "bg-[#F7F3EB] ring-2 ring-[#1F4D35]"
+        "relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
+        open ? "bg-[#1F4D35] text-white" : "bg-[#F7F3EB]"
       )}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/brand/mark.png?v2"
+        src={CELIBOT_SRC}
         alt=""
-        width={36}
-        height={48}
+        width={64}
+        height={64}
         className={cn(
-          "h-9 w-auto transition-transform duration-150 ease-out",
+          "h-[90%] w-[90%] object-contain transition-transform duration-150 ease-out",
           open ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
         )}
       />

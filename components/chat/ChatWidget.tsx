@@ -77,7 +77,7 @@ export function ChatWidget() {
       <div
         className={cn(
           "fixed bottom-6 right-6 z-[80]",
-          "max-md:bottom-[max(1.5rem,var(--bottom-nav-clearance,1.5rem))]",
+          "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+1.75rem)]",
           open && "max-md:hidden"
         )}
       >

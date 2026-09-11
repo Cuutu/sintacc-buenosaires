@@ -16,7 +16,13 @@ import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
 import { chatListUrl } from "@/lib/chat/buscar-listas"
 import { linkifyBareUrls } from "@/lib/chat/linkify"
 import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
-import { extractChatPlaceLinks, isCienPorcientoBadge } from "@/lib/chat/place-links"
+import {
+  extractChatPlaceLinks,
+  isCienPorcientoBadge,
+  isLocalChatHref,
+  stripChatPlaceLinkMarkdown,
+  toLocalChatHref,
+} from "@/lib/chat/place-links"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import type { UIMessage } from "ai"
 
@@ -371,6 +377,21 @@ describe("chat place links", () => {
     expect(isCienPorcientoBadge("100% sin TACC", false)).toBe(true)
     expect(isCienPorcientoBadge("tiene opciones sin TACC", false)).toBe(false)
     expect(isCienPorcientoBadge(undefined, true)).toBe(true)
+  })
+
+  it("pasa celimap.com.ar a path local", () => {
+    expect(toLocalChatHref("https://www.celimap.com.ar/lugar/gout-caballito")).toBe(
+      "/lugar/gout-caballito"
+    )
+    expect(isLocalChatHref("/lugar/gout-caballito")).toBe(true)
+  })
+
+  it("saca líneas de ficha del markdown visible", () => {
+    expect(
+      stripChatPlaceLinkMarkdown(
+        "Mirá estos:\n**Gout** [Ver en CeliMap](https://www.celimap.com.ar/lugar/gout-caballito)\nChau"
+      )
+    ).toBe("Mirá estos:\nChau")
   })
 })
 

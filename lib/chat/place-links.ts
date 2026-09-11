@@ -9,6 +9,40 @@ export type ChatPlaceLinkCard = {
 const MD_LUGAR =
   /\[([^\]]+)\]\((https?:\/\/(?:www\.)?celimap\.com\.ar\/lugar\/[^)\s]+|\/lugar\/[^)\s]+)\)/gi
 
+export function toLocalChatHref(url: string): string {
+  try {
+    const parsed = new URL(url, "https://www.celimap.com.ar")
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase()
+    if (host === "celimap.com.ar" || url.startsWith("/")) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+    return url
+  } catch {
+    return url
+  }
+}
+
+export function isLocalChatHref(href: string): boolean {
+  return href.startsWith("/") && !href.startsWith("//")
+}
+
+/** Cierra overlay y va a la ficha. En WebView Next Link a veces no navega. */
+export function followChatHref(
+  event: { preventDefault: () => void; metaKey: boolean; ctrlKey: boolean; button: number },
+  href: string,
+  onNavigate?: () => void
+) {
+  const local = toLocalChatHref(href)
+  if (!isLocalChatHref(local)) return
+  if (event.metaKey || event.ctrlKey || event.button === 1) {
+    onNavigate?.()
+    return
+  }
+  event.preventDefault()
+  onNavigate?.()
+  if (typeof window !== "undefined") window.location.assign(local)
+}
+
 function normalizeLugarUrl(raw: string): string {
   try {
     const url = new URL(raw, "https://www.celimap.com.ar")
@@ -18,6 +52,16 @@ function normalizeLugarUrl(raw: string): string {
   } catch {
     return raw
   }
+}
+
+/** Saca líneas con link a /lugar/ para no duplicar las mini-cards. */
+export function stripChatPlaceLinkMarkdown(text: string): string {
+  if (!text) return ""
+  const kept = text.split("\n").filter((line) => {
+    const re = new RegExp(MD_LUGAR.source, "gi")
+    return !re.test(line)
+  })
+  return kept.join("\n").replace(/\n{3,}/g, "\n\n").trim()
 }
 
 /** Links a fichas /lugar/ en el markdown del bot. Solo UI. */

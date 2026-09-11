@@ -9,23 +9,13 @@ import { ListPlus } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
 import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
-import { isCienPorcientoBadge } from "@/lib/chat/place-links"
+import {
+  followChatHref,
+  isCienPorcientoBadge,
+  isLocalChatHref,
+  toLocalChatHref,
+} from "@/lib/chat/place-links"
 import type { ChatPlaceLinkCard } from "@/lib/chat/place-links"
-
-function toLocalHref(url: string): string {
-  try {
-    const parsed = new URL(url)
-    const host = parsed.hostname.replace(/^www\./, "").toLowerCase()
-    if (host === "celimap.com.ar") return `${parsed.pathname}${parsed.search}`
-    return url
-  } catch {
-    return url
-  }
-}
-
-function isLocalHref(href: string): boolean {
-  return href.startsWith("/") && !href.startsWith("//")
-}
 
 function CardThumb({ src, alt }: { src?: string; alt: string }) {
   return (
@@ -50,6 +40,7 @@ function PlaceMiniCard({
   direccion,
   barrio,
   badge,
+  onNavigate,
 }: {
   nombre: string
   url: string
@@ -57,12 +48,18 @@ function PlaceMiniCard({
   direccion?: string
   barrio?: string
   badge: "cien" | "opciones" | null
+  onNavigate?: () => void
 }) {
-  const href = toLocalHref(url)
-  const Label = isLocalHref(href) ? Link : "a"
+  const href = toLocalChatHref(url)
+  const local = isLocalChatHref(href)
   const line2 = [tipo, direccion || barrio].filter(Boolean).join(" · ")
   return (
-    <div className="my-1.5 rounded-xl border border-[#EDEBE7] bg-[#FAFAF7] p-3">
+    <a
+      href={href}
+      onClick={(event) => followChatHref(event, href, onNavigate)}
+      className="my-1.5 block rounded-xl border border-[#EDEBE7] bg-[#FAFAF7] p-3 no-underline"
+      {...(!local ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+    >
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-[14px] font-semibold text-[#1F4D35]">{nombre}</span>
         {badge ? (
@@ -78,19 +75,16 @@ function PlaceMiniCard({
         ) : null}
       </div>
       {line2 ? <p className="mt-1 text-[13px] text-[#777]">{line2}</p> : null}
-      <Label
-        href={href}
-        className="mt-1 inline-block text-[13px] font-semibold text-[#B64320] no-underline hover:underline"
-        {...(!isLocalHref(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      >
+      <span className="mt-1 inline-block text-[13px] font-semibold text-[#B64320]">
         Ver en CeliMap →
-      </Label>
-    </div>
+      </span>
+    </a>
   )
 }
 
 export function ChatPlaceMiniCards({
   lugares,
+  onNavigate,
 }: {
   lugares: Array<{
     id?: string
@@ -102,6 +96,7 @@ export function ChatPlaceMiniCards({
     clasificacionTacc?: string
     esCienPorcientoSinTacc?: boolean
   }>
+  onNavigate?: () => void
 }) {
   if (lugares.length === 0) return null
   return (
@@ -114,6 +109,7 @@ export function ChatPlaceMiniCards({
           tipo={lugar.tipo}
           direccion={lugar.direccion}
           barrio={lugar.barrio}
+          onNavigate={onNavigate}
           badge={
             lugar.esCienPorcientoSinTacc === true ||
             isCienPorcientoBadge(lugar.clasificacionTacc, lugar.esCienPorcientoSinTacc)
@@ -154,7 +150,13 @@ export function mergePlaceCards(
   return fromText
 }
 
-export function ChatListCards({ result }: { result: BuscarListasResult }) {
+export function ChatListCards({
+  result,
+  onNavigate,
+}: {
+  result: BuscarListasResult
+  onNavigate?: () => void
+}) {
   if (result.listas.length === 0) return null
 
   return (
@@ -163,11 +165,12 @@ export function ChatListCards({ result }: { result: BuscarListasResult }) {
         Listas de CeliMap
       </p>
       {result.listas.map((lista) => {
-        const href = toLocalHref(lista.url)
+        const href = toLocalChatHref(lista.url)
         return (
-          <Link
+          <a
             key={lista.id}
             href={href}
+            onClick={(event) => followChatHref(event, href, onNavigate)}
             className="flex items-start gap-2.5 rounded-[14px] border border-[#EDEBE7] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
           >
             <CardThumb src={lista.foto} alt="" />
@@ -179,7 +182,7 @@ export function ChatListCards({ result }: { result: BuscarListasResult }) {
                   .join(" · ")}
               </span>
             </span>
-          </Link>
+          </a>
         )
       })}
     </div>

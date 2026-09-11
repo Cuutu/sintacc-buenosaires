@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import rehypeSanitize from "rehype-sanitize"
 import { linkifyBareUrls } from "@/lib/chat/linkify"
+import { followChatHref, isLocalChatHref, toLocalChatHref } from "@/lib/chat/place-links"
 import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
 
 function isCeliMapHref(href?: string): boolean {
@@ -18,19 +19,31 @@ function isCeliMapHref(href?: string): boolean {
   }
 }
 
-export function ChatMarkdown({ text }: { text: string }) {
+export function ChatMarkdown({
+  text,
+  onNavigate,
+}: {
+  text: string
+  onNavigate?: () => void
+}) {
   return (
     <ReactMarkdown
       rehypePlugins={[rehypeSanitize]}
       components={{
         a({ href, children }) {
+          const localHref = href ? toLocalChatHref(href) : undefined
           const internal = isCeliMapHref(href)
           return (
             <a
-              href={href}
+              href={localHref || href}
               className="font-semibold text-[#B64320] no-underline underline-offset-2 hover:underline"
               target={internal ? undefined : "_blank"}
               rel={internal ? undefined : "noopener noreferrer"}
+              onClick={(event) => {
+                if (localHref && isLocalChatHref(localHref)) {
+                  followChatHref(event, localHref, onNavigate)
+                }
+              }}
             >
               {children}
             </a>
