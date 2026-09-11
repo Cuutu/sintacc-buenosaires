@@ -10,9 +10,9 @@ export function resolveBottomNavPerfilHref(
 }
 
 export const BOTTOM_NAV_SLOT_KEYS = [
-  "home-map",
-  "favoritos",
   "sugerir",
+  "favoritos",
+  "home-map",
   "explorar",
   "perfil",
 ] as const

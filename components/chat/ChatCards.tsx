@@ -9,6 +9,8 @@ import { ListPlus } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
 import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
+import { isCienPorcientoBadge } from "@/lib/chat/place-links"
+import type { ChatPlaceLinkCard } from "@/lib/chat/place-links"
 
 function toLocalHref(url: string): string {
   try {
@@ -41,6 +43,91 @@ function CardThumb({ src, alt }: { src?: string; alt: string }) {
   )
 }
 
+function PlaceMiniCard({
+  nombre,
+  url,
+  tipo,
+  direccion,
+  barrio,
+  badge,
+}: {
+  nombre: string
+  url: string
+  tipo?: string
+  direccion?: string
+  barrio?: string
+  badge: "cien" | "opciones" | null
+}) {
+  const href = toLocalHref(url)
+  const Label = isLocalHref(href) ? Link : "a"
+  const line2 = [tipo, direccion || barrio].filter(Boolean).join(" · ")
+  return (
+    <div className="my-1.5 rounded-xl border border-[#EDEBE7] bg-[#FAFAF7] p-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[14px] font-semibold text-[#1F4D35]">{nombre}</span>
+        {badge ? (
+          <span
+            className={
+              badge === "cien"
+                ? "rounded-lg bg-[#1F4D35] px-2 py-0.5 text-[11px] font-semibold text-white"
+                : "rounded-lg bg-[#B64320] px-2 py-0.5 text-[11px] font-semibold text-white"
+            }
+          >
+            {badge === "cien" ? "100% sin TACC" : "Opciones sin TACC"}
+          </span>
+        ) : null}
+      </div>
+      {line2 ? <p className="mt-1 text-[13px] text-[#777]">{line2}</p> : null}
+      <Label
+        href={href}
+        className="mt-1 inline-block text-[13px] font-semibold text-[#B64320] no-underline hover:underline"
+        {...(!isLocalHref(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
+        Ver en CeliMap →
+      </Label>
+    </div>
+  )
+}
+
+export function ChatPlaceMiniCards({
+  lugares,
+}: {
+  lugares: Array<{
+    id?: string
+    nombre: string
+    url: string
+    tipo?: string
+    direccion?: string
+    barrio?: string
+    clasificacionTacc?: string
+    esCienPorcientoSinTacc?: boolean
+  }>
+}) {
+  if (lugares.length === 0) return null
+  return (
+    <div className="mt-1">
+      {lugares.map((lugar, index) => (
+        <PlaceMiniCard
+          key={lugar.id || lugar.url || index}
+          nombre={lugar.nombre}
+          url={lugar.url}
+          tipo={lugar.tipo}
+          direccion={lugar.direccion}
+          barrio={lugar.barrio}
+          badge={
+            lugar.esCienPorcientoSinTacc === true ||
+            isCienPorcientoBadge(lugar.clasificacionTacc, lugar.esCienPorcientoSinTacc)
+              ? "cien"
+              : lugar.clasificacionTacc || lugar.esCienPorcientoSinTacc === false
+                ? "opciones"
+                : null
+          }
+        />
+      ))}
+    </div>
+  )
+}
+
 export function ChatPlaceCards({
   result,
   zona,
@@ -49,35 +136,22 @@ export function ChatPlaceCards({
   zona?: string
 }) {
   if (result.lugares.length === 0) return null
-
   return (
-    <div className="mt-2 w-full space-y-2">
-      {result.lugares.map((lugar) => {
-        const href = toLocalHref(lugar.url)
-        const Label = isLocalHref(href) ? Link : "a"
-        return (
-          <Label
-            key={lugar.id}
-            href={href}
-            className="flex items-start gap-2.5 rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
-            {...(!isLocalHref(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          >
-            <CardThumb src={lugar.foto} alt="" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-semibold text-[#1F4D35]">{lugar.nombre}</span>
-              <span className="mt-0.5 block text-[12px] leading-snug text-[#2D2D2D]/70">
-                {[lugar.barrio, lugar.tipo, lugar.clasificacionTacc].filter(Boolean).join(" · ")}
-              </span>
-            </span>
-          </Label>
-        )
-      })}
+    <div className="mt-2 w-full">
       <CreateListAction
         placeIds={result.lugares.map((lugar) => lugar.id).filter(Boolean)}
         zona={zona}
       />
     </div>
   )
+}
+
+export function mergePlaceCards(
+  fromTool: BuscarLugaresResult | null | undefined,
+  fromText: ChatPlaceLinkCard[]
+) {
+  if (fromTool && fromTool.lugares.length > 0) return fromTool.lugares
+  return fromText
 }
 
 export function ChatListCards({ result }: { result: BuscarListasResult }) {
@@ -94,7 +168,7 @@ export function ChatListCards({ result }: { result: BuscarListasResult }) {
           <Link
             key={lista.id}
             href={href}
-            className="flex items-start gap-2.5 rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
+            className="flex items-start gap-2.5 rounded-[14px] border border-[#EDEBE7] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
           >
             <CardThumb src={lista.foto} alt="" />
             <span className="min-w-0 flex-1">

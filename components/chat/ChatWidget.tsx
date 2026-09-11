@@ -1,14 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
 import { useVisualViewportBox } from "@/components/chat/use-visual-viewport-box"
 import { cn } from "@/lib/utils"
 import "@/components/chat/chat-ui.css"
 
+const CLOSE_MS = 300
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false)
-  const mobileBox = useVisualViewportBox(open)
+  const [mounted, setMounted] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const leaveTimer = useRef<number>(0)
+  const mobileBox = useVisualViewportBox(open || leaving)
+
+  useEffect(() => {
+    return () => window.clearTimeout(leaveTimer.current)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -25,13 +34,31 @@ export function ChatWidget() {
     }
   }, [open])
 
+  const show = () => {
+    window.clearTimeout(leaveTimer.current)
+    setLeaving(false)
+    setMounted(true)
+    setOpen(true)
+  }
+
+  const hide = () => {
+    setOpen(false)
+    setLeaving(true)
+    window.clearTimeout(leaveTimer.current)
+    leaveTimer.current = window.setTimeout(() => {
+      setMounted(false)
+      setLeaving(false)
+    }, CLOSE_MS)
+  }
+
   return (
     <>
-      {open ? (
+      {mounted ? (
         <div
           className={cn(
-            "celimap-chat-panel-enter celimap-chat-mobile-shell fixed z-[90] overflow-hidden",
-            "md:bottom-[5.5rem] md:right-6 md:top-auto md:z-[70] md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-transparent md:p-0"
+            "celimap-chat-mobile-shell fixed z-[200] overflow-hidden bg-[#F7F3EB]",
+            leaving ? "celimap-chat-panel-leave" : "celimap-chat-panel-enter",
+            "md:bottom-[5.5rem] md:right-6 md:top-auto md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-[#F7F3EB] md:p-0"
           )}
           style={
             mobileBox
@@ -44,7 +71,7 @@ export function ChatWidget() {
               : undefined
           }
         >
-          <ChatPanel variant="widget" onClose={() => setOpen(false)} />
+          <ChatPanel variant="widget" onClose={hide} />
         </div>
       ) : null}
       <div
@@ -54,7 +81,7 @@ export function ChatWidget() {
           open && "max-md:hidden"
         )}
       >
-        <ChatFab open={open} onToggle={() => setOpen((value) => !value)} />
+        <ChatFab open={open} onToggle={() => (open ? hide() : show())} />
       </div>
     </>
   )

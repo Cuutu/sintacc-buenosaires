@@ -16,6 +16,7 @@ import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
 import { chatListUrl } from "@/lib/chat/buscar-listas"
 import { linkifyBareUrls } from "@/lib/chat/linkify"
 import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
+import { extractChatPlaceLinks, isCienPorcientoBadge } from "@/lib/chat/place-links"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import type { UIMessage } from "ai"
 
@@ -342,6 +343,34 @@ describe("chat linkify", () => {
     expect(
       linkifyBareUrls("[Amitié](https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo)")
     ).toBe("[Amitié](https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo)")
+  })
+})
+
+describe("chat place links", () => {
+  it("saca fichas [Nombre](url) de /lugar/", () => {
+    const cards = extractChatPlaceLinks(
+      "Algunos cafés:\n[Amitié](https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo)"
+    )
+    expect(cards).toEqual([
+      {
+        nombre: "Amitié",
+        url: "https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo",
+      },
+    ])
+  })
+
+  it("usa el nombre en negrita si el link dice Ver en CeliMap", () => {
+    const cards = extractChatPlaceLinks(
+      "**Gout** — Panadería · Caballito [Ver en CeliMap](https://www.celimap.com.ar/lugar/gout-caballito)"
+    )
+    expect(cards[0]?.nombre).toBe("Gout")
+    expect(cards[0]?.url).toContain("/lugar/gout-caballito")
+  })
+
+  it("badge 100% lee el label de la tool", () => {
+    expect(isCienPorcientoBadge("100% sin TACC", false)).toBe(true)
+    expect(isCienPorcientoBadge("tiene opciones sin TACC", false)).toBe(false)
+    expect(isCienPorcientoBadge(undefined, true)).toBe(true)
   })
 })
 

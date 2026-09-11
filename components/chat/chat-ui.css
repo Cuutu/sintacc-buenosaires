@@ -1,16 +1,16 @@
-/* CeliMap chat — solo visual. Calles de mapa muy suaves + motion. */
+/* CeliMap chat — visual premium. Sin libs de motion. */
 
 .celimap-chat-map {
   background-color: #f7f3eb;
   background-image:
     repeating-linear-gradient(
       0deg,
-      rgb(224 217 207 / 0.3) 0 1px,
+      rgb(31 77 53 / 0.04) 0 1px,
       transparent 1px 28px
     ),
     repeating-linear-gradient(
       90deg,
-      rgb(224 217 207 / 0.3) 0 1px,
+      rgb(31 77 53 / 0.04) 0 1px,
       transparent 1px 28px
     );
 }
@@ -18,7 +18,7 @@
 @keyframes celimap-chat-panel-in {
   from {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.8);
   }
   to {
     opacity: 1;
@@ -26,7 +26,47 @@
   }
 }
 
+@keyframes celimap-chat-panel-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes celimap-chat-panel-in-mobile {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes celimap-chat-panel-out-mobile {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
 @keyframes celimap-chat-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes celimap-chat-welcome-in {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -39,14 +79,12 @@
 
 @keyframes celimap-chat-dot {
   0%,
-  70%,
+  60%,
   100% {
-    opacity: 0.35;
     transform: translateY(0);
   }
-  35% {
-    opacity: 1;
-    transform: translateY(-3px);
+  30% {
+    transform: translateY(-4px);
   }
 }
 
@@ -55,12 +93,21 @@
   animation: celimap-chat-panel-in 250ms ease-out both;
 }
 
+.celimap-chat-panel-leave {
+  transform-origin: bottom right;
+  animation: celimap-chat-panel-out 250ms ease-out both;
+}
+
 .celimap-chat-bubble-in {
   animation: celimap-chat-bubble-in 200ms ease-out both;
 }
 
+.celimap-chat-welcome-in {
+  animation: celimap-chat-welcome-in 300ms ease-out both;
+}
+
 .celimap-chat-dot {
-  animation: celimap-chat-dot 1s ease-in-out infinite;
+  animation: celimap-chat-dot 900ms ease-in-out infinite;
 }
 
 .celimap-chat-dot:nth-child(2) {
@@ -74,19 +121,42 @@
 .celimap-chat-chips-out {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms ease-out;
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  transition:
+    opacity 150ms ease-out,
+    max-height 150ms ease-out,
+    margin 150ms ease-out;
+}
+
+.celimap-chat-chips-row {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.celimap-chat-chips-row::-webkit-scrollbar {
+  display: none;
+}
+
+.celimap-chat-mobile-shell {
+  background: #f7f3eb;
 }
 
 @media (max-width: 767px) {
   .celimap-chat-panel-enter {
-    transform-origin: center center;
-    animation-name: celimap-chat-panel-in-mobile;
+    transform-origin: bottom center;
+    animation: celimap-chat-panel-in-mobile 300ms ease-out both;
   }
 
-  /* Pantalla completa anclada al área visible. Nunca 100dvh: iOS lo hace más alto que el reloj/home. */
+  .celimap-chat-panel-leave {
+    transform-origin: bottom center;
+    animation: celimap-chat-panel-out-mobile 300ms ease-out both;
+  }
+
   .celimap-chat-mobile-shell {
     position: fixed;
-    z-index: 90;
+    z-index: 200;
     top: 0;
     left: 0;
     right: 0;
@@ -98,25 +168,37 @@
     max-height: 100svh;
     overflow: hidden;
     box-sizing: border-box;
-    padding-top: var(--safe-area-top, env(safe-area-inset-top, 0px));
-    padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
-    background: #1f4d35;
+    background: #f7f3eb;
     touch-action: manipulation;
+    isolation: isolate;
   }
 }
 
-@keyframes celimap-chat-panel-in-mobile {
-  from {
-    opacity: 0;
+@media (min-width: 768px) {
+  .celimap-chat-map {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(31 77 53 / 0.3) transparent;
   }
-  to {
-    opacity: 1;
+
+  .celimap-chat-map::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .celimap-chat-map::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .celimap-chat-map::-webkit-scrollbar-thumb {
+    background: rgb(31 77 53 / 0.3);
+    border-radius: 999px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .celimap-chat-panel-enter,
+  .celimap-chat-panel-leave,
   .celimap-chat-bubble-in,
+  .celimap-chat-welcome-in,
   .celimap-chat-dot {
     animation: none;
   }

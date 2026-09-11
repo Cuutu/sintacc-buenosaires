@@ -28,7 +28,7 @@ export function ChatMarkdown({ text }: { text: string }) {
           return (
             <a
               href={href}
-              className="font-semibold text-[#B64320] underline decoration-[#B64320]/40 underline-offset-2 hover:decoration-[#B64320]"
+              className="font-semibold text-[#B64320] no-underline underline-offset-2 hover:underline"
               target={internal ? undefined : "_blank"}
               rel={internal ? undefined : "noopener noreferrer"}
             >

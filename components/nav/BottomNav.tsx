@@ -20,9 +20,9 @@ import {
 } from "@/lib/bottom-nav-perfil"
 import { recordBottomNavIntent, setAuthStatusProbe } from "@/lib/nav-telemetry"
 const BASE_NAV_ITEMS = [
-  { href: "/mapa", label: "Mapa", icon: MapPinned },
+  { href: "/sugerir", label: "Sugerir", icon: Plus },
   { href: "/favoritos", label: "Guardados", icon: Heart },
-  { href: "/sugerir", label: "Sugerir", icon: Plus, isCenter: true },
+  { href: "/mapa", label: "Mapa", icon: MapPinned, isCenter: true },
   { href: "/mapa", label: "Explorar", icon: Navigation2, isListToggle: true },
   {
     href: "/perfil",
@@ -94,13 +94,15 @@ export function BottomNav() {
   }, [status])
 
   const rawItems = isAdmin
-    ? BASE_NAV_ITEMS.map((item, i) => (i === 3 ? ADMIN_ITEM : item))
+    ? BASE_NAV_ITEMS.map((item, i) =>
+        BOTTOM_NAV_SLOT_KEYS[i] === "explorar" ? ADMIN_ITEM : item
+      )
     : BASE_NAV_ITEMS
 
   const navItems = rawItems.map((item, index) => {
     const slotKey = BOTTOM_NAV_SLOT_KEYS[index] ?? `slot-${index}`
 
-    if (index === 0 && isOnMap) {
+    if (slotKey === "home-map" && isOnMap) {
       return { ...item, href: "/", label: "Home", icon: Home, slotKey }
     }
 

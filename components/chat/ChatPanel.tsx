@@ -3,34 +3,39 @@
 import { ArrowLeft, ArrowUp, X } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
 import Link from "next/link"
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
-import { BrandLogo } from "@/components/brand/BrandLogo"
-import { ChatListCards, ChatPlaceCards, chatZonaFromInput } from "@/components/chat/ChatCards"
+import { useCallback, useEffect, useRef, useState, type FormEvent, type UIEvent } from "react"
+import {
+  ChatListCards,
+  ChatPlaceCards,
+  ChatPlaceMiniCards,
+  chatZonaFromInput,
+  mergePlaceCards,
+} from "@/components/chat/ChatCards"
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown"
 import { chatMessageText, loadChatHistory, saveChatHistory } from "@/components/chat/storage"
 import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
 import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import { parseChatClientErrorMessage } from "@/lib/chat/errors"
 import { isCercaMioQuery } from "@/lib/chat/normalize-zona"
+import { extractChatPlaceLinks } from "@/lib/chat/place-links"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import { cn } from "@/lib/utils"
 import type { UIMessage } from "ai"
 import "@/components/chat/chat-ui.css"
 
 const CHIPS = [
-  "Lugares 100% sin TACC en Palermo",
-  "¿Qué es la contaminación cruzada?",
-  "Cafeterías cerca mío",
+  { icon: "📍", label: "100% sin TACC en Palermo", send: "Lugares 100% sin TACC en Palermo" },
+  { icon: "🔍", label: "¿Qué es la contaminación cruzada?", send: "¿Qué es la contaminación cruzada?" },
+  { icon: "☕", label: "Cafeterías cerca mío", send: "Cafeterías cerca mío" },
 ] as const
 
 const BARRIO_CHIPS = ["Palermo", "Belgrano", "Recoleta", "San Telmo", "Caballito"] as const
 
-
 const BOT_BUBBLE =
-  "rounded-[16px] rounded-tl-[4px] border border-[#E0D9CF] bg-white px-[18px] py-[14px] text-[14px] leading-relaxed text-[#2D2D2D] shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+  "rounded-[18px] rounded-tl-[4px] border border-[#EDEBE7] bg-white px-[18px] py-[14px] text-[14px] leading-relaxed text-[#333] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
 
 const USER_BUBBLE =
-  "rounded-[16px] rounded-br-[4px] bg-[#1F4D35] px-[18px] py-[14px] text-[14px] leading-relaxed text-white"
+  "rounded-[18px] rounded-br-[4px] bg-[#1F4D35] px-[18px] py-[14px] text-[14px] leading-relaxed text-white"
 
 type ChatPanelProps = {
   variant: "widget" | "page"
@@ -43,7 +48,7 @@ function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> 
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => resolve(null),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 }
     )
   })
 }
@@ -61,18 +66,30 @@ function cercaFollowUp(original: string, barrio: string): string {
   return `Lugares sin TACC en ${barrio}`
 }
 
+function formatClock(date: Date): string {
+  return date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
+}
+
 function ChatAvatar() {
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/brand/mark.png?v2"
         alt=""
-        width={24}
-        height={32}
-        className="h-6 w-auto"
+        width={22}
+        height={28}
+        className="h-[22px] w-auto brightness-0 invert"
       />
     </span>
+  )
+}
+
+function BubbleTime({ at, side }: { at: Date; side: "left" | "right" }) {
+  return (
+    <p className={cn("mt-1 text-[11px] text-[#AAA]", side === "right" ? "text-right" : "text-left")}>
+      {formatClock(at)}
+    </p>
   )
 }
 
@@ -84,9 +101,7 @@ export function ChatPanel({ variant, onClose }: ChatPanelProps) {
   }, [])
 
   if (bootMessages === null) {
-    return (
-      <div className="flex h-full w-full flex-col bg-[#F7F3EB]" aria-busy="true" />
-    )
+    return <div className="flex h-full w-full flex-col bg-[#F7F3EB]" aria-busy="true" />
   }
 
   return <ChatPanelLive variant={variant} onClose={onClose} initialMessages={bootMessages} />
@@ -100,14 +115,24 @@ function ChatPanelLive({
   const [input, setInput] = useState("")
   const [locating, setLocating] = useState(false)
   const [blockedCerca, setBlockedCerca] = useState<string | null>(null)
-  const [introGone, setIntroGone] = useState(initialMessages.length > 0)
+  const startedEmpty = useRef(initialMessages.length === 0)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const inFlightRef = useRef(false)
+  const pinBottomRef = useRef(true)
+  const timesRef = useRef<Map<string, Date>>(new Map())
   const { messages, sendMessage, status, error, regenerate, clearError } = useChat({
     messages: initialMessages,
   })
   const busy = locating || status === "submitted" || status === "streaming"
+
+  const stamp = (id: string) => {
+    const existing = timesRef.current.get(id)
+    if (existing) return existing
+    const next = new Date()
+    timesRef.current.set(id, next)
+    return next
+  }
 
   useEffect(() => {
     saveChatHistory(messages)
@@ -115,9 +140,14 @@ function ChatPanelLive({
 
   useEffect(() => {
     const el = listRef.current
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-  }, [messages, status, blockedCerca])
+    if (!el || !pinBottomRef.current) return
+    el.scrollTo({ top: el.scrollHeight, behavior: status === "streaming" ? "auto" : "smooth" })
+  }, [messages, status, blockedCerca, locating])
+
+  useEffect(() => {
+    const el = listRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [])
 
   useEffect(() => {
     if (window.matchMedia("(max-width: 767px)").matches) return
@@ -133,16 +163,6 @@ function ChatPanelLive({
     return () => window.removeEventListener("keydown", onKey)
   }, [variant, onClose])
 
-  useEffect(() => {
-    if (messages.length === 0 && !blockedCerca) {
-      setIntroGone(false)
-      return
-    }
-    if (introGone) return
-    const id = window.setTimeout(() => setIntroGone(true), 160)
-    return () => window.clearTimeout(id)
-  }, [messages.length, introGone, blockedCerca])
-
   const submitText = useCallback(
     async (raw: string) => {
       const text = raw.trim()
@@ -150,6 +170,7 @@ function ChatPanelLive({
       inFlightRef.current = true
       clearError()
       setBlockedCerca(null)
+      pinBottomRef.current = true
       let body: { lat: number; lng: number } | undefined
       try {
         if (isCercaMioQuery(text)) {
@@ -159,7 +180,6 @@ function ChatPanelLive({
             if (location) body = location
             else {
               setBlockedCerca(text)
-              setIntroGone(true)
               return
             }
           } finally {
@@ -181,7 +201,11 @@ function ChatPanelLive({
     void submitText(value)
   }
 
-  const showWelcome = messages.length === 0 && !blockedCerca
+  const onListScroll = (event: UIEvent<HTMLDivElement>) => {
+    const el = event.currentTarget
+    pinBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 64
+  }
+
   const last = messages[messages.length - 1]
   const waitingFirstToken =
     status === "submitted" ||
@@ -195,212 +219,237 @@ function ChatPanelLive({
     <div
       className={cn(
         "flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F7F3EB] font-sans text-[#1F4D35]",
-        variant === "widget" && "md:rounded-2xl md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
+        variant === "widget" && "md:rounded-[20px] md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
-      aria-label="CeliBot"
+      aria-label="Asistente CeliMap"
       aria-modal={variant === "widget" || undefined}
     >
       <header
         className={cn(
-          "flex shrink-0 items-center gap-2 bg-[#1F4D35] px-3 py-2 text-white sm:px-4 md:py-3",
-          variant === "widget" && "md:rounded-t-2xl"
+          "flex shrink-0 items-start gap-3 px-4 py-4 text-white shadow-[0_2px_8px_rgba(0,0,0,0.1)]",
+          "bg-[linear-gradient(180deg,#1F4D35_0%,#2A5E45_100%)]",
+          "max-md:pt-[max(1rem,var(--safe-area-top))]",
+          variant === "widget" && "md:rounded-t-[20px]"
         )}
       >
         {variant === "page" ? (
           <Link
             href="/"
-            className="flex h-10 shrink-0 items-center gap-1 rounded-full px-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:h-11"
+            className="mt-0.5 flex h-9 shrink-0 items-center gap-1 rounded-full px-1 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             aria-label="Volver a CeliMap"
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />
             <span className="text-[13px] font-semibold">Volver</span>
           </Link>
         ) : null}
-        <BrandLogo
-          inverse
-          size="xs"
-          className="min-w-0 shrink [&_img]:h-7 [&_img]:max-w-[8.75rem] md:[&_img]:h-8 md:[&_img]:max-w-[11rem]"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/mark.png?v2"
+          alt=""
+          width={28}
+          height={36}
+          className="mt-0.5 h-7 w-auto shrink-0 brightness-0 invert"
         />
         <div className="min-w-0 flex-1">
-          <p className="font-display truncate text-[15px] font-bold leading-tight md:text-[16px]">
-            CeliBot
-          </p>
-          <p className="hidden truncate text-[11px] leading-snug text-white/70 sm:block">
-            Confirmá siempre en el lugar.
+          <p className="truncate text-[16px] font-bold leading-tight text-white">Asistente CeliMap</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-white/60">
+            Puede cometer errores · Confirmá siempre en el lugar
           </p>
         </div>
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:h-11 md:w-11"
-            aria-label="Cerrar CeliBot"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            aria-label="Cerrar asistente"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" strokeWidth={2.2} />
           </button>
         ) : null}
       </header>
 
       <div
         ref={listRef}
+        onScroll={onListScroll}
         className="celimap-chat-map min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 md:px-4 md:py-4"
       >
         <div className={threadClass}>
-        {introGone ? null : (
-          <div className={cn("mb-4", messages.length > 0 && "celimap-chat-chips-out")}>
-            <div className="flex items-end gap-2">
-              <ChatAvatar />
-              <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in max-w-[85%]")}>
-                Hola, soy CeliBot. Te ayudo a encontrar lugares sin TACC de CeliMap y a resolver
-                dudas de celiaquía. ¿Qué estás buscando?
+          {startedEmpty.current ? (
+            <div className="celimap-chat-welcome-in mb-4">
+              <div className="flex items-end gap-2">
+                <ChatAvatar />
+                <div className={cn(BOT_BUBBLE, "max-w-[85%]")}>
+                  ¡Hola! 👋 Puedo ayudarte a encontrar lugares sin TACC y responder dudas sobre
+                  celiaquía.
+                </div>
               </div>
-            </div>
-            {showWelcome && !blockedCerca ? (
-              <div className="ml-10 mt-2 flex flex-wrap gap-2">
+              <BubbleTime at={stamp("welcome")} side="left" />
+              <div
+                className={cn(
+                  "celimap-chat-chips-row ml-11 mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1",
+                  (messages.length > 0 || blockedCerca) && "celimap-chat-chips-out"
+                )}
+              >
                 {CHIPS.map((chip) => (
                   <button
-                    key={chip}
+                    key={chip.send}
                     type="button"
                     disabled={busy}
-                    onClick={() => void submitText(chip)}
-                    className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-3 py-2 text-left text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50 md:px-4 md:py-2.5 md:text-[14px]"
+                    onClick={() => void submitText(chip.send)}
+                    className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-left text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
                   >
-                    {chip}
+                    <span className="mr-1.5" aria-hidden>
+                      {chip.icon}
+                    </span>
+                    {chip.label}
                   </button>
                 ))}
               </div>
-            ) : null}
-          </div>
-        )}
+            </div>
+          ) : null}
 
-        <div>
-          {visible.map((message, index) => {
-            const text = chatMessageText(message)
-            const isUser = message.role === "user"
-            const prev = visible[index - 1]
-            const firstInGroup = !prev || prev.role !== message.role
-            const spacing = index === 0 ? "" : prev && prev.role === message.role ? "mt-1" : "mt-4"
+          <div>
+            {visible.map((message, index) => {
+              const text = chatMessageText(message)
+              const isUser = message.role === "user"
+              const prev = visible[index - 1]
+              const next = visible[index + 1]
+              const firstInGroup = !prev || prev.role !== message.role
+              const lastInGroup = !next || next.role !== message.role
+              const spacing = index === 0 ? "" : prev && prev.role === message.role ? "mt-1" : "mt-4"
+              const at = stamp(message.id)
 
-            if (isUser) {
+              if (isUser) {
+                return (
+                  <div key={message.id} className={cn("flex flex-col items-end", spacing)}>
+                    <div className={cn(USER_BUBBLE, "celimap-chat-bubble-in max-w-[80%]")}>{text}</div>
+                    {lastInGroup ? <BubbleTime at={at} side="right" /> : null}
+                  </div>
+                )
+              }
+
+              const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
+              const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
+              const zona = chatZonaFromInput(
+                getChatToolInput<BuscarLugaresInput>(message, "buscarLugares")
+              )
+              const miniPlaces = mergePlaceCards(places, extractChatPlaceLinks(text))
+
               return (
-                <div key={message.id} className={cn("flex justify-end", spacing)}>
-                  <div className={cn(USER_BUBBLE, "max-w-[80%]")}>{text}</div>
+                <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
+                  <span className="flex w-9 shrink-0 justify-center pt-1">
+                    {firstInGroup ? <ChatAvatar /> : null}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {text || miniPlaces.length > 0 ? (
+                      <div
+                        className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[85%]")}
+                      >
+                        {text ? <ChatMarkdown text={text} /> : null}
+                        <ChatPlaceMiniCards lugares={miniPlaces} />
+                      </div>
+                    ) : null}
+                    {lastInGroup ? <BubbleTime at={at} side="left" /> : null}
+                    {lists ? <ChatListCards result={lists} /> : null}
+                    {places ? <ChatPlaceCards result={places} zona={zona} /> : null}
+                  </div>
                 </div>
               )
-            }
+            })}
+          </div>
 
-            const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
-            const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
-            const zona = chatZonaFromInput(
-              getChatToolInput<BuscarLugaresInput>(message, "buscarLugares")
-            )
-
-            return (
-              <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
-                <span className="flex w-8 shrink-0 justify-center pt-1">
-                  {firstInGroup ? <ChatAvatar /> : null}
-                </span>
+          {blockedCerca ? (
+            <div className="mt-4 space-y-2">
+              <div className="flex flex-col items-end">
+                <div className={cn(USER_BUBBLE, "celimap-chat-bubble-in max-w-[80%]")}>
+                  {blockedCerca}
+                </div>
+                <BubbleTime at={stamp("blocked-user")} side="right" />
+              </div>
+              <div className="flex items-start gap-2">
+                <ChatAvatar />
                 <div className="min-w-0 flex-1">
-                  {text ? (
-                    <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[95%]")}>
-                      <ChatMarkdown text={text} />
-                    </div>
-                  ) : null}
-                  {lists ? <ChatListCards result={lists} /> : null}
-                  {places ? <ChatPlaceCards result={places} zona={zona} /> : null}
+                  <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[85%]")}>
+                    El teléfono no me pasó la ubicación. Tocá un barrio y te busco cafeterías o
+                    lugares ahí.
+                  </div>
+                  <BubbleTime at={stamp("blocked-bot")} side="left" />
+                  <div className="celimap-chat-chips-row mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                    {BARRIO_CHIPS.map((barrio) => (
+                      <button
+                        key={barrio}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          const follow = cercaFollowUp(blockedCerca, barrio)
+                          setBlockedCerca(null)
+                          void submitText(follow)
+                        }}
+                        className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+                      >
+                        {barrio}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-
-        {blockedCerca ? (
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-end">
-              <div className={cn(USER_BUBBLE, "max-w-[80%]")}>{blockedCerca}</div>
             </div>
-            <div className="flex items-start gap-2">
+          ) : null}
+
+          {locating ? (
+            <div className="mt-4 flex items-end gap-2" aria-live="polite">
               <ChatAvatar />
-              <div className="min-w-0 flex-1">
-                <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[95%]")}>
-                  No pude usar tu ubicación. Tocá un barrio y te busco ahí.
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {BARRIO_CHIPS.map((barrio) => (
-                    <button
-                      key={barrio}
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        const follow = cercaFollowUp(blockedCerca, barrio)
-                        setBlockedCerca(null)
-                        void submitText(follow)
-                      }}
-                      className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-3 py-2 text-[13px] font-semibold text-[#1F4D35] hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
-                    >
-                      {barrio}
-                    </button>
-                  ))}
-                </div>
+              <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in text-[13px] text-[#333]/70")}>
+                Pidiendo ubicación. Si el teléfono la bloquea, te pido un barrio.
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {locating ? (
-          <div className="mt-4 flex items-end gap-2" aria-live="polite">
-            <ChatAvatar />
-            <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in text-[13px] text-[#2D2D2D]/70")}>
-              Pidiendo ubicación. Si no se puede, te pido un barrio.
+          {waitingFirstToken ? (
+            <div className="mt-4 flex items-end gap-2" aria-live="polite" aria-label="Escribiendo">
+              <ChatAvatar />
+              <div className={cn(BOT_BUBBLE, "flex items-center gap-1.5 px-4 py-3")}>
+                <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/50" />
+                <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/50" />
+                <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/50" />
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {waitingFirstToken ? (
-          <div className="mt-4 flex items-end gap-2" aria-live="polite" aria-label="Escribiendo">
-            <ChatAvatar />
-            <div className={cn(BOT_BUBBLE, "flex items-center gap-1.5 px-4 py-3")}>
-              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
-              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
-              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
+          {error ? (
+            <div className="mt-4 flex items-end gap-2">
+              <ChatAvatar />
+              <div className={cn(BOT_BUBBLE, "max-w-[85%]")}>
+                <p>{parseChatClientErrorMessage(error)}</p>
+                <button
+                  type="button"
+                  className="mt-2 text-[13px] font-semibold text-[#B64320] hover:underline"
+                  onClick={() => {
+                    clearError()
+                    void regenerate()
+                  }}
+                >
+                  Reintentar
+                </button>
+              </div>
             </div>
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="mt-4 flex items-end gap-2">
-            <ChatAvatar />
-            <div className={cn(BOT_BUBBLE, "max-w-[85%]")}>
-              <p>{parseChatClientErrorMessage(error)}</p>
-              <button
-                type="button"
-                className="mt-2 text-[13px] font-semibold text-[#B64320] hover:underline"
-                onClick={() => {
-                  clearError()
-                  void regenerate()
-                }}
-              >
-                Reintentar
-              </button>
-            </div>
-          </div>
-        ) : null}
-
+          ) : null}
         </div>
       </div>
 
       <form
         onSubmit={onSubmit}
         className={cn(
-          "shrink-0 bg-[#F7F3EB] px-3 pb-3 pt-2",
+          "shrink-0 bg-[#F7F3EB] px-3 pt-2",
+          "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
           variant === "page" && "mx-auto w-full max-w-[420px]"
         )}
       >
         <div
           className={cn(
-            "relative rounded-[24px] border-[1.5px] border-[#E0D9CF] bg-white py-3 pl-5 pr-12 transition-[border-color,box-shadow] duration-150",
-            "focus-within:border-[#1F4D35] focus-within:shadow-[0_1px_8px_rgba(31,77,53,0.12)]"
+            "relative rounded-[24px] border-[1.5px] border-[#DEDBD5] bg-white py-3.5 pl-5 pr-[52px] transition-[border-color,box-shadow] duration-150",
+            "focus-within:border-[#1F4D35] focus-within:shadow-[0_0_0_3px_rgba(31,77,53,0.1)]"
           )}
         >
           <label className="sr-only" htmlFor="celimap-chat-input">
@@ -422,13 +471,13 @@ function ChatPanelLive({
                 void submitText(value)
               }
             }}
-            className="max-h-24 min-h-[24px] w-full resize-none bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#999] disabled:opacity-60 md:max-h-32 md:text-[14px]"
+            className="max-h-24 min-h-[22px] w-full resize-none bg-transparent text-[16px] text-[#333] outline-none placeholder:text-[14px] placeholder:text-[#AAA] disabled:opacity-60 md:max-h-32 md:text-[14px]"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
             aria-label="Enviar mensaje"
-            className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-[#1F4D35] text-white hover:bg-[#183d2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-40"
+            className="absolute bottom-1.5 right-1.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#1F4D35] text-white transition-colors duration-150 hover:bg-[#2A5E45] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
           </button>
@@ -449,7 +498,7 @@ export function ChatFab({
     <button
       type="button"
       onClick={onToggle}
-      aria-label={open ? "Cerrar CeliBot" : "Abrir CeliBot"}
+      aria-label={open ? "Cerrar asistente" : "Abrir asistente CeliMap"}
       aria-expanded={open}
       className={cn(
         "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
