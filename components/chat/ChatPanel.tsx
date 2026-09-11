@@ -3,11 +3,16 @@
 import { ArrowUp, MessageCircle, X } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
+import { ChatListCards, ChatPlaceCards, chatZonaFromInput } from "@/components/chat/ChatCards"
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown"
 import { chatMessageText, loadChatHistory, saveChatHistory } from "@/components/chat/storage"
+import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
+import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import { parseChatClientErrorMessage } from "@/lib/chat/errors"
 import { isCercaMioQuery } from "@/lib/chat/normalize-zona"
+import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import { cn } from "@/lib/utils"
+import type { UIMessage } from "ai"
 import "@/components/chat/chat-ui.css"
 
 const CHIPS = [
@@ -36,6 +41,16 @@ function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> 
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 }
     )
   })
+}
+
+function assistantHasBody(message: UIMessage): boolean {
+  if (chatMessageText(message)) return true
+  const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
+  const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
+  return Boolean(
+    (places && (places.lugares.length > 0 || places.error)) ||
+      (lists && (lists.listas.length > 0 || lists.error))
+  )
 }
 
 function ChatAvatar() {
@@ -177,8 +192,11 @@ function ChatPanelLive({
   const last = messages[messages.length - 1]
   const waitingFirstToken =
     status === "submitted" ||
-    (status === "streaming" && last?.role === "assistant" && !chatMessageText(last))
-  const visible = messages.filter((message) => chatMessageText(message))
+    (status === "streaming" && last?.role === "assistant" && !assistantHasBody(last))
+  const visible = messages.filter((message) =>
+    message.role === "user" ? Boolean(chatMessageText(message)) : assistantHasBody(message)
+  )
+  const threadClass = cn("mx-auto w-full", variant === "page" ? "max-w-[420px]" : "max-w-full")
 
   return (
     <div
@@ -224,6 +242,7 @@ function ChatPanelLive({
       </header>
 
       <div className="celimap-chat-map min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className={threadClass}>
         {introGone ? null : (
           <div className={cn("mb-4", messages.length > 0 && "celimap-chat-chips-out")}>
             <div className="flex items-end gap-2">
@@ -234,7 +253,7 @@ function ChatPanelLive({
               </div>
             </div>
             {showWelcome ? (
-              <div className="ml-12 mt-2 flex flex-wrap gap-2">
+              <div className="ml-9 mt-2 flex flex-wrap gap-2">
                 {CHIPS.map((chip) => (
                   <button
                     key={chip}
@@ -262,18 +281,30 @@ function ChatPanelLive({
             if (isUser) {
               return (
                 <div key={message.id} className={cn("flex justify-end", spacing)}>
-                  <div className={cn(USER_BUBBLE, "max-w-[85%]")}>{text}</div>
+                  <div className={cn(USER_BUBBLE, "max-w-[80%]")}>{text}</div>
                 </div>
               )
             }
 
+            const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
+            const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
+            const zona = chatZonaFromInput(
+              getChatToolInput<BuscarLugaresInput>(message, "buscarLugares")
+            )
+
             return (
-              <div key={message.id} className={cn("flex items-end gap-2", spacing)}>
-                <span className="flex w-7 shrink-0 justify-center">
+              <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
+                <span className="flex w-7 shrink-0 justify-center pt-1">
                   {firstInGroup ? <ChatAvatar /> : null}
                 </span>
-                <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in max-w-[85%]")}>
-                  <ChatMarkdown text={text} />
+                <div className="min-w-0 flex-1">
+                  {text ? (
+                    <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[95%]")}>
+                      <ChatMarkdown text={text} />
+                    </div>
+                  ) : null}
+                  {lists ? <ChatListCards result={lists} /> : null}
+                  {places ? <ChatPlaceCards result={places} zona={zona} /> : null}
                 </div>
               </div>
             )
@@ -320,11 +351,15 @@ function ChatPanelLive({
         ) : null}
 
         <div ref={bottomRef} />
+        </div>
       </div>
 
       <form
         onSubmit={onSubmit}
-        className="shrink-0 bg-[#F7F3EB] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+        className={cn(
+          "shrink-0 bg-[#F7F3EB] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2",
+          variant === "page" && "mx-auto w-full max-w-[420px]"
+        )}
       >
         <div
           className={cn(

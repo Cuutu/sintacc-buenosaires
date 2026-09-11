@@ -3,6 +3,7 @@
 import { MapPin } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import rehypeSanitize from "rehype-sanitize"
+import { linkifyBareUrls } from "@/lib/chat/linkify"
 
 function isCeliMapHref(href?: string): boolean {
   if (!href) return false
@@ -26,7 +27,7 @@ export function ChatMarkdown({ text }: { text: string }) {
           return (
             <a
               href={href}
-              className="font-semibold text-[#B64320] underline-offset-2 hover:underline"
+              className="font-semibold text-[#B64320] underline decoration-[#B64320]/40 underline-offset-2 hover:decoration-[#B64320]"
               target={internal ? undefined : "_blank"}
               rel={internal ? undefined : "noopener noreferrer"}
             >
@@ -60,7 +61,7 @@ export function ChatMarkdown({ text }: { text: string }) {
         },
       }}
     >
-      {text}
+      {linkifyBareUrls(text)}
     </ReactMarkdown>
   )
 }

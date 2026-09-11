@@ -13,6 +13,10 @@ import {
   getChatOpenRouterApiKey,
 } from "@/lib/chat/config"
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
+import { chatListUrl } from "@/lib/chat/buscar-listas"
+import { linkifyBareUrls } from "@/lib/chat/linkify"
+import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
+import type { UIMessage } from "ai"
 
 type TestMessage = {
   id: string
@@ -236,6 +240,9 @@ describe("chat system prompt", () => {
     expect(CHAT_SYSTEM_PROMPT).toMatch(/Nunca digas "los mejores"/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/Como mucho un emoji/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/No narres reintentos/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/buscarListas/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pegues URLs crudas/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pases tipo/)
   })
 })
 
@@ -304,6 +311,47 @@ describe("chat OpenRouter key", () => {
     expect(getChatOpenRouterApiKey()).toBe("chat-key")
     delete process.env.OPENROUTER_CHAT_API_KEY
     expect(getChatOpenRouterApiKey()).toBe("fallback-key")
+  })
+})
+
+describe("chat linkify", () => {
+  it("convierte URLs sueltas en markdown y no toca las que ya están", () => {
+    expect(
+      linkifyBareUrls("mirá https://www.celimap.com.ar/lugar/zero-gluten-pizza-palermo")
+    ).toBe(
+      "mirá [https://www.celimap.com.ar/lugar/zero-gluten-pizza-palermo](https://www.celimap.com.ar/lugar/zero-gluten-pizza-palermo)"
+    )
+    expect(
+      linkifyBareUrls("[Amitié](https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo)")
+    ).toBe("[Amitié](https://www.celimap.com.ar/lugar/amitie-cafeteria-palermo)")
+  })
+})
+
+describe("chat listas", () => {
+  it("arma URL canónica de lista", () => {
+    expect(chatListUrl("abc123")).toBe("https://www.celimap.com.ar/listas/abc123")
+  })
+})
+
+describe("chat tool parts", () => {
+  it("lee output e input de tool-buscarLugares", () => {
+    const message = {
+      id: "1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-buscarLugares",
+          state: "output-available",
+          input: { zona: "Palermo" },
+          output: { encontrados: 1, lugares: [] },
+        },
+      ],
+    } as UIMessage
+    expect(getChatToolOutput(message, "buscarLugares")).toEqual({
+      encontrados: 1,
+      lugares: [],
+    })
+    expect(getChatToolInput(message, "buscarLugares")).toEqual({ zona: "Palermo" })
   })
 })
 

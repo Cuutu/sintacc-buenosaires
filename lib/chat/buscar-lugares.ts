@@ -81,7 +81,7 @@ export const buscarLugaresInputSchema = z.object({
     .enum(PLACE_TYPES)
     .optional()
     .describe(
-      "Tipo de lugar: restaurant (restaurante), cafe (café), bakery (panadería), store (tienda), icecream (heladería), bar, other (otro)."
+      "Tipo de lugar: restaurant, cafe, bakery, store, icecream, bar, other. Omitilo si piden 'lugares' en general, sin un tipo."
     ),
   soloCienPorcientoSinTacc: z
     .boolean()
@@ -111,7 +111,8 @@ export const buscarLugaresInputSchema = z.object({
 
 export type BuscarLugaresInput = z.infer<typeof buscarLugaresInputSchema>
 
-type ChatPlaceCard = {
+export type ChatPlaceCard = {
+  id: string
   nombre: string
   tipo: string
   direccion: string
@@ -244,6 +245,7 @@ function toCard(doc: PlaceDoc): ChatPlaceCard | null {
   const safety = clasificacionTacc(doc)
   if (safety.level === "unknown") return null
   return {
+    id: doc._id.toString(),
     nombre: doc.name,
     tipo: TYPE_LABEL[doc.type] || doc.type,
     direccion: doc.address || "",
@@ -322,7 +324,7 @@ export async function buscarLugares(input: BuscarLugaresInput): Promise<BuscarLu
 
   const near = await findNear(normalized, query)
   if (normalized.lat != null && normalized.lng != null) {
-    if (near) {
+    if (near && near.length > 0) {
       const lugares = mapDocs(near, soloDedicated)
       return { encontrados: lugares.length, lugares }
     }

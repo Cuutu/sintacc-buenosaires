@@ -21,10 +21,14 @@ Niveles TACC (cómo comunicarlos):
 - unknown → "sin información confirmada sobre TACC": NUNCA lo presentes como apto. La tool no incluye estos lugares por defecto.
 
 Cómo buscar:
-- Si piden lugares, usá buscarLugares. Completá zona/ciudad, tipo y el filtro de 100% sin TACC según lo que pidieron.
+- Si piden lugares, usá buscarLugares y también buscarListas con la misma zona. Completá zona/ciudad y el filtro de 100% sin TACC. No inventes lugares ni listas. Si dicen "lugares" sin un tipo (café, restaurante, etc.), NO pases tipo.
+- Llamá buscarListas aunque buscarLugares no traiga lugares. No pases lat/lng salvo que pidan cerca.
 - Si hay coordenadas del usuario, pasalas en lat y lng para buscar cerca. No pidas las coordenadas de nuevo.
 - Si piden cerca y no hay coordenadas, pedí un barrio. No inventes una ubicación.
-- Respondé con 3–8 lugares como máximo, en lista corta: nombre, barrio/ciudad, tipo, clasificación TACC y link.`
+- El widget ya muestra tarjetas clickeables. En el texto NO pegues URLs crudas ni un párrafo con todo junto.
+- Texto corto (2–4 líneas): "Algunos lugares en X" o "N lugares". Cada lugar, si lo nombrás, en su renglón y con markdown [Nombre](url).
+- Si buscarListas trae listas, recomendá 1 o 2 con [nombre](url). Si no hay, decí que puede armar una lista con el botón del chat (hace falta cuenta).
+- Respondé con 3–8 lugares como máximo.`
 
 export function buildChatSystemPrompt(location?: { lat: number; lng: number } | null): string {
   if (!location) return CHAT_SYSTEM_PROMPT

@@ -7,6 +7,7 @@ import {
 } from "ai"
 import { NextRequest, NextResponse } from "next/server"
 import { buscarLugares, buscarLugaresInputSchema } from "@/lib/chat/buscar-lugares"
+import { buscarListas, buscarListasInputSchema } from "@/lib/chat/buscar-listas"
 import {
   CHAT_MAX_OUTPUT_TOKENS,
   CHAT_MAX_PAYLOAD_CHARS,
@@ -177,6 +178,24 @@ export async function POST(request: NextRequest) {
                 lugares: [],
                 error:
                   "No pude consultar la base de lugares. Pedile a la persona que pruebe de nuevo.",
+              }
+            }
+          },
+        }),
+        buscarListas: tool({
+          description:
+            "Busca listas públicas de CeliMap por barrio o ciudad. Usala junto con buscarLugares cuando pidan lugares de una zona. Nunca inventes listas.",
+          inputSchema: buscarListasInputSchema,
+          execute: async (input) => {
+            try {
+              return await buscarListas(input)
+            } catch (error) {
+              logChatError(error, 500)
+              return {
+                encontradas: 0,
+                listas: [],
+                error:
+                  "No pude consultar las listas. Pedile a la persona que pruebe de nuevo.",
               }
             }
           },
