@@ -47,6 +47,7 @@
     "assets:generate": "npx capacitor-assets generate --android --ios --assetPath assets --iconBackgroundColor #0b1220 --iconBackgroundColorDark #0b1220 --splashBackgroundColor #0b1220 --splashBackgroundColorDark #0b1220"
   },
   "dependencies": {
+    "@ai-sdk/react": "^2.0.258",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.4.2",
@@ -57,6 +58,7 @@
     "@fontsource/dm-serif-display": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@hookform/resolvers": "^3.3.0",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-label": "^2.0.2",
@@ -71,6 +73,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.7.5",
     "@vercel/og": "^0.11.1",
+    "ai": "^5.0.255",
     "autoprefixer": "^10.4.0",
     "class-variance-authority": "^0.7.0",
     "cloudinary": "^1.41.0",
@@ -96,7 +99,7 @@
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.4.0",
-    "zod": "^3.22.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@capacitor/android": "^8.4.2",

@@ -10,6 +10,7 @@ describe("SEO listas privadas", () => {
       const disallow = rule?.disallow
       const list = Array.isArray(disallow) ? disallow : [disallow]
       expect(list).toContain("/listas/privadas")
+      expect(list).toContain("/chat-test")
     }
   })
 

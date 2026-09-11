@@ -4,23 +4,23 @@ import { RateLimit } from "@/models/RateLimit"
 import { RateLimitIp } from "@/models/RateLimitIp"
 import mongoose from "mongoose"
 
+function firstIp(value: string | null): string | null {
+  const first = value?.split(",")[0]?.trim()
+  return first || null
+}
+
 /**
- * Extrae IP del request. Orden: x-forwarded-for (primer IP, cliente original) →
- * x-real-ip → x-vercel-forwarded-for → cf-connecting-ip → unknown
- * Vercel y proxies estándar usan x-forwarded-for con el cliente a la izquierda.
+ * IP para rate limit. En Vercel el header de plataforma es `x-vercel-forwarded-for`
+ * (el cliente no lo puede pisar). `x-forwarded-for` queda último: en Vercel lo
+ * sobreescriben ellos, pero un caller directo podría mandarlo.
  */
 export function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for")
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim()
-    if (first) return first
-  }
+  const vercelFwd = firstIp(request.headers.get("x-vercel-forwarded-for"))
+  if (vercelFwd) return vercelFwd
   const realIp = request.headers.get("x-real-ip")?.trim()
   if (realIp) return realIp
-  const vercelFwd = request.headers.get("x-vercel-forwarded-for")?.trim()
-  if (vercelFwd) return vercelFwd.split(",")[0]?.trim() || vercelFwd
-  const cfIp = request.headers.get("cf-connecting-ip")?.trim()
-  if (cfIp) return cfIp
+  const forwarded = firstIp(request.headers.get("x-forwarded-for"))
+  if (forwarded) return forwarded
   return "unknown"
 }
 

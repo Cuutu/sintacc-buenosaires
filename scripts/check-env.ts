@@ -22,6 +22,10 @@ const optionalEnvVars = [
   "OPENROUTER_API_KEY",
   "OPENROUTER_IMAGE_MODEL",
   "OPENROUTER_TEXT_MODEL",
+  "OPENROUTER_MODEL",
+  "CHAT_TEST_ENABLED",
+  "CHAT_RATE_LIMIT_MAX",
+  "CHAT_RATE_WINDOW_MINUTES",
   "PLACE_RESEARCH_ENABLED",
   "PLACE_RESEARCH_AUTO_ON_SUBMIT",
   "GOOGLE_MAPS_API_KEY",
@@ -84,6 +88,12 @@ function checkEnv() {
       }
       if (varName === "OPENROUTER_TEXT_MODEL" || varName === "PLACE_RESEARCH_ENABLED") {
         console.log("   ℹ️  Sin esto: investigación IA de sugerencias deshabilitada.")
+      }
+      if (varName === "OPENROUTER_MODEL") {
+        console.log("   ℹ️  Sin esto: el chat usa OPENROUTER_TEXT_MODEL o openai/gpt-4.1-mini.")
+      }
+      if (varName === "CHAT_TEST_ENABLED") {
+        console.log("   ℹ️  Sin esto: /chat-test da 404 en producción.")
       }
     }
   })
