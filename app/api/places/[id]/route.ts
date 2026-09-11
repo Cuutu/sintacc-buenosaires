@@ -9,6 +9,11 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
+import { checkRateLimitByIp } from "@/lib/rate-limit"
+
+/** Rate limit: 240 requests por minuto por IP para detalles (más generoso que listas) */
+const PLACES_DETAIL_RATE_LIMIT = parseInt(process.env.PLACES_DETAIL_RATE_LIMIT_PER_MIN || "240", 10)
+const PLACES_DETAIL_WINDOW_MINUTES = 1
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +21,27 @@ export async function GET(
 ) {
   const id = params?.id
   try {
+    // Anti-scraping: rate limit por IP en detalles de lugares
+    const rateLimit = await checkRateLimitByIp(
+      request,
+      "public_places_detail",
+      PLACES_DETAIL_RATE_LIMIT,
+      PLACES_DETAIL_WINDOW_MINUTES
+    )
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Por favor intentá de nuevo en un momento." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "60",
+            "X-RateLimit-Limit": String(PLACES_DETAIL_RATE_LIMIT),
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+          }
+        }
+      )
+    }
+
     if (!id) {
       return NextResponse.json(
         { error: "ID inválido" },

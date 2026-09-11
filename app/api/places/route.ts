@@ -6,16 +6,20 @@ import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema, parsePublicPlacesSearchParams } from "@/lib/validations"
 import { buildPublicPlacesMongoQuery, filterPlacesByBbox } from "@/lib/places-public-query"
-import { PUBLIC_PLACE_SELECT } from "@/lib/places-public-select"
+import { PUBLIC_PLACE_LIST_SELECT } from "@/lib/places-public-select"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
+import { checkRateLimitByIp } from "@/lib/rate-limit"
 
 // Lugares casi estáticos: TTL largo. Escrituras invalidan tag `public:places`.
 const PUBLIC_PLACES_CACHE_TTL_MS = 15 * 60 * 1000
 /** Listados grandes (mapa): no agregar reviews/contaminación — 2 aggregations × miles de IDs. */
 const SKIP_STATS_LIMIT = 100
+/** Rate limit: 120 requests por minuto por IP para listados (suficiente para uso normal del mapa) */
+const PLACES_LIST_RATE_LIMIT = parseInt(process.env.PLACES_LIST_RATE_LIMIT_PER_MIN || "120", 10)
+const PLACES_LIST_WINDOW_MINUTES = 1
 
 function publicPlacesCacheKey(parsed: ReturnType<typeof parsePublicPlacesSearchParams>): string {
   const { bbox: _bbox, ...rest } = parsed
@@ -24,6 +28,27 @@ function publicPlacesCacheKey(parsed: ReturnType<typeof parsePublicPlacesSearchP
 
 export async function GET(request: NextRequest) {
   try {
+    // Anti-scraping: rate limit por IP en listados públicos
+    const rateLimit = await checkRateLimitByIp(
+      request,
+      "public_places_list",
+      PLACES_LIST_RATE_LIMIT,
+      PLACES_LIST_WINDOW_MINUTES
+    )
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Por favor intentá de nuevo en un momento." },
+        { 
+          status: 429,
+          headers: {
+            "Retry-After": "60",
+            "X-RateLimit-Limit": String(PLACES_LIST_RATE_LIMIT),
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+          }
+        }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     let parsed
     try {
@@ -52,7 +77,7 @@ export async function GET(request: NextRequest) {
           : { createdAt: -1 }
 
       const places = await Place.find(query)
-        .select(PUBLIC_PLACE_SELECT)
+        .select(PUBLIC_PLACE_LIST_SELECT)
         .sort(sort)
         .skip(skip)
         .limit(limit)
