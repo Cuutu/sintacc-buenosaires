@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
 import { cn } from "@/lib/utils"
+import "@/components/chat/chat-ui.css"
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false)
@@ -16,22 +17,28 @@ export function ChatWidget() {
     }
   }, [open])
 
-  if (!open) {
-    return (
-      <div className="fixed bottom-[calc(var(--bottom-nav-clearance,1rem)+0.75rem)] right-4 z-[60] md:bottom-6 md:right-6">
-        <ChatFab onOpen={() => setOpen(true)} />
-      </div>
-    )
-  }
-
   return (
-    <div
-      className={cn(
-        "fixed inset-0 z-[70]",
-        "md:inset-auto md:bottom-6 md:right-6 md:h-[600px] md:w-[380px]"
-      )}
-    >
-      <ChatPanel variant="widget" onClose={() => setOpen(false)} />
-    </div>
+    <>
+      {open ? (
+        <div
+          className={cn(
+            "celimap-chat-panel-enter fixed z-[70]",
+            "inset-0",
+            "md:inset-auto md:bottom-[5.5rem] md:right-6 md:h-[600px] md:w-[380px]"
+          )}
+        >
+          <ChatPanel variant="widget" onClose={() => setOpen(false)} />
+        </div>
+      ) : null}
+      <div
+        className={cn(
+          "fixed bottom-6 right-6 z-[80]",
+          "max-md:bottom-[max(1.5rem,var(--bottom-nav-clearance,1.5rem))]",
+          open && "max-md:hidden"
+        )}
+      >
+        <ChatFab open={open} onToggle={() => setOpen((value) => !value)} />
+      </div>
+    </>
   )
 }

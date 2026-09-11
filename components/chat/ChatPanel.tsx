@@ -1,20 +1,26 @@
 "use client"
 
+import { ArrowUp, MessageCircle, X } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
-import { MessageCircle, Send, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
-import { BrandLogo } from "@/components/brand/BrandLogo"
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown"
 import { chatMessageText, loadChatHistory, saveChatHistory } from "@/components/chat/storage"
 import { parseChatClientErrorMessage } from "@/lib/chat/errors"
 import { isCercaMioQuery } from "@/lib/chat/normalize-zona"
 import { cn } from "@/lib/utils"
+import "@/components/chat/chat-ui.css"
 
 const CHIPS = [
   "Lugares 100% sin TACC en Palermo",
   "¿Qué es la contaminación cruzada?",
   "Cafeterías cerca mío",
 ] as const
+
+const BOT_BUBBLE =
+  "rounded-[16px] rounded-tl-[4px] border border-[#E0D9CF] bg-white px-[18px] py-[14px] text-[14px] leading-relaxed text-[#2D2D2D] shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+
+const USER_BUBBLE =
+  "rounded-[16px] rounded-br-[4px] bg-[#1F4D35] px-[18px] py-[14px] text-[14px] leading-relaxed text-white"
 
 type ChatPanelProps = {
   variant: "widget" | "page"
@@ -32,6 +38,45 @@ function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> 
   })
 }
 
+function ChatAvatar() {
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/mark.png?v2"
+        alt=""
+        width={20}
+        height={27}
+        className="h-4 w-auto brightness-0 invert"
+      />
+    </span>
+  )
+}
+
+function useKeyboardInset() {
+  const [inset, setInset] = useState(0)
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const update = () => {
+      const next = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+      setInset(next)
+    }
+
+    update()
+    viewport.addEventListener("resize", update)
+    viewport.addEventListener("scroll", update)
+    return () => {
+      viewport.removeEventListener("resize", update)
+      viewport.removeEventListener("scroll", update)
+    }
+  }, [])
+
+  return inset
+}
+
 export function ChatPanel({ variant, onClose }: ChatPanelProps) {
   const [bootMessages, setBootMessages] = useState<ReturnType<typeof loadChatHistory> | null>(null)
 
@@ -41,12 +86,7 @@ export function ChatPanel({ variant, onClose }: ChatPanelProps) {
 
   if (bootMessages === null) {
     return (
-      <div
-        className={cn(
-          "flex h-full w-full flex-col bg-[#F7F3EB] text-[#1F4D35]",
-        )}
-        aria-busy="true"
-      />
+      <div className="flex h-full w-full flex-col bg-[#F7F3EB]" aria-busy="true" />
     )
   }
 
@@ -60,9 +100,11 @@ function ChatPanelLive({
 }: ChatPanelProps & { initialMessages: ReturnType<typeof loadChatHistory> }) {
   const [input, setInput] = useState("")
   const [locating, setLocating] = useState(false)
+  const [introGone, setIntroGone] = useState(initialMessages.length > 0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const inFlightRef = useRef(false)
+  const keyboardInset = useKeyboardInset()
   const { messages, sendMessage, status, error, regenerate, clearError } = useChat({
     messages: initialMessages,
   })
@@ -88,6 +130,16 @@ function ChatPanelLive({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [variant, onClose])
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setIntroGone(false)
+      return
+    }
+    if (introGone) return
+    const id = window.setTimeout(() => setIntroGone(true), 160)
+    return () => window.clearTimeout(id)
+  }, [messages.length, introGone])
 
   const submitText = useCallback(
     async (raw: string) => {
@@ -126,24 +178,36 @@ function ChatPanelLive({
   const waitingFirstToken =
     status === "submitted" ||
     (status === "streaming" && last?.role === "assistant" && !chatMessageText(last))
+  const visible = messages.filter((message) => chatMessageText(message))
 
   return (
     <div
       className={cn(
         "flex h-full w-full flex-col overflow-hidden bg-[#F7F3EB] font-sans text-[#1F4D35]",
-        variant === "widget" &&
-          "md:rounded-[28px] md:border md:border-[#1F4D35]/10 md:shadow-[0_24px_60px_-28px_rgba(31,77,53,0.45)]",
-        variant === "page" && "mx-auto max-w-[420px] sm:border-x sm:border-[#1F4D35]/10"
+        variant === "widget" && "md:rounded-2xl md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
       aria-label="Asistente CeliMap"
       aria-modal={variant === "widget" || undefined}
+      style={{ paddingBottom: keyboardInset }}
     >
-      <header className="flex shrink-0 items-center gap-3 border-b border-[#1F4D35]/10 bg-white/70 px-4 py-3">
-        <BrandLogo markOnly size="xs" className="shrink-0" />
+      <header
+        className={cn(
+          "flex shrink-0 items-center gap-3 bg-[#1F4D35] px-4 py-4 text-white",
+          variant === "widget" && "md:rounded-t-2xl"
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/mark.png?v2"
+          alt="CeliMap"
+          width={28}
+          height={37}
+          className="h-8 w-auto shrink-0 brightness-0 invert"
+        />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[15px] font-semibold leading-tight">Asistente CeliMap</p>
-          <p className="text-[11px] leading-snug text-[#1F4D35]/65">
+          <p className="font-display text-[16px] font-bold leading-tight">Asistente CeliMap</p>
+          <p className="text-[11px] leading-snug text-white/70">
             Puede cometer errores. Confirmá siempre en el lugar.
           </p>
         </div>
@@ -151,7 +215,7 @@ function ChatPanelLive({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-[#1F4D35] hover:bg-[#1F4D35]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:hidden"
             aria-label="Cerrar chat"
           >
             <X className="h-5 w-5" />
@@ -159,44 +223,57 @@ function ChatPanelLive({
         ) : null}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        {showWelcome ? (
-          <div className="space-y-3">
-            <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-white px-3.5 py-3 text-[14px] leading-relaxed shadow-[0_8px_24px_-18px_rgba(31,77,53,0.35)]">
-              Hola. Puedo ayudarte a encontrar lugares sin TACC de CeliMap y a resolver dudas de celiaquía. ¿Qué estás buscando?
+      <div className="celimap-chat-map min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        {introGone ? null : (
+          <div className={cn("mb-4", messages.length > 0 && "celimap-chat-chips-out")}>
+            <div className="flex items-end gap-2">
+              <ChatAvatar />
+              <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in max-w-[85%]")}>
+                Hola. Puedo ayudarte a encontrar lugares sin TACC de CeliMap y a resolver dudas de
+                celiaquía. ¿Qué estás buscando?
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {CHIPS.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void submitText(chip)}
-                  className="rounded-full border border-[#1F4D35]/15 bg-white px-3 py-2 text-left text-[13px] font-medium text-[#1F4D35] hover:border-[#B64320]/40 hover:text-[#B64320] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
+            {showWelcome ? (
+              <div className="ml-12 mt-2 flex flex-wrap gap-2">
+                {CHIPS.map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void submitText(chip)}
+                    className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2.5 text-left text-[14px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        )}
 
-        <div className="space-y-3">
-          {messages.map((message) => {
+        <div>
+          {visible.map((message, index) => {
             const text = chatMessageText(message)
-            if (!text) return null
             const isUser = message.role === "user"
+            const prev = visible[index - 1]
+            const firstInGroup = !prev || prev.role !== message.role
+            const spacing = index === 0 ? "" : prev && prev.role === message.role ? "mt-1" : "mt-4"
+
+            if (isUser) {
+              return (
+                <div key={message.id} className={cn("flex justify-end", spacing)}>
+                  <div className={cn(USER_BUBBLE, "max-w-[85%]")}>{text}</div>
+                </div>
+              )
+            }
+
             return (
-              <div key={message.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-[85%] px-3.5 py-2.5 text-[14px] leading-relaxed",
-                    isUser
-                      ? "rounded-2xl rounded-tr-md bg-[#1F4D35] text-white"
-                      : "rounded-2xl rounded-tl-md bg-white text-[#1F4D35] shadow-[0_8px_24px_-18px_rgba(31,77,53,0.35)]"
-                  )}
-                >
-                  {isUser ? text : <ChatMarkdown text={text} />}
+              <div key={message.id} className={cn("flex items-end gap-2", spacing)}>
+                <span className="flex w-7 shrink-0 justify-center">
+                  {firstInGroup ? <ChatAvatar /> : null}
+                </span>
+                <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in max-w-[85%]")}>
+                  <ChatMarkdown text={text} />
                 </div>
               </div>
             )
@@ -204,36 +281,41 @@ function ChatPanelLive({
         </div>
 
         {locating ? (
-          <div className="mt-3 flex justify-start" aria-live="polite">
-            <div className="rounded-2xl rounded-tl-md bg-white px-3.5 py-2.5 text-[13px] text-[#1F4D35]/70">
+          <div className="mt-4 flex items-end gap-2" aria-live="polite">
+            <ChatAvatar />
+            <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in text-[13px] text-[#2D2D2D]/70")}>
               Pidiendo ubicación…
             </div>
           </div>
         ) : null}
 
         {waitingFirstToken ? (
-          <div className="mt-3 flex justify-start" aria-live="polite" aria-label="Escribiendo">
-            <div className="flex gap-1 rounded-2xl rounded-tl-md bg-white px-3 py-3">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#1F4D35]/50 [animation-delay:-0.2s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#1F4D35]/50 [animation-delay:-0.1s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#1F4D35]/50" />
+          <div className="mt-4 flex items-end gap-2" aria-live="polite" aria-label="Escribiendo">
+            <ChatAvatar />
+            <div className={cn(BOT_BUBBLE, "flex items-center gap-1.5 px-4 py-3")}>
+              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
+              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
+              <span className="celimap-chat-dot h-1.5 w-1.5 rounded-full bg-[#1F4D35]/55" />
             </div>
           </div>
         ) : null}
 
         {error ? (
-          <div className="mt-3 rounded-2xl border border-[#B64320]/25 bg-white px-3.5 py-3 text-[13px] text-[#1F4D35]">
-            <p>{parseChatClientErrorMessage(error)}</p>
-            <button
-              type="button"
-              className="mt-2 text-[13px] font-semibold text-[#B64320] underline-offset-2 hover:underline"
-              onClick={() => {
-                clearError()
-                void regenerate()
-              }}
-            >
-              Reintentar
-            </button>
+          <div className="mt-4 flex items-end gap-2">
+            <ChatAvatar />
+            <div className={cn(BOT_BUBBLE, "max-w-[85%]")}>
+              <p>{parseChatClientErrorMessage(error)}</p>
+              <button
+                type="button"
+                className="mt-2 text-[13px] font-semibold text-[#B64320] hover:underline"
+                onClick={() => {
+                  clearError()
+                  void regenerate()
+                }}
+              >
+                Reintentar
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -242,9 +324,14 @@ function ChatPanelLive({
 
       <form
         onSubmit={onSubmit}
-        className="shrink-0 border-t border-[#1F4D35]/10 bg-white/80 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="shrink-0 bg-[#F7F3EB] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
       >
-        <div className="flex items-end gap-2 rounded-2xl border border-[#1F4D35]/15 bg-[#F7F3EB] px-2 py-1.5 focus-within:border-[#1F4D35]/40">
+        <div
+          className={cn(
+            "relative rounded-[24px] border-[1.5px] border-[#E0D9CF] bg-white py-3 pl-5 pr-12 transition-[border-color,box-shadow] duration-150",
+            "focus-within:border-[#1F4D35] focus-within:shadow-[0_1px_8px_rgba(31,77,53,0.12)]"
+          )}
+        >
           <label className="sr-only" htmlFor="celimap-chat-input">
             Mensaje
           </label>
@@ -254,7 +341,7 @@ function ChatPanelLive({
             value={input}
             disabled={busy}
             rows={1}
-            placeholder="Escribí tu consulta"
+            placeholder="Escribí tu consulta..."
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -264,15 +351,15 @@ function ChatPanelLive({
                 void submitText(value)
               }
             }}
-            className="max-h-32 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-[14px] text-[#1F4D35] outline-none placeholder:text-[#1F4D35]/45 disabled:opacity-60"
+            className="max-h-32 min-h-[24px] w-full resize-none bg-transparent text-[14px] text-[#2D2D2D] outline-none placeholder:text-[#999] disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
             aria-label="Enviar mensaje"
-            className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-[#1F4D35] text-white hover:bg-[#183d2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-40"
+            className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-[#1F4D35] text-white hover:bg-[#183d2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-40"
           >
-            <Send className="h-4 w-4" />
+            <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
           </button>
         </div>
       </form>
@@ -280,15 +367,35 @@ function ChatPanelLive({
   )
 }
 
-export function ChatFab({ onOpen }: { onOpen: () => void }) {
+export function ChatFab({
+  open = false,
+  onToggle,
+}: {
+  open?: boolean
+  onToggle: () => void
+}) {
   return (
     <button
       type="button"
-      onClick={onOpen}
-      aria-label="Abrir asistente CeliMap"
-      className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1F4D35] text-white shadow-[0_12px_28px_-10px_rgba(31,77,53,0.7)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
+      onClick={onToggle}
+      aria-label={open ? "Cerrar asistente CeliMap" : "Abrir asistente CeliMap"}
+      aria-expanded={open}
+      className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#1F4D35] text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
     >
-      <MessageCircle className="h-6 w-6" strokeWidth={2.2} />
+      <MessageCircle
+        className={cn(
+          "h-6 w-6 transition-transform duration-150 ease-out",
+          open ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
+        )}
+        strokeWidth={2.2}
+      />
+      <X
+        className={cn(
+          "absolute h-6 w-6 transition-transform duration-150 ease-out",
+          open ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
+        )}
+        strokeWidth={2.2}
+      />
     </button>
   )
 }
