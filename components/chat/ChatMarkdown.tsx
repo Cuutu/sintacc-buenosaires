@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import rehypeSanitize from "rehype-sanitize"
 import { linkifyBareUrls } from "@/lib/chat/linkify"
+import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
 
 function isCeliMapHref(href?: string): boolean {
   if (!href) return false
@@ -61,7 +62,7 @@ export function ChatMarkdown({ text }: { text: string }) {
         },
       }}
     >
-      {linkifyBareUrls(text)}
+      {linkifyBareUrls(sanitizeChatVisibleText(text))}
     </ReactMarkdown>
   )
 }

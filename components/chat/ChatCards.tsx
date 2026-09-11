@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
-import { ListPlus, MapPin } from "lucide-react"
+import { ListPlus } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
 import type { BuscarLugaresInput, BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
@@ -25,6 +25,22 @@ function isLocalHref(href: string): boolean {
   return href.startsWith("/") && !href.startsWith("//")
 }
 
+function CardThumb({ src, alt }: { src?: string; alt: string }) {
+  return (
+    <span className="relative mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-[#1F4D35]/10">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src || "/brand/app-icon.png"}
+        alt=""
+        width={48}
+        height={48}
+        className="h-full w-full object-cover"
+      />
+      <span className="sr-only">{alt}</span>
+    </span>
+  )
+}
+
 export function ChatPlaceCards({
   result,
   zona,
@@ -32,9 +48,6 @@ export function ChatPlaceCards({
   result: BuscarLugaresResult
   zona?: string
 }) {
-  if (result.error) {
-    return <p className="mt-2 text-[13px] text-[#2D2D2D]/70">{result.error}</p>
-  }
   if (result.lugares.length === 0) return null
 
   return (
@@ -46,12 +59,15 @@ export function ChatPlaceCards({
           <Label
             key={lugar.id}
             href={href}
-            className="block rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
+            className="flex items-start gap-2.5 rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
             {...(!isLocalHref(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           >
-            <span className="block text-[14px] font-semibold text-[#1F4D35]">{lugar.nombre}</span>
-            <span className="mt-0.5 block text-[12px] leading-snug text-[#2D2D2D]/70">
-              {[lugar.barrio, lugar.tipo, lugar.clasificacionTacc].filter(Boolean).join(" · ")}
+            <CardThumb src={lugar.foto} alt="" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold text-[#1F4D35]">{lugar.nombre}</span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-[#2D2D2D]/70">
+                {[lugar.barrio, lugar.tipo, lugar.clasificacionTacc].filter(Boolean).join(" · ")}
+              </span>
             </span>
           </Label>
         )
@@ -65,9 +81,6 @@ export function ChatPlaceCards({
 }
 
 export function ChatListCards({ result }: { result: BuscarListasResult }) {
-  if (result.error) {
-    return <p className="mt-2 text-[13px] text-[#2D2D2D]/70">{result.error}</p>
-  }
   if (result.listas.length === 0) return null
 
   return (
@@ -81,10 +94,10 @@ export function ChatListCards({ result }: { result: BuscarListasResult }) {
           <Link
             key={lista.id}
             href={href}
-            className="flex items-start gap-2 rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
+            className="flex items-start gap-2.5 rounded-[14px] border border-[#E0D9CF] bg-white px-3 py-2.5 no-underline shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#1F4D35]/40"
           >
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B64320]" strokeWidth={2.2} />
-            <span className="min-w-0">
+            <CardThumb src={lista.foto} alt="" />
+            <span className="min-w-0 flex-1">
               <span className="block text-[14px] font-semibold text-[#1F4D35]">{lista.nombre}</span>
               <span className="mt-0.5 block text-[12px] text-[#2D2D2D]/70">
                 {[lista.destino, lista.lugares ? `${lista.lugares} lugares` : null]

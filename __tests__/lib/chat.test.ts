@@ -15,6 +15,7 @@ import {
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
 import { chatListUrl } from "@/lib/chat/buscar-listas"
 import { linkifyBareUrls } from "@/lib/chat/linkify"
+import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 import type { UIMessage } from "ai"
 
@@ -243,6 +244,8 @@ describe("chat system prompt", () => {
     expect(CHAT_SYSTEM_PROMPT).toMatch(/buscarListas/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pegues URLs crudas/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pases tipo/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/CeliBot/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/NUNCA escribas DSML/)
   })
 })
 
@@ -311,6 +314,21 @@ describe("chat OpenRouter key", () => {
     expect(getChatOpenRouterApiKey()).toBe("chat-key")
     delete process.env.OPENROUTER_CHAT_API_KEY
     expect(getChatOpenRouterApiKey()).toBe("fallback-key")
+  })
+})
+
+describe("chat sanitize visible", () => {
+  it("saca DSML y deja el texto humano", () => {
+    const raw =
+      '< | DSML | tool_calls> < | DSML | invoke name="buscarLugares"> < | DSML | parameter name="lat" string="false">-Uh, no tengo acceso a tu ubicación exacta desde acá. Decime un barrio o zona de CABA y te busco cafeterías sin TACC'
+    const clean = sanitizeChatVisibleText(raw)
+    expect(clean).not.toMatch(/DSML|tool_calls|invoke|parameter/i)
+    expect(clean).toMatch(/barrio/i)
+    expect(clean).toMatch(/cafeterías/i)
+  })
+
+  it("vacía un mensaje que es solo markup", () => {
+    expect(sanitizeChatVisibleText('<|tool_calls|><|invoke name="buscarLugares"|>')).toBe("")
   })
 })
 

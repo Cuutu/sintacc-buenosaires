@@ -1,8 +1,10 @@
 "use client"
 
-import { ArrowUp, MessageCircle, X } from "lucide-react"
+import { ArrowLeft, ArrowUp, X } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
+import Link from "next/link"
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
+import { BrandLogo } from "@/components/brand/BrandLogo"
 import { ChatListCards, ChatPlaceCards, chatZonaFromInput } from "@/components/chat/ChatCards"
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown"
 import { chatMessageText, loadChatHistory, saveChatHistory } from "@/components/chat/storage"
@@ -20,6 +22,9 @@ const CHIPS = [
   "¿Qué es la contaminación cruzada?",
   "Cafeterías cerca mío",
 ] as const
+
+const BARRIO_CHIPS = ["Palermo", "Belgrano", "Recoleta", "San Telmo", "Caballito"] as const
+
 
 const BOT_BUBBLE =
   "rounded-[16px] rounded-tl-[4px] border border-[#E0D9CF] bg-white px-[18px] py-[14px] text-[14px] leading-relaxed text-[#2D2D2D] shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
@@ -44,25 +49,28 @@ function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> 
 }
 
 function assistantHasBody(message: UIMessage): boolean {
-  if (chatMessageText(message)) return true
+  const text = chatMessageText(message)
+  if (text) return true
   const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
   const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
-  return Boolean(
-    (places && (places.lugares.length > 0 || places.error)) ||
-      (lists && (lists.listas.length > 0 || lists.error))
-  )
+  return Boolean((places && places.lugares.length > 0) || (lists && lists.listas.length > 0))
+}
+
+function cercaFollowUp(original: string, barrio: string): string {
+  if (/cafet/i.test(original)) return `Cafeterías en ${barrio}`
+  return `Lugares sin TACC en ${barrio}`
 }
 
 function ChatAvatar() {
   return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35]">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/brand/mark.png?v2"
         alt=""
-        width={20}
-        height={27}
-        className="h-4 w-auto brightness-0 invert"
+        width={24}
+        height={32}
+        className="h-6 w-auto"
       />
     </span>
   )
@@ -115,6 +123,7 @@ function ChatPanelLive({
 }: ChatPanelProps & { initialMessages: ReturnType<typeof loadChatHistory> }) {
   const [input, setInput] = useState("")
   const [locating, setLocating] = useState(false)
+  const [blockedCerca, setBlockedCerca] = useState<string | null>(null)
   const [introGone, setIntroGone] = useState(initialMessages.length > 0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -131,7 +140,7 @@ function ChatPanelLive({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-  }, [messages, status])
+  }, [messages, status, blockedCerca])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -147,14 +156,14 @@ function ChatPanelLive({
   }, [variant, onClose])
 
   useEffect(() => {
-    if (messages.length === 0) {
+    if (messages.length === 0 && !blockedCerca) {
       setIntroGone(false)
       return
     }
     if (introGone) return
     const id = window.setTimeout(() => setIntroGone(true), 160)
     return () => window.clearTimeout(id)
-  }, [messages.length, introGone])
+  }, [messages.length, introGone, blockedCerca])
 
   const submitText = useCallback(
     async (raw: string) => {
@@ -162,6 +171,7 @@ function ChatPanelLive({
       if (!text || inFlightRef.current) return
       inFlightRef.current = true
       clearError()
+      setBlockedCerca(null)
       let body: { lat: number; lng: number } | undefined
       try {
         if (isCercaMioQuery(text)) {
@@ -169,6 +179,11 @@ function ChatPanelLive({
           try {
             const location = await requestBrowserLocation()
             if (location) body = location
+            else {
+              setBlockedCerca(text)
+              setIntroGone(true)
+              return
+            }
           } finally {
             setLocating(false)
           }
@@ -188,7 +203,7 @@ function ChatPanelLive({
     void submitText(value)
   }
 
-  const showWelcome = messages.length === 0
+  const showWelcome = messages.length === 0 && !blockedCerca
   const last = messages[messages.length - 1]
   const waitingFirstToken =
     status === "submitted" ||
@@ -205,36 +220,39 @@ function ChatPanelLive({
         variant === "widget" && "md:rounded-2xl md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
-      aria-label="Asistente CeliMap"
+      aria-label="CeliBot"
       aria-modal={variant === "widget" || undefined}
       style={{ paddingBottom: keyboardInset }}
     >
       <header
         className={cn(
-          "flex shrink-0 items-center gap-3 bg-[#1F4D35] px-4 py-4 text-white",
+          "flex shrink-0 items-center gap-2 bg-[#1F4D35] px-3 py-3 text-white sm:px-4",
           variant === "widget" && "md:rounded-t-2xl"
         )}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/mark.png?v2"
-          alt="CeliMap"
-          width={28}
-          height={37}
-          className="h-8 w-auto shrink-0 brightness-0 invert"
-        />
+        {variant === "page" ? (
+          <Link
+            href="/"
+            className="flex h-11 shrink-0 items-center gap-1 rounded-full px-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            aria-label="Volver a CeliMap"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />
+            <span className="text-[13px] font-semibold">Volver</span>
+          </Link>
+        ) : null}
+        <BrandLogo inverse size="xs" className="min-w-0 shrink" />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[16px] font-bold leading-tight">Asistente CeliMap</p>
-          <p className="text-[11px] leading-snug text-white/70">
-            Puede cometer errores. Confirmá siempre en el lugar.
+          <p className="font-display text-[16px] font-bold leading-tight">CeliBot</p>
+          <p className="truncate text-[11px] leading-snug text-white/70">
+            Confirmá siempre en el lugar.
           </p>
         </div>
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:hidden"
-            aria-label="Cerrar chat"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            aria-label="Cerrar CeliBot"
           >
             <X className="h-5 w-5" />
           </button>
@@ -248,12 +266,12 @@ function ChatPanelLive({
             <div className="flex items-end gap-2">
               <ChatAvatar />
               <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in max-w-[85%]")}>
-                Hola. Puedo ayudarte a encontrar lugares sin TACC de CeliMap y a resolver dudas de
-                celiaquía. ¿Qué estás buscando?
+                Hola, soy CeliBot. Te ayudo a encontrar lugares sin TACC de CeliMap y a resolver
+                dudas de celiaquía. ¿Qué estás buscando?
               </div>
             </div>
-            {showWelcome ? (
-              <div className="ml-9 mt-2 flex flex-wrap gap-2">
+            {showWelcome && !blockedCerca ? (
+              <div className="ml-10 mt-2 flex flex-wrap gap-2">
                 {CHIPS.map((chip) => (
                   <button
                     key={chip}
@@ -294,7 +312,7 @@ function ChatPanelLive({
 
             return (
               <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
-                <span className="flex w-7 shrink-0 justify-center pt-1">
+                <span className="flex w-8 shrink-0 justify-center pt-1">
                   {firstInGroup ? <ChatAvatar /> : null}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -311,11 +329,44 @@ function ChatPanelLive({
           })}
         </div>
 
+        {blockedCerca ? (
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-end">
+              <div className={cn(USER_BUBBLE, "max-w-[80%]")}>{blockedCerca}</div>
+            </div>
+            <div className="flex items-start gap-2">
+              <ChatAvatar />
+              <div className="min-w-0 flex-1">
+                <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[95%]")}>
+                  No pude usar tu ubicación. Tocá un barrio y te busco ahí.
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {BARRIO_CHIPS.map((barrio) => (
+                    <button
+                      key={barrio}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        const follow = cercaFollowUp(blockedCerca, barrio)
+                        setBlockedCerca(null)
+                        void submitText(follow)
+                      }}
+                      className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-3 py-2 text-[13px] font-semibold text-[#1F4D35] hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+                    >
+                      {barrio}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {locating ? (
           <div className="mt-4 flex items-end gap-2" aria-live="polite">
             <ChatAvatar />
             <div className={cn(BOT_BUBBLE, "celimap-chat-bubble-in text-[13px] text-[#2D2D2D]/70")}>
-              Pidiendo ubicación…
+              Pidiendo ubicación. Si no se puede, te pido un barrio.
             </div>
           </div>
         ) : null}
@@ -413,17 +464,25 @@ export function ChatFab({
     <button
       type="button"
       onClick={onToggle}
-      aria-label={open ? "Cerrar asistente CeliMap" : "Abrir asistente CeliMap"}
+      aria-label={open ? "Cerrar CeliBot" : "Abrir CeliBot"}
       aria-expanded={open}
-      className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#1F4D35] text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
+      className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35] text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
     >
-      <MessageCircle
+      <span
         className={cn(
-          "h-6 w-6 transition-transform duration-150 ease-out",
+          "flex h-full w-full items-center justify-center transition-transform duration-150 ease-out",
           open ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
         )}
-        strokeWidth={2.2}
-      />
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/mark.png?v2"
+          alt=""
+          width={28}
+          height={37}
+          className="h-8 w-auto brightness-0 invert"
+        />
+      </span>
       <X
         className={cn(
           "absolute h-6 w-6 transition-transform duration-150 ease-out",

@@ -15,6 +15,7 @@ import { slugifyPlacePart } from "@/lib/place-slugs"
 import { CITIES } from "@/lib/seo/cities"
 import { isProvincialSlug, normalizeProvinceSlug } from "@/lib/seo/provinces"
 import { normalizeChatZona } from "@/lib/chat/normalize-zona"
+import { getPlaceImageUrl } from "@/lib/place-image"
 
 const PLACE_TYPES = ["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"] as const
 const RESULT_LIMIT = 8
@@ -94,7 +95,7 @@ export const buscarLugaresInputSchema = z.object({
     .min(-90)
     .max(90)
     .optional()
-    .describe("Latitud para buscar cerca. Tiene que ir con lng."),
+    .describe("Latitud para buscar cerca. Solo números reales. Nunca false, strings ni inventados. Tiene que ir con lng."),
   lng: z
     .number()
     .min(-180)
@@ -122,6 +123,7 @@ export type ChatPlaceCard = {
   clasificacionTacc: string
   esCienPorcientoSinTacc: boolean
   url: string
+  foto?: string
   distanciaMetros?: number
 }
 
@@ -142,6 +144,7 @@ type PlaceDoc = {
   slug?: string
   safetyLevel?: IPlace["safetyLevel"]
   tags?: string[]
+  photos?: string[]
   distance?: number
 }
 
@@ -255,6 +258,7 @@ function toCard(doc: PlaceDoc): ChatPlaceCard | null {
     clasificacionTacc: safety.label,
     esCienPorcientoSinTacc: safety.esCienPorcientoSinTacc,
     url: chatPlaceUrl(doc),
+    foto: getPlaceImageUrl(doc.photos?.[0], "thumb") || undefined,
     distanciaMetros:
       typeof doc.distance === "number" ? Math.round(doc.distance) : undefined,
   }
@@ -283,6 +287,7 @@ const PLACE_PROJECT = {
   slug: 1,
   safetyLevel: 1,
   tags: 1,
+  photos: 1,
 }
 
 async function findNear(
@@ -329,17 +334,12 @@ export async function buscarLugares(input: BuscarLugaresInput): Promise<BuscarLu
       return { encontrados: lugares.length, lugares }
     }
     if (!normalized.zona) {
-      return {
-        encontrados: 0,
-        lugares: [],
-        error:
-          "No pude usar las coordenadas para buscar cerca. Pedile una ciudad o un barrio.",
-      }
+      return { encontrados: 0, lugares: [] }
     }
   }
 
   const docs = await Place.find(query)
-    .select("name type address neighborhood province locality slug safetyLevel tags")
+    .select("name type address neighborhood province locality slug safetyLevel tags photos")
     .sort({ featured: -1, lastConfirmedAt: -1, createdAt: -1 })
     .limit(QUERY_LIMIT)
     .lean()

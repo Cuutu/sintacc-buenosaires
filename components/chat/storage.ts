@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai"
 import type { BuscarLugaresResult } from "@/lib/chat/buscar-lugares"
 import type { BuscarListasResult } from "@/lib/chat/buscar-listas"
+import { sanitizeChatVisibleText } from "@/lib/chat/sanitize-visible"
 import { getChatToolInput, getChatToolOutput } from "@/lib/chat/ui-parts"
 
 const STORAGE_KEY = "celimap-chat-v2"
@@ -15,11 +16,11 @@ type StoredMessage = {
 }
 
 function textFromMessage(message: UIMessage): string {
-  return message.parts
+  const raw = message.parts
     .filter((part): part is { type: "text"; text: string } => part.type === "text")
     .map((part) => part.text)
     .join("")
-    .trim()
+  return sanitizeChatVisibleText(raw)
 }
 
 export function loadChatHistory(): UIMessage[] {
@@ -41,8 +42,9 @@ export function loadChatHistory(): UIMessage[] {
 
 function storedToMessage(item: StoredMessage): UIMessage {
   const parts: UIMessage["parts"] = []
-  if (item.text) {
-    parts.push({ type: "text", text: item.text })
+  const text = sanitizeChatVisibleText(item.text || "")
+  if (text) {
+    parts.push({ type: "text", text })
   }
   if (item.places) {
     parts.push({

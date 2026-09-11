@@ -33,6 +33,7 @@ export type ChatListCard = {
   destino?: string
   lugares: number
   url: string
+  foto?: string
 }
 
 export type BuscarListasResult = {
@@ -62,17 +63,19 @@ export async function buscarListas(input: BuscarListasInput): Promise<BuscarList
     })
       .sort({ likesCount: -1, createdAt: -1 })
       .limit(RESULT_LIMIT)
-      .select("name destination placeIds")
+      .select("name destination placeIds coverImage")
       .lean()
 
     const listas: ChatListCard[] = docs.map((doc) => {
       const id = String(doc._id)
+      const cover = typeof doc.coverImage === "string" ? doc.coverImage.trim() : ""
       return {
         id,
         nombre: doc.name,
         destino: doc.destination || undefined,
         lugares: Array.isArray(doc.placeIds) ? doc.placeIds.length : 0,
         url: chatListUrl(id),
+        foto: cover || undefined,
       }
     })
 
