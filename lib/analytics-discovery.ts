@@ -32,11 +32,35 @@ type SessionState = {
   emittedDiscoveries: Set<string>
 }
 
-let sessionState: SessionState = {
-  hasIntent: false,
-  intentType: null,
-  dwelledPlaces: new Map(),
-  emittedDiscoveries: new Set(),
+/**
+ * Singleton session state stored on globalThis.
+ * Ensures all module copies (across client chunks) share the same state.
+ * P0 FIX: Module duplication in layout + page chunks was causing separate buffers.
+ */
+declare global {
+  var __celimapDiscovery: SessionState | undefined
+}
+
+function getSessionState(): SessionState {
+  if (typeof globalThis === "undefined") {
+    // Fallback for environments without globalThis (should not happen in modern JS)
+    return createFreshSessionState()
+  }
+
+  if (!globalThis.__celimapDiscovery) {
+    globalThis.__celimapDiscovery = createFreshSessionState()
+  }
+
+  return globalThis.__celimapDiscovery
+}
+
+function createFreshSessionState(): SessionState {
+  return {
+    hasIntent: false,
+    intentType: null,
+    dwelledPlaces: new Map(),
+    emittedDiscoveries: new Set(),
+  }
 }
 
 /**
@@ -46,9 +70,10 @@ export function recordIntentSignal(
   intentType: IntentType,
   _properties?: Record<string, string | number | boolean>
 ): void {
-  if (!sessionState.hasIntent) {
-    sessionState.hasIntent = true
-    sessionState.intentType = intentType
+  const state = getSessionState()
+  if (!state.hasIntent) {
+    state.hasIntent = true
+    state.intentType = intentType
   }
 }
 
@@ -61,9 +86,10 @@ export function recordQualifiedDwell(
   dwellThresholdMs: number,
   placeContext: Record<string, string | number | boolean>
 ): void {
-  if (sessionState.dwelledPlaces.has(placeId)) return
+  const state = getSessionState()
+  if (state.dwelledPlaces.has(placeId)) return
 
-  sessionState.dwelledPlaces.set(placeId, {
+  state.dwelledPlaces.set(placeId, {
     dwellMs,
     dwellThresholdMs,
     placeContext,
@@ -84,20 +110,21 @@ export function recordCommitment(
 }
 
 function checkUsefulDiscovery(placeId: string, commitmentType?: CommitmentType): void {
-  if (sessionState.emittedDiscoveries.has(placeId)) return
-  if (!sessionState.hasIntent) return
+  const state = getSessionState()
+  if (state.emittedDiscoveries.has(placeId)) return
+  if (!state.hasIntent) return
 
-  const dwellData = sessionState.dwelledPlaces.get(placeId)
+  const dwellData = state.dwelledPlaces.get(placeId)
   if (!dwellData) return
 
   if (!commitmentType) return
 
-  sessionState.emittedDiscoveries.add(placeId)
+  state.emittedDiscoveries.add(placeId)
 
   trackEvent("useful_discovery", {
     placeId,
     commitmentType,
-    intentType: sessionState.intentType || "unknown",
+    intentType: state.intentType || "unknown",
     dwellMs: dwellData.dwellMs,
     dwellThresholdMs: dwellData.dwellThresholdMs,
     ...dwellData.placeContext,
@@ -109,7 +136,7 @@ function checkUsefulDiscovery(placeId: string, commitmentType?: CommitmentType):
  * @internal
  */
 export function __getDiscoverySessionState(): SessionState {
-  return sessionState
+  return getSessionState()
 }
 
 /**
@@ -117,11 +144,8 @@ export function __getDiscoverySessionState(): SessionState {
  * Called when session_start fires (30 min inactivity rollover).
  */
 export function resetDiscoverySession(): void {
-  sessionState = {
-    hasIntent: false,
-    intentType: null,
-    dwelledPlaces: new Map(),
-    emittedDiscoveries: new Set(),
+  if (typeof globalThis !== "undefined") {
+    globalThis.__celimapDiscovery = createFreshSessionState()
   }
 }
 
