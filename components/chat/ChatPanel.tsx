@@ -196,10 +196,21 @@ function ChatPanelLive({
     [clearError, sendMessage]
   )
 
+  const fitComposer = useCallback(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = "0px"
+    const mobile = window.matchMedia("(max-width: 767px)").matches
+    const cap = mobile ? 72 : 96
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 22), cap)}px`
+    el.scrollTop = el.scrollHeight
+  }, [])
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
     const value = input
     setInput("")
+    requestAnimationFrame(fitComposer)
     void submitText(value)
   }
 
@@ -470,16 +481,20 @@ function ChatPanelLive({
             disabled={busy}
             rows={1}
             placeholder="Escribí tu consulta..."
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value)
+              fitComposer()
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault()
                 const value = input
                 setInput("")
+                requestAnimationFrame(fitComposer)
                 void submitText(value)
               }
             }}
-            className="max-h-24 min-h-[22px] w-full resize-none bg-transparent text-[16px] text-[#333] outline-none placeholder:text-[14px] placeholder:text-[#AAA] disabled:opacity-60 md:max-h-32 md:text-[14px]"
+            className="max-h-[72px] min-h-[22px] w-full resize-none overflow-y-auto bg-transparent text-[16px] text-[#333] outline-none placeholder:text-[14px] placeholder:text-[#AAA] disabled:opacity-60 md:max-h-24 md:text-[14px]"
           />
           <button
             type="submit"

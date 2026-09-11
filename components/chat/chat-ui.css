@@ -194,16 +194,128 @@
   }
 }
 
+@keyframes celimap-fab-bounce {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes celimap-fab-ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  12% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+@keyframes celimap-fab-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes celimap-fab-hint-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.celimap-fab-enter {
+  animation: celimap-fab-bounce 400ms ease-out 1s both;
+}
+
+.celimap-fab-ping {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgb(31 77 53 / 0.2);
+  background: transparent;
+  opacity: 0;
+  animation: celimap-fab-ping 8s ease-out 6s 3 forwards;
+}
+
+.celimap-fab-hint {
+  animation: celimap-fab-hint-in 300ms ease-out both;
+}
+
+.celimap-fab-hint-leave {
+  animation: celimap-fab-hint-out 300ms ease-out both;
+  pointer-events: none;
+}
+
+.celimap-fab-hint-nub {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+.celimap-fab-hint[data-side="left"] .celimap-fab-hint-nub {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.celimap-fab-hint[data-side="top"] .celimap-fab-hint-nub {
+  right: 22px;
+  bottom: -6px;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 768px) {
+  .celimap-fab-hint[data-side="top"] .celimap-fab-hint-nub {
+    right: -6px;
+    top: 50%;
+    bottom: auto;
+    margin-top: -6px;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.08);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .celimap-chat-panel-enter,
   .celimap-chat-panel-leave,
   .celimap-chat-bubble-in,
   .celimap-chat-welcome-in,
-  .celimap-chat-dot {
+  .celimap-chat-dot,
+  .celimap-fab-enter,
+  .celimap-fab-ping,
+  .celimap-fab-hint,
+  .celimap-fab-hint-leave {
     animation: none;
   }
 
   .celimap-chat-chips-out {
     transition: none;
+  }
+
+  .celimap-fab-ping {
+    display: none;
   }
 }
