@@ -58,12 +58,22 @@ function assistantHasBody(message: UIMessage): boolean {
   if (text) return true
   const places = getChatToolOutput<BuscarLugaresResult>(message, "buscarLugares")
   const lists = getChatToolOutput<BuscarListasResult>(message, "buscarListas")
-  return Boolean((places && places.lugares.length > 0) || (lists && lists.listas.length > 0))
+  return Boolean(
+    (places && (places.lugares.length > 0 || places.pedirZona)) ||
+      (lists && lists.listas.length > 0)
+  )
 }
 
 function cercaFollowUp(original: string, barrio: string): string {
   if (/cafet/i.test(original)) return `Cafeterías en ${barrio}`
   return `Lugares sin TACC en ${barrio}`
+}
+
+function zonaFollowUp(zonaAmplia: string, part: string): string {
+  if (new RegExp(zonaAmplia.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(part)) {
+    return `Lugares sin TACC en ${part}`
+  }
+  return `Lugares sin TACC en ${part}, ${zonaAmplia}`
 }
 
 function formatClock(date: Date): string {
@@ -352,6 +362,13 @@ function ChatPanelLive({
               const miniPlaces = mergePlaceCards(places, extractChatPlaceLinks(text))
               const visibleText =
                 miniPlaces.length > 0 ? stripChatPlaceLinkMarkdown(text) : text
+              const askZona = Boolean(places?.pedirZona)
+              const bodyText =
+                visibleText ||
+                (askZona && places?.zonaAmplia
+                  ? `No es lo mismo el centro que un pueblo. ¿A qué parte de ${places.zonaAmplia} vas?`
+                  : "")
+              const isLastVisible = index === visible.length - 1
 
               return (
                 <div key={message.id} className={cn("flex items-start gap-2", spacing)}>
@@ -359,19 +376,42 @@ function ChatPanelLive({
                     {firstInGroup ? <ChatAvatar /> : null}
                   </span>
                   <div className="min-w-0 flex-1">
-                    {visibleText || miniPlaces.length > 0 ? (
+                    {bodyText || miniPlaces.length > 0 ? (
                       <div
                         className={cn(BOT_BUBBLE, "celimap-chat-bubble-in inline-block max-w-[85%]")}
                       >
-                        {visibleText ? (
-                          <ChatMarkdown text={visibleText} onNavigate={onClose} />
+                        {bodyText ? (
+                          <ChatMarkdown text={bodyText} onNavigate={onClose} />
                         ) : null}
                         <ChatPlaceMiniCards lugares={miniPlaces} onNavigate={onClose} />
                       </div>
                     ) : null}
                     {lastInGroup ? <BubbleTime at={at} side="left" /> : null}
+                    {isLastVisible &&
+                    askZona &&
+                    places?.sugerencias &&
+                    places.sugerencias.length > 0 &&
+                    !busy ? (
+                      <div className="celimap-chat-chips-row mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                        {places.sugerencias.map((part) => (
+                          <button
+                            key={part}
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              void submitText(zonaFollowUp(places.zonaAmplia || "", part))
+                            }
+                            className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+                          >
+                            {part}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                     {lists ? <ChatListCards result={lists} onNavigate={onClose} /> : null}
-                    {places ? <ChatPlaceCards result={places} zona={zona} /> : null}
+                    {places && !askZona ? (
+                      <ChatPlaceCards result={places} zona={zona} />
+                    ) : null}
                   </div>
                 </div>
               )

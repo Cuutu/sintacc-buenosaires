@@ -1,5 +1,7 @@
 import { CITIES } from "@/lib/seo/cities"
 import { slugifyPlacePart } from "@/lib/place-slugs"
+import { findKnownNeighborhoodSearch } from "@/lib/map-search"
+import { normalizeProvinceSlug } from "@/lib/seo/provinces"
 
 function fold(value: string): string {
   return value
@@ -69,4 +71,72 @@ export function isCercaMioQuery(text: string): boolean {
     /\bcerca\s+de\s+mi\b/.test(folded) ||
     /\bac[aá]\s+cerca\b/.test(folded)
   )
+}
+
+const WANT_WHOLE =
+  /\b(toda|todo|da igual|cualquiera|indistinto|la ciudad entera|toda la provincia|toda la ciudad)\b/i
+
+const EXTRA_DESTINOS: Record<string, string[]> = {
+  cordoba: ["Villa General Belgrano", "La Cumbre"],
+  mendoza: ["San Rafael"],
+  salta: ["Cafayate"],
+}
+
+function findCityForZona(zona: string) {
+  const foldedRaw = fold(zona)
+  const normalized = normalizeChatZona(zona)
+  const foldedNorm = fold(normalized)
+  return CITIES.find(
+    (city) => fold(city.name) === foldedNorm || fold(city.name) === foldedRaw || city.slug === foldedRaw.replace(/ /g, "-")
+  )
+}
+
+/**
+ * Ciudad/provincia a secas (viaje a Córdoba, CABA, Mendoza…).
+ * Barrio, pueblo o "Güemes, Córdoba" no es amplio.
+ */
+export function isBroadChatZona(zona: string): boolean {
+  const raw = zona.trim()
+  if (!raw) return false
+  if (WANT_WHOLE.test(raw)) return false
+
+  const neighborhood = findKnownNeighborhoodSearch(raw)
+  if (neighborhood) {
+    const sameAsCity = CITIES.some((city) => fold(city.name) === fold(neighborhood))
+    if (!sameAsCity) return false
+  }
+
+  const foldedRaw = fold(raw)
+  const city = findCityForZona(raw)
+  if (city) {
+    let leftover = foldedRaw
+      .replace(fold(city.name), " ")
+      .replace(fold(city.slug.replace(/-/g, " ")), " ")
+    for (const [alias, name] of Object.entries(STATIC_ALIASES)) {
+      if (name === city.name) leftover = leftover.replace(fold(alias), " ")
+    }
+    leftover = leftover.replace(/\b(capital|ciudad)\b/g, " ").replace(/\s+/g, " ").trim()
+    return leftover.length === 0
+  }
+
+  const provinceSlug = normalizeProvinceSlug(normalizeChatZona(raw)) || normalizeProvinceSlug(raw)
+  if (!provinceSlug) return false
+  const leftover = foldedRaw
+    .replace(/\b(provincia|de)\b/g, " ")
+    .replace(provinceSlug.replace(/-/g, " "), " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  return leftover.length === 0
+}
+
+export function suggestionsForBroadZona(zona: string): string[] {
+  const city = findCityForZona(zona)
+  if (!city) return []
+  const skip = fold(city.name)
+  const extra = EXTRA_DESTINOS[city.slug] ?? []
+  return Array.from(
+    new Set(
+      [...city.neighborhoods, ...extra].filter((name) => fold(name) !== skip)
+    )
+  ).slice(0, 6)
 }

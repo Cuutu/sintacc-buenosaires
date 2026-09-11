@@ -37,6 +37,7 @@ export function ChatWidget() {
   const [leaving, setLeaving] = useState(false)
   const [hintDismissed, setHintDismissed] = useState(false)
   const [hintReady, setHintReady] = useState(false)
+  const [hintLeaving, setHintLeaving] = useState(false)
   const [fabEnter, setFabEnter] = useState(true)
   const leaveTimer = useRef<number>(0)
   const hintLeaveTimer = useRef<number>(0)

@@ -14,7 +14,8 @@ import { getPlacePath } from "@/lib/place-url"
 import { slugifyPlacePart } from "@/lib/place-slugs"
 import { CITIES } from "@/lib/seo/cities"
 import { isProvincialSlug, normalizeProvinceSlug } from "@/lib/seo/provinces"
-import { normalizeChatZona } from "@/lib/chat/normalize-zona"
+import { normalizeChatZona, isBroadChatZona, suggestionsForBroadZona } from "@/lib/chat/normalize-zona"
+import { geocodeChatZona } from "@/lib/chat/geocode-zona"
 import { getPlaceImageUrl } from "@/lib/place-image"
 
 const PLACE_TYPES = ["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"] as const
@@ -76,7 +77,7 @@ export const buscarLugaresInputSchema = z.object({
     .max(80)
     .optional()
     .describe(
-      "Barrio, ciudad o provincia. Ej: Palermo, Córdoba, CABA, Rosario. Se normaliza sola (capital, ciudad de, CABA, tildes, alias). Mandá la zona una sola vez."
+      "Barrio, pueblo o 'barrio, ciudad'. Ej: Güemes Córdoba, Villa Carlos Paz, Palermo. Si solo dicen la ciudad/provincia (Córdoba, CABA), NO inventes: el server pide una zona más chica. Mandá la zona una sola vez."
     ),
   tipo: z
     .enum(PLACE_TYPES)
@@ -131,6 +132,9 @@ export type BuscarLugaresResult = {
   encontrados: number
   lugares: ChatPlaceCard[]
   error?: string
+  pedirZona?: boolean
+  zonaAmplia?: string
+  sugerencias?: string[]
 }
 
 type PlaceDoc = {
@@ -323,14 +327,49 @@ export async function buscarLugares(input: BuscarLugaresInput): Promise<BuscarLu
       ? { ...input, lat: undefined, lng: undefined, radioMetros: undefined }
       : input
 
-  await connectDB()
-  const query = buildPlaceQuery(normalized)
-  const soloDedicated = Boolean(normalized.soloCienPorcientoSinTacc)
+  if (normalized.zona && isBroadChatZona(normalized.zona) && normalized.lat == null) {
+    const zonaAmplia = normalizeChatZona(normalized.zona)
+    return {
+      encontrados: 0,
+      lugares: [],
+      pedirZona: true,
+      zonaAmplia,
+      sugerencias: suggestionsForBroadZona(normalized.zona),
+    }
+  }
 
-  const near = await findNear(normalized, query)
-  if (normalized.lat != null && normalized.lng != null) {
+  let geoInput = normalized
+  if (normalized.zona && normalized.lat == null) {
+    const geo = await geocodeChatZona(normalized.zona)
+    if (geo) {
+      geoInput = {
+        ...normalized,
+        lat: geo.lat,
+        lng: geo.lng,
+        radioMetros: normalized.radioMetros ?? 8000,
+        zona: undefined,
+      }
+    }
+  }
+
+  await connectDB()
+  const query = buildPlaceQuery(geoInput)
+  const soloDedicated = Boolean(geoInput.soloCienPorcientoSinTacc)
+
+  const near = await findNear(geoInput, query)
+  if (geoInput.lat != null && geoInput.lng != null) {
     if (near && near.length > 0) {
       const lugares = mapDocs(near, soloDedicated)
+      return { encontrados: lugares.length, lugares }
+    }
+    if (normalized.zona) {
+      const fallbackQuery = buildPlaceQuery(normalized)
+      const docs = await Place.find(fallbackQuery)
+        .select("name type address neighborhood province locality slug safetyLevel tags photos")
+        .sort({ featured: -1, lastConfirmedAt: -1, createdAt: -1 })
+        .limit(QUERY_LIMIT)
+        .lean()
+      const lugares = mapDocs(docs as unknown as PlaceDoc[], soloDedicated)
       return { encontrados: lugares.length, lugares }
     }
     if (!normalized.zona) {

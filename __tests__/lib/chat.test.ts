@@ -5,7 +5,7 @@ import { getFriendlyChatError, getChatErrorStatus, parseChatClientErrorMessage }
 import { parseChatMessages, getLastUserMessageText, trimChatMessages } from "@/lib/chat/messages"
 import { userTextToMongoRegex, escapeRegexLiteral } from "@/lib/chat/regex"
 import { clasificacionTacc, taccLabelForLevel, orderByTaccThenStable, chatPlaceUrl } from "@/lib/chat/buscar-lugares"
-import { normalizeChatZona, isCercaMioQuery } from "@/lib/chat/normalize-zona"
+import { normalizeChatZona, isCercaMioQuery, isBroadChatZona, suggestionsForBroadZona } from "@/lib/chat/normalize-zona"
 import {
   isChatTestEnabled,
   CHAT_MAX_USER_MESSAGE_CHARS,
@@ -214,6 +214,23 @@ describe("chat zona", () => {
     expect(isCercaMioQuery("Cafeterías cerca mío")).toBe(true)
     expect(isCercaMioQuery("lugares en palermo")).toBe(false)
   })
+
+  it("marca ciudad/provincia a secas como zona amplia", () => {
+    expect(isBroadChatZona("Córdoba")).toBe(true)
+    expect(isBroadChatZona("CBA")).toBe(true)
+    expect(isBroadChatZona("CABA")).toBe(true)
+    expect(isBroadChatZona("Mendoza")).toBe(true)
+    expect(isBroadChatZona("Palermo")).toBe(false)
+    expect(isBroadChatZona("Güemes, Córdoba")).toBe(false)
+    expect(isBroadChatZona("Villa Carlos Paz")).toBe(false)
+    expect(isBroadChatZona("toda Córdoba")).toBe(false)
+  })
+
+  it("arma chips de barrio/pueblo para Córdoba", () => {
+    const chips = suggestionsForBroadZona("Córdoba")
+    expect(chips).toEqual(expect.arrayContaining(["Nueva Córdoba", "Güemes", "Villa Carlos Paz"]))
+    expect(chips).not.toContain("Córdoba")
+  })
 })
 
 describe("chat regex Mongo", () => {
@@ -251,6 +268,9 @@ describe("chat system prompt", () => {
     expect(CHAT_SYSTEM_PROMPT).toMatch(/buscarListas/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pegues URLs crudas/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NO pases tipo/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/Destino amplio/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/No es lo mismo la ciudad que un pueblo/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/pedirZona/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/CeliBot/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NUNCA escribas DSML/)
   })
