@@ -76,30 +76,6 @@ function ChatAvatar() {
   )
 }
 
-function useKeyboardInset() {
-  const [inset, setInset] = useState(0)
-
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-
-    const update = () => {
-      const next = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
-      setInset(next)
-    }
-
-    update()
-    viewport.addEventListener("resize", update)
-    viewport.addEventListener("scroll", update)
-    return () => {
-      viewport.removeEventListener("resize", update)
-      viewport.removeEventListener("scroll", update)
-    }
-  }, [])
-
-  return inset
-}
-
 export function ChatPanel({ variant, onClose }: ChatPanelProps) {
   const [bootMessages, setBootMessages] = useState<ReturnType<typeof loadChatHistory> | null>(null)
 
@@ -125,10 +101,9 @@ function ChatPanelLive({
   const [locating, setLocating] = useState(false)
   const [blockedCerca, setBlockedCerca] = useState<string | null>(null)
   const [introGone, setIntroGone] = useState(initialMessages.length > 0)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const inFlightRef = useRef(false)
-  const keyboardInset = useKeyboardInset()
   const { messages, sendMessage, status, error, regenerate, clearError } = useChat({
     messages: initialMessages,
   })
@@ -139,10 +114,13 @@ function ChatPanelLive({
   }, [messages])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+    const el = listRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
   }, [messages, status, blockedCerca])
 
   useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) return
     inputRef.current?.focus()
   }, [])
 
@@ -216,34 +194,39 @@ function ChatPanelLive({
   return (
     <div
       className={cn(
-        "flex h-full w-full flex-col overflow-hidden bg-[#F7F3EB] font-sans text-[#1F4D35]",
+        "flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F7F3EB] font-sans text-[#1F4D35]",
         variant === "widget" && "md:rounded-2xl md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
       aria-label="CeliBot"
       aria-modal={variant === "widget" || undefined}
-      style={{ paddingBottom: keyboardInset }}
     >
       <header
         className={cn(
-          "flex shrink-0 items-center gap-2 bg-[#1F4D35] px-3 py-3 text-white sm:px-4",
+          "flex shrink-0 items-center gap-2 bg-[#1F4D35] px-3 py-2 text-white sm:px-4 md:py-3",
           variant === "widget" && "md:rounded-t-2xl"
         )}
       >
         {variant === "page" ? (
           <Link
             href="/"
-            className="flex h-11 shrink-0 items-center gap-1 rounded-full px-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="flex h-10 shrink-0 items-center gap-1 rounded-full px-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:h-11"
             aria-label="Volver a CeliMap"
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />
             <span className="text-[13px] font-semibold">Volver</span>
           </Link>
         ) : null}
-        <BrandLogo inverse size="xs" className="min-w-0 shrink" />
+        <BrandLogo
+          inverse
+          size="xs"
+          className="min-w-0 shrink [&_img]:h-7 [&_img]:max-w-[8.75rem] md:[&_img]:h-8 md:[&_img]:max-w-[11rem]"
+        />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[16px] font-bold leading-tight">CeliBot</p>
-          <p className="truncate text-[11px] leading-snug text-white/70">
+          <p className="font-display truncate text-[15px] font-bold leading-tight md:text-[16px]">
+            CeliBot
+          </p>
+          <p className="hidden truncate text-[11px] leading-snug text-white/70 sm:block">
             Confirmá siempre en el lugar.
           </p>
         </div>
@@ -251,7 +234,7 @@ function ChatPanelLive({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 md:h-11 md:w-11"
             aria-label="Cerrar CeliBot"
           >
             <X className="h-5 w-5" />
@@ -259,7 +242,10 @@ function ChatPanelLive({
         ) : null}
       </header>
 
-      <div className="celimap-chat-map min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div
+        ref={listRef}
+        className="celimap-chat-map min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 md:px-4 md:py-4"
+      >
         <div className={threadClass}>
         {introGone ? null : (
           <div className={cn("mb-4", messages.length > 0 && "celimap-chat-chips-out")}>
@@ -278,7 +264,7 @@ function ChatPanelLive({
                     type="button"
                     disabled={busy}
                     onClick={() => void submitText(chip)}
-                    className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2.5 text-left text-[14px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+                    className="rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-3 py-2 text-left text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50 md:px-4 md:py-2.5 md:text-[14px]"
                   >
                     {chip}
                   </button>
@@ -401,14 +387,13 @@ function ChatPanelLive({
           </div>
         ) : null}
 
-        <div ref={bottomRef} />
         </div>
       </div>
 
       <form
         onSubmit={onSubmit}
         className={cn(
-          "shrink-0 bg-[#F7F3EB] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2",
+          "shrink-0 bg-[#F7F3EB] px-3 pb-3 pt-2",
           variant === "page" && "mx-auto w-full max-w-[420px]"
         )}
       >
@@ -437,7 +422,7 @@ function ChatPanelLive({
                 void submitText(value)
               }
             }}
-            className="max-h-32 min-h-[24px] w-full resize-none bg-transparent text-[14px] text-[#2D2D2D] outline-none placeholder:text-[#999] disabled:opacity-60"
+            className="max-h-24 min-h-[24px] w-full resize-none bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#999] disabled:opacity-60 md:max-h-32 md:text-[14px]"
           />
           <button
             type="submit"
@@ -466,23 +451,22 @@ export function ChatFab({
       onClick={onToggle}
       aria-label={open ? "Cerrar CeliBot" : "Abrir CeliBot"}
       aria-expanded={open}
-      className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#1F4D35] text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
+      className={cn(
+        "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
+        open ? "bg-[#1F4D35] text-white" : "bg-[#F7F3EB] ring-2 ring-[#1F4D35]"
+      )}
     >
-      <span
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/mark.png?v2"
+        alt=""
+        width={36}
+        height={48}
         className={cn(
-          "flex h-full w-full items-center justify-center transition-transform duration-150 ease-out",
+          "h-9 w-auto transition-transform duration-150 ease-out",
           open ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
         )}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/mark.png?v2"
-          alt=""
-          width={28}
-          height={37}
-          className="h-8 w-auto brightness-0 invert"
-        />
-      </span>
+      />
       <X
         className={cn(
           "absolute h-6 w-6 transition-transform duration-150 ease-out",
