@@ -46,6 +46,30 @@ export function getFriendlyChatError(error: unknown): string {
   return CHAT_FRIENDLY_ERROR
 }
 
+/** El transport de useChat tira el body crudo (JSON `{ error }`) en HTTP error. */
+export function parseChatClientErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const trimmed = raw.trim()
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as { error?: unknown }
+      if (typeof parsed.error === "string" && parsed.error.trim()) {
+        return parsed.error.trim()
+      }
+    } catch {
+      // no JSON
+    }
+  }
+  if (
+    trimmed.length > 0 &&
+    trimmed.length < 280 &&
+    !/openai|openrouter|stack|at http|ECONN/i.test(trimmed)
+  ) {
+    return trimmed
+  }
+  return getFriendlyChatError(error)
+}
+
 export function sanitizeChatErrorMessage(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error)
   return raw.replace(/sk-or-[a-zA-Z0-9_-]+/gi, "[redacted]")

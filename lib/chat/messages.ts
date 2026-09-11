@@ -22,6 +22,8 @@ const chatMessageSchema = z.object({
 
 export const chatRequestBodySchema = z.object({
   messages: z.array(chatMessageSchema).min(1).max(40),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 })
 
 export type ChatRequestParseError = {
@@ -29,8 +31,10 @@ export type ChatRequestParseError = {
   message: string
 }
 
+export type ChatLocation = { lat: number; lng: number }
+
 export type ChatRequestParseResult =
-  | { ok: true; messages: UIMessage[] }
+  | { ok: true; messages: UIMessage[]; location: ChatLocation | null }
   | { ok: false; error: ChatRequestParseError }
 
 function textFromParts(parts: Array<Record<string, unknown>>): string {
@@ -131,5 +135,10 @@ export function parseChatMessages(input: unknown): ChatRequestParseResult {
     }
   }
 
-  return { ok: true, messages: trimmed }
+  const lat = parsed.data.lat
+  const lng = parsed.data.lng
+  const location =
+    lat != null && lng != null ? { lat, lng } : null
+
+  return { ok: true, messages: trimmed, location }
 }

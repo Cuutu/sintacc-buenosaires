@@ -18,6 +18,7 @@ import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { AnalyticsSessionInit } from "@/components/analytics/AnalyticsSessionInit";
 import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
+import { ChatWidgetHost } from "@/components/chat/ChatWidgetHost";
 import { getBaseUrl } from "@/lib/base-url";
 import {
   CELIMAP_DESCRIPTION,
@@ -148,6 +149,7 @@ export default function RootLayout({
             <InstallPrompt />
           </Suspense>
           <OnboardingModal />
+          <ChatWidgetHost />
         </Providers>
         <Analytics />
       </body>

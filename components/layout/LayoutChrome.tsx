@@ -53,8 +53,9 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
   const pathname = usePathname()
   const isPrivateList = isPrivateListPath(pathname)
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/")
+  const isChatTestRoute = pathname === "/chat-test" || pathname.startsWith("/chat-test/")
   const isMapRoute = pathname === "/mapa" || pathname.startsWith("/mapa?")
-  const hidePublicChrome = isPrivateList || isAdminRoute
+  const hidePublicChrome = isPrivateList || isAdminRoute || isChatTestRoute
   const showMobileChrome = isMobile === true && !hidePublicChrome
   const routeKey = pathname || "/"
 

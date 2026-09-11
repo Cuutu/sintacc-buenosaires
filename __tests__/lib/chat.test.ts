@@ -1,10 +1,11 @@
 /**
  * @jest-environment node
  */
-import { getFriendlyChatError, getChatErrorStatus } from "@/lib/chat/errors"
+import { getFriendlyChatError, getChatErrorStatus, parseChatClientErrorMessage } from "@/lib/chat/errors"
 import { parseChatMessages, getLastUserMessageText, trimChatMessages } from "@/lib/chat/messages"
 import { userTextToMongoRegex, escapeRegexLiteral } from "@/lib/chat/regex"
 import { clasificacionTacc, taccLabelForLevel, orderByTaccThenStable, chatPlaceUrl } from "@/lib/chat/buscar-lugares"
+import { normalizeChatZona, isCercaMioQuery } from "@/lib/chat/normalize-zona"
 import {
   isChatTestEnabled,
   CHAT_MAX_USER_MESSAGE_CHARS,
@@ -56,6 +57,7 @@ describe("chat messages", () => {
     expect(parsed.ok).toBe(true)
     if (parsed.ok) {
       expect(parsed.messages).toHaveLength(3)
+      expect(parsed.location).toBeNull()
       expect(getLastUserMessageText(parsed.messages)).toBe("cafés en palermo")
     }
   })
@@ -106,6 +108,18 @@ describe("chat messages", () => {
     })
     expect(parsed.ok).toBe(false)
     if (!parsed.ok) expect(parsed.error.code).toBe("message_too_long")
+  })
+
+  it("lee lat/lng del payload", () => {
+    const parsed = parseChatMessages({
+      messages: [user("1", "cafeterías cerca mío")],
+      lat: -34.588,
+      lng: -58.43,
+    })
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) {
+      expect(parsed.location).toEqual({ lat: -34.588, lng: -58.43 })
+    }
   })
 
   it("rechaza historial que supera el tope total de caracteres", () => {
@@ -174,6 +188,22 @@ describe("chat TACC labels", () => {
   })
 })
 
+describe("chat zona", () => {
+  it("normaliza Córdoba Capital, CABA y ciudad de", () => {
+    expect(normalizeChatZona("Córdoba Capital")).toBe("Córdoba")
+    expect(normalizeChatZona("CABA")).toBe("Buenos Aires")
+    expect(normalizeChatZona("Capital Federal")).toBe("Buenos Aires")
+    expect(normalizeChatZona("ciudad de Rosario")).toBe("Rosario")
+    expect(normalizeChatZona("MDQ")).toBe("Mar del Plata")
+    expect(normalizeChatZona("Palermo")).toBe("Palermo")
+  })
+
+  it("detecta cerca mío", () => {
+    expect(isCercaMioQuery("Cafeterías cerca mío")).toBe(true)
+    expect(isCercaMioQuery("lugares en palermo")).toBe(false)
+  })
+})
+
 describe("chat regex Mongo", () => {
   it("escapa metacaracteres del input", () => {
     expect(escapeRegexLiteral("Palermo.*")).toBe("Palermo\\.\\*")
@@ -203,7 +233,9 @@ describe("chat system prompt", () => {
     expect(CHAT_SYSTEM_PROMPT).not.toMatch(/cocina dedicada/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/NO debe dejar el gluten/)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/solo en iOS/)
-    expect(CHAT_SYSTEM_PROMPT).toMatch(/listadoalg\.anmat\.gob\.ar/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/Nunca digas "los mejores"/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/Como mucho un emoji/)
+    expect(CHAT_SYSTEM_PROMPT).toMatch(/No narres reintentos/)
   })
 })
 
@@ -244,6 +276,14 @@ describe("chat errors", () => {
     expect(getChatErrorStatus(new Error("OpenRouter 402 Payment required"))).toBe(402)
     expect(getChatErrorStatus(new Error("429 rate limit"))).toBe(429)
     expect(getChatErrorStatus(new Error("boom"))).toBe(502)
+  })
+
+  it("lee el mensaje amable del JSON de la API", () => {
+    expect(
+      parseChatClientErrorMessage(
+        new Error('{"error":"Llegaste al tope de mensajes por ahora. Probá de nuevo en un rato."}')
+      )
+    ).toBe("Llegaste al tope de mensajes por ahora. Probá de nuevo en un rato.")
   })
 })
 

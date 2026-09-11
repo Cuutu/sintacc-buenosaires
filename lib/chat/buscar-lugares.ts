@@ -14,6 +14,7 @@ import { getPlacePath } from "@/lib/place-url"
 import { slugifyPlacePart } from "@/lib/place-slugs"
 import { CITIES } from "@/lib/seo/cities"
 import { isProvincialSlug, normalizeProvinceSlug } from "@/lib/seo/provinces"
+import { normalizeChatZona } from "@/lib/chat/normalize-zona"
 
 const PLACE_TYPES = ["restaurant", "cafe", "bakery", "store", "icecream", "bar", "other"] as const
 const RESULT_LIMIT = 8
@@ -73,7 +74,9 @@ export const buscarLugaresInputSchema = z.object({
     .min(2)
     .max(80)
     .optional()
-    .describe("Barrio, ciudad o provincia. Ej: Palermo, Córdoba, CABA, Rosario."),
+    .describe(
+      "Barrio, ciudad o provincia. Ej: Palermo, Córdoba, CABA, Rosario. Se normaliza sola (capital, ciudad de, CABA, tildes, alias). Mandá la zona una sola vez."
+    ),
   tipo: z
     .enum(PLACE_TYPES)
     .optional()
@@ -84,7 +87,7 @@ export const buscarLugaresInputSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      "true = solo lugares 100% sin TACC / cocina dedicada. false u omitido = lugares con clasificación TACC (100% o con opciones). No incluye lugares sin información confirmada."
+      "true = solo lugares 100% sin TACC. false u omitido = lugares con clasificación TACC (100% o con opciones). No incluye lugares sin información confirmada."
     ),
   lat: z
     .number()
@@ -170,7 +173,8 @@ function confirmedTaccCondition(): FilterQuery<IPlace> {
 }
 
 function applyZonaFilter(query: FilterQuery<IPlace>, zona: string): void {
-  const slug = slugifyPlacePart(zona)
+  const normalized = normalizeChatZona(zona)
+  const slug = slugifyPlacePart(normalized)
   const city = CITIES.find(
     (item) => item.slug === slug || slugifyPlacePart(item.name) === slug
   )
@@ -180,7 +184,7 @@ function applyZonaFilter(query: FilterQuery<IPlace>, zona: string): void {
     return
   }
 
-  const neighborhood = findKnownNeighborhoodSearch(zona)
+  const neighborhood = findKnownNeighborhoodSearch(normalized)
   if (neighborhood) {
     const matchers = getNeighborhoodSearchValues(neighborhood).map((value) =>
       userTextToMongoRegex(value, true)
@@ -194,13 +198,13 @@ function applyZonaFilter(query: FilterQuery<IPlace>, zona: string): void {
     return
   }
 
-  const provinceSlug = normalizeProvinceSlug(zona) || (isProvincialSlug(slug) ? slug : null)
+  const provinceSlug = normalizeProvinceSlug(normalized) || (isProvincialSlug(slug) ? slug : null)
   if (provinceSlug) {
     query.province = provinceSlug
     return
   }
 
-  const contains = userTextToMongoRegex(zona, false)
+  const contains = userTextToMongoRegex(normalized, false)
   appendAnd(query, {
     $or: [
       { neighborhood: contains },

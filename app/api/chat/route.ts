@@ -24,7 +24,7 @@ import {
   sanitizeChatErrorMessage,
 } from "@/lib/chat/errors"
 import { parseChatMessages } from "@/lib/chat/messages"
-import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
+import { buildChatSystemPrompt } from "@/lib/chat/system-prompt"
 import { logger } from "@/lib/logger"
 import { checkRateLimitByIp } from "@/lib/rate-limit"
 
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = streamText({
       model: openrouter(model),
-      system: CHAT_SYSTEM_PROMPT,
+      system: buildChatSystemPrompt(parsed.location),
       messages: modelMessages,
       maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
       stopWhen: stepCountIs(CHAT_MAX_STEPS),
@@ -163,8 +163,13 @@ export async function POST(request: NextRequest) {
             "Busca lugares sin TACC en la base de CeliMap. Usala siempre que la persona pida restaurantes, cafés, panaderías u otros lugares. Nunca inventes lugares. No devuelve lugares sin información confirmada sobre TACC.",
           inputSchema: buscarLugaresInputSchema,
           execute: async (input) => {
+            const withUserLocation = {
+              ...input,
+              lat: input.lat ?? parsed.location?.lat,
+              lng: input.lng ?? parsed.location?.lng,
+            }
             try {
-              return await buscarLugares(input)
+              return await buscarLugares(withUserLocation)
             } catch (error) {
               logChatError(error, 500)
               return {
