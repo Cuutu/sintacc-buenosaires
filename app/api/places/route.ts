@@ -138,9 +138,6 @@ export async function GET(request: NextRequest) {
       {
         ...data,
         places,
-        pagination: bbox
-          ? { ...data.pagination, total: places.length, pages: 1 }
-          : data.pagination,
       },
       {
         headers: {

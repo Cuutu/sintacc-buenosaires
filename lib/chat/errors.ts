@@ -15,25 +15,38 @@ function getErrorStatusCode(error: unknown): number | undefined {
   if ("statusCode" in error && typeof error.statusCode === "number") {
     return error.statusCode
   }
+  if ("status" in error && typeof error.status === "number") {
+    return error.status
+  }
   return undefined
 }
 
+export function getChatErrorStatus(error: unknown): number {
+  const fromField = getErrorStatusCode(error)
+  if (fromField) return fromField
+
+  const message = error instanceof Error ? error.message : String(error)
+  if (/401|api key|unauthorized|user not found|OPENROUTER_API_KEY|OPENROUTER_CHAT_API_KEY/i.test(message)) {
+    return 401
+  }
+  if (/402|credit|insufficient|payment|saldo|quota/i.test(message)) {
+    return 402
+  }
+  if (/429|rate limit|too many/i.test(message)) {
+    return 429
+  }
+  return 502
+}
+
 export function getFriendlyChatError(error: unknown): string {
-  const status = getErrorStatusCode(error)
+  const status = getChatErrorStatus(error)
   if (status === 401 || status === 403) return CHAT_FRIENDLY_CONFIG_ERROR
   if (status === 402) return CHAT_FRIENDLY_CREDITS_ERROR
   if (status === 429) return CHAT_FRIENDLY_BUSY_ERROR
-
-  const message = error instanceof Error ? error.message : String(error)
-  if (/401|api key|unauthorized|OPENROUTER_API_KEY/i.test(message)) {
-    return CHAT_FRIENDLY_CONFIG_ERROR
-  }
-  if (/402|credit|insufficient|payment|saldo|quota/i.test(message)) {
-    return CHAT_FRIENDLY_CREDITS_ERROR
-  }
-  if (/429|rate limit|too many/i.test(message)) {
-    return CHAT_FRIENDLY_BUSY_ERROR
-  }
-
   return CHAT_FRIENDLY_ERROR
+}
+
+export function sanitizeChatErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  return raw.replace(/sk-or-[a-zA-Z0-9_-]+/gi, "[redacted]")
 }

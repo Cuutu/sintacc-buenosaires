@@ -13,13 +13,15 @@ import {
   CHAT_MAX_STEPS,
   getChatModelId,
   getChatRateLimitConfig,
-  getOpenRouterApiKey,
+  getChatOpenRouterApiKey,
   getOpenRouterHeaders,
 } from "@/lib/chat/config"
 import {
   CHAT_FRIENDLY_CONFIG_ERROR,
   CHAT_FRIENDLY_ERROR,
+  getChatErrorStatus,
   getFriendlyChatError,
+  sanitizeChatErrorMessage,
 } from "@/lib/chat/errors"
 import { parseChatMessages } from "@/lib/chat/messages"
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
@@ -48,13 +50,40 @@ function jsonError(message: string, status: number, retryAfterSeconds?: number) 
 function logChatError(error: unknown, status: number) {
   logger.error({
     route: "/api/chat",
+    outcome: "error",
     status,
-    error: error instanceof Error ? error.message : String(error),
+    errorStatus: status,
+    error: sanitizeChatErrorMessage(error),
+  })
+}
+
+function logChatFinish(opts: {
+  model: string
+  steps: number
+  inputTokens: number
+  outputTokens: number
+  toolCalled: boolean
+  finishReason: string
+  errorStatus?: number
+}) {
+  const failed = opts.finishReason === "error" || opts.errorStatus != null
+  logger[failed ? "error" : "info"]({
+    route: "/api/chat",
+    outcome: failed ? "error" : "ok",
+    model: opts.model,
+    steps: opts.steps,
+    inputTokens: opts.inputTokens,
+    outputTokens: opts.outputTokens,
+    toolCalled: opts.toolCalled,
+    finishReason: opts.finishReason,
+    ...(failed
+      ? { errorStatus: opts.errorStatus ?? 502 }
+      : {}),
   })
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = getOpenRouterApiKey()
+  const apiKey = getChatOpenRouterApiKey()
   if (!apiKey) {
     return jsonError(CHAT_FRIENDLY_CONFIG_ERROR, 503)
   }
@@ -118,6 +147,8 @@ export async function POST(request: NextRequest) {
     headers: getOpenRouterHeaders(),
   })
 
+  let providerErrorStatus: number | undefined
+
   try {
     const result = streamText({
       model: openrouter(model),
@@ -147,19 +178,21 @@ export async function POST(request: NextRequest) {
         }),
       },
       onError({ error }) {
-        logChatError(error, 502)
+        providerErrorStatus = getChatErrorStatus(error)
+        logChatError(error, providerErrorStatus)
       },
-      onFinish({ steps, totalUsage }) {
+      onFinish({ steps, totalUsage, finishReason }) {
         const toolCalled = steps.some(
           (step) => (step.toolCalls?.length ?? 0) > 0 || (step.toolResults?.length ?? 0) > 0
         )
-        logger.info({
-          route: "/api/chat",
+        logChatFinish({
           model,
           steps: steps.length,
           inputTokens: totalUsage?.inputTokens ?? 0,
           outputTokens: totalUsage?.outputTokens ?? 0,
           toolCalled,
+          finishReason,
+          errorStatus: providerErrorStatus,
         })
       },
     })
@@ -175,7 +208,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    logChatError(error, 502)
-    return jsonError(getFriendlyChatError(error), 502)
+    logChatError(error, getChatErrorStatus(error))
+    return jsonError(getFriendlyChatError(error), getChatErrorStatus(error))
   }
 }

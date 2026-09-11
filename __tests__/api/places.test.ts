@@ -177,6 +177,28 @@ describe("GET /api/places", () => {
     expect(data.places.map((p: { _id: string }) => p._id)).toEqual(["in"])
   })
 
+  it("keeps Mongo pagination for bbox so the map can page past 100", async () => {
+    const mockPlaces = Array.from({ length: 100 }, (_, i) => ({
+      _id: `p${i}`,
+      name: `Place ${i}`,
+      location: { lat: -34.6, lng: -58.4 },
+    }))
+    mockFind(mockPlaces)
+    require("@/models/Place").Place.countDocuments = jest.fn().mockResolvedValue(350)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/places?limit=100&bbox=-58.5,-34.8,-58.3,-34.4"
+    )
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.places).toHaveLength(100)
+    expect(data.pagination.total).toBe(350)
+    expect(data.pagination.pages).toBe(4)
+    expect(data.pagination.limit).toBe(100)
+  })
+
   it("returns lean list items without clone-friendly contact fields", async () => {
     mockFind([
       {

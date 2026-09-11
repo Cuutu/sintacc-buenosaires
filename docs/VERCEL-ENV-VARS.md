@@ -27,7 +27,8 @@ Agregá **cada fila** como una variable (Key = nombre, Value = tu valor).
 | `RESEND_API_KEY` | API key de Resend | [resend.com/api-keys](https://resend.com/api-keys) |
 | `RESEND_FROM_DOMAIN` | Remitente (uso pruebas: `onboarding@resend.dev`) | `onboarding@resend.dev` |
 | `FEATURES` | Opcional. Fases activas | `phase1` o `phase1,phase2` |
-| `OPENROUTER_API_KEY` | OpenRouter → API Keys. Solo servidor. | `sk-or-v1-...` |
+| `OPENROUTER_API_KEY` | OpenRouter → API Keys. Solo servidor. Research admin / CTA. | `sk-or-v1-...` |
+| `OPENROUTER_CHAT_API_KEY` | OpenRouter → API Keys del chatbot. Si no está, el chat usa `OPENROUTER_API_KEY`. | `sk-or-v1-...` |
 | `OPENROUTER_MODEL` | Modelo del chatbot (tiene que soportar tools) | `openai/gpt-4.1-mini` |
 | `CHAT_TEST_ENABLED` | Solo si querés `/chat-test` en prod. Si no, 404. | `true` |
 

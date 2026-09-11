@@ -22,8 +22,8 @@ import {
   readPlacesCache,
   rememberViewportTile,
   viewportTileCacheKey,
-  writePlacesCache,
 } from "@/lib/map-places-cache"
+import { nextViewportPage, paginationTotalPages } from "@/lib/map-viewport-pages"
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
@@ -74,6 +74,7 @@ function MapaContent() {
   const lastSyncedUrlSearchRef = useRef(searchParams.get("search") || "")
   const fetchRequestSeqRef = useRef(0)
   const lastFetchedFilterKeyRef = useRef<string | null>(null)
+  const lastBoundsRef = useRef<MapViewportBounds | null>(null)
   const forceRefreshRef = useRef(false)
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
@@ -149,7 +150,8 @@ function MapaContent() {
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
     const freeTextSearch = searchNeighborhood ? "" : search
     const effectiveNeighborhood = searchNeighborhood ?? filters.neighborhood ?? ""
-    const bounds = opts?.bounds
+    if (opts?.bounds) lastBoundsRef.current = opts.bounds
+    const bounds = opts?.bounds ?? lastBoundsRef.current ?? undefined
     const silent = Boolean(opts?.silent)
     const filterKey = buildMapFilterKey({
       citySlugs: searchNeighborhood ? "" : citySlugsFromUrl ?? "",
@@ -181,9 +183,15 @@ function MapaContent() {
       }
     }
 
-    const buildParams = (neighborhood: string, searchText: string, viewport?: MapViewportBounds) => {
+    const buildParams = (
+      neighborhood: string,
+      searchText: string,
+      viewport?: MapViewportBounds,
+      page = 1
+    ) => {
       const params = new URLSearchParams()
       params.append("limit", String(MAP_PLACES_LIMIT))
+      params.append("page", String(page))
       if (citySlugsFromUrl && !searchNeighborhood) params.append("citySlugs", citySlugsFromUrl)
       if (provinceSlugsFromUrl && !searchNeighborhood) params.append("provinceSlugs", provinceSlugsFromUrl)
       if (localitySlugsFromUrl && !searchNeighborhood) params.append("localitySlugs", localitySlugsFromUrl)
@@ -196,22 +204,58 @@ function MapaContent() {
       return params
     }
 
+    type PlacesListResponse = {
+      places: IPlace[]
+      pagination?: { page: number; limit: number; total: number; pages: number }
+    }
+
+    const fetchPage = (
+      neighborhood: string,
+      searchText: string,
+      viewport: MapViewportBounds | undefined,
+      page: number
+    ) =>
+      fetchApi<PlacesListResponse>(
+        `/api/places?${buildParams(neighborhood, searchText, viewport, page).toString()}`
+      )
+
     const networkFetch = async (
       key: string,
       neighborhood: string,
       searchText: string,
       viewport?: MapViewportBounds
     ) => {
-      const data = await fetchApi<{ places: IPlace[] }>(
-        `/api/places?${buildParams(neighborhood, searchText, viewport).toString()}`
-      )
+      const data = await fetchPage(neighborhood, searchText, viewport, 1)
       const incoming = data.places || []
-      if (viewport) {
-        await mergeIntoPlacesCache(key, incoming)
-      } else {
-        await writePlacesCache(key, incoming)
-      }
+      await mergeIntoPlacesCache(key, incoming)
       return incoming
+    }
+
+    const networkFetchViewport = async (
+      key: string,
+      neighborhood: string,
+      searchText: string,
+      viewport: MapViewportBounds,
+      requestSeq: number
+    ) => {
+      let page = 1
+      while (page >= 1) {
+        if (requestSeq !== fetchRequestSeqRef.current) return false
+        const data = await fetchPage(neighborhood, searchText, viewport, page)
+        const batch = data.places || []
+        await mergeIntoPlacesCache(key, batch)
+        if (requestSeq !== fetchRequestSeqRef.current) return false
+        applyMerged(key)
+        const next = nextViewportPage({
+          page,
+          received: batch.length,
+          limit: data.pagination?.limit ?? MAP_PLACES_LIMIT,
+          totalPages: paginationTotalPages(data.pagination),
+        })
+        if (next == null) break
+        page = next
+      }
+      return requestSeq === fetchRequestSeqRef.current
     }
 
     const prefetchAdjacent = (primaryKey: string) => {
@@ -251,13 +295,24 @@ function MapaContent() {
     }
 
     if (bounds) {
+      const requestSeq = fetchRequestSeqRef.current + 1
+      fetchRequestSeqRef.current = requestSeq
       try {
-        await networkFetch(filterKey, effectiveNeighborhood, freeTextSearch, bounds)
+        const ok = await networkFetchViewport(
+          filterKey,
+          effectiveNeighborhood,
+          freeTextSearch,
+          bounds,
+          requestSeq
+        )
+        if (!ok || requestSeq !== fetchRequestSeqRef.current) return false
         lastFetchedFilterKeyRef.current = filterKey
         applyMerged(filterKey)
         setPlacesError(null)
+        setLoading(false)
         return true
       } catch {
+        if (requestSeq === fetchRequestSeqRef.current) setLoading(false)
         return false
       }
     }

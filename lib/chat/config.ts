@@ -26,9 +26,10 @@ export function getChatModelId(): string {
   )
 }
 
-export function getOpenRouterApiKey(): string | null {
-  const key = process.env.OPENROUTER_API_KEY?.trim()
-  return key || null
+export function getChatOpenRouterApiKey(): string | null {
+  const chatKey = process.env.OPENROUTER_CHAT_API_KEY?.trim()
+  if (chatKey) return chatKey
+  return process.env.OPENROUTER_API_KEY?.trim() || null
 }
 
 export function isChatTestEnabled(): boolean {

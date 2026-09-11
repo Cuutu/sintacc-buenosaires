@@ -1,11 +1,16 @@
 /**
  * @jest-environment node
  */
-import { getFriendlyChatError } from "@/lib/chat/errors"
+import { getFriendlyChatError, getChatErrorStatus } from "@/lib/chat/errors"
 import { parseChatMessages, getLastUserMessageText, trimChatMessages } from "@/lib/chat/messages"
 import { userTextToMongoRegex, escapeRegexLiteral } from "@/lib/chat/regex"
 import { clasificacionTacc, taccLabelForLevel, orderByTaccThenStable, chatPlaceUrl } from "@/lib/chat/buscar-lugares"
-import { isChatTestEnabled, CHAT_MAX_USER_MESSAGE_CHARS, CHAT_ANMAT_LIST_URL } from "@/lib/chat/config"
+import {
+  isChatTestEnabled,
+  CHAT_MAX_USER_MESSAGE_CHARS,
+  CHAT_ANMAT_LIST_URL,
+  getChatOpenRouterApiKey,
+} from "@/lib/chat/config"
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chat/system-prompt"
 
 type TestMessage = {
@@ -232,4 +237,33 @@ describe("chat errors", () => {
     expect(msg).not.toMatch(/OpenRouter|credits|Payment|402/i)
     expect(msg.length).toBeGreaterThan(10)
   })
+
+  it("clasifica 401/402/429 y el resto como 502", () => {
+    expect(getChatErrorStatus({ statusCode: 401 })).toBe(401)
+    expect(getChatErrorStatus(new Error("User not found."))).toBe(401)
+    expect(getChatErrorStatus(new Error("OpenRouter 402 Payment required"))).toBe(402)
+    expect(getChatErrorStatus(new Error("429 rate limit"))).toBe(429)
+    expect(getChatErrorStatus(new Error("boom"))).toBe(502)
+  })
 })
+
+describe("chat OpenRouter key", () => {
+  const prevChat = process.env.OPENROUTER_CHAT_API_KEY
+  const prevFallback = process.env.OPENROUTER_API_KEY
+
+  afterEach(() => {
+    if (prevChat === undefined) delete process.env.OPENROUTER_CHAT_API_KEY
+    else process.env.OPENROUTER_CHAT_API_KEY = prevChat
+    if (prevFallback === undefined) delete process.env.OPENROUTER_API_KEY
+    else process.env.OPENROUTER_API_KEY = prevFallback
+  })
+
+  it("prioriza OPENROUTER_CHAT_API_KEY y cae a OPENROUTER_API_KEY", () => {
+    process.env.OPENROUTER_CHAT_API_KEY = "chat-key"
+    process.env.OPENROUTER_API_KEY = "fallback-key"
+    expect(getChatOpenRouterApiKey()).toBe("chat-key")
+    delete process.env.OPENROUTER_CHAT_API_KEY
+    expect(getChatOpenRouterApiKey()).toBe("fallback-key")
+  })
+})
+

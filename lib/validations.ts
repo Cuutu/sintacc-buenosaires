@@ -128,8 +128,8 @@ function parseBbox(value: unknown): z.infer<typeof bboxSchema> | undefined {
 }
 
 /**
- * Máximo de `limit` en GET /api/places.
- * El mapa pide por viewport (bbox) + este techo; no hay dump del catálogo.
+ * Máximo de `limit` por request en GET /api/places.
+ * El mapa pide bbox y pagina hasta vaciar el viewport; no hay dump del catálogo en una request.
  */
 export const PUBLIC_PLACES_MAX_LIMIT = 100
 
