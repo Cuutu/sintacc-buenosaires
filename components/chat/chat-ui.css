@@ -131,12 +131,7 @@
 }
 
 .celimap-chat-chips-row {
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.celimap-chat-chips-row::-webkit-scrollbar {
-  display: none;
+  touch-action: manipulation;
 }
 
 .celimap-chat-mobile-shell {

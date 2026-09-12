@@ -3,7 +3,7 @@
 import { ArrowLeft, ArrowUp, X } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
 import Link from "next/link"
-import { useCallback, useEffect, useRef, useState, type FormEvent, type UIEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type UIEvent } from "react"
 import {
   ChatListCards,
   ChatPlaceCards,
@@ -103,6 +103,54 @@ function BubbleTime({ at, side }: { at: Date; side: "left" | "right" }) {
     <p className={cn("mt-1 text-[11px] text-[#AAA]", side === "right" ? "text-right" : "text-left")}>
       {formatClock(at)}
     </p>
+  )
+}
+
+const CHIP_BTN =
+  "inline-flex max-w-full items-center rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-3.5 py-2 text-left text-[13px] font-semibold leading-snug text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
+
+function ChatChip({
+  label,
+  icon,
+  disabled,
+  onClick,
+}: {
+  label: string
+  icon?: string
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className={CHIP_BTN}>
+      {icon ? (
+        <span className="mr-1.5 shrink-0" aria-hidden>
+          {icon}
+        </span>
+      ) : null}
+      <span className="min-w-0">{label}</span>
+    </button>
+  )
+}
+
+function ChatChipRow({
+  children,
+  className,
+  leaving,
+}: {
+  children: ReactNode
+  className?: string
+  leaving?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "celimap-chat-chips-row mt-2 flex min-w-0 flex-wrap gap-2",
+        leaving && "celimap-chat-chips-out",
+        className
+      )}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -321,24 +369,22 @@ function ChatPanelLive({
               <BubbleTime at={stamp("welcome")} side="left" />
               <div
                 className={cn(
-                  "celimap-chat-chips-row ml-11 mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1",
-                  (messages.length > 0 || blockedCerca) && "celimap-chat-chips-out"
+                  "mt-2 flex gap-2",
+                  (messages.length > 0 || Boolean(blockedCerca)) && "celimap-chat-chips-out"
                 )}
               >
-                {CHIPS.map((chip) => (
-                  <button
-                    key={chip.send}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void submitText(chip.send)}
-                    className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-left text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
-                  >
-                    <span className="mr-1.5" aria-hidden>
-                      {chip.icon}
-                    </span>
-                    {chip.label}
-                  </button>
-                ))}
+                <span className="w-11 shrink-0" aria-hidden />
+                <ChatChipRow className="mt-0 min-w-0 flex-1">
+                  {CHIPS.map((chip) => (
+                    <ChatChip
+                      key={chip.send}
+                      icon={chip.icon}
+                      label={chip.label}
+                      disabled={busy}
+                      onClick={() => void submitText(chip.send)}
+                    />
+                  ))}
+                </ChatChipRow>
               </div>
             </div>
           ) : null}
@@ -401,21 +447,18 @@ function ChatPanelLive({
                     places?.sugerencias &&
                     places.sugerencias.length > 0 &&
                     !busy ? (
-                      <div className="celimap-chat-chips-row mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                      <ChatChipRow>
                         {places.sugerencias.map((part) => (
-                          <button
+                          <ChatChip
                             key={part}
-                            type="button"
+                            label={part}
                             disabled={busy}
                             onClick={() =>
                               void submitText(zonaFollowUp(places.zonaAmplia || "", part))
                             }
-                            className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
-                          >
-                            {part}
-                          </button>
+                          />
                         ))}
-                      </div>
+                      </ChatChipRow>
                     ) : null}
                     {lists ? <ChatListCards result={lists} onNavigate={onClose} /> : null}
                     {places && !askZona ? (
@@ -443,23 +486,20 @@ function ChatPanelLive({
                     lugares ahí.
                   </div>
                   <BubbleTime at={stamp("blocked-bot")} side="left" />
-                  <div className="celimap-chat-chips-row mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                  <ChatChipRow>
                     {BARRIO_CHIPS.map((barrio) => (
-                      <button
+                      <ChatChip
                         key={barrio}
-                        type="button"
+                        label={barrio}
                         disabled={busy}
                         onClick={() => {
                           const follow = cercaFollowUp(blockedCerca, barrio)
                           setBlockedCerca(null)
                           void submitText(follow)
                         }}
-                        className="shrink-0 rounded-[20px] border-[1.5px] border-[#1F4D35] bg-white px-4 py-2 text-[13px] font-semibold text-[#1F4D35] transition-[background-color,color] duration-150 hover:bg-[#1F4D35] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-50"
-                      >
-                        {barrio}
-                      </button>
+                      />
                     ))}
-                  </div>
+                  </ChatChipRow>
                 </div>
               </div>
             </div>
