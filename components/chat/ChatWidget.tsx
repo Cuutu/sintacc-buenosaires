@@ -1,7 +1,6 @@
 "use client"
 
 import { X } from "lucide-react"
-import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
 import { useVisualViewportBox } from "@/components/chat/use-visual-viewport-box"
@@ -9,10 +8,10 @@ import { cn } from "@/lib/utils"
 import "@/components/chat/chat-ui.css"
 
 const CLOSE_MS = 300
-const HINT_DELAY_MS = 3000
+const HINT_DELAY_MS = 1400
 const HINT_LEAVE_MS = 300
-const HINT_KEY = "celimap-celibot-hint"
-const HINT_TEXT = "¡Hola! Soy CeliBot 👋 Estoy acá para ayudarte a encontrar lugares sin TACC"
+const HINT_KEY = "celimap-celibot-hello"
+const HINT_TEXT = "Hola, soy CeliBot"
 
 function readHintDismissed(): boolean {
   try {
@@ -31,7 +30,6 @@ function persistHintDismissed() {
 }
 
 export function ChatWidget() {
-  const pathname = usePathname() || "/"
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -44,8 +42,7 @@ export function ChatWidget() {
   const hintRef = useRef<HTMLDivElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
   const mobileBox = useVisualViewportBox(open || leaving)
-  const home = pathname === "/"
-  const hintSide: "left" | "top" = home ? "left" : "top"
+  const [hintIdle, setHintIdle] = useState(false)
   const showHint = hintReady && !hintDismissed && !open
   const pulse = !open && !hintDismissed
 
@@ -83,6 +80,7 @@ export function ChatWidget() {
   const dismissHint = () => {
     if (hintDismissed || hintLeaving) return
     persistHintDismissed()
+    setHintIdle(false)
     setHintLeaving(true)
     window.clearTimeout(hintLeaveTimer.current)
     hintLeaveTimer.current = window.setTimeout(() => {
@@ -97,6 +95,7 @@ export function ChatWidget() {
     setHintDismissed(true)
     setHintReady(false)
     setHintLeaving(false)
+    setHintIdle(false)
     setFabEnter(false)
     window.clearTimeout(leaveTimer.current)
     setLeaving(false)
@@ -114,40 +113,44 @@ export function ChatWidget() {
     }, CLOSE_MS)
   }
 
-  useEffect(() => {
-    if (!showHint && !hintLeaving) return
-    function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node | null
-      if (hintRef.current?.contains(target)) return
-      if (dockRef.current?.contains(target)) return
-      dismissHint()
-    }
-    document.addEventListener("pointerdown", onPointerDown)
-    return () => document.removeEventListener("pointerdown", onPointerDown)
-  }, [showHint, hintLeaving, hintDismissed])
-
   return (
     <>
       {mounted ? (
-        <div
-          className={cn(
-            "celimap-chat-mobile-shell fixed z-[200] overflow-hidden bg-[#F7F3EB]",
-            leaving ? "celimap-chat-panel-leave" : "celimap-chat-panel-enter",
-            "md:bottom-[5.5rem] md:right-6 md:top-auto md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-[#F7F3EB] md:p-0"
-          )}
-          style={
-            mobileBox
-              ? {
-                  top: mobileBox.top,
-                  height: mobileBox.height,
-                  maxHeight: mobileBox.height,
-                  paddingBottom: mobileBox.keyboard ? 8 : undefined,
-                }
-              : undefined
-          }
-        >
-          <ChatPanel variant="widget" onClose={hide} />
-        </div>
+        <>
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none fixed inset-x-0 top-0 z-[199] bg-[#F7F3EB] md:hidden",
+              leaving && "opacity-0 transition-opacity duration-300"
+            )}
+            style={{ height: "200vh" }}
+          />
+          <div
+            className={cn(
+              "celimap-chat-mobile-shell fixed inset-x-0 z-[200] overflow-hidden bg-[#F7F3EB]",
+              leaving ? "celimap-chat-panel-leave" : "celimap-chat-panel-enter",
+              "md:bottom-[5.5rem] md:left-auto md:right-6 md:top-auto md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-[#F7F3EB] md:p-0"
+            )}
+            style={
+              mobileBox
+                ? {
+                    top: mobileBox.top,
+                    left: 0,
+                    right: 0,
+                    height: mobileBox.height,
+                    maxHeight: mobileBox.height,
+                    paddingBottom: mobileBox.keyboard ? 8 : undefined,
+                  }
+                : undefined
+            }
+          >
+            <ChatPanel
+              variant="widget"
+              onClose={hide}
+              keyboardOpen={Boolean(mobileBox?.keyboard)}
+            />
+          </div>
+        </>
       ) : null}
       <div
         ref={dockRef}
@@ -160,17 +163,16 @@ export function ChatWidget() {
         {showHint || hintLeaving ? (
           <div
             ref={hintRef}
-            data-side={hintSide}
-            role="dialog"
+            role="status"
             aria-label="CeliBOT"
             className={cn(
-              "celimap-fab-hint absolute z-[2] w-[240px] max-w-[min(240px,calc(100vw-6.5rem))] rounded-[12px] bg-white px-4 py-3 pr-8 text-left shadow-[0_4px_16px_rgba(0,0,0,0.12)]",
+              "celimap-fab-hint absolute bottom-[calc(100%+10px)] right-0 z-[2] w-max max-w-[min(220px,calc(100vw-5rem))] rounded-[16px] bg-white px-3.5 py-2 pr-7 text-left shadow-[0_4px_16px_rgba(0,0,0,0.12)]",
               hintLeaving && "celimap-fab-hint-leave",
-              hintSide === "left"
-                ? "bottom-1 right-[calc(100%+12px)]"
-                : "bottom-[calc(100%+12px)] right-0",
-              "md:bottom-1 md:right-[calc(100%+12px)] md:left-auto"
+              hintIdle && !hintLeaving && "celimap-fab-hint-idle"
             )}
+            onAnimationEnd={(event) => {
+              if (event.animationName === "celimap-fab-hint-in") setHintIdle(true)
+            }}
           >
             <span className="celimap-fab-hint-nub" aria-hidden />
             <button
@@ -187,7 +189,7 @@ export function ChatWidget() {
             <button
               type="button"
               onClick={show}
-              className="block w-full text-left text-[13px] leading-[1.4] text-[#333]"
+              className="block w-full whitespace-nowrap text-left text-[13px] font-medium leading-[1.35] text-[#333]"
             >
               {HINT_TEXT}
             </button>

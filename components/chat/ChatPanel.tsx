@@ -40,6 +40,7 @@ const USER_BUBBLE =
 type ChatPanelProps = {
   variant: "widget" | "page"
   onClose?: () => void
+  keyboardOpen?: boolean
 }
 
 function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> {
@@ -105,7 +106,7 @@ function BubbleTime({ at, side }: { at: Date; side: "left" | "right" }) {
   )
 }
 
-export function ChatPanel({ variant, onClose }: ChatPanelProps) {
+export function ChatPanel({ variant, onClose, keyboardOpen }: ChatPanelProps) {
   const [bootMessages, setBootMessages] = useState<ReturnType<typeof loadChatHistory> | null>(null)
 
   useEffect(() => {
@@ -116,12 +117,20 @@ export function ChatPanel({ variant, onClose }: ChatPanelProps) {
     return <div className="flex h-full w-full flex-col bg-[#F7F3EB]" aria-busy="true" />
   }
 
-  return <ChatPanelLive variant={variant} onClose={onClose} initialMessages={bootMessages} />
+  return (
+    <ChatPanelLive
+      variant={variant}
+      onClose={onClose}
+      keyboardOpen={keyboardOpen}
+      initialMessages={bootMessages}
+    />
+  )
 }
 
 function ChatPanelLive({
   variant,
   onClose,
+  keyboardOpen,
   initialMessages,
 }: ChatPanelProps & { initialMessages: ReturnType<typeof loadChatHistory> }) {
   const [input, setInput] = useState("")
@@ -501,7 +510,9 @@ function ChatPanelLive({
         onSubmit={onSubmit}
         className={cn(
           "shrink-0 bg-[#F7F3EB] px-3 pt-2",
-          "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
+          keyboardOpen
+            ? "pb-2"
+            : "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
           variant === "page" && "mx-auto w-full max-w-[420px]"
         )}
       >
@@ -520,6 +531,11 @@ function ChatPanelLive({
             value={input}
             disabled={busy}
             rows={1}
+            autoComplete="off"
+            autoCorrect="on"
+            autoCapitalize="sentences"
+            enterKeyHint="send"
+            name="celimap-chat-message"
             placeholder="Escribí tu consulta..."
             onChange={(event) => {
               setInput(event.target.value)
