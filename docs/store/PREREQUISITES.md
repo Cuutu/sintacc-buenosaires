@@ -19,7 +19,7 @@ Privacy URL pública (bloqueador #1 de stores):
 
 ### Legal / soporte
 - [ ] Deploy web a Vercel → verificar que abre `/privacidad`
-- [ ] Confirmar que `hola@celimap.com.ar` existe o cambiar el mail en la página
+- [ ] Confirmar que `contacto@celimap.com.ar` existe o cambiar el mail en la página
 - [ ] (Opcional) Publicar `.well-known` con Team ID + SHA256 reales
 
 ### Apple (Developer ya lo tenés)

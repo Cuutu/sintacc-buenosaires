@@ -511,8 +511,8 @@ function ChatPanelLive({
         className={cn(
           "shrink-0 bg-[#F7F3EB] px-3 pt-2",
           keyboardOpen
-            ? "pb-2"
-            : "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
+            ? "max-md:pb-2 md:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+            : "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] max-md:pb-[env(safe-area-inset-bottom,0px)]",
           variant === "page" && "mx-auto w-full max-w-[420px]"
         )}
       >

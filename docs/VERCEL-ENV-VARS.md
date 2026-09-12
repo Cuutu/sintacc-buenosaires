@@ -23,7 +23,7 @@ Agregá **cada fila** como una variable (Key = nombre, Value = tu valor).
 | `CLOUDINARY_API_KEY` | Cloudinary Dashboard → API Keys | Número |
 | `CLOUDINARY_API_SECRET` | Cloudinary Dashboard → API Keys | String secreta |
 | `ADMIN_EMAILS` | Emails que serán admin (separados por coma) | `tu@email.com,otro@email.com` |
-| `CONTACT_EMAIL` | Email donde llegan las consultas del formulario | `tu-email@ejemplo.com` |
+| `CONTACT_EMAIL` | Email donde llegan las consultas del formulario | `contacto@celimap.com.ar` |
 | `RESEND_API_KEY` | API key de Resend | [resend.com/api-keys](https://resend.com/api-keys) |
 | `RESEND_FROM_DOMAIN` | Remitente (uso pruebas: `onboarding@resend.dev`) | `onboarding@resend.dev` |
 | `FEATURES` | Opcional. Fases activas | `phase1` o `phase1,phase2` |
@@ -44,7 +44,7 @@ Agregá **cada fila** como una variable (Key = nombre, Value = tu valor).
 6. **NEXT_PUBLIC_MAPBOX_TOKEN** – Para que funcione el mapa.
 7. **CLOUDINARY_*** – Para fotos (si no usás fotos aún, podés dejarlas con valores de prueba y configurar bien después).
 8. **ADMIN_EMAILS** – Emails que pueden entrar al panel admin.
-9. **CONTACT_EMAIL** – Email donde llegan las consultas del formulario de contacto (ej. `tu-email@ejemplo.com`).
+9. **CONTACT_EMAIL** – Email donde llegan las consultas del formulario de contacto (ej. `contacto@celimap.com.ar`).
 10. **RESEND_API_KEY** y **RESEND_FROM_DOMAIN** – Para emails: consultas de contacto, sugerencias nuevas (a admins) y sugerencias aprobadas (al usuario). Creá una cuenta en [resend.com](https://resend.com), generá una API key y usá `onboarding@resend.dev` como FROM para pruebas.
 11. **FEATURES** – Opcional; si no lo ponés, se usa `phase1`.
 

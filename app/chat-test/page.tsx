@@ -7,28 +7,21 @@ import "@/components/chat/chat-ui.css"
 export default function ChatTestPage() {
   const box = useVisualViewportBox(true)
   return (
-    <>
+    <div className="celimap-chat-mobile-shell fixed inset-0 z-[90] md:h-auto md:max-h-none md:bg-[#F7F3EB]">
       <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 z-[89] h-[200vh] bg-[#F7F3EB] md:hidden"
-      />
-      <div
-        className="celimap-chat-mobile-shell fixed inset-x-0 z-[90] md:inset-0 md:h-auto md:max-h-none md:bg-[#F7F3EB]"
+        className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F7F3EB]"
         style={
           box
             ? {
-                top: box.top,
-                left: 0,
-                right: 0,
                 height: box.height,
                 maxHeight: box.height,
-                paddingBottom: box.keyboard ? 8 : undefined,
+                marginTop: box.top,
               }
             : undefined
         }
       >
         <ChatPanel variant="page" keyboardOpen={Boolean(box?.keyboard)} />
       </div>
-    </>
+    </div>
   )
 }

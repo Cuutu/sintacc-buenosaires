@@ -27,8 +27,8 @@ Gratis. Crece con la comunidad celíaca.
 **Tags:** celiaco, sin tacc, sin gluten, mapa
 
 **Privacy policy:** https://www.celimap.com.ar/privacidad
-**Support URL / Contact:** https://www.celimap.com.ar (formulario de contacto) · hola@celimap.com.ar
-**Contact email:** hola@celimap.com.ar
+**Support URL / Contact:** https://www.celimap.com.ar (formulario de contacto) · contacto@celimap.com.ar
+**Contact email:** contacto@celimap.com.ar
 
 ---
 
@@ -62,7 +62,7 @@ Gratis. Hecho para la comunidad celíaca.
 **Privacy policy URL:** https://www.celimap.com.ar/privacidad
 **Support URL:** https://www.celimap.com.ar
 **Marketing URL (opcional):** https://www.celimap.com.ar/que-es-celimap
-**Contact email:** hola@celimap.com.ar
+**Contact email:** contacto@celimap.com.ar
 
 ---
 

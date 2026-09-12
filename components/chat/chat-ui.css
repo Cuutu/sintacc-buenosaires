@@ -156,33 +156,33 @@
 
   .celimap-chat-mobile-shell {
     position: fixed;
-    z-index: 200;
+    z-index: 9999;
+    inset: 0;
     top: 0;
-    left: 0;
     right: 0;
-    bottom: auto;
+    bottom: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100svh;
-    max-height: 100svh;
-    overflow: visible;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
     box-sizing: border-box;
     background: #f7f3eb;
     touch-action: manipulation;
+    overscroll-behavior: none;
     isolation: isolate;
   }
 
-  /* Cubre el hueco entre el input y el teclado (Gboard / barra de sugerencias). */
-  .celimap-chat-mobile-shell::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    height: 100vh;
-    background: #f7f3eb;
-    pointer-events: none;
+  .celimap-chat-map {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

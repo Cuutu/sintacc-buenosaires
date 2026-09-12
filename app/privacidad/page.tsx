@@ -5,7 +5,7 @@ import { getBaseUrl } from "@/lib/base-url"
 
 const BASE_URL = getBaseUrl()
 const UPDATED_AT = "7 de septiembre de 2026"
-const CONTACT_MAIL = "hola@celimap.com.ar"
+const CONTACT_MAIL = "contacto@celimap.com.ar"
 
 export const metadata: Metadata = {
   title: "Política de privacidad",

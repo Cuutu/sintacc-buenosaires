@@ -16,7 +16,7 @@ app/sitemap.ts                (actualizado)
 ## Cambios clave
 
 ### 1. Página /contacto
-- Email principal: `hola@celimap.com.ar` (clickeable como mailto:)
+- Email principal: `contacto@celimap.com.ar` (clickeable como mailto:)
 - Patrón InstitutionalPage con FAQs
 - Metadata completa (canonical, OG, Twitter)
 - JSON-LD: WebPage + BreadcrumbList + FAQPage
@@ -85,7 +85,7 @@ curl https://www.celimap.com.ar/sitemap.xml | grep -E 'contacto|sobre-nosotros'
 
 ### Email visible en /contacto
 ```bash
-curl https://www.celimap.com.ar/contacto | grep -o "hola@celimap.com.ar"
+curl https://www.celimap.com.ar/contacto | grep -o "contacto@celimap.com.ar"
 ```
 
 ## Patterns reutilizados

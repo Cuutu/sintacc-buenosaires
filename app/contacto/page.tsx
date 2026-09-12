@@ -13,7 +13,7 @@ import { getBaseUrl } from "@/lib/base-url"
 const BASE_URL = getBaseUrl()
 const PATH = "/contacto"
 const UPDATED_AT = "2026-09-10"
-const CONTACT_MAIL = "hola@celimap.com.ar"
+const CONTACT_MAIL = "contacto@celimap.com.ar"
 
 const title = "Contacto"
 const description = `Contactá con ${CELIMAP_NAME} para consultas generales. Para sugerencias de lugares usá el formulario de Sugerir.`

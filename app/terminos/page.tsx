@@ -75,8 +75,8 @@ export default function TerminosPage() {
         <h2>Contacto</h2>
         <p>
           Consultas:{" "}
-          <a href="mailto:hola@celimap.com.ar" className="text-primary hover:underline">
-            hola@celimap.com.ar
+          <a href="mailto:contacto@celimap.com.ar" className="text-primary hover:underline">
+            contacto@celimap.com.ar
           </a>
           .
         </p>

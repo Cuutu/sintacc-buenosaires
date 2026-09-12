@@ -3,7 +3,10 @@
 import { X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
-import { useVisualViewportBox } from "@/components/chat/use-visual-viewport-box"
+import {
+  useMobileBodyLock,
+  useVisualViewportBox,
+} from "@/components/chat/use-visual-viewport-box"
 import { cn } from "@/lib/utils"
 import "@/components/chat/chat-ui.css"
 
@@ -41,10 +44,11 @@ export function ChatWidget() {
   const hintLeaveTimer = useRef<number>(0)
   const hintRef = useRef<HTMLDivElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
-  const mobileBox = useVisualViewportBox(open || leaving)
+  const mobileBox = useVisualViewportBox(mounted)
   const [hintIdle, setHintIdle] = useState(false)
   const showHint = hintReady && !hintDismissed && !open
   const pulse = !open && !hintDismissed
+  useMobileBodyLock(mounted)
 
   useEffect(() => {
     return () => {
@@ -64,13 +68,13 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (!open) return
+    if (!window.matchMedia("(min-width: 768px)").matches) return
     const html = document.documentElement
     const body = document.body
     const prevHtmlOverflow = html.style.overflow
     const prevBodyOverflow = body.style.overflow
     html.style.overflow = "hidden"
     body.style.overflow = "hidden"
-    window.scrollTo(0, 0)
     return () => {
       html.style.overflow = prevHtmlOverflow
       body.style.overflow = prevBodyOverflow
@@ -116,41 +120,29 @@ export function ChatWidget() {
   return (
     <>
       {mounted ? (
-        <>
+        <div
+          className={cn(
+            "celimap-chat-mobile-shell fixed z-[200] overflow-hidden bg-[#F7F3EB]",
+            "max-md:inset-0 max-md:z-[9999]",
+            leaving ? "celimap-chat-panel-leave" : "celimap-chat-panel-enter",
+            "md:bottom-[5.5rem] md:left-auto md:right-6 md:top-auto md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-[#F7F3EB] md:p-0"
+          )}
+        >
           <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none fixed inset-x-0 top-0 z-[199] bg-[#F7F3EB] md:hidden",
-              leaving && "opacity-0 transition-opacity duration-300"
-            )}
-            style={{ height: "200vh" }}
-          />
-          <div
-            className={cn(
-              "celimap-chat-mobile-shell fixed inset-x-0 z-[200] overflow-hidden bg-[#F7F3EB]",
-              leaving ? "celimap-chat-panel-leave" : "celimap-chat-panel-enter",
-              "md:bottom-[5.5rem] md:left-auto md:right-6 md:top-auto md:h-[600px] md:w-[380px] md:max-h-[min(600px,calc(100dvh-6rem))] md:bg-[#F7F3EB] md:p-0"
-            )}
+            className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F7F3EB]"
             style={
               mobileBox
                 ? {
-                    top: mobileBox.top,
-                    left: 0,
-                    right: 0,
                     height: mobileBox.height,
                     maxHeight: mobileBox.height,
-                    paddingBottom: mobileBox.keyboard ? 8 : undefined,
+                    marginTop: mobileBox.top,
                   }
                 : undefined
             }
           >
-            <ChatPanel
-              variant="widget"
-              onClose={hide}
-              keyboardOpen={Boolean(mobileBox?.keyboard)}
-            />
+            <ChatPanel variant="widget" onClose={hide} keyboardOpen={Boolean(mobileBox?.keyboard)} />
           </div>
-        </>
+        </div>
       ) : null}
       <div
         ref={dockRef}
