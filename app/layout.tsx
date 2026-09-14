@@ -44,12 +44,8 @@ const BASE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
-  // Smart App Banner (Safari iOS). Argumento estático: Safari no relee el meta en SPA.
-  // TODO: deep link por página → generateMetadata en app/mapa/[slug]/page.tsx (SSR), no client.
-  itunes: {
-    appId: "6797278308",
-    appArgument: "https://www.celimap.com.ar",
-  },
+  // Smart App Banner no va en layout raíz: en "/" come el fold de Safari.
+  // itunes vive en app/mapa y app/lugar (HTML inicial de esas rutas).
   // title.template agrega la marca UNA sola vez. Las funciones de pagina devuelven el titulo SIN marca.
   title: {
     default: "Mapa para celíacos en Argentina | CeliMap",

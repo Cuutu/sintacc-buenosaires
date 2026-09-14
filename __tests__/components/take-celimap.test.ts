@@ -41,4 +41,13 @@ describe("Llevá CeliMap con vos", () => {
     expect(src).toContain("isProdHost")
     expect(src).toContain("isPreviewEnv")
   })
+
+  it("banner store no sale en el primer load de home", () => {
+    const banner = read("components/store-banner/StoreAppBanner.tsx")
+    const mapa = read("components/mapa/MapaPageClient.tsx")
+    expect(banner).toContain("shouldShowStoreBanner")
+    expect(banner).toContain("unlockStoreBanner")
+    expect(mapa).toContain("unlockStoreBanner")
+    expect(mapa).toContain("selectedPlaceId")
+  })
 })

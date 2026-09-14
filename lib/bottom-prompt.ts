@@ -14,6 +14,8 @@ export const STORE_BANNER_DISMISS_KEY = "celimap_store_banner_dismissed_until_v1
 export const STORE_BANNER_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000
 
 export const STORE_BANNER_SHOWN_SESSION_KEY = "celimap_store_banner_shown_session"
+/** Tras abrir ficha /lugar o pin en el mapa. Home no arma el banner. */
+export const STORE_BANNER_UNLOCK_KEY = "celimap_store_banner_unlock_v1"
 
 export type BottomPromptInput = {
   platform: DevicePlatform
@@ -64,6 +66,42 @@ function notifyBottomPromptChange() {
 export function isStoreBannerDebugQuery(search: string): boolean {
   const q = search.startsWith("?") ? search.slice(1) : search
   return new URLSearchParams(q).get("debugBanner") === "1"
+}
+
+export function isStoreBannerUnlocked(): boolean {
+  if (typeof sessionStorage === "undefined") return false
+  try {
+    return sessionStorage.getItem(STORE_BANNER_UNLOCK_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+/** Armar banner store después de ver un lugar. No-op si ya estaba. */
+export function unlockStoreBanner(): void {
+  if (typeof sessionStorage === "undefined") return
+  try {
+    if (sessionStorage.getItem(STORE_BANNER_UNLOCK_KEY) === "1") return
+    sessionStorage.setItem(STORE_BANNER_UNLOCK_KEY, "1")
+  } catch {
+    return
+  }
+  notifyBottomPromptChange()
+}
+
+export function isHomePath(pathname: string | null | undefined): boolean {
+  return pathname === "/"
+}
+
+/** Home nunca muestra banner. Resto: solo si ya se vio un lugar (o debug). */
+export function shouldShowStoreBanner(input: {
+  pathname: string | null | undefined
+  unlocked: boolean
+  debugBanner?: boolean
+}): boolean {
+  if (input.debugBanner) return true
+  if (isHomePath(input.pathname)) return false
+  return input.unlocked
 }
 
 /** Primer `store_banner_shown` de la tab session. False si ya se emitió. */

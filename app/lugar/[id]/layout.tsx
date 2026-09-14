@@ -4,6 +4,7 @@ import { PlaceJsonLd } from "@/components/seo/PlaceJsonLd"
 import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 import { getPlaceLiveStats } from "@/lib/place-stats"
 import { missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
+import { CELIMAP_ITUNES } from "@/lib/seo/itunes"
 import { buildPlaceMetadata } from "@/lib/seo/place-metadata"
 
 export const dynamicParams = true
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: LugarLayoutProps): Promise<Me
   const { id } = await params
   const place = await getApprovedPlaceByRouteParam(id)
   if (!place) return missingPlaceMetadata
-  return buildPlaceMetadata(place)
+  return { ...buildPlaceMetadata(place), itunes: CELIMAP_ITUNES }
 }
 
 export default async function LugarLayout({ params, children }: LugarLayoutProps) {

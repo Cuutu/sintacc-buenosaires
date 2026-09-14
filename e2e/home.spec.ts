@@ -57,10 +57,16 @@ test.describe("home carrusel y buscador @hermetic @mobile", () => {
     ).toBe(true)
   })
 
-  test("CTA Abrir el mapa visible", async ({ page }) => {
+  it("CTA Abrir el mapa visible sin scroll en mobile", async ({ page }) => {
     await installHappyPathMocks(page)
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await expect(page.getByRole("link", { name: /Abrir el mapa/i })).toBeVisible()
+    const cta = page.getByTestId("home-open-map")
+    await expect(cta).toBeVisible()
+    const box = await cta.boundingBox()
+    expect(box).toBeTruthy()
+    expect(box!.y).toBeGreaterThanOrEqual(0)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(667)
+    await expect(page.locator("[data-store-banner]")).toHaveCount(0)
   })
 })

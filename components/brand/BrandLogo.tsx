@@ -25,7 +25,7 @@ const HEIGHT = {
   xs: "h-8 md:h-9",
   sm: "h-11 md:h-12",
   md: "h-11 md:h-12",
-  lg: "h-12 md:h-[4.5rem]",
+  lg: "h-9 md:h-[4.5rem]",
 } as const
 
 export function BrandLogo({

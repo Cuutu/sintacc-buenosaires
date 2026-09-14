@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getBaseUrl } from "@/lib/base-url";
 import { MapaSeoIntro } from "@/components/mapa/MapaSeoIntro";
+import { CELIMAP_ITUNES } from "@/lib/seo/itunes";
 
 const BASE_URL = getBaseUrl();
 
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
     url: `${BASE_URL}/mapa`,
     type: "website",
   },
+  itunes: CELIMAP_ITUNES,
 };
 
 export default function MapaLayout({

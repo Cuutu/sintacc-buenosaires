@@ -22,7 +22,7 @@ export function CategoryChips() {
           <Link
             key={cat.href}
             href={cat.href}
-            className="inline-flex h-8 shrink-0 items-center rounded-full border border-[#D9DED4] bg-white px-3 text-[13px] font-medium text-[#2D4A34] transition-colors hover:border-olive/35 hover:bg-[#F6F1E8] sm:h-9 sm:px-3.5 sm:text-sm"
+            className="inline-flex h-7 shrink-0 items-center rounded-full border border-[#D9DED4] bg-white px-2.5 text-[12px] font-medium text-[#2D4A34] transition-colors hover:border-olive/35 hover:bg-[#F6F1E8] sm:h-9 sm:px-3.5 sm:text-sm"
           >
             {cat.label}
           </Link>

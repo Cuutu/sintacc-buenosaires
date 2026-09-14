@@ -1,21 +1,38 @@
 /**
  * Parsea horarios en formato libre (ej: "Lun-Vie 9-18, Sáb 10-14")
  * y determina si el lugar está abierto ahora.
- * Usa timezone Argentina (America/Argentina/Buenos_Aires).
+ * Reloj: America/Argentina/Buenos_Aires (UTC-3).
  */
 
-const ARGENTINA_OFFSET = -3 // UTC-3
+const AR_TZ = "America/Argentina/Buenos_Aires"
 
-function getLocalMinutes(now: Date): number {
-  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes()
-  const localMinutes = utcMinutes + ARGENTINA_OFFSET * 60
-  return ((localMinutes % (24 * 60)) + 24 * 60) % (24 * 60)
+const WEEKDAY_TO_INDEX: Record<string, number> = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
 }
 
-function getLocalDay(now: Date): number {
-  const utcHours = now.getUTCHours()
-  const localDay = now.getUTCDay() + (utcHours + ARGENTINA_OFFSET < 0 ? -1 : 0)
-  return ((localDay % 7) + 7) % 7
+function getArgentinaClock(now: Date): { day: number; minutes: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: AR_TZ,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now)
+  const weekday = (parts.find((part) => part.type === "weekday")?.value ?? "Sun")
+    .slice(0, 3)
+    .toLowerCase()
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0)
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0)
+  return {
+    day: WEEKDAY_TO_INDEX[weekday] ?? 0,
+    minutes: hour * 60 + minute,
+  }
 }
 
 // 0 = Domingo, 1 = Lun, ..., 6 = Sáb
@@ -29,14 +46,25 @@ const DAY_NAMES: Record<string, number> = {
   sab: 6, sáb: 6, sabado: 6, sábado: 6,
 }
 
+const AMPM = "(?:a\\.?m\\.?|p\\.?m\\.?|am|pm|hs?)"
+const TIME_TOKEN = `\\d{1,2}(?:[:.]\\d{2})?\\s*${AMPM}?`
+const TIME_RANGE_RE = new RegExp(
+  `(${TIME_TOKEN})\\s*(?:[–—-]|\\ba\\b)\\s*(${TIME_TOKEN})`,
+  "i"
+)
+const TIME_PARSE_RE = new RegExp(
+  `^(\\d{1,2})(?:[:.](\\d{2}))?\\s*(${AMPM})?$`,
+  "i"
+)
+
 function parseTimeStr(str: string): number | null {
-  const m = str.trim().match(/^(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm|hs?)?$/i)
+  const m = str.trim().match(TIME_PARSE_RE)
   if (!m) return null
   let h = parseInt(m[1], 10)
   const min = m[2] ? parseInt(m[2], 10) : 0
-  const ampm = (m[3] || "").toLowerCase()
-  if (ampm === "pm" && h < 12) h += 12
-  if (ampm === "am" && h === 12) h = 0
+  const ampm = (m[3] || "").toLowerCase().replace(/\./g, "")
+  if (ampm.startsWith("p") && h < 12) h += 12
+  if (ampm.startsWith("a") && h === 12) h = 0
   return Math.min(23 * 60 + 59, h * 60 + min)
 }
 
@@ -111,8 +139,7 @@ function parseOpenStatus(
   if (s === "cerrado") return { open: false }
   if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return { open: true }
 
-  const nowMinutes = getLocalMinutes(now)
-  const nowDay = getLocalDay(now)
+  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
   const segments = s
     .split(/[\n,;]+/)
     .map((seg) => seg.trim())
@@ -131,9 +158,7 @@ function parseOpenStatus(
       continue
     }
 
-    const timeMatch = seg.match(
-      /(\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm|hs?)?)\s*[-–a]\s*(\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm|hs?)?)/i
-    )
+    const timeMatch = seg.match(TIME_RANGE_RE)
     if (!timeMatch) continue
     const openM = parseTimeStr(timeMatch[1])
     const closeM = parseTimeStr(timeMatch[2])

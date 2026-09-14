@@ -2,18 +2,38 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { X } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
-import { claimStoreBannerShownSession } from "@/lib/bottom-prompt"
+import {
+  claimStoreBannerShownSession,
+  isStoreBannerUnlocked,
+  shouldShowStoreBanner,
+  subscribeBottomPromptChange,
+  unlockStoreBanner,
+} from "@/lib/bottom-prompt"
 import { CELIMAP_STORE_URLS } from "@/lib/device-platform"
 import { useBottomPrompt } from "@/lib/use-bottom-prompt"
 
 export function StoreAppBanner() {
+  const pathname = usePathname()
   const { prompt, browser, store, ready, debugBanner, dismissStore } = useBottomPrompt()
   const [debugHidden, setDebugHidden] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
   const shownRef = useRef(false)
 
-  const visible = ready && prompt === "store" && store != null && !debugHidden
+  useEffect(() => {
+    if (pathname.startsWith("/lugar/")) unlockStoreBanner()
+  }, [pathname])
+
+  useEffect(() => {
+    const sync = () => setUnlocked(debugBanner || isStoreBannerUnlocked())
+    sync()
+    return subscribeBottomPromptChange(sync)
+  }, [debugBanner])
+
+  const gated = shouldShowStoreBanner({ pathname, unlocked, debugBanner })
+  const visible = ready && prompt === "store" && store != null && !debugHidden && gated
   const href = store ? CELIMAP_STORE_URLS[store] : ""
 
   useEffect(() => {

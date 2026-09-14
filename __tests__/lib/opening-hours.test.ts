@@ -14,6 +14,19 @@ const MARTINEZ_HOURS = `Lunes - Viernes: 7.30 a 19.30 horas
 Sábado: 8 a 19 horas
 Domingo: Cerrado`
 
+const GOOGLE_HOURS = `lunes: 8:00 a.m. – 8:30 p.m.
+martes: Cerrado
+miércoles: 8:00 a.m. – 8:30 p.m.
+jueves: 8:00 a.m. – 8:30 p.m.
+viernes: 8:00 a.m. – 8:30 p.m.
+sábado: 8:30 a.m. – 9:00 p.m.
+domingo: 8:30 a.m. – 9:00 p.m.`
+
+/** Lunes 14 sep 2026 19:09 AR = 22:09 UTC */
+const MONDAY_EVENING = new Date("2026-09-14T22:09:00.000Z")
+/** Martes 15 sep 2026 15:00 AR = 18:00 UTC */
+const TUESDAY_AFTERNOON = new Date("2026-09-15T18:00:00.000Z")
+
 describe("isOpenNow", () => {
   it("no marca cerrado todo el texto solo porque Domingo dice Cerrado", () => {
     expect(isOpenNow(MARTINEZ_HOURS, FRIDAY_AFTERNOON)).toBe(true)
@@ -30,11 +43,20 @@ describe("isOpenNow", () => {
   it("formato corto Lun-Vie sigue andando", () => {
     expect(isOpenNow("Lun-Vie 9-18, Sáb 10-14", FRIDAY_AFTERNOON)).toBe(true)
   })
+
+  it("formato Google a.m./p.m. usa hora Argentina UTC-3", () => {
+    expect(isOpenNow(GOOGLE_HOURS, MONDAY_EVENING)).toBe(true)
+    expect(isOpenNow(GOOGLE_HOURS, TUESDAY_AFTERNOON)).toBe(false)
+  })
 })
 
 describe("getOpenStatusLabel", () => {
   it("abierto muestra hora de cierre si se puede parsear", () => {
     expect(getOpenStatusLabel(MARTINEZ_HOURS, FRIDAY_AFTERNOON)).toBe("Cierra a las 19:30")
+  })
+
+  it("Google p.m. cierra a las 20:30 en UTC-3", () => {
+    expect(getOpenStatusLabel(GOOGLE_HOURS, MONDAY_EVENING)).toBe("Cierra a las 20:30")
   })
 
   it("cerrado no inventa horario", () => {

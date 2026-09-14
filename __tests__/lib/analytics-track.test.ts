@@ -53,13 +53,20 @@ describe("trackEvent + Vercel custom props", () => {
 })
 
 describe("layout Analytics + itunes", () => {
-  it("monta Analytics y meta itunes", () => {
+  it("monta Analytics; Smart App Banner no está en home (fold)", () => {
     const src = fs.readFileSync(path.join(__dirname, "../../app/layout.tsx"), "utf8")
+    const home = fs.readFileSync(path.join(__dirname, "../../app/page.tsx"), "utf8")
+    const mapa = fs.readFileSync(path.join(__dirname, "../../app/mapa/layout.tsx"), "utf8")
+    const itunes = fs.readFileSync(path.join(__dirname, "../../lib/seo/itunes.ts"), "utf8")
     expect(src).toContain('from "@vercel/analytics/next"')
     expect(src).toContain("<Analytics />")
     expect(src).not.toContain("@vercel/analytics/react")
     expect(src).toContain("metadataBase")
-    expect(src).toContain('appId: "6797278308"')
-    expect(src).toContain('appArgument: "https://www.celimap.com.ar"')
+    expect(src).not.toContain("itunes:")
+    expect(home).not.toContain("itunes:")
+    expect(itunes).toContain('appId: "6797278308"')
+    expect(itunes).toContain('appArgument: "https://www.celimap.com.ar"')
+    expect(mapa).toContain("CELIMAP_ITUNES")
+    expect(mapa).toContain("itunes:")
   })
 })

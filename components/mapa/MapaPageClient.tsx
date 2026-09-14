@@ -10,6 +10,7 @@ import { findKnownNeighborhoodSearch } from "@/lib/map-search"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
 import { recordIntentSignal } from "@/lib/analytics-discovery"
+import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
@@ -85,6 +86,10 @@ function MapaContent() {
     mapOpenTracked.current = true
     trackEvent("map_open", { source: "mapa_page" })
   }, [])
+
+  useEffect(() => {
+    if (selectedPlaceId) unlockStoreBanner()
+  }, [selectedPlaceId])
 
   const handleFiltersChange = useCallback((next: MapFilters) => {
     setFilters(next)

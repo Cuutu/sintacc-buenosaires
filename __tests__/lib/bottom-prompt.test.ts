@@ -3,6 +3,7 @@ import {
   isStoreBannerDebugQuery,
   resolveBottomPrompt,
   readBottomPromptSnapshot,
+  shouldShowStoreBanner,
   STORE_BANNER_SNOOZE_MS,
 } from "@/lib/bottom-prompt"
 
@@ -134,5 +135,17 @@ describe("resolveBottomPrompt", () => {
     })
     expect(storeCase.prompt).toBe("store")
     expect(safariCase.prompt).toBe("install")
+  })
+})
+
+describe("shouldShowStoreBanner", () => {
+  it("home oculta el banner aunque ya esté unlocked", () => {
+    expect(shouldShowStoreBanner({ pathname: "/", unlocked: true })).toBe(false)
+  })
+
+  it("mapa/lugar muestran si unlocked; debug fuerza home", () => {
+    expect(shouldShowStoreBanner({ pathname: "/mapa", unlocked: false })).toBe(false)
+    expect(shouldShowStoreBanner({ pathname: "/mapa", unlocked: true })).toBe(true)
+    expect(shouldShowStoreBanner({ pathname: "/", unlocked: false, debugBanner: true })).toBe(true)
   })
 })
