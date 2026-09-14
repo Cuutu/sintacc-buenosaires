@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
   alternates: { canonical: `${BASE_URL}/explorar` },
   openGraph: {
-    title: "Explorar lugares sin gluten - Mapa para celÃ­acos",
+    title: "Explorar lugares sin gluten - Mapa para celíacos",
     description:
-      "ExplorÃ¡ el mapa para celÃ­acos: restaurantes, cafÃ©s y panaderÃ­as aptas en todo el mundo.",
+      "Explorá el mapa para celíacos: restaurantes, cafés y panaderías aptas en todo el mundo.",
     url: `${BASE_URL}/explorar`,
     type: "website",
   },

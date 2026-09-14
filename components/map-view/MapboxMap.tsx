@@ -509,6 +509,18 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             center: initialCenter ?? CABA_CENTER,
             zoom: initialZoom ?? CABA_ZOOM,
             failIfMajorPerformanceCaveat: false,
+            transformRequest: (url, resourceType) => {
+              // Studio publish queda cacheado en CDN. fresh=true pide el style publicado ya.
+              if (
+                !darkStyle &&
+                resourceType === "Style" &&
+                url.includes("cmtnrjtlq003a01qmclt69831") &&
+                !url.includes("fresh=true")
+              ) {
+                return { url: `${url}${url.includes("?") ? "&" : "?"}fresh=true` }
+              }
+              return { url }
+            },
           })
           instance.on("load", () => {
             if (disposedRef.current || isPrivateGuide) return

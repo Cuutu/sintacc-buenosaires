@@ -1,3 +1,5 @@
+import { repairUtf8Mojibake } from "@/lib/opening-hours"
+
 /**
  * Campos de LISTADO público (mapa / cards / featured).
  * El detalle GET /api/places/[id] sigue rico (contact, hours, snapshot).
@@ -97,7 +99,9 @@ export function toPublicPlaceListItem(
     featured: place.featured,
     featuredOrder: place.featuredOrder,
     googlePlaceId: place.googlePlaceId,
-    openingHours: place.openingHours,
+    openingHours: place.openingHours
+      ? repairUtf8Mojibake(place.openingHours)
+      : place.openingHours,
     googleSnapshot: place.googleSnapshot
       ? {
           rating: place.googleSnapshot.rating,

@@ -21,7 +21,7 @@ import {
 import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
 import { animateSpring, EASE_OUT, MOTION_MS } from "./motion"
 
-export const MOBILE_SHEET_COMPACT_PX = 168
+export const MOBILE_SHEET_COMPACT_PX = 196
 export const MOBILE_SHEET_EXPANDED_PX = 320
 export const CLOSE_THRESHOLD_PX = 72
 export const CAMERA_SHEET_GAP_PX = 8
@@ -293,7 +293,11 @@ export function MobileMapBottomSheet({
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <PlaceSafetyBadge place={place} size="sm" />
-                <PlaceRatingRow place={place} className="text-[12px]" />
+                <PlaceRatingRow
+                  place={place}
+                  className="text-[12px]"
+                  emptyCommunity={expanded ? "when-google" : "never"}
+                />
               </div>
               {meta ? (
                 <p className="mt-1 truncate text-[12.5px] font-medium text-[#5F6B63]">{meta}</p>
@@ -301,7 +305,7 @@ export function MobileMapBottomSheet({
               {address ? (
                 <p className="mt-0.5 truncate text-[12px] text-[#5F6B63]/90">{address}</p>
               ) : null}
-              {detailTags.length > 0 ? (
+              {expanded && detailTags.length > 0 ? (
                 <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
                   {detailTags.map((tag) => (
                     <span
@@ -327,18 +331,20 @@ export function MobileMapBottomSheet({
                 ) : (
                   <span />
                 )}
-                <a
-                  href={directionsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-directions="true"
-                  data-place-id={String(place._id)}
-                  onClick={(event) => event.stopPropagation()}
-                  className="pointer-events-auto relative z-[2] inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
-                >
-                  <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                  Cómo llegar
-                </a>
+                {expanded ? (
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-directions="true"
+                    data-place-id={String(place._id)}
+                    onClick={(event) => event.stopPropagation()}
+                    className="pointer-events-auto relative z-[2] inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
+                  >
+                    <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                    Cómo llegar
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>

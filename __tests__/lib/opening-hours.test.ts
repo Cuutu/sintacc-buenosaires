@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { getOpenStatusLabel, isOpenNow } from "@/lib/opening-hours"
+import { getOpenStatusLabel, isOpenNow, repairUtf8Mojibake, splitOpeningHoursLines } from "@/lib/opening-hours"
 
 /** Viernes 14 ago 2026 15:21 en Argentina = 18:21 UTC */
 const FRIDAY_AFTERNOON = new Date("2026-08-14T18:21:00.000Z")
@@ -44,5 +44,24 @@ describe("getOpenStatusLabel", () => {
   it("sin dato no muestra placeholder", () => {
     expect(getOpenStatusLabel(undefined)).toBeNull()
     expect(getOpenStatusLabel("")).toBeNull()
+  })
+})
+
+describe("repairUtf8Mojibake", () => {
+  it("arregla Miércoles y Sábado rotos", () => {
+    expect(repairUtf8Mojibake("Mi\u00C3\u00A9rcoles")).toBe("Miércoles")
+    expect(repairUtf8Mojibake("S\u00C3\u00A1bado")).toBe("Sábado")
+    expect(repairUtf8Mojibake("Lunes - 8 a 20")).toBe("Lunes - 8 a 20")
+  })
+})
+
+describe("splitOpeningHoursLines", () => {
+  it("parte el bloque de días en líneas y repara encoding", () => {
+    const raw =
+      "Lunes - 8 a 20 horas Martes - 8 a 20 horas Mi\u00C3\u00A9rcoles - 8 a 20 horas Jueves - 8 a 20 horas"
+    const lines = splitOpeningHoursLines(raw)
+    expect(lines[0]).toBe("Lunes - 8 a 20 horas")
+    expect(lines).toContain("Martes - 8 a 20 horas")
+    expect(lines).toContain("Miércoles - 8 a 20 horas")
   })
 })

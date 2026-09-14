@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { ChevronDown, Clock } from "lucide-react"
-import { isOpenNow } from "@/lib/opening-hours"
+import { isOpenNow, splitOpeningHoursLines } from "@/lib/opening-hours"
 
 export function PlaceHoursToggle({ hours }: { hours: string }) {
   const [open, setOpen] = useState(false)
   const status = isOpenNow(hours)
-  const parts = hours.split(/[,;]/).map((p) => p.trim()).filter(Boolean)
+  const parts = splitOpeningHoursLines(hours)
   const summary = parts[0] ?? hours
-  const expandable = parts.length > 1 || hours.length > 42
+  const expandable = parts.length > 1 || summary.length > 42
 
   return (
     <div className="flex items-start gap-3 py-4">
@@ -18,7 +18,7 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-base text-[#1F4D35]">
-              {expandable ? (open ? "Horarios" : summary) : hours}
+              {expandable ? (open ? "Horarios" : summary) : summary}
             </p>
             {status != null && (
               <p className="mt-1 text-base font-semibold text-[#1F4D35]">
@@ -46,7 +46,7 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-base text-[#5F6B63]">{hours}</p>
+            <p className="mt-2 text-base text-[#5F6B63]">{summary}</p>
           )
         )}
       </div>

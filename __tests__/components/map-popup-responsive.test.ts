@@ -42,7 +42,7 @@ describe("popup mapa responsive", () => {
       path.join(process.cwd(), "components/map-view/MobileMapBottomSheet.tsx"),
       "utf8"
     )
-    expect(src).toContain("MOBILE_SHEET_COMPACT_PX = 168")
+    expect(src).toContain("MOBILE_SHEET_COMPACT_PX = 196")
     expect(src).toContain("CLOSE_THRESHOLD_PX")
     expect(src).toContain('data-directions="true"')
     expect(src).toContain('data-favorite="true"')

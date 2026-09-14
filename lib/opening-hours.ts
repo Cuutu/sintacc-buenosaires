@@ -75,13 +75,39 @@ function formatClock(totalMinutes: number): string {
   return `${h}:${String(m).padStart(2, "0")}`
 }
 
+/** UTF-8 leído como Latin-1: "MiÃ©rcoles" → "Miércoles". */
+export function repairUtf8Mojibake(input: string): string {
+  if (!/[ÃÂ]/.test(input)) return input
+  try {
+    const bytes = Uint8Array.from(input, (ch) => ch.charCodeAt(0) & 0xff)
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes)
+    if (!decoded || decoded.includes("\uFFFD") || decoded === input) return input
+    return decoded
+  } catch {
+    return input
+  }
+}
+
+const DAY_LINE_SPLIT =
+  /(?=\b(?:Lunes|Martes|Miércoles|Miercoles|Jueves|Viernes|Sábado|Sabado|Domingo)\b)/gi
+
+/** Líneas de horario para UI. Repara encoding y parte por día. */
+export function splitOpeningHoursLines(raw: string): string[] {
+  const text = repairUtf8Mojibake(raw).replace(/\s+/g, " ").trim()
+  if (!text) return []
+  const byPunct = text.split(/[,;|\n]+/).map((part) => part.trim()).filter(Boolean)
+  if (byPunct.length > 1) return byPunct
+  const byDay = text.split(DAY_LINE_SPLIT).map((part) => part.trim()).filter(Boolean)
+  return byDay.length > 1 ? byDay : [text]
+}
+
 function parseOpenStatus(
   openingHours: string | undefined | null,
   now: Date
 ): ParsedOpenStatus | null {
   if (!openingHours || !openingHours.trim()) return null
 
-  const s = openingHours.toLowerCase().trim()
+  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
   if (s === "cerrado") return { open: false }
   if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return { open: true }
 
@@ -174,7 +200,7 @@ export function parseOpeningHours(raw?: string): WeekHours {
   const week = emptyWeekHours()
   if (!raw?.trim()) return week
 
-  const chunks = raw
+  const chunks = repairUtf8Mojibake(raw)
     .split(/[·\n|;]+/)
     .map((c) => c.trim())
     .filter(Boolean)

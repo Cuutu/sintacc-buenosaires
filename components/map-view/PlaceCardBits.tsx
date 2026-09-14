@@ -57,11 +57,13 @@ export function PlaceTypeGlyph({ place }: { place: IPlace }) {
 export function PlaceRatingRow({
   place,
   className,
+  emptyCommunity,
 }: {
   place: IPlace
   className?: string
+  emptyCommunity?: "always" | "when-google" | "never"
 }) {
-  const lines = getPlaceReviewLines(place)
+  const lines = getPlaceReviewLines(place, emptyCommunity ? { emptyCommunity } : undefined)
   if (lines.length === 0) return null
   return (
     <div className={cn("flex flex-col gap-1", className)}>
