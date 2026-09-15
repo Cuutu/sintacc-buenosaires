@@ -9,8 +9,11 @@ import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
 import type { ReviewItem } from "@/components/admin/types"
 import { daysSince } from "@/lib/admin-quality"
 import { adminUi } from "@/lib/admin-ui"
+import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
 
 export type AdminReviewsSectionProps = {
+  estadoFilter: string
+  onEstadoFilter: (value: string) => void
   reviews: ReviewItem[]
   reviewsLoading: boolean
   reviewSearch: string
@@ -41,6 +44,7 @@ const {
       </p>
     </div>
 
+    <AdminEstadoFilter value={props.estadoFilter} onChange={props.onEstadoFilter} />
     <div className="flex flex-wrap items-center gap-2 border-b border-[#E8E1D6] px-5 py-3">
       <div className="relative flex-1 min-w-[180px] max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -107,7 +111,7 @@ const {
                     </span>
                     <span>·</span>
                     <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
-                    {review.status === "hidden" && daysSince(review.createdAt) != null && daysSince(review.createdAt)! >= 2 ? (
+                    {(review.estado ?? "pendiente") === "pendiente" && daysSince(review.createdAt) != null && daysSince(review.createdAt)! >= 2 ? (
                       <span className="font-medium text-[#C85A2E]">
                         · {daysSince(review.createdAt)} días sin resolver
                       </span>
@@ -137,9 +141,10 @@ const {
               <ReviewAdminReplyForm
                 reviewId={review._id}
                 existingReply={review.adminReply}
-                onSuccess={() => fetchReviews(reviewFilter || undefined)}
+                onSuccess={() => { window.dispatchEvent(new Event("admin:counts-changed")); fetchReviews(reviewFilter || undefined) }}
                 compact
               />
+              <AdminEstadoActions endpoint={`/api/admin/reviews/${review._id}`} estado={review.estado} onSaved={() => fetchReviews()} />
               <div className="flex flex-wrap gap-2 mt-3">
                 {(review as any).pinned ? (
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1"

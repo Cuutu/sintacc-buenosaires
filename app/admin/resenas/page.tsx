@@ -8,12 +8,12 @@ export default async function AdminResenasPage() {
     <Suspense>
       <AdminModulePage
         title="Reseñas"
-        subtitle="Moderá reseñas de lugares y marcas. Las reportadas pesan más si llevan días."
+        subtitle="Moderá reseñas de lugares y emprendimientos. Las reportadas pesan más si llevan días."
         counts={counts}
         defaultSection="reviews"
         tabs={[
           { id: "reviews", label: "Lugares" },
-          { id: "ventureReviews", label: "Marcas" },
+          { id: "ventureReviews", label: "Emprendimientos" },
         ]}
       />
     </Suspense>

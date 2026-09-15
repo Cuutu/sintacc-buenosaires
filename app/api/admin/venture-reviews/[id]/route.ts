@@ -4,6 +4,8 @@ import { VentureReview } from "@/models/VentureReview"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
+import { isAdminEstado } from "@/lib/admin-estado"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 export async function PATCH(
   request: NextRequest,
@@ -21,6 +23,14 @@ export async function PATCH(
 
     const body = await request.json()
     const { action } = body
+
+    if ("estado" in body) {
+      if (!isAdminEstado(body.estado)) return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
+      const review = await VentureReview.findByIdAndUpdate(params.id, { $set: { estado: body.estado } }, { new: true, runValidators: true })
+      if (!review) return NextResponse.json({ error: "Reseña no encontrada" }, { status: 404 })
+      invalidateApiCache(["admin:counts"])
+      return NextResponse.json({ review })
+    }
 
     if (!["hide", "unhide", "pin", "unpin"].includes(action)) {
       return NextResponse.json({ error: "Acción inválida" }, { status: 400 })

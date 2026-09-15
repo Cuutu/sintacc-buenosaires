@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/middleware"
 import { ventureSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
-import { ZodError } from "zod"
+import { z, ZodError } from "zod"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { generateUniqueVentureSlug } from "@/lib/venture-slug"
 
@@ -24,7 +24,9 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const parsed = ventureSchema.partial().parse(body)
+    const parsed = ventureSchema.partial().extend({
+      responsibleEmail: z.union([z.string().trim().email().max(254), z.literal("")]).optional(),
+    }).parse(body)
 
     const existing = await Venture.findById(params.id)
     if (!existing) {
@@ -32,6 +34,7 @@ export async function PATCH(
     }
 
     const update: Record<string, unknown> = { ...parsed }
+    if (parsed.contact) update.contact = { ...existing.contact, ...parsed.contact }
     if ((parsed.name || parsed.zone) && !parsed.slug) {
       const name = (parsed.name as string) ?? existing.name
       const zone = (parsed.zone as string) ?? existing.zone

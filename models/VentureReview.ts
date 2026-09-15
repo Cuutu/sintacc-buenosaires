@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
+import { ADMIN_ESTADOS, type AdminEstado } from "@/lib/admin-estado"
 
 export interface IVentureReview extends Document {
   ventureId: mongoose.Types.ObjectId
@@ -6,6 +7,7 @@ export interface IVentureReview extends Document {
   rating: number
   comment: string
   status: "visible" | "hidden"
+  estado: AdminEstado
   pinned?: boolean
   createdAt: Date
   updatedAt: Date
@@ -13,6 +15,7 @@ export interface IVentureReview extends Document {
 
 const VentureReviewSchema = new Schema<IVentureReview>(
   {
+    estado: { type: String, enum: ADMIN_ESTADOS, default: "pendiente", index: true },
     ventureId: {
       type: Schema.Types.ObjectId,
       ref: "Venture",

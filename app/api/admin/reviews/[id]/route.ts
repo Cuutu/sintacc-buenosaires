@@ -6,6 +6,8 @@ import { sanitizeHtml } from "@/lib/validations"
 import { ADMIN_REPLY_DISPLAY_NAME } from "@/lib/constants"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
+import { isAdminEstado } from "@/lib/admin-estado"
+import { invalidateApiCache } from "@/lib/api-cache"
 
 export async function PATCH(
   request: NextRequest,
@@ -27,6 +29,14 @@ export async function PATCH(
     const body = await request.json()
     const { action } = body
 
+    if ("estado" in body) {
+      if (!isAdminEstado(body.estado)) return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
+      const review = await Review.findByIdAndUpdate(params.id, { $set: { estado: body.estado } }, { new: true, runValidators: true })
+      if (!review) return NextResponse.json({ error: "Reseña no encontrada" }, { status: 404 })
+      invalidateApiCache(["admin:counts"])
+      return NextResponse.json({ review })
+    }
+
     if (!["hide", "unhide", "pin", "unpin", "reply", "delete_reply"].includes(action)) {
       return NextResponse.json(
         { error: "Acción inválida" },
@@ -47,6 +57,7 @@ export async function PATCH(
       }
       update = {
         adminReply: sanitizeHtml(reply),
+        estado: "respondido",
         adminReplyAt: new Date(),
         adminReplyBy: ADMIN_REPLY_DISPLAY_NAME,
       }
@@ -77,6 +88,7 @@ export async function PATCH(
       )
     }
     
+    invalidateApiCache(["admin:counts"])
     return NextResponse.json({
       message,
       review,

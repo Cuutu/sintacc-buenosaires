@@ -59,10 +59,10 @@ export async function GET(request: NextRequest) {
       })),
       ...ventures.map((v) => ({
         id: `v-${v._id}`,
-        kind: "marca",
+        kind: "emprendimiento",
         label: v.name,
         hint: v.zone,
-        href: "/admin/marcas",
+        href: "/admin/emprendimientos",
       })),
       ...suggestions.map((s) => ({
         id: `s-${s._id}`,

@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import type { VentureReviewItem } from "@/components/admin/types"
+import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
 
 export type AdminVentureReviewsSectionProps = {
+  estadoFilter: string
+  onEstadoFilter: (value: string) => void
   reviews: VentureReviewItem[]
   loading: boolean
   search: string
@@ -18,6 +21,8 @@ export type AdminVentureReviewsSectionProps = {
 }
 
 export function AdminVentureReviewsSection({
+  estadoFilter,
+  onEstadoFilter,
   reviews,
   loading,
   search,
@@ -32,10 +37,11 @@ export function AdminVentureReviewsSection({
       <div className="px-4 py-3 border-b border-border bg-card">
         <h2 className="text-sm font-bold">Reseñas de emprendimientos</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Moderá opiniones de la comunidad sobre marcas y proyectos
+          Moderá opiniones de la comunidad sobre emprendimientos y proyectos
         </p>
       </div>
 
+      <AdminEstadoFilter value={estadoFilter} onChange={onEstadoFilter} />
       <div className="px-4 py-2 border-b border-border bg-card/50 flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[180px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -112,6 +118,7 @@ export function AdminVentureReviewsSection({
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{review.comment}</p>
+                <AdminEstadoActions endpoint={`/api/admin/venture-reviews/${review._id}`} estado={review.estado} onSaved={() => fetchReviews()} />
                 <div className="flex flex-wrap gap-2">
                   {review.status === "visible" ? (
                     <Button size="sm" variant="outline" onClick={() => handleAction(review._id, "hide")}>

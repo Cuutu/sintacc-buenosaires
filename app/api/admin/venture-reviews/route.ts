@@ -4,6 +4,7 @@ import { Venture } from "@/models/Venture"
 import { VentureReview } from "@/models/VentureReview"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
+import { estadoQuery, isAdminEstado } from "@/lib/admin-estado"
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,6 +21,9 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     const query: Record<string, unknown> = {}
+    const estado = searchParams.get("estado")
+    if (estado && !isAdminEstado(estado)) return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
+    if (isAdminEstado(estado)) query.$and = [estadoQuery(estado)]
     if (status === "visible" || status === "hidden") {
       query.status = status
     }

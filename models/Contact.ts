@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose"
+import { ADMIN_ESTADOS, type AdminEstado } from "@/lib/admin-estado"
 
 export interface IContact extends Document {
   userId: mongoose.Types.ObjectId
@@ -7,11 +8,13 @@ export interface IContact extends Document {
   subject: string
   message: string
   status: "pending" | "read"
+  estado: AdminEstado
   createdAt: Date
 }
 
 const ContactSchema = new Schema<IContact>(
   {
+    estado: { type: String, enum: ADMIN_ESTADOS, default: "pendiente", index: true },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

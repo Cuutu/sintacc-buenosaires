@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Fraunces, Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { LayoutChrome } from "@/components/layout/LayoutChrome";
@@ -148,6 +149,7 @@ export default function RootLayout({
           <ChatWidgetHost />
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

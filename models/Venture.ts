@@ -6,6 +6,7 @@ import {
 } from "@/lib/venture-constants"
 
 export interface IVenture extends Document {
+  responsibleEmail?: string
   name: string
   slug?: string
   category: (typeof ventureCategoryIds)[number]
@@ -28,6 +29,7 @@ export interface IVenture extends Document {
 
 const VentureSchema = new Schema<IVenture>(
   {
+    responsibleEmail: { type: String, trim: true, lowercase: true, maxlength: 254, select: false },
     name: { type: String, required: true, trim: true },
     slug: { type: String, trim: true, unique: true, sparse: true, index: true },
     category: {

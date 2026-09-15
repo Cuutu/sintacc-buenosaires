@@ -42,7 +42,7 @@ const PRESETS: Array<{
   {
     id: "latest_ventures",
     label: "Últimos emprendimientos",
-    desc: "Marcas nuevas en Celimap",
+    desc: "Emprendimientos nuevas en Celimap",
   },
   {
     id: "neighborhood",

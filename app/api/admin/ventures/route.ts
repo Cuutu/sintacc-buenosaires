@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [ventures, total] = await Promise.all([
-      Venture.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Venture.find(query).select("+responsibleEmail").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Venture.countDocuments(query),
     ])
 

@@ -209,7 +209,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap lg:flex-wrap">
           {chip(placeFilter === "pending", "Pendientes", () => {
             setPlaceFilter(placeFilter === "pending" ? "" : "pending")
             apply(placeFilter === "pending" ? "" : "pending")
@@ -435,7 +435,27 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
           <p className="px-5 py-10 text-center text-sm text-[#6B746C]">No hay lugares</p>
         ) : (
           <>
-            <div className="hidden items-center gap-3 border-b border-[#E8E1D6] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B746C] md:grid md:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_auto]">
+            <div className="lg:hidden space-y-3 p-3">
+              {places.map(place => {
+                const completeness = placeCompleteness(place)
+                return <article key={place._id} className="rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 break-words font-semibold">{place.name}</h3>
+                    <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs">{place.status === "approved" ? "Publicado" : "Pendiente"}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-[#6B746C]">{[place.locality || place.neighborhood, place.province].filter(Boolean).join(" · ") || "Sin ubicación"}</p>
+                  <p className="mt-4 text-xs">Completitud: {completeness}%</p>
+                  <div role="progressbar" aria-label={`Completitud de ${place.name}`} aria-valuenow={completeness} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E1D6]">
+                    <div className="h-full rounded-full bg-[#234A33]" style={{ width: `${completeness}%` }} />
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <label className="flex min-h-11 items-center gap-2 text-xs"><input type="checkbox" checked={selectedPlaceIds.has(place._id)} onChange={() => togglePlaceSelection(place._id)} aria-label={`Seleccionar ${place.name}`} />Seleccionar</label>
+                    <button type="button" className={cn(adminUi.btnPrimary, "min-h-12 flex-1")} onClick={() => setEditingPlaceId(place._id)}>Editar</button>
+                  </div>
+                </article>
+              })}
+            </div>
+            <div className="hidden items-center gap-3 border-b border-[#E8E1D6] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B746C] lg:grid lg:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_auto]">
               <input
                 type="checkbox"
                 checked={selectedPlaceIds.size === places.length && places.length > 0}
@@ -450,7 +470,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               <span>Acciones</span>
             </div>
 
-            <div className="divide-y divide-[#E8E1D6]">
+            <div className="hidden divide-y divide-[#E8E1D6] lg:block">
               {places.map((place) => {
                 const level = inferSafetyLevel(place)
                 const cfg = getSafetyBadge(level)

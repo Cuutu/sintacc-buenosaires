@@ -1,27 +1,9 @@
-import { Suspense } from "react"
-import Link from "next/link"
-import { getAdminCounts } from "@/lib/admin-ops"
-import { AdminModulePage } from "@/components/admin/ops/AdminModulePage"
-import { adminUi } from "@/lib/admin-ui"
+import { redirect } from "next/navigation"
 
-export default async function AdminMarcasPage() {
-  const counts = await getAdminCounts()
-  return (
-    <Suspense>
-      <AdminModulePage
-        title="Marcas"
-        counts={counts}
-        defaultSection="ventures"
-        tabs={[
-          { id: "ventures", label: "Publicadas" },
-          { id: "ventureSuggestions", label: "Cola", query: "cola=1" },
-        ]}
-        actions={
-          <Link href="/sugerir-emprendimiento" className={adminUi.btnPrimary}>
-            Publicar marca
-          </Link>
-        }
-      />
-    </Suspense>
-  )
+export default function AdminAliasPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value != null) query.set(key, Array.isArray(value) ? value[0] : value)
+  }
+  redirect("/admin/emprendimientos" + (query.size ? `?${query}` : ""))
 }

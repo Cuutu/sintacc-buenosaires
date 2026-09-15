@@ -19,7 +19,6 @@ import {
   softLeaveMapa,
   softEnterMapa,
 } from "./helpers"
-import { E2E_STATS } from "./fixtures/payloads"
 
 const host = () =>
   new URL(test.info().project.use.baseURL || "http://127.0.0.1:3000").host
@@ -31,17 +30,8 @@ test.describe("suite crítica @hermetic @critical", () => {
     const cancels: string[] = []
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page.waitForSelector('[data-testid="home-stats"]', { timeout: 10_000 })
-    const stats = page.getByTestId("home-stats")
-    await expect(stats.getByText(String(E2E_STATS.placesCount), { exact: true })).toBeVisible({
-      timeout: 8_000,
-    })
-    await expect(stats.getByText("lugares")).toBeVisible()
-    await expect(stats.getByText(String(E2E_STATS.reviewsCountGoogle), { exact: true })).toBeVisible()
-    await expect(stats.getByText("reseñas")).toBeVisible()
-    await expect(stats.getByText(String(E2E_STATS.usersCount), { exact: true })).toBeVisible()
-    await expect(stats.getByText("usuarios")).toBeVisible()
-    await expect(stats.locator("li")).toHaveCount(3)
+    await page.waitForSelector('[data-testid="home-open-map"]', { timeout: 10_000 })
+    await expect(page.getByTestId("home-stats")).toHaveCount(0)
     await assertNoAppCrash(page)
     await assertBodyHasVisibleContent(page)
     await expect(page.getByTestId("home-search-bar")).toBeVisible()

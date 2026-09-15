@@ -40,6 +40,7 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   const { status } = useSession()
   const urlParams = useSearchParams()
+  const [gestionFilter, setGestionFilter] = useState(urlParams.get("estado") || "")
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
   const [ventureSuggestions, setVentureSuggestions] = useState<VentureSuggestionItem[]>([])
   const [ventures, setVentures] = useState<VentureItem[]>([])
@@ -222,11 +223,12 @@ export function AdminDashboard({
     }
   }, [])
 
-  const fetchReviews = async (status?: string) => {
+  const fetchReviews = async (status?: string, estado = gestionFilter) => {
     setReviewsLoading(true)
     try {
       const params = new URLSearchParams()
       const filter = status ?? reviewFilter
+      if (estado) params.set("estado", estado)
       if (filter) params.set("status", filter)
       if (reviewSearch.trim()) params.set("search", reviewSearch.trim())
       const res = await fetch(`/api/admin/reviews?${params}`)
@@ -297,11 +299,12 @@ export function AdminDashboard({
     }
   }
 
-  const fetchContacts = async () => {
+  const fetchContacts = async (estado = gestionFilter) => {
     setContactsLoading(true)
     try {
       const params = new URLSearchParams()
       if (contactSearch.trim()) params.set("search", contactSearch.trim())
+      if (estado) params.set("estado", estado)
       const res = await fetch(`/api/admin/contacts?${params}`)
       const data = await res.json()
       setContacts(data.contacts || [])
@@ -364,11 +367,12 @@ export function AdminDashboard({
     }
   }
 
-  const fetchVentureReviews = async (status?: string) => {
+  const fetchVentureReviews = async (status?: string, estado = gestionFilter) => {
     setVentureReviewsLoading(true)
     try {
       const params = new URLSearchParams()
       const filter = status ?? ventureReviewFilter
+      if (estado) params.set("estado", estado)
       if (filter) params.set("status", filter)
       if (ventureReviewSearch.trim()) params.set("search", ventureReviewSearch.trim())
       const res = await fetch(`/api/admin/venture-reviews?${params}`)
@@ -650,7 +654,7 @@ export function AdminDashboard({
             key: "ventureSuggestions",
             icon: "🧁",
             label: "Emprend. sugeridos",
-            desc: "Marcas sin local físico",
+            desc: "Emprendimientos sin local físico",
             badge: counts?.ventureSuggestionsPending ?? ventureSuggestions.length,
             urgent: (counts?.ventureSuggestionsPending ?? 0) > 0,
             onClick: () => {
@@ -683,7 +687,7 @@ export function AdminDashboard({
             key: "ventureReviews",
             icon: "💬",
             label: "Reseñas emprend.",
-            desc: "Opiniones de marcas",
+            desc: "Opiniones de emprendimientos",
             badge: ventureReviews.length || null,
             urgent: false,
             onClick: () => {
@@ -802,6 +806,8 @@ export function AdminDashboard({
 
       {activeSection === "reviews" && (
         <AdminReviewsSection
+          estadoFilter={gestionFilter}
+          onEstadoFilter={(value) => { setGestionFilter(value); fetchReviews(undefined, value) }}
           reviews={reviews}
           reviewsLoading={reviewsLoading}
           reviewSearch={reviewSearch}
@@ -815,6 +821,8 @@ export function AdminDashboard({
 
       {activeSection === "ventureReviews" && (
         <AdminVentureReviewsSection
+          estadoFilter={gestionFilter}
+          onEstadoFilter={(value) => { setGestionFilter(value); fetchVentureReviews(undefined, value) }}
           reviews={ventureReviews}
           loading={ventureReviewsLoading}
           search={ventureReviewSearch}
@@ -896,6 +904,8 @@ export function AdminDashboard({
 
       {activeSection === "contacts" && (
         <AdminContactsSection
+          estadoFilter={gestionFilter}
+          onEstadoFilter={(value) => { setGestionFilter(value); fetchContacts(value) }}
           contacts={contacts}
           contactsLoading={contactsLoading}
           contactSearch={contactSearch}

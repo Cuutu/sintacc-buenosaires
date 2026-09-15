@@ -323,7 +323,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
     { label: "Lugares publicados", value: catalog.placesApproved, note: "Fichas con status aprobado." },
     { label: "Lugares totales", value: catalog.placesTotal, note: "Incluye pendientes." },
     { label: "Sugerencias pendientes", value: catalog.suggestionsPending, note: "Cola de locales." },
-    { label: "Marcas por validar", value: catalog.ventureSuggestionsPending, note: "Cola de emprendimientos." },
+    { label: "Emprendimientos por validar", value: catalog.ventureSuggestionsPending, note: "Cola de emprendimientos." },
     { label: "Destacados activos", value: catalog.featuredCount, note: "Selección manual del admin." },
     { label: "Mensajes pendientes", value: catalog.contactsPending, note: "Bandeja de contacto." },
     { label: "Reseñas ocultas", value: catalog.reviewsHidden, note: "Reportes o moderación." },

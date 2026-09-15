@@ -1,4 +1,5 @@
 import type { DuplicateCandidate } from "@/lib/place-duplicates"
+import type { AdminEstado } from "@/lib/admin-estado"
 
 export type DuplicateWarningItem = DuplicateCandidate & {
   matchLevel: "exact" | "likely"
@@ -62,6 +63,7 @@ export type SuggestionItem = {
 }
 
 export type ReviewItem = {
+  estado?: AdminEstado
   _id: string
   placeId: { name: string; address?: string; _id: string }
   userId?: { name?: string; image?: string }
@@ -101,6 +103,7 @@ export type PlaceItem = {
 }
 
 export type ContactItem = {
+  estado?: AdminEstado
   _id: string
   name: string
   email: string
@@ -132,6 +135,7 @@ export type VentureSuggestionItem = {
 }
 
 export type VentureItem = {
+  responsibleEmail?: string
   _id: string
   name: string
   category: string
@@ -159,10 +163,12 @@ export type AdminCounts = {
   placesNoCoords?: number
   placesIncomplete?: number
   reviewsHidden?: number
+  reviewsPending?: number
   featuredCount?: number
 }
 
 export type VentureReviewItem = {
+  estado?: AdminEstado
   _id: string
   rating: number
   comment: string

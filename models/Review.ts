@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
 import { features } from "@/lib/features"
+import { ADMIN_ESTADOS, type AdminEstado } from "@/lib/admin-estado"
 
 export interface IReview extends Document {
   placeId: mongoose.Types.ObjectId
@@ -9,6 +10,7 @@ export interface IReview extends Document {
   separateKitchen: "yes" | "no" | "unknown"
   comment: string
   status: "visible" | "hidden"
+  estado: AdminEstado
   pinned?: boolean
   // Fase 2
   contaminationIncident?: boolean
@@ -23,6 +25,7 @@ export interface IReview extends Document {
 
 const ReviewSchema = new Schema<IReview>(
   {
+    estado: { type: String, enum: ADMIN_ESTADOS, default: "pendiente", index: true },
     placeId: {
       type: Schema.Types.ObjectId,
       ref: "Place",

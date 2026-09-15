@@ -1,6 +1,8 @@
 "use client"
 
 import { Search } from "lucide-react"
+import { useState } from "react"
+import { VentureContactEditModal } from "./VentureContactEditModal"
 import { getCategoryLabel } from "@/lib/venture-constants"
 import type { VentureItem } from "@/components/admin/types"
 import { toast } from "sonner"
@@ -26,6 +28,7 @@ export function AdminVenturesSection({
   setSearch,
   fetchVentures,
 }: AdminVenturesSectionProps) {
+  const [editing, setEditing] = useState<VentureItem | null>(null)
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`¿Eliminar "${name}"?`)) return
     try {
@@ -57,7 +60,7 @@ export function AdminVenturesSection({
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B746C]" />
           <input
-            placeholder="Buscar marca..."
+            placeholder="Buscar emprendimiento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 w-full rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] pl-9 pr-3 text-sm text-[#234A33] outline-none"
@@ -103,6 +106,7 @@ export function AdminVenturesSection({
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" className={adminUi.btnGhost} onClick={() => setEditing(v)}>Editar contacto</button>
                 <a
                   href={`/emprendimientos/${(v as { slug?: string }).slug ?? v._id}`}
                   target="_blank"
@@ -123,6 +127,7 @@ export function AdminVenturesSection({
           ))}
         </div>
       )}
+      {editing && <VentureContactEditModal key={editing._id} venture={editing} onClose={() => setEditing(null)} onSaved={fetchVentures} />}
     </div>
   )
 }

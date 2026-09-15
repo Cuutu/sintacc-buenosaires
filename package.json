@@ -73,6 +73,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.7.5",
     "@vercel/og": "^0.11.1",
+    "@vercel/speed-insights": "^2.0.0",
     "ai": "^5.0.255",
     "autoprefixer": "^10.4.0",
     "class-variance-authority": "^0.7.0",

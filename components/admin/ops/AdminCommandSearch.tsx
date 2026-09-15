@@ -49,7 +49,7 @@ export function AdminCommandSearch({
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar lugares, marcas, usuarios, mensajes…"
+          placeholder="Buscar lugares, emprendimientos, usuarios, mensajes…"
           className="h-14 w-full border-b border-[#E8E1D6] bg-transparent px-4 text-base text-[#234A33] outline-none placeholder:text-[#6B746C]"
         />
         <ul className="max-h-80 overflow-y-auto py-2">

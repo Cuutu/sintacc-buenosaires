@@ -1,13 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { Search } from "lucide-react"
 import type { ContactItem } from "@/components/admin/types"
 import { daysSince } from "@/lib/admin-quality"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
+import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
+import { contactReplyUrl } from "@/lib/admin-estado"
 
 export type AdminContactsSectionProps = {
+  estadoFilter: string
+  onEstadoFilter: (value: string) => void
   contacts: ContactItem[]
   contactsLoading: boolean
   contactSearch: string
@@ -15,21 +19,11 @@ export type AdminContactsSectionProps = {
   fetchContacts: () => void
 }
 
-const LABELS = [
-  { id: "all", label: "Todos" },
-  { id: "pending", label: "Nuevo" },
-  { id: "read", label: "Respondido" },
-] as const
-
 export function AdminContactsSection(props: AdminContactsSectionProps) {
   const { contacts, contactsLoading, contactSearch, setContactSearch, fetchContacts } = props
-  const [filter, setFilter] = useState<(typeof LABELS)[number]["id"]>("all")
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const visible = useMemo(() => {
-    if (filter === "all") return contacts
-    return contacts.filter((c) => c.status === filter)
-  }, [contacts, filter])
+  const visible = contacts
 
   const selected = visible.find((c) => c._id === selectedId) ?? visible[0]
 
@@ -52,18 +46,7 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
               Buscar
             </button>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {LABELS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setFilter(item.id)}
-                className={filter === item.id ? adminUi.chipActive : adminUi.chip}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          <AdminEstadoFilter value={props.estadoFilter} onChange={props.onEstadoFilter} />
         </div>
         {contactsLoading ? (
           <p className="px-5 py-10 text-center text-sm text-[#6B746C]">Cargando mensajes...</p>
@@ -83,8 +66,8 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
                 >
                   <span className="text-sm font-semibold text-[#234A33]">{c.subject}</span>
                   <span className="mt-1 text-xs text-[#6B746C]">
-                    {c.name} · {c.status === "pending" ? "Nuevo" : "Respondido"}
-                    {c.status === "pending" && daysSince(c.createdAt) != null && daysSince(c.createdAt)! >= 2
+                    {c.name} · {c.estado ?? "pendiente"}
+                    {(c.estado ?? "pendiente") === "pendiente" && daysSince(c.createdAt) != null && daysSince(c.createdAt)! >= 2
                       ? ` · ${daysSince(c.createdAt)} días sin resolver`
                       : ""}
                   </span>
@@ -105,12 +88,15 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
             <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[#234A33]">
               {selected.message}
             </p>
-            <a
-              href={`mailto:${selected.email}?subject=${encodeURIComponent(`Re: ${selected.subject}`)}`}
+            <AdminEstadoActions key={selected._id} endpoint={`/api/admin/contacts/${selected._id}`} estado={selected.estado} onSaved={fetchContacts} />
+            {selected.email ? <a
+              href={contactReplyUrl(selected.email, selected.subject, selected.message)}
+              target="_blank"
+              rel="noopener noreferrer"
               className={cn(adminUi.btnPrimary, "mt-6")}
             >
               Responder
-            </a>
+            </a> : <button disabled title="Sin datos de contacto" className={adminUi.btnGhost}>Responder</button>}
           </>
         ) : (
           <p className="text-sm text-[#6B746C]">Elegí un mensaje para responder.</p>

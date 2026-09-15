@@ -10,7 +10,6 @@ import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 import { FAQ_ITEMS, FaqSection } from "@/components/home/FaqSection"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroBackdrop } from "@/components/home/HeroBackdrop"
-import { HeroMetrics } from "@/components/home/HeroMetrics"
 import { CategoryChips } from "@/components/home/CategoryChips"
 import { HomeFeatured } from "@/components/home/HomeFeatured"
 import { HowItWorks } from "@/components/home/HowItWorks"
@@ -85,7 +84,7 @@ export default async function HomePage() {
               CeliMap es un mapa colaborativo Sin TACC en Argentina. Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
-            <div className="order-4 mb-3 grid w-full grid-cols-1 gap-2 md:order-7 md:mb-0 md:grid-cols-[65fr_35fr] md:gap-3">
+            <div className="order-4 mb-3 grid w-full grid-cols-1 gap-2 md:order-6 md:mb-0 md:grid-cols-[65fr_35fr] md:gap-3">
               <Link
                 href="/mapa"
                 data-testid="home-open-map"
@@ -107,12 +106,8 @@ export default async function HomePage() {
               <SearchBar />
             </div>
 
-            <div className="order-6 mb-3 w-full min-w-0 md:order-5 md:mb-5">
+            <div className="order-6 mb-0 w-full min-w-0 md:order-5 md:mb-0">
               <CategoryChips />
-            </div>
-
-            <div className="order-7 mb-0 w-full md:order-6 md:mb-6">
-              <HeroMetrics initialStats={initialStats} />
             </div>
           </div>
         </div>

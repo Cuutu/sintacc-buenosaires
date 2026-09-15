@@ -7,6 +7,7 @@ import {
 import type { AdminCounts } from "@/lib/admin-ops"
 
 const base: AdminCounts = {
+  reviewsPending: 0,
   suggestionsPending: 0,
   ventureSuggestionsPending: 0,
   contactsTotal: 0,

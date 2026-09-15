@@ -48,6 +48,7 @@ export function AdminModulePage({
     section = "places"
   }
   if (status && tabs.some((t) => t.id === "reviews")) section = "reviews"
+  if (params.get("seccion") === "ventureReviews" && tabs.some(t => t.id === "ventureReviews")) section = "ventureReviews"
 
   return (
     <div className="mx-auto max-w-[1280px]">
@@ -62,9 +63,14 @@ export function AdminModulePage({
               {tabs.map((tab) => (
                 <a
                   key={tab.id}
-                  href={tab.query ? `?${tab.query}` : "?"}
+                  href={(() => {
+                    const query = new URLSearchParams(tab.query || "")
+                    if (params.get("estado")) query.set("estado", params.get("estado")!)
+                    if (tab.id === "ventureReviews") query.set("seccion", "ventureReviews")
+                    return `?${query}`
+                  })()}
                   className={cn(
-                    "inline-flex h-10 items-center rounded-2xl px-3 text-sm font-medium transition-colors duration-150",
+                    "inline-flex min-h-11 items-center rounded-2xl px-3 text-sm font-medium transition-colors duration-150",
                     section === tab.id ? "bg-[#234A33] text-[#F8F5EF]" : "text-[#6B746C]"
                   )}
                 >
@@ -77,6 +83,7 @@ export function AdminModulePage({
         </div>
       </div>
       <AdminDashboard
+        key={`${section}:${params.toString()}`}
         initialCounts={counts}
         initialSection={section}
         hideLauncher

@@ -47,7 +47,7 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
           )}
         </h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Marcas sin local físico. Si tiene local abierto, debe ir al mapa.
+          Emprendimientos sin local físico. Si tiene local abierto, debe ir al mapa.
         </p>
       </div>
 

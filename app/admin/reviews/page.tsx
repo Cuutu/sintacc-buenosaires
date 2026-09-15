@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation"
 
-export default function AdminReviewsAliasPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>
-}) {
-  const status = typeof searchParams.status === "string" ? searchParams.status : ""
-  redirect(status ? `/admin/resenas?status=${encodeURIComponent(status)}` : "/admin/resenas")
+export default function AdminAliasPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value != null) query.set(key, Array.isArray(value) ? value[0] : value)
+  }
+  redirect("/admin/resenas" + (query.size ? `?${query}` : ""))
 }

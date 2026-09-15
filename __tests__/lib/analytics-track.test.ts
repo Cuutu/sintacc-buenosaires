@@ -53,13 +53,15 @@ describe("trackEvent + Vercel custom props", () => {
 })
 
 describe("layout Analytics + itunes", () => {
-  it("monta Analytics; Smart App Banner no está en home (fold)", () => {
+  it("monta Analytics + Speed Insights; Smart App Banner no está en home (fold)", () => {
     const src = fs.readFileSync(path.join(__dirname, "../../app/layout.tsx"), "utf8")
     const home = fs.readFileSync(path.join(__dirname, "../../app/page.tsx"), "utf8")
     const mapa = fs.readFileSync(path.join(__dirname, "../../app/mapa/layout.tsx"), "utf8")
     const itunes = fs.readFileSync(path.join(__dirname, "../../lib/seo/itunes.ts"), "utf8")
     expect(src).toContain('from "@vercel/analytics/next"')
     expect(src).toContain("<Analytics />")
+    expect(src).toContain('from "@vercel/speed-insights/next"')
+    expect(src).toContain("<SpeedInsights />")
     expect(src).not.toContain("@vercel/analytics/react")
     expect(src).toContain("metadataBase")
     expect(src).not.toContain("itunes:")
