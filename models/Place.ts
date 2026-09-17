@@ -279,6 +279,7 @@ const PlaceSchema = new Schema<IPlace>(
 
 // Indexes
 PlaceSchema.index({ location: "2dsphere" })
+PlaceSchema.index({ status: 1, "location.lat": 1, "location.lng": 1 })
 PlaceSchema.index({ name: "text", address: "text", neighborhood: "text" })
 PlaceSchema.index({ status: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, type: 1 })

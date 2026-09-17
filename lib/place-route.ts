@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import type { GooglePlaceSnapshot, IPlace } from "@/models/Place"
+import { PUBLIC_PLACE_PAGE_SELECT } from "@/lib/places-public-select"
 
 export interface PlaceRouteDoc {
   _id: { toString(): string }
@@ -34,17 +35,23 @@ async function loadApprovedPlaceByRouteParam(
   await connectDB()
 
   if (!mongoose.Types.ObjectId.isValid(routeParam)) {
-    const bySlug = await Place.findOne({ slug: routeParam, status: "approved" }).lean()
+    const bySlug = await Place.findOne({ slug: routeParam, status: "approved" })
+      .select(PUBLIC_PLACE_PAGE_SELECT)
+      .lean()
     return bySlug as PlaceRouteDoc | null
   }
 
   const byId = await Place.findOne({
     _id: new mongoose.Types.ObjectId(routeParam),
     status: "approved",
-  }).lean()
+  })
+    .select(PUBLIC_PLACE_PAGE_SELECT)
+    .lean()
   if (byId) return byId as PlaceRouteDoc
 
-  const bySlug = await Place.findOne({ slug: routeParam, status: "approved" }).lean()
+  const bySlug = await Place.findOne({ slug: routeParam, status: "approved" })
+    .select(PUBLIC_PLACE_PAGE_SELECT)
+    .lean()
   return bySlug as PlaceRouteDoc | null
 }
 

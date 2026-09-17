@@ -1,3 +1,4 @@
+import { cache } from "react"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Suggestion } from "@/models/Suggestion"
@@ -6,6 +7,8 @@ import { Contact } from "@/models/Contact"
 import { Review } from "@/models/Review"
 import { VentureReview } from "@/models/VentureReview"
 import { estadoQuery } from "@/lib/admin-estado"
+import { getOrSetApiCache } from "@/lib/api-cache"
+import { logSlowServerOp } from "@/lib/logger"
 import {
   MISSING_COORDS,
   MISSING_DESCRIPTION,
@@ -94,68 +97,113 @@ export type AdminOpsSnapshot = {
   priority: PriorityItem[]
 }
 
-export async function getAdminCounts(): Promise<AdminCounts> {
+const ADMIN_COUNTS_CACHE_TTL_MS = 45 * 1000
+
+function facetN(rows?: Array<{ n?: number }>): number {
+  return Number(rows?.[0]?.n || 0)
+}
+
+async function loadAdminCountsFromDb(): Promise<AdminCounts> {
+  const started = Date.now()
   await connectDB()
+  const pendingEstado = estadoQuery("pendiente")
   const [
     suggestionsPending,
     ventureSuggestionsPending,
-    contactsTotal,
-    contactsPending,
-    placesTotal,
-    placesApproved,
-    placesNoPhoto,
-    placesNoHours,
-    placesNoInstagram,
-    placesNoPhone,
-    placesNoWeb,
-    placesNoDescription,
-    placesNoCoords,
-    placesIncomplete,
-    reviewsHidden,
-    featuredCount,
-    placeReviewsPending,
+    contactFacets,
+    placeFacets,
+    reviewFacets,
     ventureReviewsPending,
   ] = await Promise.all([
     Suggestion.countDocuments({ status: "pending" }),
     VentureSuggestion.countDocuments({ status: "pending" }),
-    Contact.countDocuments(),
-    Contact.countDocuments(estadoQuery("pendiente")),
-    Place.countDocuments(),
-    Place.countDocuments({ status: "approved" }),
-    Place.countDocuments({ status: "approved", ...MISSING_PHOTO }),
-    Place.countDocuments({ status: "approved", ...MISSING_HOURS }),
-    Place.countDocuments({ status: "approved", ...MISSING_INSTAGRAM }),
-    Place.countDocuments({ status: "approved", ...MISSING_PHONE }),
-    Place.countDocuments({ status: "approved", ...MISSING_WEB }),
-    Place.countDocuments({ status: "approved", ...MISSING_DESCRIPTION }),
-    Place.countDocuments({ status: "approved", ...MISSING_COORDS }),
-    Place.countDocuments({ status: "approved", ...MISSING_TACC }),
-    Review.countDocuments({ status: "hidden" }),
-    Place.countDocuments({ featured: true }),
-    Review.countDocuments(estadoQuery("pendiente")),
-    VentureReview.countDocuments(estadoQuery("pendiente")),
+    Contact.aggregate<{ total: Array<{ n: number }>; pending: Array<{ n: number }> }>([
+      {
+        $facet: {
+          total: [{ $count: "n" }],
+          pending: [{ $match: pendingEstado }, { $count: "n" }],
+        },
+      },
+    ]),
+    Place.aggregate<{
+      placesTotal: Array<{ n: number }>
+      placesApproved: Array<{ n: number }>
+      placesNoPhoto: Array<{ n: number }>
+      placesNoHours: Array<{ n: number }>
+      placesNoInstagram: Array<{ n: number }>
+      placesNoPhone: Array<{ n: number }>
+      placesNoWeb: Array<{ n: number }>
+      placesNoDescription: Array<{ n: number }>
+      placesNoCoords: Array<{ n: number }>
+      placesIncomplete: Array<{ n: number }>
+      featuredCount: Array<{ n: number }>
+    }>([
+      {
+        $facet: {
+          placesTotal: [{ $count: "n" }],
+          placesApproved: [{ $match: { status: "approved" } }, { $count: "n" }],
+          placesNoPhoto: [{ $match: { status: "approved", ...MISSING_PHOTO } }, { $count: "n" }],
+          placesNoHours: [{ $match: { status: "approved", ...MISSING_HOURS } }, { $count: "n" }],
+          placesNoInstagram: [
+            { $match: { status: "approved", ...MISSING_INSTAGRAM } },
+            { $count: "n" },
+          ],
+          placesNoPhone: [{ $match: { status: "approved", ...MISSING_PHONE } }, { $count: "n" }],
+          placesNoWeb: [{ $match: { status: "approved", ...MISSING_WEB } }, { $count: "n" }],
+          placesNoDescription: [
+            { $match: { status: "approved", ...MISSING_DESCRIPTION } },
+            { $count: "n" },
+          ],
+          placesNoCoords: [{ $match: { status: "approved", ...MISSING_COORDS } }, { $count: "n" }],
+          placesIncomplete: [{ $match: { status: "approved", ...MISSING_TACC } }, { $count: "n" }],
+          featuredCount: [{ $match: { featured: true } }, { $count: "n" }],
+        },
+      },
+    ]),
+    Review.aggregate<{ hidden: Array<{ n: number }>; pending: Array<{ n: number }> }>([
+      {
+        $facet: {
+          hidden: [{ $match: { status: "hidden" } }, { $count: "n" }],
+          pending: [{ $match: pendingEstado }, { $count: "n" }],
+        },
+      },
+    ]),
+    VentureReview.countDocuments(pendingEstado),
   ])
 
+  const places = placeFacets[0]
+  const contacts = contactFacets[0]
+  const reviews = reviewFacets[0]
+  logSlowServerOp({
+    route: "admin:counts",
+    op: "loadAdminCountsFromDb",
+    durationMs: Date.now() - started,
+  })
+
   return {
-    reviewsPending: placeReviewsPending + ventureReviewsPending,
+    reviewsPending: facetN(reviews?.pending) + ventureReviewsPending,
     suggestionsPending,
     ventureSuggestionsPending,
-    contactsTotal,
-    contactsPending,
-    placesTotal,
-    placesApproved,
-    placesNoPhoto,
-    placesNoHours,
-    placesNoInstagram,
-    placesNoPhone,
-    placesNoWeb,
-    placesNoDescription,
-    placesNoCoords,
-    placesIncomplete,
-    reviewsHidden,
-    featuredCount,
+    contactsTotal: facetN(contacts?.total),
+    contactsPending: facetN(contacts?.pending),
+    placesTotal: facetN(places?.placesTotal),
+    placesApproved: facetN(places?.placesApproved),
+    placesNoPhoto: facetN(places?.placesNoPhoto),
+    placesNoHours: facetN(places?.placesNoHours),
+    placesNoInstagram: facetN(places?.placesNoInstagram),
+    placesNoPhone: facetN(places?.placesNoPhone),
+    placesNoWeb: facetN(places?.placesNoWeb),
+    placesNoDescription: facetN(places?.placesNoDescription),
+    placesNoCoords: facetN(places?.placesNoCoords),
+    placesIncomplete: facetN(places?.placesIncomplete),
+    reviewsHidden: facetN(reviews?.hidden),
+    featuredCount: facetN(places?.featuredCount),
   }
 }
+
+export const getAdminCounts = cache(async function getAdminCounts(): Promise<AdminCounts> {
+  return getOrSetApiCache("admin:counts", ADMIN_COUNTS_CACHE_TTL_MS, loadAdminCountsFromDb)
+})
 
 export async function getAdminOpsSnapshot(): Promise<AdminOpsSnapshot> {
   const counts = await getAdminCounts()

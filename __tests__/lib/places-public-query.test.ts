@@ -1,4 +1,4 @@
-import { buildPublicPlacesMongoQuery, filterPlacesByBbox } from "@/lib/places-public-query"
+import { buildPublicPlacesMongoQuery, expandViewportBbox, filterPlacesByBbox } from "@/lib/places-public-query"
 
 describe("buildPublicPlacesMongoQuery", () => {
   it("keeps text search when a city filter is present", () => {
@@ -109,5 +109,18 @@ describe("buildPublicPlacesMongoQuery", () => {
       north: -34.4,
     })
     expect(filtered.map((p) => p.id)).toEqual(["in"])
+  })
+
+  it("expands bbox to thousandths so nearby pans share a cache key", () => {
+    const expanded = expandViewportBbox({
+      west: -58.3816,
+      south: -34.6037,
+      east: -58.3701,
+      north: -34.5922,
+    })
+    expect(expanded.west).toBe(-58.382)
+    expect(expanded.south).toBe(-34.604)
+    expect(expanded.east).toBe(-58.37)
+    expect(expanded.north).toBe(-34.592)
   })
 })

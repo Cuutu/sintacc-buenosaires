@@ -63,3 +63,20 @@ export function logApiError(
     error: error instanceof Error ? error.message : String(error),
   })
 }
+
+/** Ops lentas: siempre si >=2s; 10% si >=800ms. Sin PII. */
+export function logSlowServerOp(ctx: {
+  route: string
+  op?: string
+  durationMs: number
+  extra?: Record<string, number | string>
+}) {
+  if (ctx.durationMs < 800) return
+  if (ctx.durationMs < 2000 && Math.random() > 0.1) return
+  logger.warn({
+    route: ctx.route,
+    message: ctx.op,
+    durationMs: ctx.durationMs,
+    ...ctx.extra,
+  })
+}

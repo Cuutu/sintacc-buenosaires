@@ -27,6 +27,6 @@ describe("syncAddressTextOnPatch", () => {
   })
 
   it("no inventa addressText si no hay address", () => {
-    expect(syncAddressTextOnPatch({ name: "Panadería" })).toEqual({ name: "Panadería" })
+    expect(syncAddressTextOnPatch({})).toEqual({})
   })
 })

@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
 import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
+import { logSlowServerOp } from "@/lib/logger"
 
 export type PlaceLiveStats = {
   avgRating: number
@@ -12,6 +13,7 @@ export type PlaceLiveStats = {
 }
 
 async function loadPlaceLiveStats(placeId: string): Promise<PlaceLiveStats> {
+  const started = Date.now()
   await connectDB()
   const placeObjectId = new mongoose.Types.ObjectId(placeId)
   const [reviewStats, contaminationReportsCount] = await Promise.all([
@@ -37,6 +39,12 @@ async function loadPlaceLiveStats(placeId: string): Promise<PlaceLiveStats> {
     totalReviews: 0,
     safeFeelingCount: 0,
   }
+
+  logSlowServerOp({
+    route: "/lugar/[id]",
+    op: "getPlaceLiveStats",
+    durationMs: Date.now() - started,
+  })
 
   return {
     totalReviews: stats.totalReviews,

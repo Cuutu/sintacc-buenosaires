@@ -44,6 +44,20 @@ function appendAnd(query: FilterQuery<IPlace>, condition: FilterQuery<IPlace>): 
   query.$and = [...(query.$and ?? []), condition]
 }
 
+export type PlaceBbox = { west: number; south: number; east: number; north: number }
+
+const BBOX_CACHE_SCALE = 1000
+
+/** Expande el viewport a 3 decimales (~111m) para reusar Data Cache entre pans. */
+export function expandViewportBbox(bbox: PlaceBbox): PlaceBbox {
+  return {
+    west: Math.floor(bbox.west * BBOX_CACHE_SCALE) / BBOX_CACHE_SCALE,
+    south: Math.floor(bbox.south * BBOX_CACHE_SCALE) / BBOX_CACHE_SCALE,
+    east: Math.ceil(bbox.east * BBOX_CACHE_SCALE) / BBOX_CACHE_SCALE,
+    north: Math.ceil(bbox.north * BBOX_CACHE_SCALE) / BBOX_CACHE_SCALE,
+  }
+}
+
 export function filterPlacesByBbox<T extends { location?: { lat?: number; lng?: number } }>(
   places: T[],
   bbox: { west: number; south: number; east: number; north: number }

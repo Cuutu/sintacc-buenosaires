@@ -39,6 +39,7 @@ describe("PR1 ficha lugar SSR", () => {
     expect(layout).toContain("notFound()")
     expect(loader).toContain('from "react"')
     expect(loader).toContain("cache(")
+    expect(loader).toContain("PUBLIC_PLACE_PAGE_SELECT")
   })
 
   it("generateMetadata de ficha faltante no llama notFound", () => {

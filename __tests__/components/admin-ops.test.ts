@@ -25,6 +25,12 @@ describe("admin centro de operaciones", () => {
     expect(shell).not.toContain("#0B0B0D")
     expect(shell).toContain('href="/"')
     expect(shell).toContain("Volver a CeliMap")
+    expect(shell).toContain("120000")
+    expect(shell).toContain("document.hidden")
+    expect(shell).toContain("visibilitychange")
+    expect(read("lib/admin-ops.ts")).toContain("$facet")
+    expect(read("lib/admin-ops.ts")).toContain("getOrSetApiCache")
+    expect(read("components/admin/ops/OpsDashboard.tsx")).not.toContain("refresh()")
   })
 
   it("dashboard es inbox, no grilla de botones", () => {

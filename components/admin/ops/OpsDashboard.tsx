@@ -16,7 +16,6 @@ export function OpsDashboard({ initial }: { initial: AdminOpsSnapshot }) {
   useEffect(() => {
     let active = true
     const refresh = () => fetch("/api/admin/ops").then(r => r.ok ? r.json() : null).then(next => { if (active && next) setData(next) }).catch(() => undefined)
-    refresh()
     window.addEventListener("admin:counts-changed", refresh)
     return () => { active = false; window.removeEventListener("admin:counts-changed", refresh) }
   }, [])

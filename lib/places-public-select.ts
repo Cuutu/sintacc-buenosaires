@@ -33,6 +33,33 @@ export const PUBLIC_PLACE_LIST_SELECT = [
   "createdAt",
 ].join(" ")
 
+/** Ficha pública SSR: sin AI/editLog/reviews Google. */
+export const PUBLIC_PLACE_PAGE_SELECT = [
+  "name",
+  "type",
+  "types",
+  "address",
+  "neighborhood",
+  "province",
+  "locality",
+  "slug",
+  "location",
+  "addressText",
+  "userProvidedNeighborhood",
+  "photos",
+  "photoSource",
+  "status",
+  "safetyLevel",
+  "tags",
+  "openingHours",
+  "contact",
+  "googleSnapshot.rating",
+  "googleSnapshot.userRatingCount",
+  "googleSnapshot.googleMapsUri",
+  "googleSnapshot.reviewSummaryText",
+  "googleSnapshot.syncedAt",
+].join(" ")
+
 /** Detalle público: sin blobs internos de admin/IA. */
 export const PUBLIC_PLACE_DETAIL_SELECT = ["-editLog", "-aiEnrichment", "-googleSync"].join(" ")
 

@@ -20,6 +20,7 @@ async function main() {
   const expectedIndices: Record<string, Array<{ keys: Record<string, number | string>; options?: any }>> = {
     places: [
       { keys: { location: "2dsphere" } },
+      { keys: { status: 1, "location.lat": 1, "location.lng": 1 } },
       { keys: { name: "text", address: "text", neighborhood: "text" } },
       { keys: { status: 1, type: 1 } },
       { keys: { neighborhood: 1, type: 1 } },

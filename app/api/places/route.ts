@@ -5,13 +5,13 @@ import { Review } from "@/models/Review"
 import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema, parsePublicPlacesSearchParams } from "@/lib/validations"
-import { buildPublicPlacesMongoQuery, filterPlacesByBbox } from "@/lib/places-public-query"
+import { buildPublicPlacesMongoQuery, expandViewportBbox, filterPlacesByBbox } from "@/lib/places-public-query"
 import {
   PUBLIC_PLACE_LIST_SELECT,
   toPublicPlaceListItem,
 } from "@/lib/places-public-select"
 import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
-import { logApiError } from "@/lib/logger"
+import { logApiError, logSlowServerOp } from "@/lib/logger"
 import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
@@ -20,8 +20,7 @@ import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 const PUBLIC_PLACES_CACHE_TTL_MS = 15 * 60 * 1000
 
 function publicPlacesCacheKey(parsed: ReturnType<typeof parsePublicPlacesSearchParams>): string {
-  const { bbox: _bbox, ...rest } = parsed
-  return `public:places:${JSON.stringify(rest)}`
+  return `public:places:${JSON.stringify(parsed)}`
 }
 
 async function loadPublicPlaces(parsed: ReturnType<typeof parsePublicPlacesSearchParams>) {
@@ -123,16 +122,21 @@ export async function GET(request: NextRequest) {
       throw error
     }
     const { bbox } = parsed
-    // bbox va a Mongo (viewport). No cachear por bbox: cada pan sería miss inútil.
-    const data = bbox
-      ? await loadPublicPlaces(parsed)
-      : await getOrSetApiCache(
-          publicPlacesCacheKey(parsed),
-          PUBLIC_PLACES_CACHE_TTL_MS,
-          () => loadPublicPlaces(parsed)
-        )
+    const queryParsed = bbox ? { ...parsed, bbox: expandViewportBbox(bbox) } : parsed
+    const started = Date.now()
+    const data = await getOrSetApiCache(
+      publicPlacesCacheKey(queryParsed),
+      PUBLIC_PLACES_CACHE_TTL_MS,
+      () => loadPublicPlaces(queryParsed)
+    )
 
     const places = bbox ? filterPlacesByBbox(data.places, bbox) : data.places
+    logSlowServerOp({
+      route: "/api/places",
+      op: "GET",
+      durationMs: Date.now() - started,
+      extra: { cachedBbox: bbox ? 1 : 0, returned: places.length },
+    })
 
     return NextResponse.json(
       {

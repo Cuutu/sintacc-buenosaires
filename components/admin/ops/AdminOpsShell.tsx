@@ -27,13 +27,25 @@ export function AdminOpsShell({
 
   useEffect(() => {
     let active = true
-    const refresh = () => fetch("/api/admin/counts", { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (active && data) setCounts(data) })
-      .catch(() => undefined)
-    const timer = setInterval(refresh, 30000)
+    const refresh = () => {
+      if (typeof document !== "undefined" && document.hidden) return
+      fetch("/api/admin/counts", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (active && data) setCounts(data) })
+        .catch(() => undefined)
+    }
+    const timer = setInterval(refresh, 120000)
+    const onVisible = () => {
+      if (!document.hidden) refresh()
+    }
     window.addEventListener("admin:counts-changed", refresh)
-    return () => { active = false; clearInterval(timer); window.removeEventListener("admin:counts-changed", refresh) }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      active = false
+      clearInterval(timer)
+      window.removeEventListener("admin:counts-changed", refresh)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
   }, [])
 
   useEffect(() => {
