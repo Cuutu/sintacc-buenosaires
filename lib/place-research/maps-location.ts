@@ -58,3 +58,23 @@ export function parseFormCoords(
   if (isPlaceholderCabaLocation({ lat: parsedLat, lng: parsedLng })) return null
   return { lat: parsedLat, lng: parsedLng }
 }
+
+/** Lee `{ lat, lng }` o GeoJSON Point `{ coordinates: [lng, lat] }`. */
+export function readPlaceCoords(location: unknown): { lat: number; lng: number } | null {
+  if (!location || typeof location !== "object") return null
+  const loc = location as { lat?: unknown; lng?: unknown; coordinates?: unknown }
+  let lat: number | undefined
+  let lng: number | undefined
+  if (typeof loc.lat === "number" && typeof loc.lng === "number") {
+    lat = loc.lat
+    lng = loc.lng
+  } else if (Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+    const [c0, c1] = loc.coordinates
+    if (typeof c0 === "number" && typeof c1 === "number") {
+      lng = c0
+      lat = c1
+    }
+  }
+  if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { lat, lng }
+}

@@ -11,6 +11,7 @@ import { MapPickerModal } from "@/components/map-picker-modal"
 import { LocationPinPreview } from "@/components/location-pin-preview"
 import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geocode"
 import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { readPlaceCoords } from "@/lib/place-research/maps-location"
 import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
 import { AdminPhotoStudio } from "@/components/admin/ops/AdminPhotoStudio"
@@ -41,10 +42,12 @@ type PlaceData = {
   type?: string
   types?: string[]
   address?: string
+  addressText?: string
   neighborhood?: string
   locality?: string
   slug?: string
-  location?: { lat: number; lng: number }
+  location?: { lat: number; lng: number } | { coordinates?: number[] }
+  locationPrecision?: "exact" | "approx"
   openingHours?: string
   delivery?: { available?: boolean; rappi?: string; pedidosya?: string; other?: string }
   contact?: { instagram?: string; url?: string; phone?: string; whatsapp?: string }
@@ -70,6 +73,7 @@ type FormState = {
   slug: string
   lat: string
   lng: string
+  locationPrecision: "exact" | "approx"
   openingHours: string
   delivery: { available: boolean; rappi: string; pedidosya: string; other: string }
   contact: { instagram: string; url: string; phone: string; whatsapp: string }
@@ -100,6 +104,7 @@ function emptyForm(): FormState {
     slug: "",
     lat: "",
     lng: "",
+    locationPrecision: "exact",
     openingHours: "",
     delivery: { available: false, rappi: "", pedidosya: "", other: "" },
     contact: { instagram: "", url: "", phone: "", whatsapp: "" },
@@ -193,7 +198,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
     fetch(`/api/admin/places/${placeId}`)
       .then((res) => res.json())
       .then((place: PlaceData) => {
-        const loc = place.location
+        const loc = readPlaceCoords(place.location)
         const baseTags = place.tags || []
         const normalizedSafety = place.safetyLevel || inferSafetyFromTags(baseTags)
         setFormData({
@@ -201,12 +206,13 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
           status: place.status || "approved",
           type: place.type || "other",
           types: place.types || (place.type ? [place.type] : ["other"]),
-          address: place.address || "",
+          address: place.addressText || place.address || "",
           neighborhood: place.neighborhood || "",
           locality: place.locality || "",
           slug: place.slug || "",
           lat: loc ? String(loc.lat) : "",
           lng: loc ? String(loc.lng) : "",
+          locationPrecision: place.locationPrecision || "exact",
           openingHours: place.openingHours || "",
           delivery: {
             available: place.delivery?.available ?? false,
@@ -297,8 +303,10 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       type: formData.types[0] || formData.type || "other",
       types: formData.types.length ? formData.types : undefined,
       address: formData.address.trim() || undefined,
+      addressText: formData.address.trim() || undefined,
       neighborhood: formData.neighborhood.trim() || undefined,
       location: loc,
+      locationPrecision: formData.locationPrecision,
       openingHours: formatOpeningHours(weekHours) || formData.openingHours.trim() || undefined,
       delivery: formData.delivery.available
         ? {
@@ -353,8 +361,10 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       const payload = {
         ...buildPayload(),
         address: geo.address,
+        addressText: geo.address,
         neighborhood: geo.neighborhood || formData.neighborhood,
         location: { lat: geo.lat, lng: geo.lng },
+        locationPrecision: formData.locationPrecision,
       }
       const res = await fetch(`/api/places/${placeId}`, {
         method: "PATCH",
@@ -365,7 +375,14 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
       if (res.ok) {
         setSaveState("saved")
         setUpdatedAt(new Date().toISOString())
-        if (data.slug) setFormData((prev) => ({ ...prev, slug: data.slug }))
+        setFormData((prev) => ({
+          ...prev,
+          slug: data.slug || prev.slug,
+          address: geo.address,
+          neighborhood: geo.neighborhood || prev.neighborhood,
+          lat: String(geo.lat),
+          lng: String(geo.lng),
+        }))
         if (data.editLog) setEditLog(data.editLog)
         if (!silent) {
           toast.success("Lugar actualizado")
@@ -634,6 +651,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                               lat: String(r.lat),
                               lng: String(r.lng),
                               neighborhood: r.neighborhood || "Otro",
+                              locationPrecision: "exact",
                             })
                           }
                           placeholder="Buscar en Google Maps"
@@ -686,10 +704,11 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         onSelect={(result) =>
                           patchForm((prev) => ({
                             ...prev,
-                            address: result.address,
+                            address: result.addressText || result.address,
                             lat: String(result.lat),
                             lng: String(result.lng),
                             neighborhood: result.neighborhood || prev.neighborhood || "Otro",
+                            locationPrecision: result.locationPrecision || "exact",
                           }))
                         }
                       />

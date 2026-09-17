@@ -1,5 +1,5 @@
-import { applyGeoToForm } from "@/lib/geocode"
-import { parseFormCoords } from "@/lib/place-research/maps-location"
+import { applyGeoToForm, formLocationSource } from "@/lib/geocode"
+import { parseFormCoords, readPlaceCoords } from "@/lib/place-research/maps-location"
 
 describe("form location helpers", () => {
   it("keeps real coords and ignores Obelisco placeholder", () => {
@@ -9,6 +9,41 @@ describe("form location helpers", () => {
     })
     expect(parseFormCoords("-34.6037", "-58.3816")).toBeNull()
     expect(parseFormCoords("", "")).toBeNull()
+  })
+
+  it("lee coords {lat,lng} y GeoJSON Point", () => {
+    expect(readPlaceCoords({ lat: -34.65, lng: -58.79 })).toEqual({ lat: -34.65, lng: -58.79 })
+    expect(readPlaceCoords({ type: "Point", coordinates: [-58.79, -34.65] })).toEqual({
+      lat: -34.65,
+      lng: -58.79,
+    })
+    expect(readPlaceCoords(null)).toBeNull()
+  })
+
+  it("no deja que el link Maps del contacto pise un pin ya elegido", () => {
+    expect(
+      formLocationSource({
+        address: "Int. Gorriti 3500, Moreno",
+        lat: "-34.65",
+        lng: "-58.79",
+        mapsUrl: "https://maps.app.goo.gl/HrvWSntqH5rFTmJY6",
+      })
+    ).toBe("coords")
+    expect(
+      formLocationSource({
+        address: "https://maps.app.goo.gl/HrvWSntqH5rFTmJY6",
+        lat: "",
+        lng: "",
+      })
+    ).toBe("address-maps")
+    expect(
+      formLocationSource({
+        address: "A completar",
+        lat: "",
+        lng: "",
+        mapsUrl: "https://maps.app.goo.gl/HrvWSntqH5rFTmJY6",
+      })
+    ).toBe("contact-maps")
   })
 
   it("fills incomplete address from Google result", () => {

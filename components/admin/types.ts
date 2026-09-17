@@ -83,6 +83,7 @@ export type PlaceItem = {
   name: string
   type: string
   address: string
+  addressText?: string
   neighborhood: string
   province?: string
   locality?: string

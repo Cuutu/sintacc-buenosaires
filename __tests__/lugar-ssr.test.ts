@@ -25,6 +25,7 @@ describe("PR1 ficha lugar SSR", () => {
     expect(page).toContain("revalidate = 3600")
     expect(page).toContain("generateStaticParams")
     expect(page).toContain("return []")
+    expect(page).toContain("place.location?.lat")
     expect(page).not.toContain("useEffect")
     expect(page).not.toContain("fetchPlace")
   })

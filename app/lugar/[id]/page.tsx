@@ -58,7 +58,13 @@ export default async function LugarPage({ params }: LugarPageProps) {
     getNearbyPlacesForPlace(place),
   ])
 
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address || place.name)}`
+  const lat = place.location?.lat
+  const lng = place.location?.lng
+  const mapsQuery =
+    Number.isFinite(lat) && Number.isFinite(lng)
+      ? `${lat},${lng}`
+      : place.address || place.name
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
   const shareUrl = `${getBaseUrl()}${getPlacePath(place)}`
   const reportCount = liveStats.contaminationReportsCount
   const effectiveSafety = inferSafetyLevel(place)

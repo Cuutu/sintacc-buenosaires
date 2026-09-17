@@ -10,6 +10,7 @@ import { AdminPlaceReviewTools } from "@/components/admin/AdminPlaceReviewTools"
 import type { PlaceItem } from "@/components/admin/types"
 import { getPlacePath } from "@/lib/place-url"
 import { placeCompleteness } from "@/lib/place-completeness"
+import { formatShortPlaceAddress } from "@/lib/place-location-display"
 import { PlaceCompleteness } from "@/components/admin/PlaceCompleteness"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
@@ -84,6 +85,10 @@ export type AdminPlacesSectionProps = {
 function formatEdit(iso?: string) {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+}
+
+function placeAddressLine(place: PlaceItem) {
+  return formatShortPlaceAddress(place) || place.address?.trim() || "Sin dirección"
 }
 
 export function AdminPlacesSection(props: AdminPlacesSectionProps) {
@@ -187,9 +192,10 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
             className={adminUi.btnGhost}
             onClick={() => {
               const rows = [
-                ["nombre", "estado", "ciudad", "completitud"],
+                ["nombre", "direccion", "estado", "ciudad", "completitud"],
                 ...places.map((p) => [
                   p.name,
+                  placeAddressLine(p),
                   p.status,
                   p.neighborhood,
                   String(placeCompleteness(p)),
@@ -443,7 +449,8 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                     <h3 className="min-w-0 break-words font-semibold">{place.name}</h3>
                     <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs">{place.status === "approved" ? "Publicado" : "Pendiente"}</span>
                   </div>
-                  <p className="mt-2 text-sm text-[#6B746C]">{[place.locality || place.neighborhood, place.province].filter(Boolean).join(" · ") || "Sin ubicación"}</p>
+                  <p className="mt-2 text-sm text-[#234A33]">{placeAddressLine(place)}</p>
+                  <p className="mt-1 text-xs text-[#6B746C]">{[place.locality || place.neighborhood, place.province].filter(Boolean).join(" · ") || "Sin ciudad"}</p>
                   <p className="mt-4 text-xs">Completitud: {completeness}%</p>
                   <div role="progressbar" aria-label={`Completitud de ${place.name}`} aria-valuenow={completeness} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E1D6]">
                     <div className="h-full rounded-full bg-[#234A33]" style={{ width: `${completeness}%` }} />
@@ -497,6 +504,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-[#234A33]">{place.name}</p>
+                          <p className="truncate text-xs text-[#234A33]">{placeAddressLine(place)}</p>
                           <p className="truncate text-xs text-[#6B746C]">
                             {TYPES.find((t) => t.value === place.type)?.label || place.type}
                             {level && level !== "unknown" ? ` · ${cfg.label}` : ""}

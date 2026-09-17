@@ -7,8 +7,9 @@ import { requireAdmin } from "@/lib/middleware"
 import { placeSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
-import { invalidateApiCache } from "@/lib/api-cache"
+import { invalidateApiCache, revalidatePlacePages } from "@/lib/api-cache"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
+import { syncAddressTextOnPatch } from "@/lib/place-location-patch"
 import { PUBLIC_PLACE_DETAIL_SELECT } from "@/lib/places-public-select"
 import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 
@@ -112,7 +113,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const validated = placeSchema.partial().parse(body)
+    const validated = syncAddressTextOnPatch(placeSchema.partial().parse(body))
     const existing = await Place.findById(params.id)
 
     if (!existing) {
@@ -163,6 +164,8 @@ export async function PATCH(
     }
 
     invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+    revalidatePlacePages(existing)
+    revalidatePlacePages(place)
     return NextResponse.json(place)
   } catch (error: any) {
     if (error.name === "ZodError") {
@@ -206,6 +209,7 @@ export async function DELETE(
     }
 
     invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+    revalidatePlacePages(place)
     return NextResponse.json({ message: "Lugar eliminado correctamente" })
   } catch (error) {
     logApiError("/api/places/[id]", error, { request })

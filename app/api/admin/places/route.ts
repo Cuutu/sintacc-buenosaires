@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
         $or: [
           { name: regex },
           { address: regex },
+          { addressText: regex },
           { neighborhood: regex },
           { locality: regex },
           { province: regex },

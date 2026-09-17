@@ -112,6 +112,21 @@ async function geocodeAddressWithGoogle(address: string): Promise<GeocodeResult 
   }
 }
 
+export type FormLocationSource = "address-maps" | "coords" | "contact-maps" | "geocode"
+
+/** Pin y calle del form ganan. Link Maps del contacto solo si no hay pin todavía. */
+export function formLocationSource(input: {
+  address: string
+  lat?: string
+  lng?: string
+  mapsUrl?: string
+}): FormLocationSource {
+  if (normalizeGoogleMapsUrl(input.address)) return "address-maps"
+  if (parseFormCoords(input.lat, input.lng)) return "coords"
+  if (normalizeGoogleMapsUrl(input.mapsUrl ?? "")) return "contact-maps"
+  return "geocode"
+}
+
 export async function resolveFormLocation(input: {
   address: string
   lat?: string
@@ -119,20 +134,28 @@ export async function resolveFormLocation(input: {
   neighborhood?: string
   mapsUrl?: string
 }): Promise<GeocodeResult | null> {
-  const mapsSource = normalizeGoogleMapsUrl(input.address) || normalizeGoogleMapsUrl(input.mapsUrl ?? "")
-  if (mapsSource) {
-    const fromMaps = await geocodeAddress(mapsSource)
+  const source = formLocationSource(input)
+
+  if (source === "address-maps") {
+    const fromMaps = await geocodeAddress(input.address)
     if (fromMaps) return fromMaps
   }
 
-  const existing = parseFormCoords(input.lat, input.lng)
-  if (existing) {
-    return {
-      address: input.address.trim(),
-      lat: existing.lat,
-      lng: existing.lng,
-      neighborhood: input.neighborhood?.trim() || undefined,
+  if (source === "coords") {
+    const existing = parseFormCoords(input.lat, input.lng)
+    if (existing) {
+      return {
+        address: input.address.trim(),
+        lat: existing.lat,
+        lng: existing.lng,
+        neighborhood: input.neighborhood?.trim() || undefined,
+      }
     }
+  }
+
+  if (source === "contact-maps") {
+    const fromMaps = await geocodeAddress(input.mapsUrl ?? "")
+    if (fromMaps) return fromMaps
   }
 
   return geocodeAddress(input.address)

@@ -1,4 +1,4 @@
-import { unstable_cache, revalidateTag } from "next/cache"
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache"
 
 const TAG_BY_PREFIX: Record<string, string> = {
   "public:places:": "public:places",
@@ -36,4 +36,15 @@ export function invalidateApiCache(prefixes: string[]) {
   for (const tag of tags) {
     revalidateTag(tag)
   }
+}
+
+/** ISR de /lugar/[id] es 1h. Sin esto, admin guarda y la ficha pública sigue vieja. */
+export function revalidatePlacePages(place: {
+  _id: { toString(): string }
+  slug?: string | null
+}) {
+  const id = place._id.toString()
+  revalidatePath(`/lugar/${id}`)
+  const slug = place.slug?.trim()
+  if (slug && slug !== id) revalidatePath(`/lugar/${slug}`)
 }
