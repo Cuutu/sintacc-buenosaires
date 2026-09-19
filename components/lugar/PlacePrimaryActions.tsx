@@ -3,6 +3,7 @@
 import { MapPinned, Share2 } from "lucide-react"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
+import { flushFirstPartyQueue } from "@/lib/analytics-client"
 import { recordCommitment } from "@/lib/analytics-discovery"
 import { PlaceSaveButton } from "./PlaceSaveButton"
 import { placePrimaryBtnClass, placeSecondaryBtnClass } from "./place-detail-ui"
@@ -21,6 +22,9 @@ export function PlacePrimaryActions({
   shareUrl,
 }: PlacePrimaryActionsProps) {
   const handleShare = async () => {
+    trackEvent("place_share", { placeId, surface: "place_detail" })
+    recordCommitment("place_share", placeId)
+    flushFirstPartyQueue(false)
     try {
       if (navigator.share) {
         await navigator.share({ title: `${name} · CeliMap`, url: shareUrl })
@@ -28,8 +32,6 @@ export function PlacePrimaryActions({
         await navigator.clipboard.writeText(shareUrl)
         toast.success("Link copiado")
       }
-      trackEvent("place_share", { placeId })
-      recordCommitment("place_share", placeId)
     } catch {
       /* cancelado */
     }
