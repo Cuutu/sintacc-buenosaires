@@ -130,13 +130,15 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
 
   return (
     <>
-      <TrackPlaceDwell
-        placeId={placeId}
-        properties={{
-          surface: "map_sheet",
-          placeName: place.name,
-        }}
-      />
+      {placement !== null && (
+        <TrackPlaceDwell
+          placeId={placeId}
+          properties={{
+            surface: "map_sheet",
+            placeName: place.name,
+          }}
+        />
+      )}
       <article
         ref={cardRef}
         role="dialog"

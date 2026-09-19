@@ -258,13 +258,15 @@ export function MobileMapBottomSheet({
       className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 h-[320px] overflow-hidden"
       data-overflow-allowed="decoration"
     >
-      <TrackPlaceDwell
-        placeId={placeId}
-        properties={{
-          surface: "map_sheet",
-          placeName: place.name,
-        }}
-      />
+      {expanded && (
+        <TrackPlaceDwell
+          placeId={placeId}
+          properties={{
+            surface: "map_sheet",
+            placeName: place.name,
+          }}
+        />
+      )}
       <section
         ref={sheetRef}
         className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0"
