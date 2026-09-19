@@ -156,18 +156,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
         <div className="pointer-events-none relative z-[1]">
           <div className="flex items-center justify-between gap-3">
             <PlaceSafetyBadge place={place} />
-            <div className="flex items-center gap-2">
-              <PlaceTypeGlyph place={place} />
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="pointer-events-auto"
-              >
-                <FavoriteButton
-                  placeId={placeId}
-                  className="h-9 w-9 text-[#1F4D35]/70"
-                />
-              </div>
-            </div>
+            <PlaceTypeGlyph place={place} />
           </div>
           <h2 className="mt-3 line-clamp-2 text-[20px] font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]">
             {place.name}
@@ -182,27 +171,38 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
             </p>
           ) : null}
           <PlaceRatingRow place={place} className="mt-2.5" />
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleShare}
-              className="pointer-events-auto inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="pointer-events-auto inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+              >
+                <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                Compartir
+              </button>
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-directions="true"
+                data-place-id={placeId}
+                onClick={(event) => event.stopPropagation()}
+                className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+              >
+                <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                Cómo llegar
+              </a>
+            </div>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto"
             >
-              <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-              Compartir
-            </button>
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-directions="true"
-              data-place-id={placeId}
-              onClick={(event) => event.stopPropagation()}
-              className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
-            >
-              <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-              Cómo llegar
-            </a>
+              <FavoriteButton
+                placeId={placeId}
+                className="h-10 w-10 text-[#1F4D35]"
+              />
+            </div>
           </div>
           <Link
             href={detailPath}

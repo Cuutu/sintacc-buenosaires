@@ -69,7 +69,7 @@ export function MobileMapBottomSheet({
   const velocityRef = React.useRef(0)
   const lastMoveRef = React.useRef({ t: 0, y: 0 })
   const stopSpringRef = React.useRef<(() => void) | null>(null)
-  const [snap, setSnap] = React.useState<PlaceSheetSnap>("compact")
+  const [snap, setSnap] = React.useState<PlaceSheetSnap>("expanded")
   const expanded = snap === "expanded"
   const onSnapChangeRef = React.useRef(onSnapChange)
   onSnapChangeRef.current = onSnapChange
@@ -152,15 +152,15 @@ export function MobileMapBottomSheet({
   React.useLayoutEffect(() => {
     closingRef.current = false
     stopSpring()
-    setSnap("compact")
-    onSnapChangeRef.current?.("compact")
+    setSnap("expanded")
+    onSnapChangeRef.current?.("expanded")
     if (reduceMotion) {
-      setYImmediate(COMPACT_Y, 1)
+      setYImmediate(EXPANDED_Y, 1)
       return
     }
     setYImmediate(ENTER_FROM_Y, 0)
     const id = window.requestAnimationFrame(() => {
-      transitionTo(COMPACT_Y, MOTION_MS.sheet, 1)
+      transitionTo(EXPANDED_Y, MOTION_MS.sheet, 1)
     })
     return () => window.cancelAnimationFrame(id)
   }, [place._id, reduceMotion, setYImmediate, stopSpring, transitionTo])
