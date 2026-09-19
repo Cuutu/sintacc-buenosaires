@@ -26,7 +26,7 @@ export function PlaceHeroChrome({ placeId, name, shareUrl }: PlaceHeroChromeProp
   }
 
   const handleShare = async () => {
-    trackEvent("place_share", { placeId })
+    trackEvent("place_share", { placeId, surface: "place_detail" })
     recordCommitment("place_share", placeId)
     flushFirstPartyQueue(false)
     try {
