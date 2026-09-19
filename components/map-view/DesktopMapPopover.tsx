@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, MapPin, Navigation } from "lucide-react"
+import { ArrowRight, MapPin, Navigation, Share2 } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import type { MapboxMapRef } from "./MapboxMap"
 import { computePopoverPlacement, type PopoverPlacement } from "./popover-placement"
@@ -14,6 +14,11 @@ import {
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
 import { PlaceRatingRow, PlaceSafetyBadge, PlaceTypeGlyph } from "./PlaceCardBits"
+import { trackEvent } from "@/lib/analytics"
+import { recordCommitment } from "@/lib/analytics-discovery"
+import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
+import { FavoriteButton } from "@/components/favorite-button"
+import { toast } from "sonner"
 
 interface DesktopMapPopoverProps {
   place: IPlace
@@ -25,6 +30,16 @@ interface DesktopMapPopoverProps {
 export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: DesktopMapPopoverProps) {
   const cardRef = React.useRef<HTMLElement>(null)
   const [placement, setPlacement] = React.useState<PopoverPlacement | null>(null)
+
+  const placeId = String(place._id)
+
+  React.useEffect(() => {
+    trackEvent("place_view", {
+      placeId,
+      surface: "map_sheet",
+      placeName: place.name,
+    })
+  }, [placeId, place.name])
 
   const update = React.useCallback(() => {
     const lng = place.location?.lng
@@ -97,30 +112,60 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
 
-  return (
-    <article
-      ref={cardRef}
-      role="dialog"
-      aria-label={place.name}
-      className={`pointer-events-auto absolute z-30 w-[min(340px,calc(100%-24px))] overflow-visible ${
-        closing ? "map-popover-leave" : "map-popover-enter"
-      }`}
-      style={
-        placement
-          ? { left: placement.left, top: placement.top }
-          : { left: 16, top: 16, visibility: "hidden" }
+  const handleShare = async () => {
+    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place.name, url: shareUrl })
+      } else {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success("Link copiado")
       }
-    >
+      trackEvent("place_share", { placeId, surface: "map_sheet" })
+      recordCommitment("place_share", placeId)
+    } catch {
+      // User cancelled
+    }
+  }
+
+  return (
+    <>
+      <TrackPlaceDwell
+        placeId={placeId}
+        properties={{
+          surface: "map_sheet",
+          placeName: place.name,
+        }}
+      />
+      <article
+        ref={cardRef}
+        role="dialog"
+        aria-label={place.name}
+        className={`pointer-events-auto absolute z-30 w-[min(340px,calc(100%-24px))] overflow-visible ${
+          closing ? "map-popover-leave" : "map-popover-enter"
+        }`}
+        style={
+          placement
+            ? { left: placement.left, top: placement.top }
+            : { left: 16, top: 16, visibility: "hidden" }
+        }
+      >
       <div className="relative overflow-hidden rounded-[22px] border border-[var(--map-paper-border)] bg-[var(--map-paper-bg)] p-4 shadow-[0_12px_32px_-14px_rgba(45,74,52,0.22)]">
-        <Link
-          href={detailPath}
-          className="absolute inset-0 z-0 rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
-          aria-label={`Ver ${place.name}`}
-        />
         <div className="pointer-events-none relative z-[1]">
           <div className="flex items-center justify-between gap-3">
             <PlaceSafetyBadge place={place} />
-            <PlaceTypeGlyph place={place} />
+            <div className="flex items-center gap-2">
+              <PlaceTypeGlyph place={place} />
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="pointer-events-auto"
+              >
+                <FavoriteButton
+                  placeId={placeId}
+                  className="h-9 w-9 text-[#1F4D35]/70"
+                />
+              </div>
+            </div>
           </div>
           <h2 className="mt-3 line-clamp-2 text-[20px] font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]">
             {place.name}
@@ -135,17 +180,21 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
             </p>
           ) : null}
           <PlaceRatingRow place={place} className="mt-2.5" />
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tracking-[0.01em] text-[#C85A2E]">
-              Ver lugar
-              <ArrowRight className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-            </span>
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="pointer-events-auto inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+            >
+              <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+              Compartir
+            </button>
             <a
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
               data-directions="true"
-              data-place-id={String(place._id)}
+              data-place-id={placeId}
               onClick={(event) => event.stopPropagation()}
               className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
             >
@@ -153,10 +202,18 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
               Cómo llegar
             </a>
           </div>
+          <Link
+            href={detailPath}
+            className="pointer-events-auto mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C85A2E] px-4 py-2.5 text-[13px] font-semibold tracking-[0.01em] text-white hover:bg-[#B64320] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
+          >
+            Ver ficha completa
+            <ArrowRight className="h-4 w-4 stroke-[2]" aria-hidden />
+          </Link>
         </div>
       </div>
       {placement ? <PopoverArrow side={placement.side} x={placement.arrowX} y={placement.arrowY} /> : null}
     </article>
+    </>
   )
 }
 

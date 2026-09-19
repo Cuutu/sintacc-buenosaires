@@ -3,7 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, MapPin, Navigation } from "lucide-react"
+import { ArrowRight, MapPin, Navigation, Share2 } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
 import { FavoriteButton } from "@/components/favorite-button"
@@ -20,6 +20,10 @@ import {
 } from "./place-selected-card-model"
 import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
 import { animateSpring, EASE_OUT, MOTION_MS } from "./motion"
+import { trackEvent } from "@/lib/analytics"
+import { recordCommitment } from "@/lib/analytics-discovery"
+import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
+import { toast } from "sonner"
 
 export const MOBILE_SHEET_COMPACT_PX = 196
 export const MOBILE_SHEET_EXPANDED_PX = 320
@@ -71,6 +75,15 @@ export function MobileMapBottomSheet({
   onSnapChangeRef.current = onSnapChange
   const reduceMotionRef = React.useRef(reduceMotion)
   reduceMotionRef.current = reduceMotion
+
+  React.useEffect(() => {
+    const placeId = String(place._id)
+    trackEvent("place_view", {
+      placeId,
+      surface: "map_sheet",
+      placeName: place.name,
+    })
+  }, [place._id, place.name])
 
   const stopSpring = React.useCallback(() => {
     stopSpringRef.current?.()
@@ -222,12 +235,36 @@ export function MobileMapBottomSheet({
   const openLabel = getOpenStatusLabel(place.openingHours)
   const openNow = openLabel != null && openLabel !== "Cerrado"
   const detailTags = getPlaceSheetDetailTags(place.tags)
+  const placeId = String(place._id)
+
+  const handleShare = async () => {
+    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place.name, url: shareUrl })
+      } else {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success("Link copiado")
+      }
+      trackEvent("place_share", { placeId, surface: "map_sheet" })
+      recordCommitment("place_share", placeId)
+    } catch {
+      // User cancelled
+    }
+  }
 
   return (
     <div
       className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 h-[320px] overflow-hidden"
       data-overflow-allowed="decoration"
     >
+      <TrackPlaceDwell
+        placeId={placeId}
+        properties={{
+          surface: "map_sheet",
+          placeName: place.name,
+        }}
+      />
       <section
         ref={sheetRef}
         className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0"
@@ -332,18 +369,28 @@ export function MobileMapBottomSheet({
                   <span />
                 )}
                 {expanded ? (
-                  <a
-                    href={directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-directions="true"
-                    data-place-id={String(place._id)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="pointer-events-auto relative z-[2] inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
-                  >
-                    <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                    Cómo llegar
-                  </a>
+                  <div className="pointer-events-auto relative z-[2] flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
+                    >
+                      <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                      Compartir
+                    </button>
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-directions="true"
+                      data-place-id={placeId}
+                      onClick={(event) => event.stopPropagation()}
+                      className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
+                    >
+                      <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+                      Cómo llegar
+                    </a>
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -351,12 +398,16 @@ export function MobileMapBottomSheet({
 
           {expanded ? (
             <div className="pointer-events-none relative z-[1] mt-3 border-t border-[#1F4D35]/[0.06] pt-3">
-              <div className="flex items-center justify-end">
-                <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tracking-[0.01em] text-[#C85A2E]">
-                  Ver lugar
-                  <ArrowRight className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                </span>
-              </div>
+              <Link
+                href={detailPath}
+                onClick={(event) => {
+                  if (draggedRef.current) event.preventDefault()
+                }}
+                className="pointer-events-auto flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C85A2E] px-4 py-3 text-[13px] font-semibold tracking-[0.01em] text-white hover:bg-[#B64320] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
+              >
+                Ver ficha completa
+                <ArrowRight className="h-4 w-4 stroke-[2]" aria-hidden />
+              </Link>
             </div>
           ) : null}
         </div>
