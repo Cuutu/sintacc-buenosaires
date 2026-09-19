@@ -21,6 +21,7 @@ import {
 import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
 import { animateSpring, EASE_OUT, MOTION_MS } from "./motion"
 import { trackEvent } from "@/lib/analytics"
+import { flushFirstPartyQueue } from "@/lib/analytics-client"
 import { recordCommitment } from "@/lib/analytics-discovery"
 import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
 import { toast } from "sonner"
@@ -241,6 +242,7 @@ export function MobileMapBottomSheet({
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
     trackEvent("place_share", { placeId, surface: "map_sheet" })
     recordCommitment("place_share", placeId)
+    flushFirstPartyQueue(false)
     try {
       if (navigator.share) {
         await navigator.share({ title: place.name, url: shareUrl })

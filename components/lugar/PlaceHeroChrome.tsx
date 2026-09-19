@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, Share2 } from "lucide-react"
 import { toast } from "sonner"
 import { trackEvent } from "@/lib/analytics"
+import { flushFirstPartyQueue } from "@/lib/analytics-client"
 import { recordCommitment } from "@/lib/analytics-discovery"
 import { PlaceSaveButton } from "./PlaceSaveButton"
 
@@ -27,6 +28,7 @@ export function PlaceHeroChrome({ placeId, name, shareUrl }: PlaceHeroChromeProp
   const handleShare = async () => {
     trackEvent("place_share", { placeId })
     recordCommitment("place_share", placeId)
+    flushFirstPartyQueue(false)
     try {
       if (navigator.share) {
         await navigator.share({ title: `${name} · CeliMap`, url: shareUrl })

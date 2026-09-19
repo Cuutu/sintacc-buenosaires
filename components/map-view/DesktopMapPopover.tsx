@@ -15,6 +15,7 @@ import {
 } from "./place-selected-card-model"
 import { PlaceRatingRow, PlaceSafetyBadge, PlaceTypeGlyph } from "./PlaceCardBits"
 import { trackEvent } from "@/lib/analytics"
+import { flushFirstPartyQueue } from "@/lib/analytics-client"
 import { recordCommitment } from "@/lib/analytics-discovery"
 import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
 import { FavoriteButton } from "@/components/favorite-button"
@@ -116,6 +117,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
     trackEvent("place_share", { placeId, surface: "map_sheet" })
     recordCommitment("place_share", placeId)
+    flushFirstPartyQueue(false)
     try {
       if (navigator.share) {
         await navigator.share({ title: place.name, url: shareUrl })
