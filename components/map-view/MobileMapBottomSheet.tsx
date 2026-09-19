@@ -239,6 +239,8 @@ export function MobileMapBottomSheet({
 
   const handleShare = async () => {
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
+    trackEvent("place_share", { placeId, surface: "map_sheet" })
+    recordCommitment("place_share", placeId)
     try {
       if (navigator.share) {
         await navigator.share({ title: place.name, url: shareUrl })
@@ -246,8 +248,6 @@ export function MobileMapBottomSheet({
         await navigator.clipboard.writeText(shareUrl)
         toast.success("Link copiado")
       }
-      trackEvent("place_share", { placeId, surface: "map_sheet" })
-      recordCommitment("place_share", placeId)
     } catch {
       // User cancelled
     }
