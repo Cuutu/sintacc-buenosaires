@@ -10,7 +10,6 @@ import { buscarLugares, buscarLugaresInputSchema } from "@/lib/chat/buscar-lugar
 import { buscarListas, buscarListasInputSchema } from "@/lib/chat/buscar-listas"
 import {
   CHAT_MAX_OUTPUT_TOKENS,
-  CHAT_MAX_PAYLOAD_CHARS,
   CHAT_MAX_STEPS,
   getChatModelId,
   getChatRateLimitConfig,
@@ -109,18 +108,9 @@ export async function POST(request: NextRequest) {
     return jsonError(CHAT_FRIENDLY_ERROR, 503)
   }
 
-  let raw: string
-  try {
-    raw = await request.text()
-  } catch {
-    return jsonError("El mensaje no se pudo leer.", 400)
-  }
-  if (raw.length > CHAT_MAX_PAYLOAD_CHARS) {
-    return jsonError("El mensaje es muy largo.", 400)
-  }
-
   let json: unknown
   try {
+    const raw = await request.text()
     json = JSON.parse(raw)
   } catch {
     return jsonError("El mensaje no se pudo leer.", 400)
