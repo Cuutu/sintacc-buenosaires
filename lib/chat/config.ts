@@ -49,6 +49,18 @@ export function getChatRateLimitConfig(): {
   }
 }
 
+export function getChatBurstRateLimitConfig(): {
+  type: string
+  maxCount: number
+  windowMinutes: number
+} {
+  return {
+    type: "chat-burst",
+    maxCount: parseEnvInt("CHAT_BURST_RATE_LIMIT_MAX", 5, 1, 50),
+    windowMinutes: parseEnvInt("CHAT_BURST_RATE_WINDOW_MINUTES", 1, 1, 60),
+  }
+}
+
 export function getOpenRouterHeaders(): Record<string, string> {
   return {
     "HTTP-Referer": getBaseUrl(),

@@ -13,6 +13,7 @@ import {
   CHAT_MAX_STEPS,
   getChatModelId,
   getChatRateLimitConfig,
+  getChatBurstRateLimitConfig,
   getChatOpenRouterApiKey,
   getOpenRouterHeaders,
 } from "@/lib/chat/config"
@@ -31,6 +32,14 @@ import { checkRateLimitByIp } from "@/lib/rate-limit"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
+
+function formatRateLimitMessage(retryAfterSeconds: number): string {
+  if (retryAfterSeconds < 120) {
+    return `Llegaste al tope de mensajes. Esperá ${retryAfterSeconds} segundos y probá de nuevo.`
+  }
+  const minutes = Math.ceil(retryAfterSeconds / 60)
+  return `Llegaste al tope de mensajes. Esperá ${minutes} minutos y probá de nuevo.`
+}
 
 function jsonError(message: string, status: number, retryAfterSeconds?: number) {
   return NextResponse.json(
@@ -89,6 +98,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const burst = getChatBurstRateLimitConfig()
+    const burstLimit = await checkRateLimitByIp(
+      request,
+      burst.type,
+      burst.maxCount,
+      burst.windowMinutes
+    )
+    if (!burstLimit.allowed) {
+      return jsonError(
+        formatRateLimitMessage(burstLimit.retryAfterSeconds),
+        429,
+        burstLimit.retryAfterSeconds
+      )
+    }
+
     const rate = getChatRateLimitConfig()
     const limit = await checkRateLimitByIp(
       request,
@@ -98,7 +122,7 @@ export async function POST(request: NextRequest) {
     )
     if (!limit.allowed) {
       return jsonError(
-        "Llegaste al tope de mensajes por ahora. Probá de nuevo en un rato.",
+        formatRateLimitMessage(limit.retryAfterSeconds),
         429,
         limit.retryAfterSeconds
       )
