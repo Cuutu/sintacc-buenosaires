@@ -87,3 +87,58 @@ describe("splitOpeningHoursLines", () => {
     expect(lines).toContain("Miércoles - 8 a 20 horas")
   })
 })
+
+describe("dual-range opening hours (split daily hours)", () => {
+  const GRANJA_VIAMONTE = "Lun-Viernes de 9.30 a 14 hs y de 17 a 20 hs. Sab. 9.30 a 14 hs."
+
+  /** Martes 22 sep 2026 10:30 AR = 13:30 UTC */
+  const TUESDAY_MORNING = new Date("2026-09-22T13:30:00.000Z")
+  /** Martes 22 sep 2026 15:00 AR = 18:00 UTC */
+  const TUESDAY_SIESTA = new Date("2026-09-22T18:00:00.000Z")
+  /** Martes 22 sep 2026 18:26 AR = 21:26 UTC */
+  const TUESDAY_EVENING = new Date("2026-09-22T21:26:00.000Z")
+  /** Sábado 26 sep 2026 10:30 AR = 13:30 UTC */
+  const SATURDAY_MORNING = new Date("2026-09-26T13:30:00.000Z")
+  /** Sábado 26 sep 2026 15:00 AR = 18:00 UTC */
+  const SATURDAY_AFTERNOON = new Date("2026-09-26T18:00:00.000Z")
+
+  it("Tuesday morning 10:30 - open (first range 9.30-14)", () => {
+    expect(isOpenNow(GRANJA_VIAMONTE, TUESDAY_MORNING)).toBe(true)
+  })
+
+  it("Tuesday siesta 15:00 - closed (between ranges)", () => {
+    expect(isOpenNow(GRANJA_VIAMONTE, TUESDAY_SIESTA)).toBe(false)
+  })
+
+  it("Tuesday evening 18:26 - open (second range 17-20)", () => {
+    expect(isOpenNow(GRANJA_VIAMONTE, TUESDAY_EVENING)).toBe(true)
+  })
+
+  it("Saturday morning 10:30 - open (after period splitting)", () => {
+    expect(isOpenNow(GRANJA_VIAMONTE, SATURDAY_MORNING)).toBe(true)
+  })
+
+  it("Saturday afternoon 15:00 - closed (only one range for Sat)", () => {
+    expect(isOpenNow(GRANJA_VIAMONTE, SATURDAY_AFTERNOON)).toBe(false)
+  })
+
+  it("shows correct close time for evening range", () => {
+    expect(getOpenStatusLabel(GRANJA_VIAMONTE, TUESDAY_EVENING)).toBe("Cierra a las 20:00")
+  })
+})
+
+describe("similar dual-range patterns", () => {
+  it("handles 'y de' separator with different spacing", () => {
+    const hours = "Lunes a Viernes de 8 a 13 y de 16 a 21"
+    /** Lunes 21 sep 2026 17:00 AR = 20:00 UTC */
+    const mondayEvening = new Date("2026-09-21T20:00:00.000Z")
+    expect(isOpenNow(hours, mondayEvening)).toBe(true)
+  })
+
+  it("handles three ranges in one day", () => {
+    const hours = "Viernes de 9 a 12 y de 15 a 18 y de 20 a 23"
+    /** Viernes 25 sep 2026 21:00 AR = 00:00 UTC (sábado) */
+    const fridayNight = new Date("2026-09-26T00:00:00.000Z")
+    expect(isOpenNow(hours, fridayNight)).toBe(true)
+  })
+})

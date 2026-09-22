@@ -141,7 +141,7 @@ function parseOpenStatus(
 
   const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
   const segments = s
-    .split(/[\n,;]+/)
+    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
     .map((seg) => seg.trim())
     .filter(Boolean)
 
@@ -158,20 +158,24 @@ function parseOpenStatus(
       continue
     }
 
-    const timeMatch = seg.match(TIME_RANGE_RE)
-    if (!timeMatch) continue
-    const openM = parseTimeStr(timeMatch[1])
-    const closeM = parseTimeStr(timeMatch[2])
-    if (openM == null || closeM == null) continue
+    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
+    if (timeMatches.length === 0) continue
+
     const applies = days ? days.includes(nowDay) : true
     if (!applies) continue
     matchedDay = true
-    const isOpen =
-      closeM > openM
-        ? nowMinutes >= openM && nowMinutes < closeM
-        : nowMinutes >= openM || nowMinutes < closeM
-    if (isOpen) return { open: true, closeMinutes: closeM }
-    if (days) return { open: false }
+
+    for (const timeMatch of timeMatches) {
+      const openM = parseTimeStr(timeMatch[1])
+      const closeM = parseTimeStr(timeMatch[2])
+      if (openM == null || closeM == null) continue
+
+      const isOpen =
+        closeM > openM
+          ? nowMinutes >= openM && nowMinutes < closeM
+          : nowMinutes >= openM || nowMinutes < closeM
+      if (isOpen) return { open: true, closeMinutes: closeM }
+    }
   }
 
   return matchedDay ? { open: false } : null
