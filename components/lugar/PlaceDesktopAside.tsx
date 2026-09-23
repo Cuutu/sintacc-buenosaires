@@ -1,7 +1,7 @@
 "use client"
 
 import { Clock, MapPin, Phone } from "lucide-react"
-import { isOpenNow } from "@/lib/opening-hours"
+import { getOpenStatusDetail } from "@/lib/opening-hours"
 import { PlacePrimaryActions } from "./PlacePrimaryActions"
 import { PlaceReportCard } from "./PlaceReportCard"
 import { placeCardClass } from "./place-detail-ui"
@@ -27,7 +27,7 @@ export function PlaceDesktopAside({
   phone,
   onReportSuccess,
 }: PlaceDesktopAsideProps) {
-  const openStatus = openingHours ? isOpenNow(openingHours) : null
+  const openStatusDetail = openingHours ? getOpenStatusDetail(openingHours) : null
 
   return (
     <aside className="hidden lg:block">
@@ -50,14 +50,18 @@ export function PlaceDesktopAside({
               <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
               <span className="text-base leading-relaxed text-[#1F4D35]">{address}</span>
             </a>
-            {openingHours ? (
+            {openStatusDetail ? (
               <div className="flex items-start gap-3 py-4">
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
                 <div>
-                  <p className="text-base text-[#1F4D35]">{openingHours}</p>
-                  {openStatus != null && (
-                    <p className="mt-1 text-base font-semibold text-[#1F4D35]">
-                      {openStatus ? "Abierto ahora" : "Cerrado ahora"}
+                  <p
+                    className={`text-base font-semibold ${openStatusDetail.isOpen ? "text-[#2D7A4E]" : "text-[#8B5A3C]"}`}
+                  >
+                    {openStatusDetail.label}
+                  </p>
+                  {openStatusDetail.relativeText && (
+                    <p className="mt-0.5 text-sm text-[#5F6B63]">
+                      {openStatusDetail.relativeText}
                     </p>
                   )}
                 </div>
