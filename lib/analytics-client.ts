@@ -125,9 +125,18 @@ export function enqueueFirstPartyEvent(
 
 export function flushFirstPartyQueue(_keepalive: boolean): void {
   if (typeof window === "undefined") return
-  if (queue.length === 0) return
+  if (queue.length === 0) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[analytics-flush] queue empty, skipping")
+    }
+    return
+  }
   const batch = queue.splice(0, MAX_BATCH)
   const body = JSON.stringify({ events: batch })
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[analytics-flush] flushing", batch.length, "events:", batch.map(e => e.name))
+  }
 
   try {
     void fetch("/api/analytics/events", {
@@ -136,15 +145,27 @@ export function flushFirstPartyQueue(_keepalive: boolean): void {
       body,
       keepalive: true,
       credentials: "same-origin",
-    }).catch(() => undefined)
-  } catch {
+    }).catch((err) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[analytics-flush] fetch failed:", err)
+      }
+    })
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[analytics-flush] fetch threw:", err)
+    }
     try {
       if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
         const blob = new Blob([body], { type: "application/json" })
         navigator.sendBeacon("/api/analytics/events", blob)
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[analytics-flush] fell back to sendBeacon")
+        }
       }
-    } catch {
-      /* analytics nunca rompe UX */
+    } catch (beaconErr) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[analytics-flush] sendBeacon failed:", beaconErr)
+      }
     }
   }
 }
