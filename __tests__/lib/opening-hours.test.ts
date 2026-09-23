@@ -142,3 +142,91 @@ describe("similar dual-range patterns", () => {
     expect(isOpenNow(hours, fridayNight)).toBe(true)
   })
 })
+
+describe("getOpenStatusDetail", () => {
+  const GRANJA_VIAMONTE = "Lun-Viernes de 9.30 a 14 hs y de 17 a 20 hs. Sab. 9.30 a 14 hs."
+  
+  /** Martes 22 sep 2026 15:00 AR = 18:00 UTC */
+  const TUESDAY_SIESTA = new Date("2026-09-22T18:00:00.000Z")
+  /** Martes 22 sep 2026 16:45 AR = 19:45 UTC */
+  const TUESDAY_PRE_OPENING = new Date("2026-09-22T19:45:00.000Z")
+  /** Martes 22 sep 2026 18:26 AR = 21:26 UTC */
+  const TUESDAY_EVENING = new Date("2026-09-22T21:26:00.000Z")
+  /** Martes 22 sep 2026 19:30 AR = 22:30 UTC */
+  const TUESDAY_CLOSING_SOON = new Date("2026-09-22T22:30:00.000Z")
+  /** Sábado 26 sep 2026 10:30 AR = 13:30 UTC */
+  const SATURDAY_MORNING = new Date("2026-09-26T13:30:00.000Z")
+
+  it("returns null for empty hours", () => {
+    expect(import("@/lib/opening-hours").then((m) => m.getOpenStatusDetail(undefined))).resolves.toBeNull()
+    expect(import("@/lib/opening-hours").then((m) => m.getOpenStatusDetail(""))).resolves.toBeNull()
+  })
+
+  it("closed during siesta shows 'abre en X min'", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const detail = getOpenStatusDetail(GRANJA_VIAMONTE, TUESDAY_SIESTA)
+    expect(detail).not.toBeNull()
+    expect(detail!.isOpen).toBe(false)
+    expect(detail!.label).toBe("Cerrado")
+    expect(detail!.relativeText).toMatch(/abre en \d+ h/)
+    expect(detail!.fullSchedule.length).toBeGreaterThan(0)
+  })
+
+  it("closed 15 min before opening shows exact time", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const detail = getOpenStatusDetail(GRANJA_VIAMONTE, TUESDAY_PRE_OPENING)
+    expect(detail).not.toBeNull()
+    expect(detail!.isOpen).toBe(false)
+    expect(detail!.label).toBe("Cerrado")
+    expect(detail!.relativeText).toMatch(/abre en 15 min/)
+  })
+
+  it("open in evening window shows Abierto without relative time (not closing soon)", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const detail = getOpenStatusDetail(GRANJA_VIAMONTE, TUESDAY_EVENING)
+    expect(detail).not.toBeNull()
+    expect(detail!.isOpen).toBe(true)
+    expect(detail!.label).toBe("Abierto")
+    expect(detail!.relativeText).toBeUndefined()
+  })
+
+  it("open and closing soon (30 min) shows 'cierra en X min'", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const detail = getOpenStatusDetail(GRANJA_VIAMONTE, TUESDAY_CLOSING_SOON)
+    expect(detail).not.toBeNull()
+    expect(detail!.isOpen).toBe(true)
+    expect(detail!.label).toBe("Abierto")
+    expect(detail!.relativeText).toMatch(/cierra en 30 min/)
+  })
+
+  it("Saturday morning open shows status and full schedule", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const detail = getOpenStatusDetail(GRANJA_VIAMONTE, SATURDAY_MORNING)
+    expect(detail).not.toBeNull()
+    expect(detail!.isOpen).toBe(true)
+    expect(detail!.label).toBe("Abierto")
+    expect(detail!.fullSchedule.length).toBeGreaterThan(0)
+    const scheduleText = detail!.fullSchedule.join(" ")
+    expect(scheduleText).toContain("Sab")
+  })
+
+  it("formats relative time naturally", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const hours = "Lunes de 10 a 22"
+    /** Lunes 21 sep 2026 09:00 AR = 12:00 UTC */
+    const mondayMorning = new Date("2026-09-21T12:00:00.000Z")
+    const detail = getOpenStatusDetail(hours, mondayMorning)
+    expect(detail).not.toBeNull()
+    expect(detail!.relativeText).toMatch(/abre en 1 h/)
+  })
+
+  it("handles multi-hour waits correctly", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const hours = "Lunes de 17 a 22"
+    /** Lunes 21 sep 2026 12:30 AR = 15:30 UTC */
+    const mondayNoon = new Date("2026-09-21T15:30:00.000Z")
+    const detail = getOpenStatusDetail(hours, mondayNoon)
+    expect(detail).not.toBeNull()
+    expect(detail!.relativeText).toMatch(/abre en 4 h 30 min/)
+  })
+})

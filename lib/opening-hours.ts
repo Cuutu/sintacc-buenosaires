@@ -205,6 +205,208 @@ export function getOpenStatusLabel(
   return "Abierto ahora"
 }
 
+type OpeningEvent = {
+  dayIndex: number
+  minutes: number
+}
+
+/**
+ * Formatea tiempo relativo en español natural.
+ * Ej: 25 min → "25 min", 90 min → "1 h 30 min", 120 min → "2 h"
+ */
+function formatRelativeTime(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes} min`
+  }
+  const hours = Math.floor(minutes / 60)
+  const remainingMins = minutes % 60
+  if (remainingMins === 0) {
+    return `${hours} h`
+  }
+  return `${hours} h ${remainingMins} min`
+}
+
+/**
+ * Encuentra el próximo evento (apertura o cierre) en el horario semanal.
+ * Retorna el día de la semana (0-6) y minutos desde medianoche.
+ */
+function findNextEvent(
+  openingHours: string | undefined | null,
+  now: Date,
+  findOpening: boolean
+): OpeningEvent | null {
+  if (!openingHours || !openingHours.trim()) return null
+
+  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
+  if (s === "cerrado") return null
+  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return null
+
+  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
+  const segments = s
+    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
+    .map((seg) => seg.trim())
+    .filter(Boolean)
+
+  const allEvents: OpeningEvent[] = []
+
+  for (const seg of segments) {
+    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
+    const days = dayPart ? parseDayRange(dayPart) : null
+
+    if (/\bcerrado\b/.test(seg)) continue
+
+    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
+    if (timeMatches.length === 0) continue
+
+    for (const timeMatch of timeMatches) {
+      const openM = parseTimeStr(timeMatch[1])
+      const closeM = parseTimeStr(timeMatch[2])
+      if (openM == null || closeM == null) continue
+
+      const applicableDays = days ?? [0, 1, 2, 3, 4, 5, 6]
+      for (const dayIndex of applicableDays) {
+        if (findOpening) {
+          allEvents.push({ dayIndex, minutes: openM })
+        } else {
+          allEvents.push({ dayIndex, minutes: closeM })
+        }
+      }
+    }
+  }
+
+  if (allEvents.length === 0) return null
+
+  let closestEvent: OpeningEvent | null = null
+  let minDiff = Infinity
+
+  for (const event of allEvents) {
+    let dayDiff = event.dayIndex - nowDay
+    if (dayDiff < 0) dayDiff += 7
+    else if (dayDiff === 0 && event.minutes <= nowMinutes) dayDiff = 7
+
+    const totalMinutesAhead = dayDiff * 24 * 60 + event.minutes - nowMinutes
+
+    if (totalMinutesAhead > 0 && totalMinutesAhead < minDiff) {
+      minDiff = totalMinutesAhead
+      closestEvent = event
+    }
+  }
+
+  return closestEvent
+}
+
+/**
+ * Calcula minutos hasta el próximo evento desde ahora.
+ */
+function getMinutesUntilEvent(event: OpeningEvent, now: Date): number {
+  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
+
+  let dayDiff = event.dayIndex - nowDay
+  if (dayDiff < 0) dayDiff += 7
+  else if (dayDiff === 0 && event.minutes <= nowMinutes) dayDiff = 7
+
+  return dayDiff * 24 * 60 + event.minutes - nowMinutes
+}
+
+export type OpenStatusDetail = {
+  isOpen: boolean
+  label: string
+  relativeText?: string
+  fullSchedule: string[]
+}
+
+/**
+ * Retorna estado completo del lugar para UI:
+ * - isOpen: boolean
+ * - label: "Abierto" o "Cerrado"
+ * - relativeText: "abre en 25 min" / "cierra en 1 h" (opcional)
+ * - fullSchedule: líneas del horario completo
+ */
+export function getOpenStatusDetail(
+  openingHours: string | undefined | null,
+  now: Date = new Date()
+): OpenStatusDetail | null {
+  if (!openingHours || !openingHours.trim()) return null
+
+  const status = parseOpenStatus(openingHours, now)
+  if (!status) return null
+
+  const fullSchedule = splitOpeningHoursLines(openingHours)
+
+  if (!status.open) {
+    const nextOpen = findNextEvent(openingHours, now, true)
+    if (nextOpen) {
+      const minutesUntil = getMinutesUntilEvent(nextOpen, now)
+      return {
+        isOpen: false,
+        label: "Cerrado",
+        relativeText: `abre en ${formatRelativeTime(minutesUntil)}`,
+        fullSchedule,
+      }
+    }
+    return {
+      isOpen: false,
+      label: "Cerrado",
+      fullSchedule,
+    }
+  }
+
+  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
+  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
+  const segments = s
+    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
+    .map((seg) => seg.trim())
+    .filter(Boolean)
+
+  let todayCloseMinutes: number | null = null
+
+  for (const seg of segments) {
+    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
+    const days = dayPart ? parseDayRange(dayPart) : null
+    if (days && !days.includes(nowDay)) continue
+
+    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
+    for (const timeMatch of timeMatches) {
+      const openM = parseTimeStr(timeMatch[1])
+      const closeM = parseTimeStr(timeMatch[2])
+      if (openM == null || closeM == null) continue
+
+      const isInRange =
+        closeM > openM
+          ? nowMinutes >= openM && nowMinutes < closeM
+          : nowMinutes >= openM || nowMinutes < closeM
+
+      if (isInRange) {
+        todayCloseMinutes = closeM
+        break
+      }
+    }
+    if (todayCloseMinutes != null) break
+  }
+
+  if (todayCloseMinutes != null) {
+    const minutesUntilClose =
+      todayCloseMinutes > nowMinutes
+        ? todayCloseMinutes - nowMinutes
+        : 24 * 60 - nowMinutes + todayCloseMinutes
+
+    if (minutesUntilClose <= 90) {
+      return {
+        isOpen: true,
+        label: "Abierto",
+        relativeText: `cierra en ${formatRelativeTime(minutesUntilClose)}`,
+        fullSchedule,
+      }
+    }
+  }
+
+  return {
+    isOpen: true,
+    label: "Abierto",
+    fullSchedule,
+  }
+}
+
 export const WEEK_DAYS = [
   { key: "lun", label: "Lunes", aliases: ["lun", "lunes", "l"] },
   { key: "mar", label: "Martes", aliases: ["mar", "martes"] },
