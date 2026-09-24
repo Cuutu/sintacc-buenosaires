@@ -30,6 +30,7 @@ const CHIPS = [
 ] as const
 
 const BARRIO_CHIPS = ["Palermo", "Belgrano", "Recoleta", "San Telmo", "Caballito"] as const
+const CLIENT_SEND_COOLDOWN_MS = 1500
 
 const BOT_BUBBLE =
   "rounded-[18px] rounded-tl-[4px] border border-[#EDEBE7] bg-white px-[18px] py-[14px] text-[14px] leading-relaxed text-[#333] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
@@ -184,12 +185,14 @@ function ChatPanelLive({
   const [input, setInput] = useState("")
   const [locating, setLocating] = useState(false)
   const [blockedCerca, setBlockedCerca] = useState<string | null>(null)
+  const [sendCooldown, setSendCooldown] = useState(false)
   const startedEmpty = useRef(initialMessages.length === 0)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const inFlightRef = useRef(false)
   const pinBottomRef = useRef(true)
   const timesRef = useRef<Map<string, Date>>(new Map())
+  const cooldownTimerRef = useRef<number>(0)
   const { messages, sendMessage, status, error, regenerate, clearError } = useChat({
     messages: initialMessages,
   })
@@ -206,6 +209,12 @@ function ChatPanelLive({
   useEffect(() => {
     saveChatHistory(messages)
   }, [messages])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(cooldownTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     const el = listRef.current
@@ -240,6 +249,11 @@ function ChatPanelLive({
       clearError()
       setBlockedCerca(null)
       pinBottomRef.current = true
+      setSendCooldown(true)
+      window.clearTimeout(cooldownTimerRef.current)
+      cooldownTimerRef.current = window.setTimeout(() => {
+        setSendCooldown(false)
+      }, CLIENT_SEND_COOLDOWN_MS)
       let body: { lat: number; lng: number } | undefined
       try {
         if (isCercaMioQuery(text)) {
@@ -380,7 +394,7 @@ function ChatPanelLive({
                       key={chip.send}
                       icon={chip.icon}
                       label={chip.label}
-                      disabled={busy}
+                      disabled={busy || sendCooldown}
                       onClick={() => void submitText(chip.send)}
                     />
                   ))}
@@ -446,13 +460,14 @@ function ChatPanelLive({
                     askZona &&
                     places?.sugerencias &&
                     places.sugerencias.length > 0 &&
-                    !busy ? (
+                    !busy &&
+                    !sendCooldown ? (
                       <ChatChipRow>
                         {places.sugerencias.map((part) => (
                           <ChatChip
                             key={part}
                             label={part}
-                            disabled={busy}
+                            disabled={busy || sendCooldown}
                             onClick={() =>
                               void submitText(zonaFollowUp(places.zonaAmplia || "", part))
                             }
@@ -491,7 +506,7 @@ function ChatPanelLive({
                       <ChatChip
                         key={barrio}
                         label={barrio}
-                        disabled={busy}
+                        disabled={busy || sendCooldown}
                         onClick={() => {
                           const follow = cercaFollowUp(blockedCerca, barrio)
                           setBlockedCerca(null)
@@ -569,7 +584,7 @@ function ChatPanelLive({
             id="celimap-chat-input"
             ref={inputRef}
             value={input}
-            disabled={busy}
+            disabled={busy || sendCooldown}
             rows={1}
             autoComplete="off"
             autoCorrect="on"
@@ -594,8 +609,9 @@ function ChatPanelLive({
           />
           <button
             type="submit"
-            disabled={busy || !input.trim()}
+            disabled={busy || sendCooldown || !input.trim()}
             aria-label="Enviar mensaje"
+            aria-disabled={busy || sendCooldown || !input.trim()}
             className="absolute bottom-1.5 right-1.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#1F4D35] text-white transition-colors duration-150 hover:bg-[#2A5E45] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40 disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" strokeWidth={2.4} />

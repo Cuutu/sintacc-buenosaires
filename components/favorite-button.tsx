@@ -26,7 +26,10 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
   const favorited = isFavorite(placeId)
 
   const toggleFavorite = async () => {
-    if (!session) return
+    if (!session) {
+      // TODO: trigger login modal/redirect when implemented
+      return
+    }
 
     if (!favorited && !reduceMotion) {
       setPop(true)
@@ -40,7 +43,7 @@ export function FavoriteButton({ placeId, showLabel, className }: FavoriteButton
     }
   }
 
-  if (!features.favorites || !session) {
+  if (!features.favorites) {
     return null
   }
 

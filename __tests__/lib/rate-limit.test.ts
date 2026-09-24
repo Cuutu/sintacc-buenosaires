@@ -87,5 +87,19 @@ describe("rate-limit", () => {
       expect(result.remaining).toBe(0)
       expect(result.retryAfterSeconds).toBeGreaterThan(0)
     })
+
+    it("handles burst rate limit with different type string", async () => {
+      mockFindOneAndUpdate.mockResolvedValue({ count: 5 })
+      const request = new NextRequest("http://localhost:3000", {
+        headers: { "x-vercel-forwarded-for": "1.2.3.4" },
+      })
+      const result = await checkRateLimitByIp(request, "chat-burst", 5, 1)
+      expect(result.allowed).toBe(true)
+      expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "chat-burst" }),
+        expect.anything(),
+        expect.anything()
+      )
+    })
   })
 })

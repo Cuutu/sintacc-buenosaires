@@ -126,11 +126,14 @@ function MapaContent() {
   useEffect(() => {
     const t = setTimeout(() => {
       const trimmedSearch = filters.search.trim()
-      setDebouncedSearch(
+      const nextDebouncedSearch =
         trimmedSearch.length === 0 || trimmedSearch.length >= MIN_SEARCH_LENGTH
           ? filters.search
           : ""
-      )
+      setDebouncedSearch(nextDebouncedSearch)
+      if (nextDebouncedSearch.trim()) {
+        lastBoundsRef.current = null
+      }
     }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [filters.search])

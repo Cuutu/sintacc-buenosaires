@@ -283,7 +283,7 @@ export default function EmprendimientosPageContent({
           <p className="mt-3 text-xs text-[#5F6B63] md:hidden">Deslizá para ver más categorías</p>
           <div className="relative mt-2 md:mt-4">
             <div
-              className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 pr-12 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pr-0"
+              className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2 pr-12 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pr-0"
               data-overflow-allowed="venture-chips"
             >
               {HERO_CHIPS.map((chip) => {

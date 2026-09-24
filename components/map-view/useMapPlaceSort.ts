@@ -60,7 +60,7 @@ export function useMapPlaceSort(location: LocationApi) {
       // Pedir geolocation acá (gesto del select/CTA). Desde useEffect el browser
       // traga el prompt y el sort se revierte a Recomendados.
       if (shouldAskLocationForNearest({ sort: next, hasCoords: Boolean(coords) })) {
-        requestLocation()
+        requestLocation({ silent: true })
       }
     },
     [coords, requestLocation]

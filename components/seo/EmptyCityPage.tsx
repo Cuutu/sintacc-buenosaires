@@ -84,7 +84,7 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 overflow-x-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -111,9 +111,9 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
           colaborativo: cuando la comunidad cargue opciones sin TACC, van a aparecer acá y en el
           mapa. Mientras tanto, podés sugerir un lugar o explorar otras ciudades.
         </p>
-        <Button asChild size="lg" className="gap-2">
-          <Link href="/sugerir">
-            <PlusCircle className="h-5 w-5" />
+        <Button asChild size="lg" className="gap-2 !whitespace-normal h-auto min-h-12 py-3 text-center max-w-full w-full sm:w-auto">
+          <Link href="/sugerir" className="inline-flex items-center justify-center gap-2 !whitespace-normal text-wrap max-w-full">
+            <PlusCircle className="h-5 w-5 shrink-0" />
             ¿Conocés un lugar sin TACC en {nombre}? Agregalo al mapa
           </Link>
         </Button>
