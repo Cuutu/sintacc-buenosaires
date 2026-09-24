@@ -171,6 +171,19 @@ export function MapMobile({
     [places, selectedPlaceId]
   )
 
+  const showFab = !listOpen && sheetSnap !== "expanded"
+
+  // CeliBot es global: va arriba del botón de ubicación y se oculta con ficha abierta (tapa el CTA).
+  const chatFabPlacement = selectedPlace ? "hidden" : showFab ? "above-map-fab" : null
+  React.useEffect(() => {
+    if (!chatFabPlacement) return
+    const root = document.documentElement
+    root.dataset.chatFab = chatFabPlacement
+    return () => {
+      delete root.dataset.chatFab
+    }
+  }, [chatFabPlacement])
+
   const sheetPx = selectedPlace
     ? sheetSnap === "expanded"
       ? MOBILE_SHEET_EXPANDED_PX
@@ -384,7 +397,7 @@ export function MapMobile({
         </MapErrorBoundary>
       </div>
 
-      {!listOpen && sheetSnap !== "expanded" && (
+      {showFab && (
         <FabButtons
           onNearMe={() => goToNearMe()}
           locating={locating}

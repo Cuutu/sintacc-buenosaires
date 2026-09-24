@@ -147,7 +147,7 @@ export function ChatWidget() {
       <div
         ref={dockRef}
         className={cn(
-          "fixed bottom-6 right-6 z-[90]",
+          "celimap-chat-dock fixed bottom-6 right-6 z-[90]",
           "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+1.75rem)]",
           open && "max-md:hidden"
         )}

@@ -299,6 +299,18 @@
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08);
 }
 
+/* /mapa mobile: MapMobile marca <html data-chat-fab>. Botón ubicación = 3rem en clearance + 0.5rem. */
+@media (max-width: 767.98px) {
+  html[data-chat-fab="above-map-fab"] .celimap-chat-dock {
+    right: 0.75rem;
+    bottom: calc(var(--bottom-nav-clearance) + 0.5rem + 3rem + 0.75rem);
+  }
+
+  html[data-chat-fab="hidden"] .celimap-chat-dock {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .celimap-chat-panel-enter,
   .celimap-chat-panel-leave,

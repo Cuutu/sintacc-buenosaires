@@ -29,8 +29,8 @@ export const LAYER_PINS = "celimap-pins"
 export const LAYER_SELECTED_HALO = "celimap-selected-halo"
 export const LAYER_SELECTED_PIN = "celimap-selected-pin"
 
-/** Desde zoom 13 (nivel barrio) se ven todos los pins sueltos. */
-export const CLUSTER_MAX_ZOOM = 12
+/** En zoom 13 solo se agrupan pilas de pins encimados; desde 14 van todos sueltos. */
+export const CLUSTER_MAX_ZOOM = 13
 /** Radio chico + mínimo 3: dos lugares vecinos se ven como pins, no como "2". */
 export const CLUSTER_RADIUS_PX = 30
 export const CLUSTER_MIN_POINTS = 3
