@@ -29,7 +29,11 @@ export const LAYER_PINS = "celimap-pins"
 export const LAYER_SELECTED_HALO = "celimap-selected-halo"
 export const LAYER_SELECTED_PIN = "celimap-selected-pin"
 
-export const CLUSTER_MAX_ZOOM = 14
+/** Desde zoom 13 (nivel barrio) se ven todos los pins sueltos. */
+export const CLUSTER_MAX_ZOOM = 12
+/** Radio chico + mínimo 3: dos lugares vecinos se ven como pins, no como "2". */
+export const CLUSTER_RADIUS_PX = 30
+export const CLUSTER_MIN_POINTS = 3
 export const PIN_FOCUS_ZOOM = 16
 /** Gota lógica 64×84 @ pixelRatio 3. Desktop ≥ mobile. */
 export const PIN_ICON_SIZE = 0.58
@@ -265,9 +269,9 @@ export function ensurePlacesLayers(
     type: "geojson",
     data: emptyCollection(),
     cluster: true,
-    clusterRadius: 44,
+    clusterRadius: CLUSTER_RADIUS_PX,
     clusterMaxZoom: CLUSTER_MAX_ZOOM,
-    clusterMinPoints: 2,
+    clusterMinPoints: CLUSTER_MIN_POINTS,
     promoteId: "id",
   })
   addSourceSafe(map, SELECTED_SOURCE, {
