@@ -44,7 +44,7 @@ describe("Home landing v3 copy + structure", () => {
     expect(directory).toContain("`/${c.slug}-sin-gluten`")
     expect(directory).toContain("`/sin-gluten/${city.slug}`")
     expect(directory).toContain("getTop10CitySlugs")
-    expect(src).not.toContain("EmprendimientosSection")
+    expect(src).toContain("EmprendimientosSection")
     expect(src).not.toContain("FeaturedListsSection")
     expect(src).not.toContain("Lugares sin gluten por ciudad")
     expect(src).not.toContain("Qué estás buscando")

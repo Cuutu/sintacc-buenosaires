@@ -16,6 +16,7 @@ import { HowItWorks } from "@/components/home/HowItWorks"
 import { CommunityBand } from "@/components/home/CommunityBand"
 import { TakeCeliMapWithYou } from "@/components/home/TakeCeliMapWithYou"
 import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
+import { EmprendimientosSection } from "@/components/home/EmprendimientosSection"
 
 const BASE_URL = getBaseUrl()
 
@@ -120,6 +121,12 @@ export default async function HomePage() {
       </section>
 
       <HomeDirectoryLinks />
+
+      <section className="px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-5xl">
+          <EmprendimientosSection />
+        </div>
+      </section>
 
       <section className="px-4 py-8 md:py-16">
         <div className="container mx-auto max-w-5xl">

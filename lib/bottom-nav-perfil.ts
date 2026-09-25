@@ -13,7 +13,7 @@ export const BOTTOM_NAV_SLOT_KEYS = [
   "sugerir",
   "favoritos",
   "home-map",
-  "explorar",
+  "emprendimientos",
   "perfil",
 ] as const
 

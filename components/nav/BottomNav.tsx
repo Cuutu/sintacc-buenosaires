@@ -9,9 +9,9 @@ import {
   Heart,
   Home,
   MapPinned,
-  Navigation2,
   Plus,
   ShieldCheck,
+  Store,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -23,7 +23,7 @@ const BASE_NAV_ITEMS = [
   { href: "/sugerir", label: "Sugerir", icon: Plus },
   { href: "/favoritos", label: "Guardados", icon: Heart },
   { href: "/mapa", label: "Mapa", icon: MapPinned, isCenter: true },
-  { href: "/mapa", label: "Explorar", icon: Navigation2, isListToggle: true },
+  { href: "/emprendimientos", label: "Emprendimientos", icon: Store },
   {
     href: "/perfil",
     label: "Perfil",
@@ -95,7 +95,7 @@ export function BottomNav() {
 
   const rawItems = isAdmin
     ? BASE_NAV_ITEMS.map((item, i) =>
-        BOTTOM_NAV_SLOT_KEYS[i] === "explorar" ? ADMIN_ITEM : item
+        BOTTOM_NAV_SLOT_KEYS[i] === "sugerir" ? ADMIN_ITEM : item
       )
     : BASE_NAV_ITEMS
 

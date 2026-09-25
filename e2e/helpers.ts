@@ -199,7 +199,7 @@ export async function assertNoAppCrash(page: Page): Promise<void> {
 /** Clicks reales BottomNav (no page.goto). */
 export async function clickBottomNav(
   page: Page,
-  slot: "home-map" | "favoritos" | "sugerir" | "explorar" | "perfil",
+  slot: "home-map" | "favoritos" | "sugerir" | "emprendimientos" | "perfil",
   opts: { settleMs?: number } = {}
 ): Promise<void> {
   const nav = page.getByTestId("bottom-nav")
