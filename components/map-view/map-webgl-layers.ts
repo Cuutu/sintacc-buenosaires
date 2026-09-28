@@ -539,6 +539,51 @@ export function resetPinEntrance(map: MapboxMapType): void {
   appearedIdsByMap.set(map, new Set())
 }
 
+/** Pins que ya estaban en pantalla: no repetir la entrada cuando llegan más lugares del viewport. */
+export function markPinsSeen(map: MapboxMapType, ids: Iterable<string>): void {
+  const seen = appearedIdsByMap.get(map) ?? new Set<string>()
+  for (const id of ids) seen.add(id)
+  appearedIdsByMap.set(map, seen)
+}
+
+/** Lugares que salieron del set: sin esto quedan con enter=0 si vuelven fuera de pantalla. */
+export function clearPinEntranceState(map: MapboxMapType, ids: Iterable<string>): void {
+  for (const id of ids) {
+    try {
+      map.removeFeatureState({ source: PLACES_SOURCE, id })
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/**
+ * Tras pan/zoom: los pins que entraron ya se vieron durante el gesto (opacidad 1).
+ * Solo se asegura enter=1 — animarlos desde 0 acá los hace parpadear al soltar.
+ */
+export function revealRenderedPins(map: MapboxMapType): void {
+  const seen = appearedIdsByMap.get(map) ?? new Set<string>()
+  appearedIdsByMap.set(map, seen)
+  if (!map.getLayer(LAYER_PINS)) return
+  let ids: Array<string | number> = []
+  try {
+    ids = map
+      .queryRenderedFeatures({ layers: [LAYER_PINS] })
+      .map(featureIdOf)
+      .filter((id): id is string | number => id != null)
+  } catch {
+    return
+  }
+  for (const id of ids) {
+    seen.add(String(id))
+    try {
+      map.setFeatureState({ source: PLACES_SOURCE, id }, { enter: 1 })
+    } catch {
+      /* feature already gone */
+    }
+  }
+}
+
 function featureIdOf(feature: { id?: unknown; properties?: Record<string, unknown> | null }): string | number | null {
   if (feature.id != null) return feature.id as string | number
   const props = feature.properties

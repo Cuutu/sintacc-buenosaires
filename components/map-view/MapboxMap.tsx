@@ -35,6 +35,7 @@ import { MAP_MOVE_DEBOUNCE_MS } from "@/lib/map-places-cache"
 import { celimapPinMarkup } from "@/lib/celimap-pin"
 import { buildPlacePopupHtml } from "./map-popup-html"
 import {
+  clearPinEntranceState,
   ensurePlacesLayers,
   expandClusterAt,
   fadeRenderedPinsOut,
@@ -43,11 +44,13 @@ import {
   LAYER_PINS,
   LAYER_SELECTED_PIN,
   loadCeliMapPinImages,
+  markPinsSeen,
   PIN_FOCUS_ZOOM,
   PIN_POPUP_OFFSET,
   playVisiblePinEntrance,
   queryPlaceOrClusterAt,
   resetPinEntrance,
+  revealRenderedPins,
   setPlacesSourceData,
   setSelectedPlaceOnMap,
 } from "./map-webgl-layers"
@@ -81,6 +84,7 @@ export type MapOverlayPadding = {
 const CAMERA_FOCUS_MS = 420
 const CAMERA_PADDING_MS = 300
 const PIN_KEEP_ZOOM = 15.5
+const PIN_ENTRANCE_IDLE_FALLBACK_MS = 600
 
 function overlayPaddingKey(padding: MapOverlayPadding | null | undefined): string {
   if (!padding) return ""
@@ -200,6 +204,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const pinsReadyRef = useRef(false)
     const hadPlacesRef = useRef(false)
     const placesFadeTimerRef = useRef<number | null>(null)
+    const lastPlaceIdsRef = useRef<Set<string>>(new Set())
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
     const lastOverlayPaddingKeyRef = useRef<string | null>(null)
     const selectedPlaceIdRef = useRef(selectedPlaceId)
@@ -753,7 +758,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           if (!b) return
           onBoundsChangeRef.current?.(b)
           if (!useNumberedMarkersRef.current && !isE2eMapboxMockEnabled()) {
-            playVisiblePinEntrance(m, reduceMotionRef.current)
+            revealRenderedPins(m)
           }
         } catch {
           /* mapa destruido */
@@ -818,8 +823,26 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             playVisiblePinEntrance(instance, reduceMotion, { pulse })
           }
           try {
-            if (instance.loaded?.() && !instance.isMoving?.()) run()
-            else instance.once("idle", run)
+            if (instance.loaded?.() && !instance.isMoving?.()) {
+              run()
+              return
+            }
+            // `idle` puede tardar (tiles lentos en mobile): sin respaldo los pins
+            // que se apagaron en el fade quedan invisibles hasta entonces.
+            let done = false
+            const runOnce = () => {
+              if (done) return
+              done = true
+              window.clearTimeout(fallback)
+              try {
+                instance.off("idle", runOnce)
+              } catch {
+                /* mapa destruido */
+              }
+              run()
+            }
+            const fallback = window.setTimeout(runOnce, PIN_ENTRANCE_IDLE_FALLBACK_MS)
+            instance.once("idle", runOnce)
           } catch {
             run()
           }
@@ -829,6 +852,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           resetPinEntrance(instance)
           playEntrance(pulse)
         }
+        const nextIds = new Set<string>()
+        placesRef.current.forEach((place) => {
+          if (place._id != null) nextIds.add(String(place._id))
+        })
+        const prevIds = lastPlaceIdsRef.current
+        lastPlaceIdsRef.current = nextIds
         if (!didInitLayersRef.current) {
           didInitLayersRef.current = true
           ensurePlacesLayers(instance, reduceMotion, false)
@@ -844,12 +873,23 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           return
         }
         ensurePlacesLayers(instance, reduceMotion, pinsReadyRef.current)
+        const removedIds = [...prevIds].filter((id) => !nextIds.has(id))
+        if (prevIds.size > 0 && removedIds.length === 0) {
+          // Pan/zoom/paginado del viewport: solo se suman lugares. Los pins que ya
+          // estaban quedan quietos; únicamente los nuevos hacen la entrada.
+          markPinsSeen(instance, prevIds)
+          setPlacesSourceData(instance, placesRef.current)
+          if (nextIds.size > prevIds.size) playEntrance(false)
+          hadPlacesRef.current = nextIds.size > 0
+          return
+        }
         const pulse = hadPlacesRef.current
         fadeRenderedPinsOut(instance, reduceMotion)
         if (placesFadeTimerRef.current) window.clearTimeout(placesFadeTimerRef.current)
         const delay = reduceMotion ? 0 : MOTION_MS.filterFade
         placesFadeTimerRef.current = window.setTimeout(() => {
           applyData(pulse)
+          clearPinEntranceState(instance, removedIds)
           hadPlacesRef.current = placesRef.current.length > 0
         }, delay)
       }
