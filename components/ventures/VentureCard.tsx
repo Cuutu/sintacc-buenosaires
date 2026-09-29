@@ -6,8 +6,10 @@ import { Instagram, MessageCircle } from "lucide-react"
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
   getCategoryLabel,
+  getCategoryLabels,
   getModalityLabel,
   getSafetyBadge,
+  getVentureCategories,
 } from "@/lib/venture-constants"
 import { parseVentureLinks } from "@/lib/venture-contact"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
@@ -19,6 +21,7 @@ export type VentureCardData = {
   slug?: string
   name: string
   category: string
+  categories?: string[]
   zone: string
   modalities?: string[]
   safetyLevel?: string
@@ -41,9 +44,18 @@ function safetyOverlay(level?: string): { label: string; className: string } | n
   }
 }
 
-function CategoryPill({ label, onPhoto }: { label: string; onPhoto?: boolean }) {
+function CategoryPill({
+  label,
+  title,
+  onPhoto,
+}: {
+  label: string
+  title?: string
+  onPhoto?: boolean
+}) {
   return (
     <span
+      title={title}
       className={cn(
         "rounded-full px-3 py-1 text-xs font-semibold text-[#1F4D35]",
         onPhoto ? "bg-[#F8F5EF]/92 backdrop-blur-sm" : "bg-[#1F4D35]/8"
@@ -58,7 +70,9 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
   const href = `/emprendimientos/${venture.slug ?? venture._id}`
   const photo = getVentureCoverPhoto(venture.photos)
   const safety = safetyOverlay(venture.safetyLevel)
-  const category = getCategoryLabel(venture.category)
+  const categoryLabels = getCategoryLabels(getVentureCategories(venture))
+  const category = categoryLabels[0] ?? getCategoryLabel(venture.category)
+  const extraCategories = categoryLabels.length - 1
   const { instagram: igUrl, whatsapp: waUrl } = parseVentureLinks({
     contact: venture.contact,
     purchaseChannels: venture.purchaseChannels,
@@ -121,7 +135,11 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
             ) : (
               <span />
             )}
-            <CategoryPill label={category} onPhoto={Boolean(photo)} />
+            <CategoryPill
+              label={extraCategories > 0 ? `${category} +${extraCategories}` : category}
+              title={extraCategories > 0 ? categoryLabels.join(" · ") : undefined}
+              onPhoto={Boolean(photo)}
+            />
           </div>
         </div>
 

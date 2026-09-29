@@ -1,6 +1,19 @@
 import { Resend } from "resend"
 import { getBaseUrl } from "@/lib/base-url"
-import { getCategoryLabel, getSafetyBadge } from "@/lib/venture-constants"
+import {
+  getCategoryLabels,
+  getModalityLabels,
+  getSafetyBadge,
+  getVentureCategories,
+} from "@/lib/venture-constants"
+import {
+  emailDetails,
+  emailFallbackLink,
+  emailNotice,
+  emailParagraph,
+  escapeHtml,
+  renderEmailLayout,
+} from "@/lib/email-layout"
 
 function getAdminEmails(): string[] {
   const adminEmails = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()).filter(Boolean)
@@ -10,43 +23,32 @@ function getAdminEmails(): string[] {
   return []
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-}
-
 function formatVentureDraft(
   draft: Record<string, unknown>,
-  extra?: { suggesterComment?: string; shipsNationwide?: boolean }
+  extra?: { shipsNationwide?: boolean }
 ): string {
-  const rows: string[] = []
-  const add = (label: string, value: unknown) => {
-    if (value != null && value !== "") {
-      rows.push(
-        `<tr><td style="padding:6px 0;font-size:12px;color:#71717a;width:140px;">${escapeHtml(label)}</td><td style="padding:6px 0;font-size:14px;color:#fafafa;">${escapeHtml(String(value))}</td></tr>`
-      )
-    }
-  }
-  add("Nombre", draft.name)
-  add("Categoría", draft.category ? getCategoryLabel(String(draft.category)) : undefined)
-  add("Zona", draft.zone)
-  if (Array.isArray(draft.modalities) && draft.modalities.length) {
-    add("Modalidades", draft.modalities.join(", "))
-  }
-  const safety = getSafetyBadge(draft.safetyLevel as string | undefined)
-  add("Seguridad", safety.label)
-  if (draft.contact && typeof draft.contact === "object") {
-    const c = draft.contact as Record<string, unknown>
-    add("Instagram", c.instagram)
-    add("WhatsApp", c.whatsapp)
-  }
-  if (draft.certifiedProducts) add("Certificados", "Sí")
-  add("Dónde comprar", draft.purchaseChannels)
-  if (extra?.shipsNationwide) add("Envíos", "Sí")
-  if (extra?.suggesterComment) add("Comentario", extra.suggesterComment)
-  return rows.length ? `<table>${rows.join("")}</table>` : "<p>Sin datos adicionales</p>"
+  const categories = getVentureCategories({
+    category: typeof draft.category === "string" ? draft.category : undefined,
+    categories: Array.isArray(draft.categories) ? (draft.categories as string[]) : undefined,
+  })
+  const contact =
+    draft.contact && typeof draft.contact === "object"
+      ? (draft.contact as Record<string, unknown>)
+      : {}
+  return emailDetails([
+    [categories.length > 1 ? "Categorías" : "Categoría", getCategoryLabels(categories).join(", ")],
+    ["Zona", draft.zone],
+    [
+      "Modalidades",
+      Array.isArray(draft.modalities) ? getModalityLabels(draft.modalities as string[]).join(", ") : "",
+    ],
+    ["Seguridad", getSafetyBadge(draft.safetyLevel as string | undefined).label],
+    ["Instagram", contact.instagram],
+    ["WhatsApp", contact.whatsapp],
+    ["Certificados", draft.certifiedProducts ? "Sí" : ""],
+    ["Dónde comprar", draft.purchaseChannels],
+    ["Envíos a todo el país", extra?.shipsNationwide ? "Sí" : ""],
+  ])
 }
 
 export function buildVentureSuggestionNewEmailHtml(params: {
@@ -58,36 +60,23 @@ export function buildVentureSuggestionNewEmailHtml(params: {
 }): string {
   const { ventureDraft, suggestedByName, suggestedByEmail, suggesterComment, shipsNationwide } =
     params
-  const baseUrl = getBaseUrl()
-  const logoUrl = `${baseUrl}/celimaplogocompleto.png`
-  const adminUrl = `${baseUrl}/admin`
+  const adminUrl = `${getBaseUrl()}/admin`
   const name = (ventureDraft.name as string) || "Sin nombre"
 
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;font-family:sans-serif;background:#0f0f12;color:#e4e4e7;">
-  <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
-    <table style="max-width:560px;">
-      <tr><td style="text-align:center;padding-bottom:24px;">
-        <img src="${logoUrl}" alt="CeliMap" width="160" height="42" />
-        <p style="font-size:11px;color:#10b981;font-weight:600;">EMPRENDIMIENTO NUEVO</p>
-      </td></tr>
-      <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
-        <h1 style="margin:0;font-size:20px;color:#fafafa;">${escapeHtml(name)}</h1>
-        <p style="font-size:13px;color:#71717a;">Por ${escapeHtml(suggestedByName)} (${escapeHtml(suggestedByEmail)})</p>
-        <div style="margin-top:16px;padding:16px;background:rgba(0,0,0,0.2);border-radius:12px;">
-          ${formatVentureDraft(ventureDraft, { suggesterComment, shipsNationwide })}
-        </div>
-      </td></tr>
-      <tr><td style="padding:24px;text-align:center;">
-        <a href="${adminUrl}" style="display:inline-block;padding:14px 28px;background:#10b981;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Ver en admin</a>
-      </td></tr>
-    </table>
-  </td></tr></table>
-</body>
-</html>`.trim()
+  return renderEmailLayout({
+    title: `Emprendimiento nuevo: ${name}`,
+    preheader: `${suggestedByName} sugirió un emprendimiento para revisar.`,
+    eyebrow: "Emprendimiento nuevo",
+    heading: name,
+    bodyHtml: [
+      emailParagraph(
+        `Sugerido por <strong style="color:#1F4D35;">${escapeHtml(suggestedByName)}</strong> · ${escapeHtml(suggestedByEmail)}`
+      ),
+      formatVentureDraft(ventureDraft, { shipsNationwide }),
+      suggesterComment ? emailNotice("Comentario", suggesterComment, "olive") : "",
+    ].join(""),
+    cta: { label: "Revisar en el admin", href: adminUrl },
+  })
 }
 
 export function buildVentureApprovedEmailHtml(params: {
@@ -96,56 +85,49 @@ export function buildVentureApprovedEmailHtml(params: {
 }): string {
   const baseUrl = getBaseUrl()
   const url = `${baseUrl}/emprendimientos/${params.ventureSlug}`
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;font-family:sans-serif;background:#0f0f12;color:#e4e4e7;">
-  <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
-    <table style="max-width:560px;">
-      <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;">
-        <h1 style="margin:0;font-size:22px;color:#fafafa;">Tu emprendimiento fue publicado</h1>
-        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> ya está en CeliMap Emprendimientos.</p>
-      </td></tr>
-      <tr><td style="padding:24px;text-align:center;">
-        <a href="${url}" style="display:inline-block;padding:14px 28px;background:#10b981;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Ver emprendimiento</a>
-      </td></tr>
-    </table>
-  </td></tr></table>
-</body>
-</html>`.trim()
+  const name = escapeHtml(params.ventureName)
+
+  return renderEmailLayout({
+    title: `${params.ventureName} ya está en CeliMap`,
+    preheader: `Tu emprendimiento ya se puede ver en CeliMap. ¡Gracias por sumar!`,
+    eyebrow: "¡Ya está online!",
+    eyebrowTone: "terracotta",
+    heading: "Tu emprendimiento fue publicado",
+    bodyHtml: [
+      emailParagraph(
+        `<strong style="color:#1F4D35;">${name}</strong> ya forma parte de los emprendimientos 100% sin gluten de CeliMap. Desde ahora la comunidad celíaca lo puede encontrar, contactar por WhatsApp o Instagram y dejarle reseñas.`
+      ),
+      emailNotice(
+        "Tip",
+        "Compartí el link en tus redes: cuantas más reseñas tenga, más arriba aparece para quienes buscan.",
+        "olive"
+      ),
+    ].join(""),
+    cta: { label: "Ver emprendimiento", href: url },
+    afterCtaHtml: emailFallbackLink(url),
+  })
 }
 
 export function buildVentureRejectedEmailHtml(params: {
   ventureName: string
   rejectionReason: string
 }): string {
-  const baseUrl = getBaseUrl()
-  const logoUrl = `${baseUrl}/celimaplogocompleto.png`
+  const suggestUrl = `${getBaseUrl()}/sugerir-emprendimiento`
 
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;font-family:sans-serif;background:#0f0f12;color:#e4e4e7;">
-  <table width="100%" style="background:#0f0f12;"><tr><td align="center" style="padding:40px 20px;">
-    <table style="max-width:560px;">
-      <tr><td style="text-align:center;padding-bottom:24px;">
-        <img src="${logoUrl}" alt="CeliMap" width="160" height="42" />
-        <p style="font-size:11px;color:#f59e0b;font-weight:600;">SUGERENCIA REVISADA</p>
-      </td></tr>
-      <tr><td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;">
-        <h1 style="margin:0;font-size:22px;color:#fafafa;">Tu emprendimiento no fue publicado</h1>
-        <p style="margin:16px 0 0;color:#d4d4d8;"><strong>${escapeHtml(params.ventureName)}</strong> fue revisado y por ahora no lo vamos a publicar en CeliMap.</p>
-        <div style="margin-top:18px;padding:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:12px;">
-          <p style="margin:0 0 8px;font-size:12px;color:#fbbf24;font-weight:600;">MOTIVO</p>
-          <p style="margin:0;font-size:14px;line-height:1.6;color:#fef3c7;">${escapeHtml(params.rejectionReason)}</p>
-        </div>
-      </td></tr>
-    </table>
-  </td></tr></table>
-</body>
-</html>`.trim()
+  return renderEmailLayout({
+    title: `Revisamos ${params.ventureName}`,
+    preheader: "Revisamos tu sugerencia y te contamos por qué no la publicamos.",
+    eyebrow: "Sugerencia revisada",
+    heading: "Por ahora no lo publicamos",
+    bodyHtml: [
+      emailParagraph(
+        `Gracias por sugerir <strong style="color:#1F4D35;">${escapeHtml(params.ventureName)}</strong>. Lo revisamos y por ahora no lo vamos a sumar a CeliMap.`
+      ),
+      emailNotice("Motivo", params.rejectionReason),
+      emailParagraph("Si podés corregir lo que falta, volvé a sugerirlo: lo revisamos de nuevo."),
+    ].join(""),
+    cta: { label: "Sugerir de nuevo", href: suggestUrl, tone: "terracotta" },
+  })
 }
 
 export async function sendVentureSuggestionNewEmail(params: {
@@ -191,7 +173,7 @@ export async function sendVentureApprovedEmail(params: {
     await resend.emails.send({
       from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[CeliMap] "${params.ventureName}" ya está publicado`,
+      subject: `¡${params.ventureName} ya está en CeliMap! 🎉`,
       html: buildVentureApprovedEmailHtml(params),
     })
     return true
@@ -216,7 +198,7 @@ export async function sendVentureRejectedEmail(params: {
     await resend.emails.send({
       from: `CeliMap <${fromDomain}>`,
       to: params.userEmail,
-      subject: `[CeliMap] Revisamos tu emprendimiento "${params.ventureName}"`,
+      subject: `Revisamos tu sugerencia: ${params.ventureName}`,
       html: buildVentureRejectedEmailHtml(params),
     })
     return true

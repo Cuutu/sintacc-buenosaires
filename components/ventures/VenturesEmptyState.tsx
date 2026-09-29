@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { getCategoryLabel } from "@/lib/venture-constants"
+import { getCategoryLabel, parseVentureCategoryParam } from "@/lib/venture-constants"
 import { SuggestVentureCta } from "./SuggestVentureCta"
 
 type VenturesEmptyStateProps = {
@@ -14,7 +14,9 @@ export function VenturesEmptyState({
   categoryId,
   onClearHref = "/emprendimientos",
 }: VenturesEmptyStateProps) {
-  const categoryLabel = categoryId ? getCategoryLabel(categoryId) : null
+  // `categoryId` puede venir como lista: "panificados,viandas".
+  const categoryLabel =
+    parseVentureCategoryParam(categoryId).map(getCategoryLabel).join(" / ") || null
   const heading = search
     ? `0 resultados para “${search}”`
     : categoryLabel

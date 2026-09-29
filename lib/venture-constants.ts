@@ -62,6 +62,40 @@ export function getCategoryLabel(id: string): string {
   return VENTURE_CATEGORIES.find((c) => c.id === id)?.label ?? id
 }
 
+/**
+ * Un emprendimiento puede tener varias categorías. `category` = principal (SEO, ícono,
+ * relacionados); `categories` = todas. Docs viejos solo tienen `category`.
+ */
+export function getVentureCategories(venture: {
+  category?: string | null
+  categories?: readonly string[] | null
+}): string[] {
+  const list = venture.categories?.length
+    ? venture.categories
+    : venture.category
+      ? [venture.category]
+      : []
+  return [...new Set(list)]
+}
+
+export function getCategoryLabels(ids: readonly string[]): string[] {
+  return ids.map(getCategoryLabel)
+}
+
+/** `?category=panificados,viandas` → ids válidos, sin repetidos. */
+export function parseVentureCategoryParam(value?: string | null): VentureCategoryId[] {
+  if (!value) return []
+  const valid = new Set<string>(ventureCategoryIds)
+  return [...new Set(value.split(",").map((s) => s.trim()))].filter((id): id is VentureCategoryId =>
+    valid.has(id)
+  )
+}
+
+/** Match por cualquiera de las categorías; incluye docs viejos que solo tienen `category`. */
+export function ventureCategoryMongoFilter(ids: readonly string[]): Record<string, unknown> {
+  return { $or: [{ categories: { $in: ids } }, { category: { $in: ids } }] }
+}
+
 export function getModalityLabel(id: string): string {
   return VENTURE_MODALITIES.find((m) => m.id === id)?.label ?? id
 }

@@ -17,12 +17,14 @@ import {
   VENTURE_SAFETY_LEVELS,
 } from "@/lib/venture-constants"
 import type { VentureModalityId, VentureSafetyLevelId, VentureCategoryId } from "@/lib/venture-constants"
+import { getVentureCategories } from "@/lib/venture-constants"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 type VentureDraft = {
   name?: string
   category?: string
+  categories?: string[]
   zone?: string
   modalities?: string[]
   safetyLevel?: string
@@ -53,7 +55,7 @@ export function VentureSuggestionEditModal({
 }: Props) {
   const [form, setForm] = useState({
     name: "",
-    category: "" as VentureCategoryId | "",
+    categories: [] as VentureCategoryId[],
     zone: "",
     modalities: [] as VentureModalityId[],
     safetyLevel: "to_confirm" as VentureSafetyLevelId,
@@ -68,7 +70,7 @@ export function VentureSuggestionEditModal({
     if (open && ventureDraft) {
       setForm({
         name: ventureDraft.name || "",
-        category: (ventureDraft.category as VentureCategoryId) || "",
+        categories: getVentureCategories(ventureDraft) as VentureCategoryId[],
         zone: ventureDraft.zone || "",
         modalities: (ventureDraft.modalities || []) as VentureModalityId[],
         safetyLevel: (ventureDraft.safetyLevel as VentureSafetyLevelId) || "to_confirm",
@@ -89,7 +91,7 @@ export function VentureSuggestionEditModal({
         body: JSON.stringify({
           ventureDraft: {
             name: form.name,
-            category: form.category,
+            categories: form.categories,
             zone: form.zone,
             modalities: form.modalities,
             safetyLevel: form.safetyLevel,
@@ -124,7 +126,7 @@ export function VentureSuggestionEditModal({
           action: "approve",
           ventureDraft: {
             name: form.name,
-            category: form.category,
+            categories: form.categories,
             zone: form.zone,
             modalities: form.modalities,
             safetyLevel: form.safetyLevel,
@@ -148,6 +150,15 @@ export function VentureSuggestionEditModal({
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleCategory = (id: VentureCategoryId) => {
+    setForm((p) => ({
+      ...p,
+      categories: p.categories.includes(id)
+        ? p.categories.filter((c) => c !== id)
+        : [...p.categories, id],
+    }))
   }
 
   const toggleMod = (id: VentureModalityId) => {
@@ -176,16 +187,17 @@ export function VentureSuggestionEditModal({
             <Input value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })} />
           </div>
           <div className="space-y-2">
-            <Label>Categoría</Label>
+            <Label>Categorías</Label>
             <div className="flex flex-wrap gap-1">
               {VENTURE_CATEGORIES.map((c) => (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setForm({ ...form, category: c.id })}
+                  onClick={() => toggleCategory(c.id)}
+                  aria-pressed={form.categories.includes(c.id)}
                   className={cn(
                     "px-2 py-1 rounded text-xs border",
-                    form.category === c.id ? "border-primary bg-primary/10" : "border-border"
+                    form.categories.includes(c.id) ? "border-primary bg-primary/10" : "border-border"
                   )}
                 >
                   {c.label}

@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import {
   getCategoryLabel,
+  getCategoryLabels,
   getModalityLabel,
   getSafetyBadge,
+  getVentureCategories,
   VENTURE_SAFETY_DISCLAIMER,
   VENTURE_CATALOG_INTRO,
 } from "@/lib/venture-constants"
@@ -70,7 +72,8 @@ type VentureProfileContentProps = {
 
 export function VentureProfileContent({ venture, related = [] }: VentureProfileContentProps) {
   const photo = getVentureCoverPhoto(venture.photos)
-  const categoryLabel = getCategoryLabel(venture.category)
+  const categoryIds = getVentureCategories(venture)
+  const categoryLabel = getCategoryLabels(categoryIds).join(" · ")
   const { label: safetyLabel, dot: safetyDot } = getSafetyBadge("fully_gf")
   const links = parseVentureLinks({
     contact: venture.contact,
@@ -83,7 +86,6 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
     purchaseText: links.purchaseText,
   })
   const shareUrl = `${getBaseUrl()}/emprendimientos/${venture.slug}`
-  const categoryHref = getCategoryLandingPath(venture.category)
   const zoneHref = resolveZoneHref(venture.zone)
   const inArgentina = isArgentinaVentureZone(venture.zone)
   const hasBuyLinks = Boolean(links.whatsapp || links.instagram || links.web)
@@ -136,11 +138,13 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
             ) : null}
 
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-primary/30 text-primary">
-                <Link href={categoryHref} className="hover:underline">
-                  {categoryLabel}
-                </Link>
-              </Badge>
+              {categoryIds.map((id) => (
+                <Badge key={id} variant="outline" className="border-primary/30 text-primary">
+                  <Link href={getCategoryLandingPath(id)} className="hover:underline">
+                    {getCategoryLabel(id)}
+                  </Link>
+                </Badge>
+              ))}
               <span className="inline-flex items-center gap-1.5 rounded-full border border-olive/10 bg-olive/5 px-2.5 py-0.5 text-xs font-medium">
                 <span aria-hidden>{safetyDot}</span>
                 {safetyLabel}

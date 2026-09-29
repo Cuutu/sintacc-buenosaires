@@ -7,13 +7,19 @@ import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { ensureVentureSlug } from "@/lib/venture-slug"
 import type { VentureZoneLandingConfig } from "@/lib/venture-seo"
 import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
-import { dedicatedVentureMongoFilter, isCatalogDedicatedVenture } from "@/lib/venture-constants"
+import {
+  dedicatedVentureMongoFilter,
+  getVentureCategories,
+  isCatalogDedicatedVenture,
+  ventureCategoryMongoFilter,
+} from "@/lib/venture-constants"
 
 export type VenturePublic = {
   _id: string
   slug: string
   name: string
   category: IVenture["category"]
+  categories: IVenture["categories"]
   zone: string
   modalities: IVenture["modalities"]
   safetyLevel: IVenture["safetyLevel"]
@@ -38,6 +44,7 @@ function serializeVenture(
     name: d.name,
     slug: d.slug ?? d._id.toString(),
     category: d.category,
+    categories: getVentureCategories(d) as IVenture["categories"],
     zone: d.zone,
     modalities: d.modalities ?? [],
     safetyLevel: d.safetyLevel,
@@ -75,8 +82,11 @@ export async function getApprovedVentures(options?: {
     ...dedicatedVentureMongoFilter(),
   }
   if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
-  if (options?.category) query.category = options.category
-  if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
+  // Categoría y zona usan $or: van en $and para no pisarse.
+  const and: Record<string, unknown>[] = []
+  if (options?.category) and.push(ventureCategoryMongoFilter([options.category]))
+  if (options?.zoneConfig) and.push(buildZoneMongoFilter(options.zoneConfig))
+  if (and.length) query.$and = and
   if (options?.excludeId && mongoose.Types.ObjectId.isValid(options.excludeId)) {
     query._id = { $ne: new mongoose.Types.ObjectId(options.excludeId) }
   }
@@ -106,8 +116,11 @@ export async function countApprovedVentures(options?: {
     ...dedicatedVentureMongoFilter(),
   }
   if (options?.argentinaOnly !== false) Object.assign(query, argentinaVentureMongoFilter())
-  if (options?.category) query.category = options.category
-  if (options?.zoneConfig) Object.assign(query, buildZoneMongoFilter(options.zoneConfig))
+  // Categoría y zona usan $or: van en $and para no pisarse.
+  const and: Record<string, unknown>[] = []
+  if (options?.category) and.push(ventureCategoryMongoFilter([options.category]))
+  if (options?.zoneConfig) and.push(buildZoneMongoFilter(options.zoneConfig))
+  if (and.length) query.$and = and
   return Venture.countDocuments(query)
 }
 
@@ -146,7 +159,7 @@ export async function getRelatedVentures(
   const oid = new mongoose.Types.ObjectId(venture._id)
   const sameCategory = await Venture.find({
     status: "approved",
-    category: venture.category,
+    ...ventureCategoryMongoFilter(getVentureCategories(venture)),
     _id: { $ne: oid },
     ...argentinaVentureMongoFilter(),
     ...dedicatedVentureMongoFilter(),

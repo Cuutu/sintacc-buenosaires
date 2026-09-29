@@ -206,7 +206,9 @@ const ventureSafetyEnum = z.enum(ventureSafetyLevelIds as unknown as [string, ..
 export const ventureSchema = z.object({
   name: z.string().min(1).max(200).trim(),
   slug: z.string().min(2).max(120).optional(),
-  category: ventureCategoryEnum,
+  /** Principal. Clientes nuevos mandan `categories`; ver normalizeVentureCategories. */
+  category: ventureCategoryEnum.optional(),
+  categories: z.array(ventureCategoryEnum).max(ventureCategoryIds.length).optional(),
   zone: z.string().min(1).max(150).trim(),
   modalities: z.array(ventureModalityEnum).default([]),
   safetyLevel: ventureSafetyEnum.default("to_confirm"),
@@ -232,8 +234,32 @@ export const ventureSuggestionSchema = ventureSchema.extend({
 
 export const ventureDraftUpdateSchema = ventureSchema.partial()
 
+type VentureCategoryFields = { category?: string; categories?: string[] }
+
+/**
+ * Unifica `category` / `categories`: categories sin repetidos, category = categories[0].
+ * `required` tira ZodError (→ 400) si no quedó ninguna. En updates parciales sin
+ * ninguno de los dos campos devuelve el objeto tal cual.
+ */
+export function normalizeVentureCategories<T extends VentureCategoryFields>(
+  data: T,
+  options: { required: boolean }
+): T {
+  const categories = [
+    ...new Set(data.categories?.length ? data.categories : data.category ? [data.category] : []),
+  ]
+  if (categories.length === 0) {
+    if (!options.required) return data
+    throw new z.ZodError([
+      { code: "custom", path: ["categories"], message: "Elegí al menos una categoría" },
+    ])
+  }
+  return { ...data, category: categories[0], categories }
+}
+
 export const venturesPublicQuerySchema = z.object({
-  category: ventureCategoryEnum.optional(),
+  /** `?category=a,b` → cualquiera de esas categorías. */
+  categories: z.array(ventureCategoryEnum).optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.preprocess(
@@ -257,8 +283,11 @@ export const ventureReviewSchema = z.object({
 export function parseVenturesSearchParams(
   searchParams: URLSearchParams
 ): VenturesPublicQuery {
+  const categoryParam = searchParams.get("category")
   return venturesPublicQuerySchema.parse({
-    category: searchParams.get("category") ?? undefined,
+    categories: categoryParam
+      ? [...new Set(categoryParam.split(",").map((s) => s.trim()).filter(Boolean))]
+      : undefined,
     search: searchParams.get("search") ?? undefined,
     page: searchParams.get("page") ?? "1",
     limit: searchParams.get("limit") ?? "20",

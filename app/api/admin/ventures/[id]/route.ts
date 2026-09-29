@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { requireAdmin } from "@/lib/middleware"
-import { ventureSchema } from "@/lib/validations"
+import { normalizeVentureCategories, ventureSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { z, ZodError } from "zod"
@@ -24,9 +24,13 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const parsed = ventureSchema.partial().extend({
-      responsibleEmail: z.union([z.string().trim().email().max(254), z.literal("")]).optional(),
-    }).parse(body)
+    // findByIdAndUpdate no corre el pre("validate") del modelo: category/categories acá.
+    const parsed = normalizeVentureCategories(
+      ventureSchema.partial().extend({
+        responsibleEmail: z.union([z.string().trim().email().max(254), z.literal("")]).optional(),
+      }).parse(body),
+      { required: false }
+    )
 
     const existing = await Venture.findById(params.id)
     if (!existing) {

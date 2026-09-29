@@ -36,7 +36,7 @@ export default function SugerirEmprendimientoContent() {
   const [whatsapp, setWhatsapp] = useState("")
   const [zone, setZone] = useState("")
   const [shipsNationwide, setShipsNationwide] = useState(false)
-  const [category, setCategory] = useState<VentureCategoryId | "">("")
+  const [categories, setCategories] = useState<VentureCategoryId[]>([])
   const [safetyLevel, setSafetyLevel] = useState<VentureSafetyLevelId | "">("fully_gf")
   const [certifiedProducts, setCertifiedProducts] = useState(false)
   const [modalities, setModalities] = useState<VentureModalityId[]>([])
@@ -47,9 +47,17 @@ export default function SugerirEmprendimientoContent() {
   useEffect(() => {
     const fromUrl = searchParams.get("category")
     if (fromUrl && VALID_CATEGORY_IDS.has(fromUrl as VentureCategoryId)) {
-      setCategory(fromUrl as VentureCategoryId)
+      setCategories((prev) =>
+        prev.includes(fromUrl as VentureCategoryId) ? prev : [fromUrl as VentureCategoryId, ...prev]
+      )
     }
   }, [searchParams])
+
+  const toggleCategory = (id: VentureCategoryId) => {
+    setCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    )
+  }
 
   const toggleModality = (id: VentureModalityId) => {
     setModalities((prev) =>
@@ -61,8 +69,8 @@ export default function SugerirEmprendimientoContent() {
     e.preventDefault()
     setError("")
 
-    if (!name.trim() || !zone.trim() || !category || !safetyLevel) {
-      setError("Completá nombre, zona, categoría y nivel de seguridad")
+    if (!name.trim() || !zone.trim() || categories.length === 0 || !safetyLevel) {
+      setError("Completá nombre, zona, al menos una categoría y nivel de seguridad")
       return
     }
     if (!instagram.trim() && !whatsapp.trim()) {
@@ -77,7 +85,7 @@ export default function SugerirEmprendimientoContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          category,
+          categories,
           zone: zone.trim(),
           modalities,
           safetyLevel,
@@ -220,16 +228,18 @@ export default function SugerirEmprendimientoContent() {
         </label>
 
         <div className="space-y-2">
-          <Label>Categoría *</Label>
+          <Label>Categorías *</Label>
+          <p className="text-xs text-muted-foreground">Podés elegir más de una.</p>
           <div className="flex flex-wrap gap-2">
             {VENTURE_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setCategory(cat.id)}
+                onClick={() => toggleCategory(cat.id)}
+                aria-pressed={categories.includes(cat.id)}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm border transition-colors",
-                  category === cat.id
+                  categories.includes(cat.id)
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-olive/10 hover:border-primary/30"
                 )}

@@ -9,7 +9,9 @@ export interface IVenture extends Document {
   responsibleEmail?: string
   name: string
   slug?: string
+  /** Categoría principal (SEO, ícono, relacionados). Siempre = categories[0]. */
   category: (typeof ventureCategoryIds)[number]
+  categories: (typeof ventureCategoryIds)[number][]
   zone: string
   modalities: (typeof ventureModalityIds)[number][]
   safetyLevel: (typeof ventureSafetyLevelIds)[number]
@@ -36,6 +38,12 @@ const VentureSchema = new Schema<IVenture>(
       type: String,
       enum: ventureCategoryIds,
       required: true,
+      index: true,
+    },
+    categories: {
+      type: [String],
+      enum: ventureCategoryIds,
+      default: [],
       index: true,
     },
     zone: { type: String, required: true, trim: true },
@@ -78,6 +86,15 @@ const VentureSchema = new Schema<IVenture>(
   },
   { timestamps: true }
 )
+
+// save(): mantiene `category` = primera de `categories` (y completa `categories` en docs viejos).
+// findByIdAndUpdate no pasa por acá: normalizar antes con normalizeVentureCategories.
+VentureSchema.pre("validate", function (next) {
+  const categories = [...new Set(this.categories?.length ? this.categories : this.category ? [this.category] : [])]
+  this.categories = categories
+  if (categories[0]) this.category = categories[0]
+  next()
+})
 
 VentureSchema.index({ status: 1, category: 1, createdAt: -1 })
 VentureSchema.index({ name: "text", zone: "text" })

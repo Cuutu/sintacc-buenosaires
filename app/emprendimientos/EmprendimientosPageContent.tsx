@@ -7,7 +7,13 @@ import { VentureCard, VentureCardSkeleton, type VentureCardData } from "@/compon
 import { VentureExploreSections } from "@/components/ventures/VentureExploreSections"
 import { VenturesEmptyState } from "@/components/ventures/VenturesEmptyState"
 import { SuggestVentureCta } from "@/components/ventures/SuggestVentureCta"
-import { VENTURE_CATEGORIES, getCategoryLabel, VENTURE_CATALOG_INTRO } from "@/lib/venture-constants"
+import {
+  VENTURE_CATEGORIES,
+  getCategoryLabel,
+  getVentureCategories,
+  parseVentureCategoryParam,
+  VENTURE_CATALOG_INTRO,
+} from "@/lib/venture-constants"
 import { isArgentinaVentureZone, VENTURE_AR_ZONE_LANDINGS } from "@/lib/venture-argentina"
 import { matchesVentureSearch, resolveVentureCategoryFromQuery } from "@/lib/venture-search"
 import { cn } from "@/lib/utils"
@@ -43,6 +49,8 @@ export default function EmprendimientosPageContent({
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
+  // `?category=panificados,viandas`: muestra los que tengan cualquiera de esas.
+  const selectedCategories = useMemo(() => parseVentureCategoryParam(categoryParam), [categoryParam])
   const modalityParam = searchParams.get("modality")
   const searchParam = searchParams.get("search") ?? ""
 
@@ -117,9 +125,16 @@ export default function EmprendimientosPageContent({
     setSuggestOpen(false)
     navigate((params) => {
       params.delete("search")
-      params.delete("category")
       params.delete("modality")
-      if ("category" in chip && chip.category) params.set("category", chip.category)
+      if (!("category" in chip) || !chip.category) {
+        params.delete("category")
+        return
+      }
+      const next = selectedCategories.includes(chip.category)
+        ? selectedCategories.filter((id) => id !== chip.category)
+        : [...selectedCategories, chip.category]
+      if (next.length) params.set("category", next.join(","))
+      else params.delete("category")
     })
   }
 
@@ -139,16 +154,21 @@ export default function EmprendimientosPageContent({
 
   const displayedVentures = useMemo(() => {
     return ventures.filter((v) => {
-      if (categoryParam && v.category !== categoryParam) return false
+      if (
+        selectedCategories.length &&
+        !getVentureCategories(v).some((id) => (selectedCategories as string[]).includes(id))
+      ) {
+        return false
+      }
       if (modalityParam && !(v.modalities ?? []).some((m) => m === modalityParam)) return false
       return matchesVentureSearch(v, searchParam)
     })
-  }, [ventures, categoryParam, modalityParam, searchParam])
+  }, [ventures, selectedCategories, modalityParam, searchParam])
 
   const categoryGuess = !categoryParam ? resolveVentureCategoryFromQuery(searchParam) : null
   const categoryFallback =
     displayedVentures.length === 0 && categoryGuess
-      ? ventures.filter((v) => v.category === categoryGuess)
+      ? ventures.filter((v) => getVentureCategories(v).includes(categoryGuess))
       : []
   const list = displayedVentures.length > 0 ? displayedVentures : categoryFallback
   const usedCategoryFallback = displayedVentures.length === 0 && categoryFallback.length > 0
@@ -201,16 +221,12 @@ export default function EmprendimientosPageContent({
   const hasFilter = Boolean(categoryParam || modalityParam || hasActiveSearch)
   const isSearchPending =
     searchInput.trim() !== searchParam.trim() && searchInput.trim().length >= 2
-  const activeChip = HERO_CHIPS.find((c) => {
-    if ("category" in c && c.category && c.category === categoryParam) return true
-    return false
-  })
 
   const countLabel = showEmpty
     ? hasActiveSearch
       ? `0 resultados para “${searchParam}”`
-      : categoryParam
-        ? `0 resultados en ${getCategoryLabel(categoryParam)}`
+      : selectedCategories.length
+        ? `0 resultados en ${selectedCategories.map(getCategoryLabel).join(" / ")}`
         : "0 emprendimientos"
     : `${list.length} ${list.length === 1 ? "emprendimiento" : "emprendimientos"}`
 
@@ -288,12 +304,15 @@ export default function EmprendimientosPageContent({
             >
               {HERO_CHIPS.map((chip) => {
                 const selected =
-                  chip.key === "all" ? !categoryParam && !modalityParam : activeChip?.key === chip.key
+                  "category" in chip && chip.category
+                    ? selectedCategories.includes(chip.category)
+                    : selectedCategories.length === 0 && !modalityParam
                 return (
                   <button
                     key={chip.key}
                     type="button"
                     onClick={() => setChip(chip)}
+                    aria-pressed={selected}
                     className={cn(
                       "h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors",
                       selected

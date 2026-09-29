@@ -120,6 +120,7 @@ export type VentureSuggestionItem = {
   ventureDraft: {
     name?: string
     category?: string
+    categories?: string[]
     zone?: string
     modalities?: string[]
     safetyLevel?: string
@@ -140,6 +141,7 @@ export type VentureItem = {
   _id: string
   name: string
   category: string
+  categories?: string[]
   zone: string
   modalities?: string[]
   safetyLevel?: string

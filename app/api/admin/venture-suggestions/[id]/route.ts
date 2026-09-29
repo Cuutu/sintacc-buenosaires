@@ -4,7 +4,11 @@ import { VentureSuggestion } from "@/models/VentureSuggestion"
 import { Venture } from "@/models/Venture"
 import { User } from "@/models/User"
 import { requireAdmin } from "@/lib/middleware"
-import { ventureDraftUpdateSchema, ventureSchema } from "@/lib/validations"
+import {
+  normalizeVentureCategories,
+  ventureDraftUpdateSchema,
+  ventureSchema,
+} from "@/lib/validations"
 import { sendVentureApprovedEmail, sendVentureRejectedEmail } from "@/lib/email-ventures"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
@@ -13,10 +17,13 @@ import { invalidateApiCache } from "@/lib/api-cache"
 import { withGeneratedVentureSlug } from "@/lib/venture-save"
 
 function buildVentureFromDraft(draft: Record<string, unknown>) {
-  const parsed = ventureSchema.parse({
-    ...draft,
-    photos: (draft.photos as string[])?.length ? draft.photos : [],
-  })
+  const parsed = normalizeVentureCategories(
+    ventureSchema.parse({
+      ...draft,
+      photos: (draft.photos as string[])?.length ? draft.photos : [],
+    }),
+    { required: true }
+  )
   return { ...parsed, status: "approved" as const, source: "suggestion" as const }
 }
 
@@ -47,7 +54,9 @@ export async function PATCH(
     }
 
     if (incomingDraft && !action) {
-      const parsed = ventureDraftUpdateSchema.parse(incomingDraft)
+      const parsed = normalizeVentureCategories(ventureDraftUpdateSchema.parse(incomingDraft), {
+        required: false,
+      })
       const current = (suggestion.ventureDraft as Record<string, unknown>) || {}
       suggestion.ventureDraft = { ...current, ...parsed } as typeof suggestion.ventureDraft
       await suggestion.save()
@@ -61,7 +70,12 @@ export async function PATCH(
     if (action === "approve") {
       const currentDraft = suggestion.ventureDraft as Record<string, unknown>
       const draft = incomingDraft
-        ? { ...currentDraft, ...ventureDraftUpdateSchema.parse(incomingDraft) }
+        ? {
+            ...currentDraft,
+            ...normalizeVentureCategories(ventureDraftUpdateSchema.parse(incomingDraft), {
+              required: false,
+            }),
+          }
         : currentDraft
 
       const ventureData = buildVentureFromDraft(draft)

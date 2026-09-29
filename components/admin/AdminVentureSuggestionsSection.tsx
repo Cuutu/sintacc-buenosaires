@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { VentureSuggestionEditModal } from "@/components/admin/VentureSuggestionEditModal"
-import { getCategoryLabel, getSafetyBadge } from "@/lib/venture-constants"
+import { getCategoryLabels, getSafetyBadge, getVentureCategories } from "@/lib/venture-constants"
 import type { AdminCounts, VentureSuggestionItem } from "@/components/admin/types"
 
 export type AdminVentureSuggestionsSectionProps = {
@@ -80,7 +80,7 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
                   <div>
                     <h3 className="font-semibold">{d.name || "Sin nombre"}</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {getCategoryLabel(d.category || "")} · {d.zone}
+                      {getCategoryLabels(getVentureCategories(d)).join(", ")} · {d.zone}
                       {s.suggestedByUserId?.name && ` · por ${s.suggestedByUserId.name}`}
                     </p>
                     <p className="text-xs mt-1">

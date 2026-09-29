@@ -3,6 +3,7 @@ import {
   VENTURE_MODALITIES,
   getCategoryLabel,
   getModalityLabel,
+  getVentureCategories,
   type VentureCategoryId,
 } from "@/lib/venture-constants"
 
@@ -72,7 +73,7 @@ export function buildVentureSearchFilter(term: string): Record<string, unknown> 
   ]
 
   if (categoryIds.length) {
-    or.push({ category: { $in: categoryIds } })
+    or.push({ categories: { $in: categoryIds } }, { category: { $in: categoryIds } })
   }
   if (modalityIds.length) {
     or.push({ modalities: { $in: modalityIds } })
@@ -87,6 +88,7 @@ export function matchesVentureSearch(
     name: string
     zone: string
     category: string
+    categories?: string[]
     modalities?: string[]
     description?: string
     purchaseChannels?: string
@@ -99,7 +101,7 @@ export function matchesVentureSearch(
   const haystack = [
     venture.name,
     venture.zone,
-    getCategoryLabel(venture.category),
+    ...getVentureCategories(venture).map(getCategoryLabel),
     venture.description,
     venture.purchaseChannels,
     ...(venture.modalities ?? []).map(getModalityLabel),

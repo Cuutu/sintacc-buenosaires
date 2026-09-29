@@ -4,7 +4,7 @@ import { VentureSuggestion } from "@/models/VentureSuggestion"
 import { requireAuth } from "@/lib/middleware"
 import { checkRateLimit, checkRateLimitByIp } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
-import { ventureSuggestionSchema } from "@/lib/validations"
+import { normalizeVentureCategories, ventureSuggestionSchema } from "@/lib/validations"
 import { sendVentureSuggestionNewEmail } from "@/lib/email-ventures"
 import mongoose from "mongoose"
 import { ZodError } from "zod"
@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validated = ventureSuggestionSchema.parse(body)
+    const validated = normalizeVentureCategories(ventureSuggestionSchema.parse(body), {
+      required: true,
+    })
 
     const { suggesterComment, shipsNationwide, ...draftFields } = validated
     const modalities = [...(draftFields.modalities ?? [])] as VentureModalityId[]

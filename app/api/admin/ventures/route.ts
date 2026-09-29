@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Venture } from "@/models/Venture"
 import { requireAdmin } from "@/lib/middleware"
-import { ventureSchema } from "@/lib/validations"
+import { normalizeVentureCategories, ventureSchema } from "@/lib/validations"
+import { ventureCategoryMongoFilter } from "@/lib/venture-constants"
 import { withGeneratedVentureSlug } from "@/lib/venture-save"
 import { logApiError } from "@/lib/logger"
 import { invalidateApiCache } from "@/lib/api-cache"
@@ -25,11 +26,13 @@ export async function GET(request: NextRequest) {
 
     const query: Record<string, unknown> = {}
     if (status === "approved" || status === "pending") query.status = status
-    if (category) query.category = category
+    const and: Record<string, unknown>[] = []
+    if (category) and.push(ventureCategoryMongoFilter([category]))
     if (search && search.length >= 2) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-      query.$or = [{ name: regex }, { zone: regex }]
+      and.push({ $or: [{ name: regex }, { zone: regex }] })
     }
+    if (and.length) query.$and = and
 
     const [ventures, total] = await Promise.all([
       Venture.find(query).select("+responsibleEmail").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
@@ -56,7 +59,10 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const parsed = ventureSchema.parse({ ...body, source: "manual", status: body.status ?? "approved" })
+    const parsed = normalizeVentureCategories(
+      ventureSchema.parse({ ...body, source: "manual", status: body.status ?? "approved" }),
+      { required: true }
+    )
     const withSlug = await withGeneratedVentureSlug(parsed)
     const venture = new Venture(withSlug)
     await venture.save()

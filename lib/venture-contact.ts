@@ -89,7 +89,16 @@ export function parseVentureLinks(input: {
 
   const purchaseText = purchase ? stripUrlsFromText(purchase) || null : null
 
-  return { whatsapp, instagram, web, purchaseText }
+  return { whatsapp: withWhatsAppOrderMessage(whatsapp), instagram, web, purchaseText }
+}
+
+export const VENTURE_WHATSAPP_ORDER_MESSAGE =
+  "Hola, los vi en CeliMap y me gustaría hacer un pedido"
+
+/** Chat abre con el mensaje escrito. Solo wa.me: grupos (chat.whatsapp.com) no aceptan `text`. */
+export function withWhatsAppOrderMessage(url: string | null): string | null {
+  if (!url || !/^https:\/\/wa\.me\/\d+$/.test(url)) return url
+  return `${url}?text=${encodeURIComponent(VENTURE_WHATSAPP_ORDER_MESSAGE)}`
 }
 
 const DESCRIPTION_FALLBACKS: Partial<Record<VentureCategoryId, string>> = {

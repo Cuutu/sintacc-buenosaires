@@ -4,7 +4,7 @@ import { Venture } from "@/models/Venture"
 import { parseVenturesSearchParams } from "@/lib/validations"
 import { buildVentureSearchFilter } from "@/lib/venture-search"
 import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
-import { dedicatedVentureMongoFilter } from "@/lib/venture-constants"
+import { dedicatedVentureMongoFilter, ventureCategoryMongoFilter } from "@/lib/venture-constants"
 import { logApiError } from "@/lib/logger"
 import { getOrSetApiCache } from "@/lib/api-cache"
 import { getVentureReviewStatsMap } from "@/lib/venture-review-stats"
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { page, limit, category, search } = parsed
+    const { page, limit, categories, search } = parsed
     const skip = (page - 1) * limit
 
     const query: Record<string, unknown> = {
@@ -41,11 +41,12 @@ export async function GET(request: NextRequest) {
       ...argentinaVentureMongoFilter(),
       ...dedicatedVentureMongoFilter(),
     }
-    if (category) query.category = category
+    // Categoría y búsqueda usan $or: van en $and para no pisarse.
+    const and: Record<string, unknown>[] = []
+    if (categories?.length) and.push(ventureCategoryMongoFilter(categories))
     const searchFilter = search ? buildVentureSearchFilter(search) : null
-    if (searchFilter) {
-      Object.assign(query, searchFilter)
-    }
+    if (searchFilter) and.push(searchFilter)
+    if (and.length) query.$and = and
 
     const cacheKey = `public:ventures:${searchParams.toString()}`
     const data = await getOrSetApiCache(cacheKey, CACHE_TTL_MS, async () => {

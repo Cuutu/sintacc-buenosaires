@@ -3,7 +3,7 @@
 import { Search } from "lucide-react"
 import { useState } from "react"
 import { VentureContactEditModal } from "./VentureContactEditModal"
-import { getCategoryLabel } from "@/lib/venture-constants"
+import { getCategoryLabels, getVentureCategories } from "@/lib/venture-constants"
 import type { VentureItem } from "@/components/admin/types"
 import { toast } from "sonner"
 import { adminUi } from "@/lib/admin-ui"
@@ -50,7 +50,7 @@ export function AdminVenturesSection({
     return (
       v.name.toLowerCase().includes(q) ||
       v.zone.toLowerCase().includes(q) ||
-      getCategoryLabel(v.category).toLowerCase().includes(q)
+      getCategoryLabels(getVentureCategories(v)).join(" ").toLowerCase().includes(q)
     )
   })
 
@@ -92,7 +92,7 @@ export function AdminVenturesSection({
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-[#234A33]">{v.name}</p>
                   <p className="mt-1 text-sm text-[#6B746C]">
-                    {getCategoryLabel(v.category)} · {v.zone || "Sin zona"}
+                    {getCategoryLabels(getVentureCategories(v)).join(", ")} · {v.zone || "Sin zona"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {hasModality(v, "delivery") ? <span className={adminUi.chip}>Delivery</span> : null}

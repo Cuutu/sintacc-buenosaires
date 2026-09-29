@@ -1,3 +1,5 @@
+import { getVentureCategories } from "@/lib/venture-constants"
+
 /**
  * Campos de LISTADO público de emprendimientos.
  * El detalle GET /api/ventures/[id] sigue con contact / description.
@@ -6,6 +8,7 @@ export const PUBLIC_VENTURE_LIST_SELECT = [
   "name",
   "slug",
   "category",
+  "categories",
   "zone",
   "modalities",
   "safetyLevel",
@@ -20,6 +23,7 @@ type VentureListSource = {
   name?: string
   slug?: string
   category?: string
+  categories?: string[]
   zone?: string
   modalities?: string[]
   safetyLevel?: string
@@ -42,6 +46,7 @@ export function toPublicVentureListItem(
     name: venture.name,
     slug: venture.slug ?? (venture._id != null ? String(venture._id) : undefined),
     category: venture.category,
+    categories: getVentureCategories(venture),
     zone: venture.zone,
     modalities: venture.modalities ?? [],
     safetyLevel: venture.safetyLevel,
