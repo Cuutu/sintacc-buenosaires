@@ -1,4 +1,4 @@
-import { Resend } from "resend"
+import { sendCelimapEmail } from "@/lib/email-send"
 import { getBaseUrl } from "@/lib/base-url"
 import {
   getCategoryLabels,
@@ -138,24 +138,14 @@ export async function sendVentureSuggestionNewEmail(params: {
   shipsNationwide?: boolean
 }): Promise<boolean> {
   const admins = getAdminEmails()
-  const resendKey = process.env.RESEND_API_KEY
-  if (!admins.length || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap Emprendimientos <${fromDomain}>`,
-      to: admins,
-      subject: `[CeliMap] Emprendimiento nuevo: ${(params.ventureDraft.name as string) || "Sin nombre"}`,
-      html: buildVentureSuggestionNewEmailHtml(params),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-ventures] Error enviando email:", err)
-    return false
-  }
+  if (!admins.length) return false
+  return sendCelimapEmail({
+    tag: "email-ventures",
+    fromName: "CeliMap Emprendimientos",
+    to: admins,
+    subject: `[CeliMap] Emprendimiento nuevo: ${(params.ventureDraft.name as string) || "Sin nombre"}`,
+    html: buildVentureSuggestionNewEmailHtml(params),
+  })
 }
 
 export async function sendVentureApprovedEmail(params: {
@@ -163,24 +153,14 @@ export async function sendVentureApprovedEmail(params: {
   ventureName: string
   ventureSlug: string
 }): Promise<boolean> {
-  const resendKey = process.env.RESEND_API_KEY
-  if (!params.userEmail || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap <${fromDomain}>`,
-      to: params.userEmail,
-      subject: `¡${params.ventureName} ya está en CeliMap! 🎉`,
-      html: buildVentureApprovedEmailHtml(params),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-ventures] Error email aprobado:", err)
-    return false
-  }
+  if (!params.userEmail) return false
+  return sendCelimapEmail({
+    tag: "email-ventures",
+    fromName: "CeliMap",
+    to: params.userEmail,
+    subject: `¡${params.ventureName} ya está en CeliMap! 🎉`,
+    html: buildVentureApprovedEmailHtml(params),
+  })
 }
 
 export async function sendVentureRejectedEmail(params: {
@@ -188,22 +168,12 @@ export async function sendVentureRejectedEmail(params: {
   ventureName: string
   rejectionReason: string
 }): Promise<boolean> {
-  const resendKey = process.env.RESEND_API_KEY
-  if (!params.userEmail || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap <${fromDomain}>`,
-      to: params.userEmail,
-      subject: `Revisamos tu sugerencia: ${params.ventureName}`,
-      html: buildVentureRejectedEmailHtml(params),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-ventures] Error email rechazado:", err)
-    return false
-  }
+  if (!params.userEmail) return false
+  return sendCelimapEmail({
+    tag: "email-ventures",
+    fromName: "CeliMap",
+    to: params.userEmail,
+    subject: `Revisamos tu sugerencia: ${params.ventureName}`,
+    html: buildVentureRejectedEmailHtml(params),
+  })
 }

@@ -148,6 +148,11 @@ export type VentureItem = {
   status: string
   contact?: { instagram?: string; whatsapp?: string }
   photos?: string[]
+  slug?: string
+  description?: string
+  purchaseChannels?: string
+  certifiedProducts?: boolean
+  updatedAt?: string
 }
 
 export type AdminCounts = {

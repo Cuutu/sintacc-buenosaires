@@ -1,9 +1,9 @@
 /**
  * Emails para sugerencias: admin (nueva) y usuario (aprobada).
- * Usa Resend. Requiere RESEND_API_KEY y RESEND_FROM_DOMAIN.
+ * Envío: lib/email-send (Resend). Requiere RESEND_API_KEY y RESEND_FROM_DOMAIN verificado.
  */
 
-import { Resend } from "resend"
+import { sendCelimapEmail } from "@/lib/email-send"
 import { getBaseUrl } from "@/lib/base-url"
 import {
   emailDetails,
@@ -129,28 +129,14 @@ export async function sendSuggestionNewEmail(params: {
   suggestedByEmail: string
 }): Promise<boolean> {
   const admins = getAdminEmails()
-  const resendKey = process.env.RESEND_API_KEY
-  if (!admins.length || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap Sugerencias <${fromDomain}>`,
-      to: admins,
-      subject: `[CeliMap] Sugerencia nueva: ${(params.placeDraft.name as string) || "Sin nombre"}`,
-      html: buildSuggestionNewEmailHtml({
-        placeDraft: params.placeDraft,
-        suggestedByName: params.suggestedByName,
-        suggestedByEmail: params.suggestedByEmail,
-      }),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-suggestions] Error enviando email nueva sugerencia:", err)
-    return false
-  }
+  if (!admins.length) return false
+  return sendCelimapEmail({
+    tag: "email-suggestions",
+    fromName: "CeliMap Sugerencias",
+    to: admins,
+    subject: `[CeliMap] Sugerencia nueva: ${(params.placeDraft.name as string) || "Sin nombre"}`,
+    html: buildSuggestionNewEmailHtml(params),
+  })
 }
 
 export async function sendSuggestionApprovedEmail(params: {
@@ -158,27 +144,14 @@ export async function sendSuggestionApprovedEmail(params: {
   placeName: string
   placeId: string
 }): Promise<boolean> {
-  const resendKey = process.env.RESEND_API_KEY
-  if (!params.userEmail || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap <${fromDomain}>`,
-      to: params.userEmail,
-      subject: `¡${params.placeName} ya está en el mapa! 🎉`,
-      html: buildSuggestionApprovedEmailHtml({
-        placeName: params.placeName,
-        placeId: params.placeId,
-      }),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-suggestions] Error enviando email sugerencia aprobada:", err)
-    return false
-  }
+  if (!params.userEmail) return false
+  return sendCelimapEmail({
+    tag: "email-suggestions",
+    fromName: "CeliMap",
+    to: params.userEmail,
+    subject: `¡${params.placeName} ya está en el mapa! 🎉`,
+    html: buildSuggestionApprovedEmailHtml(params),
+  })
 }
 
 export async function sendSuggestionRejectedEmail(params: {
@@ -186,25 +159,12 @@ export async function sendSuggestionRejectedEmail(params: {
   placeName: string
   rejectionReason: string
 }): Promise<boolean> {
-  const resendKey = process.env.RESEND_API_KEY
-  if (!params.userEmail || !resendKey) return false
-
-  const resend = new Resend(resendKey)
-  const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-
-  try {
-    await resend.emails.send({
-      from: `CeliMap <${fromDomain}>`,
-      to: params.userEmail,
-      subject: `Revisamos tu sugerencia: ${params.placeName}`,
-      html: buildSuggestionRejectedEmailHtml({
-        placeName: params.placeName,
-        rejectionReason: params.rejectionReason,
-      }),
-    })
-    return true
-  } catch (err) {
-    console.error("[email-suggestions] Error enviando email sugerencia rechazada:", err)
-    return false
-  }
+  if (!params.userEmail) return false
+  return sendCelimapEmail({
+    tag: "email-suggestions",
+    fromName: "CeliMap",
+    to: params.userEmail,
+    subject: `Revisamos tu sugerencia: ${params.placeName}`,
+    html: buildSuggestionRejectedEmailHtml(params),
+  })
 }

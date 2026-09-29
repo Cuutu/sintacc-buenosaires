@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react"
 import { useState } from "react"
-import { VentureContactEditModal } from "./VentureContactEditModal"
+import { VentureEditModal } from "./VentureEditModal"
 import { getCategoryLabels, getVentureCategories } from "@/lib/venture-constants"
 import type { VentureItem } from "@/components/admin/types"
 import { toast } from "sonner"
@@ -106,9 +106,11 @@ export function AdminVenturesSection({
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" className={adminUi.btnGhost} onClick={() => setEditing(v)}>Editar contacto</button>
+                <button type="button" className={adminUi.btnPrimary} onClick={() => setEditing(v)}>
+                  Editar
+                </button>
                 <a
-                  href={`/emprendimientos/${(v as { slug?: string }).slug ?? v._id}`}
+                  href={`/emprendimientos/${v.slug ?? v._id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={adminUi.chip}
@@ -127,7 +129,17 @@ export function AdminVenturesSection({
           ))}
         </div>
       )}
-      {editing && <VentureContactEditModal key={editing._id} venture={editing} onClose={() => setEditing(null)} onSaved={fetchVentures} />}
+      {editing ? (
+        <VentureEditModal
+          key={editing._id}
+          venture={editing}
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditing(null)
+          }}
+          onSaved={fetchVentures}
+        />
+      ) : null}
     </div>
   )
 }

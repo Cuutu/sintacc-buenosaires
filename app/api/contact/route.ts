@@ -6,7 +6,7 @@ import { checkRateLimit, checkRateLimitByIp } from "@/lib/rate-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { z } from "zod"
-import { Resend } from "resend"
+import { sendCelimapEmail } from "@/lib/email-send"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { emailDetails, emailNotice, renderEmailLayout } from "@/lib/email-layout"
 
@@ -98,14 +98,12 @@ export async function POST(request: NextRequest) {
 
     // Enviar email al admin si está configurado Resend
     const adminEmail = getContactEmail()
-    const resendKey = process.env.RESEND_API_KEY
-    if (adminEmail && resendKey) {
-      const resend = new Resend(resendKey)
-      const fromDomain = process.env.RESEND_FROM_DOMAIN ?? "onboarding@resend.dev"
-      await resend.emails.send({
-        from: `CeliMap Contacto <${fromDomain}>`,
+    if (adminEmail) {
+      await sendCelimapEmail({
+        tag: "contact",
+        fromName: "CeliMap Contacto",
         to: adminEmail,
-        replyTo: email,
+        replyTo: email || undefined,
         subject: `[CeliMap] ${validated.subject}`,
         html: buildContactEmailHtml({
           subject: validated.subject,

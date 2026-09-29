@@ -8,10 +8,13 @@ export function AdminPhotoStudio({
   photos,
   onChange,
   compact = false,
+  folder = "places",
 }: {
   photos: string[]
   onChange: (urls: string[]) => void
   compact?: boolean
+  /** Carpeta de subida (places | ventures). */
+  folder?: string
 }) {
   const cover = photos[0]
   const [dragFrom, setDragFrom] = useState<number | null>(null)
@@ -89,7 +92,7 @@ export function AdminPhotoStudio({
           </button>
         ) : null}
       </div>
-      <ImageUpload value={photos} onChange={onChange} maxCount={3} folder="places" />
+      <ImageUpload value={photos} onChange={onChange} maxCount={3} folder={folder} />
     </div>
   )
 }
