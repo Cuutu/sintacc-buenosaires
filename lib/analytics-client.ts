@@ -7,7 +7,9 @@ import {
 } from "@/lib/analytics-catalog"
 
 const DISTINCT_KEY = "celimap_aid"
-const FLUSH_MS = 400
+// Cada POST levanta una función en Vercel: agrupar eventos abarata.
+const FLUSH_MS = 5000
+// No subir: el server descarta lotes > ANALYTICS_INGEST_MAX_EVENTS (lib/analytics-ingest.ts).
 const MAX_BATCH = 8
 
 export type FirstPartyEventPayload = {

@@ -70,6 +70,17 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
+// Vercel cobra cada invocación: correr solo donde alguna rama de arriba hace algo.
+// Si agregás una rama, sumala acá (__tests__/middleware-matcher.test.ts lo controla).
 export const config = {
-  matcher: ["/((?!_next|api|.*\\..*).*)"],
+  matcher: [
+    // Apex → www. Hoy Vercel ya redirige el apex a nivel dominio; esto queda de respaldo.
+    {
+      source: "/((?!_next|api|.*\\..*).*)",
+      has: [{ type: "host", value: "celimap\\.com\\.ar" }],
+    },
+    // /admin*, /listas/privadas* y URLs viejas "*-sin-gluten" (incluye top-sin-gluten-*).
+    // [sS][iI]… porque los patrones de arriba son case-insensitive (/i).
+    "/((?!_next|api|.*\\..*)(?:admin|listas/privadas|[^/]*-[sS][iI][nN]-[gG][lL][uU][tT][eE][nN]).*)",
+  ],
 }

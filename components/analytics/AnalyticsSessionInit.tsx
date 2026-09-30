@@ -14,7 +14,7 @@ import { trackEvent } from "@/lib/analytics"
 import { recordCommitment, resetDiscoverySession } from "@/lib/analytics-discovery"
 import { isNativeApp } from "@/lib/native-app"
 import { captureAnalyticsAttribution } from "@/lib/analytics-attribution"
-import { setAnalyticsAuthenticated } from "@/lib/analytics-client"
+import { flushFirstPartyQueue, setAnalyticsAuthenticated } from "@/lib/analytics-client"
 import { warmAnalyticsAppVersion } from "@/lib/analytics-app-version"
 
 const SESSION_ONLY_KEYS = new Set([
@@ -148,7 +148,11 @@ export function AnalyticsSessionInit() {
 
       void import("@capacitor/app").then(({ App }) => {
         void App.addListener("appStateChange", ({ isActive }) => {
-          if (!isActive) return
+          if (!isActive) {
+            // En nativo no confiamos en visibilitychange: mandar la cola antes de que la app se suspenda.
+            flushFirstPartyQueue(true)
+            return
+          }
           runAnalyticsLifecycleOpen({
             storage,
             track,
