@@ -68,33 +68,171 @@ function parseTimeStr(str: string): number | null {
   return Math.min(23 * 60 + 59, h * 60 + min)
 }
 
+function parseDayToken(token: string): number | null {
+  const t = token.trim().replace(/\.$/, "")
+  return DAY_NAMES[t] ?? DAY_NAMES[t.slice(0, 3)] ?? null
+}
+
+/** "lun-vie", "lunes a viernes", "sábados y domingos". Null si no nombra ningún día. */
 function parseDayRange(str: string): number[] | null {
-  const s = str.toLowerCase().trim()
-  if (s.includes("-") || s.includes(" a ")) {
-    const parts = s.split(/\s*[-–a]\s*/).map((p) => p.trim()).filter(Boolean)
-    if (parts.length >= 2) {
-      const from = DAY_NAMES[parts[0].slice(0, 3)] ?? DAY_NAMES[parts[0]]
-      const to = DAY_NAMES[parts[parts.length - 1].slice(0, 3)] ?? DAY_NAMES[parts[parts.length - 1]]
-      if (from != null && to != null) {
-        const days: number[] = []
-        let d = from
-        while (true) {
-          days.push(d)
-          if (d === to) break
-          d = (d + 1) % 7
-        }
-        return days
+  const s = str.toLowerCase().replace(/\bde\b/g, " ").trim()
+  const days = new Set<number>()
+  for (const part of s.split(/\s*(?:\by\b|\/|&)\s*/)) {
+    const ends = part.split(/\s*(?:[-–—]|\ba\b|\bal\b)\s*/).filter(Boolean)
+    if (ends.length >= 2) {
+      const from = parseDayToken(ends[0])
+      const to = parseDayToken(ends[ends.length - 1])
+      if (from == null) continue
+      // "Lunes - Cerrado": lo que sigue al guion no es un día.
+      if (to == null) {
+        days.add(from)
+        continue
       }
+      for (let d = from; ; d = (d + 1) % 7) {
+        days.add(d)
+        if (d === to) break
+      }
+    } else if (ends.length === 1) {
+      const day = parseDayToken(ends[0])
+      if (day != null) days.add(day)
     }
   }
-  const single = DAY_NAMES[s.slice(0, 3)] ?? DAY_NAMES[s]
-  if (single != null) return [single]
-  return null
+  return days.size ? Array.from(days) : null
 }
 
 type ParsedOpenStatus = {
   open: boolean
   closeMinutes?: number
+  /** Minutos hasta el cierre (si está abierto) o hasta la próxima apertura (si está cerrado). */
+  minutesUntilChange?: number
+}
+
+const DAY_MINUTES = 24 * 60
+const WEEK_MINUTES = 7 * DAY_MINUTES
+
+/** Minutos desde el domingo 00:00. `end` puede pasar de la semana (sábado que cierra de madrugada). */
+type WeeklyInterval = { start: number; end: number }
+
+function meridiem(str: string): "a" | "p" | null {
+  const m = str.trim().match(/([ap])\.?\s*m\.?$/i)
+  return m ? (m[1].toLowerCase() as "a" | "p") : null
+}
+
+/**
+ * Google omite a.m./p.m. en la apertura cuando coincide con el cierre:
+ * "7:00 – 11:00 p.m." es 19 a 23 hs, "12:00 – 3:00 p.m." es 12 a 15 hs.
+ */
+function parseTimeRange(openStr: string, closeStr: string): [number, number] | null {
+  let open = parseTimeStr(openStr)
+  const close = parseTimeStr(closeStr)
+  if (open == null || close == null) return null
+  const closeSuffix = meridiem(closeStr)
+  if (!meridiem(openStr) && closeSuffix && !/hs?\s*$/i.test(openStr.trim())) {
+    const inherited = parseTimeStr(`${openStr.trim()} ${closeSuffix}m`)
+    if (inherited != null && inherited < (close || DAY_MINUTES)) open = inherited
+  }
+  return [open, close]
+}
+
+/**
+ * Horario de texto libre (manual o weekdayDescriptions de Google) → intervalos semanales.
+ * Null si no se puede interpretar nada.
+ */
+function parseWeeklyIntervals(openingHours: string | undefined | null): WeeklyInterval[] | null {
+  if (!openingHours || !openingHours.trim()) return null
+
+  const s = repairUtf8Mojibake(openingHours)
+    .toLowerCase()
+    .replace(/[   ]/g, " ")
+    .replace(/\b([ap])\.\s+m\./g, "$1.m.")
+    .trim()
+  const allDays = [0, 1, 2, 3, 4, 5, 6]
+  const fullDays = (days: number[]) =>
+    days.map((d) => ({ start: d * DAY_MINUTES, end: (d + 1) * DAY_MINUTES }))
+
+  if (s === "cerrado") return []
+  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return fullDays(allDays)
+
+  const segments = s
+    .split(/[\n,;·•|]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
+    .map((seg) => seg.trim())
+    .filter(Boolean)
+
+  const intervals: WeeklyInterval[] = []
+  const closedDays = new Set<number>()
+  let interpretable = false
+  // Tramos sin rango horario claro ("desde las 19 horas"): si no hay ningún rango, mejor no inventar "Cerrado".
+  let unknownSegments = 0
+  // "Lun-Sab 9 a 13, 18 a 21": el rango después de la coma sigue siendo de Lun-Sab.
+  let previousDays: number[] | null = null
+
+  for (const seg of segments) {
+    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
+    const ownDays = dayPart ? parseDayRange(dayPart) : null
+    const days = dayPart ? ownDays ?? allDays : previousDays ?? allDays
+    if (dayPart) previousDays = ownDays
+
+    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
+
+    if (timeMatches.length === 0) {
+      // "Lunes - Abierto 24 horas" / "lunes: Abierto las 24 horas". El tramo tiene que terminar ahí:
+      // una nota que menciona "24h" no vuelve el lugar 24/7.
+      const is24h =
+        !/\bcerrado\b/.test(seg) && /^[^\d]*?(abierto\s+(las\s+)?)?\b24\s*(hs?|horas?)\.?$/.test(seg)
+      if (is24h) {
+        intervals.push(...fullDays(days))
+        interpretable = true
+      } else if (/\bcerrado\b/.test(seg) && (ownDays || segments.length === 1)) {
+        ;(ownDays ?? allDays).forEach((d) => closedDays.add(d))
+        interpretable = true
+      } else if (/\d/.test(seg)) {
+        unknownSegments++
+      }
+      continue
+    }
+
+    for (const timeMatch of timeMatches) {
+      const range = parseTimeRange(timeMatch[1], timeMatch[2])
+      if (!range) continue
+      const [open, close] = range
+      interpretable = true
+      for (const d of days) {
+        const start = d * DAY_MINUTES + open
+        const end = d * DAY_MINUTES + (close > open ? close : close + DAY_MINUTES)
+        intervals.push({ start, end })
+      }
+    }
+  }
+
+  if (!interpretable) return null
+  const open = intervals.filter((iv) => !closedDays.has(Math.floor(iv.start / DAY_MINUTES)))
+  if (open.length === 0 && unknownSegments > 0) return null
+  return open
+}
+
+function evaluateIntervals(intervals: WeeklyInterval[], now: Date): ParsedOpenStatus {
+  const { day, minutes } = getArgentinaClock(now)
+  const t = day * DAY_MINUTES + minutes
+  // Semana anterior y siguiente: el sábado que cierra de madrugada abre el domingo, etc.
+  const timeline = intervals.flatMap((iv) =>
+    [-WEEK_MINUTES, 0, WEEK_MINUTES].map((o) => ({ start: iv.start + o, end: iv.end + o }))
+  )
+
+  const current = timeline.find((iv) => t >= iv.start && t < iv.end)
+  if (current) {
+    // Encadenar intervalos contiguos (24 hs todos los días, o cierre 00:00 + apertura 00:00).
+    let end = current.end
+    for (let guard = 0; guard < 50; guard++) {
+      const next = timeline.find((iv) => iv.start <= end && iv.end > end)
+      if (!next) break
+      end = next.end
+      if (end - t >= WEEK_MINUTES) return { open: true }
+    }
+    return { open: true, closeMinutes: end % DAY_MINUTES, minutesUntilChange: end - t }
+  }
+
+  const upcoming = timeline.filter((iv) => iv.start > t).map((iv) => iv.start - t)
+  return { open: false, minutesUntilChange: upcoming.length ? Math.min(...upcoming) : undefined }
 }
 
 function formatClock(totalMinutes: number): string {
@@ -133,52 +271,8 @@ function parseOpenStatus(
   openingHours: string | undefined | null,
   now: Date
 ): ParsedOpenStatus | null {
-  if (!openingHours || !openingHours.trim()) return null
-
-  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
-  if (s === "cerrado") return { open: false }
-  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return { open: true }
-
-  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
-  const segments = s
-    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-
-  let matchedDay = false
-
-  for (const seg of segments) {
-    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
-    const days = dayPart ? parseDayRange(dayPart) : null
-    if (days && !days.includes(nowDay)) continue
-    if (days) matchedDay = true
-
-    if (/\bcerrado\b/.test(seg)) {
-      if (days?.includes(nowDay) || (!days && segments.length === 1)) return { open: false }
-      continue
-    }
-
-    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
-    if (timeMatches.length === 0) continue
-
-    const applies = days ? days.includes(nowDay) : true
-    if (!applies) continue
-    matchedDay = true
-
-    for (const timeMatch of timeMatches) {
-      const openM = parseTimeStr(timeMatch[1])
-      const closeM = parseTimeStr(timeMatch[2])
-      if (openM == null || closeM == null) continue
-
-      const isOpen =
-        closeM > openM
-          ? nowMinutes >= openM && nowMinutes < closeM
-          : nowMinutes >= openM || nowMinutes < closeM
-      if (isOpen) return { open: true, closeMinutes: closeM }
-    }
-  }
-
-  return matchedDay ? { open: false } : null
+  const intervals = parseWeeklyIntervals(openingHours)
+  return intervals ? evaluateIntervals(intervals, now) : null
 }
 
 /**
@@ -205,11 +299,6 @@ export function getOpenStatusLabel(
   return "Abierto ahora"
 }
 
-type OpeningEvent = {
-  dayIndex: number
-  minutes: number
-}
-
 /**
  * Formatea tiempo relativo en español natural.
  * Ej: 25 min → "25 min", 90 min → "1 h 30 min", 120 min → "2 h"
@@ -226,86 +315,15 @@ function formatRelativeTime(minutes: number): string {
   return `${hours} h ${remainingMins} min`
 }
 
-/**
- * Encuentra el próximo evento (apertura o cierre) en el horario semanal.
- * Retorna el día de la semana (0-6) y minutos desde medianoche.
- */
-function findNextEvent(
-  openingHours: string | undefined | null,
-  now: Date,
-  findOpening: boolean
-): OpeningEvent | null {
-  if (!openingHours || !openingHours.trim()) return null
+const DAY_LABELS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"]
 
-  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
-  if (s === "cerrado") return null
-  if (/^24\s*(hs?|horas?)?$/i.test(s) || s === "24h") return null
-
-  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
-  const segments = s
-    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-
-  const allEvents: OpeningEvent[] = []
-
-  for (const seg of segments) {
-    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
-    const days = dayPart ? parseDayRange(dayPart) : null
-
-    if (/\bcerrado\b/.test(seg)) continue
-
-    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
-    if (timeMatches.length === 0) continue
-
-    for (const timeMatch of timeMatches) {
-      const openM = parseTimeStr(timeMatch[1])
-      const closeM = parseTimeStr(timeMatch[2])
-      if (openM == null || closeM == null) continue
-
-      const applicableDays = days ?? [0, 1, 2, 3, 4, 5, 6]
-      for (const dayIndex of applicableDays) {
-        if (findOpening) {
-          allEvents.push({ dayIndex, minutes: openM })
-        } else {
-          allEvents.push({ dayIndex, minutes: closeM })
-        }
-      }
-    }
-  }
-
-  if (allEvents.length === 0) return null
-
-  let closestEvent: OpeningEvent | null = null
-  let minDiff = Infinity
-
-  for (const event of allEvents) {
-    let dayDiff = event.dayIndex - nowDay
-    if (dayDiff < 0) dayDiff += 7
-    else if (dayDiff === 0 && event.minutes <= nowMinutes) dayDiff = 7
-
-    const totalMinutesAhead = dayDiff * 24 * 60 + event.minutes - nowMinutes
-
-    if (totalMinutesAhead > 0 && totalMinutesAhead < minDiff) {
-      minDiff = totalMinutesAhead
-      closestEvent = event
-    }
-  }
-
-  return closestEvent
-}
-
-/**
- * Calcula minutos hasta el próximo evento desde ahora.
- */
-function getMinutesUntilEvent(event: OpeningEvent, now: Date): number {
-  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
-
-  let dayDiff = event.dayIndex - nowDay
-  if (dayDiff < 0) dayDiff += 7
-  else if (dayDiff === 0 && event.minutes <= nowMinutes) dayDiff = 7
-
-  return dayDiff * 24 * 60 + event.minutes - nowMinutes
+/** "abre en 25 min", o "abre el lunes a las 9:00" si falta más de un día. */
+function formatNextOpening(minutesUntil: number, now: Date): string {
+  if (minutesUntil < DAY_MINUTES) return `abre en ${formatRelativeTime(minutesUntil)}`
+  const { day, minutes } = getArgentinaClock(now)
+  const target = minutes + minutesUntil
+  const targetDay = (day + Math.floor(target / DAY_MINUTES)) % 7
+  return `abre el ${DAY_LABELS[targetDay]} a las ${formatClock(target % DAY_MINUTES)}`
 }
 
 export type OpenStatusDetail = {
@@ -334,69 +352,22 @@ export function getOpenStatusDetail(
   const fullSchedule = splitOpeningHoursLines(openingHours)
 
   if (!status.open) {
-    const nextOpen = findNextEvent(openingHours, now, true)
-    if (nextOpen) {
-      const minutesUntil = getMinutesUntilEvent(nextOpen, now)
-      return {
-        isOpen: false,
-        label: "Cerrado",
-        relativeText: `abre en ${formatRelativeTime(minutesUntil)}`,
-        fullSchedule,
-      }
-    }
     return {
       isOpen: false,
       label: "Cerrado",
+      ...(status.minutesUntilChange != null && {
+        relativeText: formatNextOpening(status.minutesUntilChange, now),
+      }),
       fullSchedule,
     }
   }
 
-  const { day: nowDay, minutes: nowMinutes } = getArgentinaClock(now)
-  const s = repairUtf8Mojibake(openingHours).toLowerCase().trim()
-  const segments = s
-    .split(/[\n,;]+|\.(?=\s*(?:lun|mar|mie|mié|jue|vie|sab|sáb|dom)\b)/)
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-
-  let todayCloseMinutes: number | null = null
-
-  for (const seg of segments) {
-    const dayPart = seg.replace(/:.+$/, " ").replace(/\d.+$/, " ").trim()
-    const days = dayPart ? parseDayRange(dayPart) : null
-    if (days && !days.includes(nowDay)) continue
-
-    const timeMatches = Array.from(seg.matchAll(new RegExp(TIME_RANGE_RE.source, "gi")))
-    for (const timeMatch of timeMatches) {
-      const openM = parseTimeStr(timeMatch[1])
-      const closeM = parseTimeStr(timeMatch[2])
-      if (openM == null || closeM == null) continue
-
-      const isInRange =
-        closeM > openM
-          ? nowMinutes >= openM && nowMinutes < closeM
-          : nowMinutes >= openM || nowMinutes < closeM
-
-      if (isInRange) {
-        todayCloseMinutes = closeM
-        break
-      }
-    }
-    if (todayCloseMinutes != null) break
-  }
-
-  if (todayCloseMinutes != null) {
-    const minutesUntilClose =
-      todayCloseMinutes > nowMinutes
-        ? todayCloseMinutes - nowMinutes
-        : 24 * 60 - nowMinutes + todayCloseMinutes
-
-    if (minutesUntilClose <= 90) {
-      return {
-        isOpen: true,
-        label: "Abierto",
-        relativeText: `cierra en ${formatRelativeTime(minutesUntilClose)}`,
-        fullSchedule,
-      }
+  if (status.minutesUntilChange != null && status.minutesUntilChange <= 90) {
+    return {
+      isOpen: true,
+      label: "Abierto",
+      relativeText: `cierra en ${formatRelativeTime(status.minutesUntilChange)}`,
+      fullSchedule,
     }
   }
 

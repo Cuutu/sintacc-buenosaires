@@ -230,3 +230,92 @@ describe("getOpenStatusDetail", () => {
     expect(detail!.relativeText).toMatch(/abre en 4 h 30 min/)
   })
 })
+
+describe("horarios reales de Google y manuales que antes fallaban", () => {
+  const googleWeek = (value: string) =>
+    ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+      .map((day) => `${day}: ${value}`)
+      .join("; ")
+
+  /** Miércoles 30 sep 2026 14:00 AR = 17:00 UTC */
+  const WEDNESDAY_2PM = new Date("2026-09-30T17:00:00.000Z")
+
+  it("'Abierto las 24 horas' está abierto y no muestra cierre", () => {
+    const hours = googleWeek("Abierto las 24 horas")
+    expect(isOpenNow(hours, WEDNESDAY_2PM)).toBe(true)
+    expect(getOpenStatusLabel(hours, WEDNESDAY_2PM)).toBe("Abierto ahora")
+  })
+
+  it("'Lunes - Abierto 24 horas' (carga manual) también", () => {
+    expect(isOpenNow("Lunes - Abierto 24 horas\nDomingo - Abierto 24 horas", new Date("2026-09-28T15:00:00.000Z"))).toBe(true)
+  })
+
+  it("cierre después de medianoche: abierto de día y de madrugada del día siguiente", () => {
+    const hours = googleWeek("7:00 a.m. – 12:30 a.m.")
+    /** Viernes 2 oct 10:00 AR */
+    expect(isOpenNow(hours, new Date("2026-10-02T13:00:00.000Z"))).toBe(true)
+    /** Sábado 3 oct 00:15 AR: sigue abierto por el horario del viernes */
+    expect(isOpenNow(hours, new Date("2026-10-03T03:15:00.000Z"))).toBe(true)
+    /** Sábado 3 oct 02:00 AR: cerrado */
+    expect(isOpenNow(hours, new Date("2026-10-03T05:00:00.000Z"))).toBe(false)
+    expect(getOpenStatusLabel(hours, WEDNESDAY_2PM)).toBe("Cierra a las 0:30")
+  })
+
+  it("Google omite p.m. en la apertura: '7:00 – 11:00 p.m.' es de 19 a 23", () => {
+    const hours =
+      "lunes: 12:00 – 3:00 p.m., 7:00 – 11:00 p.m.; martes: Cerrado; miércoles: 12:00 – 3:00 p.m., 7:00 – 11:00 p.m."
+    /** Miércoles 8:00 AR: cerrado (antes decía abierto desde las 7 am) */
+    expect(isOpenNow(hours, new Date("2026-09-30T11:00:00.000Z"))).toBe(false)
+    expect(isOpenNow(hours, WEDNESDAY_2PM)).toBe(true)
+    /** Miércoles 20:00 AR */
+    expect(isOpenNow(hours, new Date("2026-09-30T23:00:00.000Z"))).toBe(true)
+  })
+
+  it("el rango después de la coma no se aplica a los días cerrados", () => {
+    const hours = "lunes: 12:00 – 3:00 p.m., 7:00 – 11:00 p.m.; martes: Cerrado"
+    /** Martes 29 sep 20:00 AR */
+    expect(isOpenNow(hours, new Date("2026-09-29T23:00:00.000Z"))).toBe(false)
+  })
+
+  it("'Lun-Sab 9 a 13, 18 a 21': la tarde es de Lun-Sab, no del domingo", () => {
+    const hours = "Lun-Sab 9 a 13, 18 a 21"
+    /** Sábado 3 oct 19:00 AR */
+    expect(isOpenNow(hours, new Date("2026-10-03T22:00:00.000Z"))).toBe(true)
+    /** Domingo 4 oct 19:00 AR */
+    expect(isOpenNow(hours, new Date("2026-10-04T22:00:00.000Z"))).toBe(false)
+  })
+
+  it("rango de días con guion largo 'Lun–Sáb'", () => {
+    /** Martes 29 sep 10:00 AR */
+    expect(isOpenNow("Lun–Sáb 09:00–21:00; Dom 09:00–13:00", new Date("2026-09-29T13:00:00.000Z"))).toBe(true)
+  })
+
+  it("'Lunes - Cerrado' con texto después del guion", () => {
+    /** Lunes 28 sep 12:00 AR */
+    expect(isOpenNow("Lunes - Cerrado\nMartes - 10 a 18 horas", new Date("2026-09-28T15:00:00.000Z"))).toBe(false)
+  })
+
+  it("días separados por '·'", () => {
+    /** Martes 29 sep 12:00 AR */
+    expect(isOpenNow("Lun 10:00–21:00 · Mar 10:00–21:00", new Date("2026-09-29T15:00:00.000Z"))).toBe(true)
+  })
+
+  it("sin rango claro ('desde las 18 horas') no inventa Cerrado", () => {
+    expect(isOpenNow("Lunes - desde las 18 horas\nMartes - desde las 18 horas", WEDNESDAY_2PM)).toBeNull()
+  })
+
+  it("una nota que menciona '24h' no vuelve el lugar 24/7", () => {
+    const hours = "Lun–Vie 08:30–20:30; Dom cerrado (some platforms wrongly show 24h Sundays)."
+    /** Domingo 4 oct 12:00 AR */
+    expect(isOpenNow(hours, new Date("2026-10-04T15:00:00.000Z"))).toBe(false)
+  })
+
+  it("si falta más de un día para abrir, dice qué día", async () => {
+    const { getOpenStatusDetail } = await import("@/lib/opening-hours")
+    const hours = "lunes: Cerrado; martes: Cerrado; miércoles: 12:00 – 3:00 p.m."
+    /** Lunes 28 sep 10:00 AR */
+    const detail = getOpenStatusDetail(hours, new Date("2026-09-28T13:00:00.000Z"))
+    expect(detail!.isOpen).toBe(false)
+    expect(detail!.relativeText).toBe("abre el miércoles a las 12:00")
+  })
+})
