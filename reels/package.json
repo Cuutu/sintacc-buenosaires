@@ -1,0 +1,29 @@
+{
+  "name": "celimap-reels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reels de Instagram de CeliMap hechos con Remotion. Proyecto independiente de la web.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ReelEmprendimientos out/reel-emprendimientos.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --muted",
+    "portada": "remotion still src/index.ts PortadaEmprendimientos out/portada-emprendimientos.png",
+    "build": "npm run render && npm run portada && npm run portada-alternativa",
+    "prepare-logo": "node scripts/prepare-logo.js",
+    "portada-alternativa": "remotion still src/index.ts PortadaEmprendimientosAlternativa out/portada-emprendimientos-alternativa.png",
+    "ilustraciones": "remotion studio src/lab/index.ts"
+  },
+  "dependencies": {
+    "@fontsource/fraunces": "^5.2.0",
+    "@fontsource/nunito": "^5.2.0",
+    "@remotion/cli": "4.0.471",
+    "lucide-react": "0.344.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "remotion": "4.0.471"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^5.4.0"
+  }
+}
