@@ -6,6 +6,7 @@ import {
 } from "@/components/seo/InstitutionalPage"
 import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME } from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const PATH = "/como-funciona"
@@ -47,6 +48,7 @@ export const metadata: Metadata = {
     description,
     url: `${BASE_URL}${PATH}`,
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",

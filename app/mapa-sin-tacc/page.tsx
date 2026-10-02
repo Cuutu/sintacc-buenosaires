@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { MapLandingPage } from "@/components/seo/MapLandingPage"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const CANONICAL = `${BASE_URL}/mapa`
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
       "Mapa sin tacc con restaurantes, cafés y panaderías con opciones Sin TACC en Argentina. Datos aportados por la comunidad.",
     url: CANONICAL,
     type: "website",
+    images: [OG_IMAGE],
   },
 }
 

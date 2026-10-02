@@ -3,6 +3,7 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getBaseUrl } from "@/lib/base-url"
 import { getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
+import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 
 export const PLACE_TYPE_LABELS: Record<string, string> = {
   restaurant: "Restaurante",
@@ -121,7 +122,8 @@ export function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
   })}`
   const title = buildPlaceTitle(place)
   const description = buildPlaceDescription(place)
-  const ogImage = place.photos?.[0] || `${baseUrl}/CelimapLOGO.png`
+  const photo = place.photos?.[0]
+  const ogImage = photo || `${baseUrl}${OG_IMAGE_PATH}`
 
   return {
     title,
@@ -132,7 +134,11 @@ export function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
       description,
       url: canonical,
       type: "website",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: place.name }],
+      images: [
+        photo
+          ? { url: photo, width: 1200, height: 630, alt: place.name }
+          : { ...OG_IMAGE, url: ogImage },
+      ],
     },
     twitter: {
       card: "summary_large_image",

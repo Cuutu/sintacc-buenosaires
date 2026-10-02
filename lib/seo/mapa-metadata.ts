@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 export const MAPA_PATH = "/mapa"
 
@@ -41,6 +42,6 @@ export function buildMapaMetadata(searchParams: MapaSearchParams = {}): Metadata
     robots: noindex
       ? { index: false, follow: true }
       : { index: true, follow: true },
-    openGraph: { url: canonical },
+    openGraph: { url: canonical, images: [OG_IMAGE] },
   }
 }

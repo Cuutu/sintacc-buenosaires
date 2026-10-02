@@ -9,6 +9,7 @@ import { serializeListForPublicViewer } from "@/lib/lists/serialize"
 import { PrivateListClientView } from "@/components/lists/PrivateListClientView"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 import Link from "next/link"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -28,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Lista privada | CeliMap",
       description: "Contenido privado de CeliMap.",
       type: "website",
+      images: [OG_IMAGE],
     },
     twitter: {
       card: "summary",

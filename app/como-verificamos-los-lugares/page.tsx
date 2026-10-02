@@ -11,6 +11,7 @@ import {
   SAFETY_LABELS,
 } from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const PATH = "/como-verificamos-los-lugares"
@@ -51,6 +52,7 @@ export const metadata: Metadata = {
     description,
     url: `${BASE_URL}${PATH}`,
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",

@@ -9,6 +9,7 @@ import {
   decisionToRobots,
 } from "@/lib/seo/indexing-rules"
 import { CELIMAP_NAME } from "@/lib/seo/brand"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 interface ListaLayoutProps {
   params: Promise<{ id: string }>
@@ -67,6 +68,7 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
         description,
         url: canonical,
         type: "website",
+        images: [OG_IMAGE],
       },
       twitter: {
         card: "summary_large_image",

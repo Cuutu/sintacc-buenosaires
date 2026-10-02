@@ -7,6 +7,7 @@ import { decideProvinceCategoryIndexing } from "@/lib/seo/indexing-rules"
 import { isValidCategorySlug, CATEGORIES } from "@/lib/seo/cities"
 import { ProvinceCategoryPageContent } from "@/components/seo/ProvinceCategoryPageContent"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -51,6 +52,7 @@ export async function generateMetadata({
       description: getProvinceCategoryDescription(province, categorySlug, data.total),
       url: canonical,
       type: "website",
+      images: [OG_IMAGE],
     },
   }
 }

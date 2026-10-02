@@ -71,3 +71,41 @@ Assets copiados de la web: `public/brand/texture-wheat.svg`, `public/brand/icon-
 3. Registrá la composición en `src/Root.tsx` y sumá los scripts de render en `package.json`.
 
 Si cambia el logo de la web, corré `npm run prepare-logo`.
+
+## Meta Ads: "¿Sos celíaco?" y "¿Conocés a un celíaco?"
+
+Dos anuncios de instalación (9:16, con música) con el mismo esqueleto. Código en `src/celiaco/`,
+textos en `src/celiaco/copy.ts`.
+
+```bash
+npm run render:ads   # genera el audio + out/ad-sos-celiaco.mp4, out/ad-conoces-celiaco.mp4 + portadas
+npm run audio        # solo regenera public/audio/ad-*.wav
+```
+
+Todo va sobre la grilla de una música a **100 bpm** (1 beat = 18 frames, 1 compás = 72).
+`src/celiaco/timing.ts` es la única fuente de tiempos: la usan las escenas y el sintetizador
+(`scripts/make-audio.ts`), así que si movés algo ahí y corrés `npm run audio`, los efectos siguen
+cayendo donde corresponde.
+
+| Compás | Sos celíaco (16,8s) | Conocés a un celíaco (20,4s) | Música |
+| --- | --- | --- | --- |
+| 1 | "¿Sos celíaco? Esto es para vos" | "¿Conocés a un celíaco? Compartíselo" | Golpe + piano, filtro cerrado |
+| 2–3 | Chat con un restó → 🥗 → "no debería ser adivinar" | Chat de la juntada → 🍕 → "comer antes de salir" | Igual; corte + subida al final |
+| 4–5 | Mapa: caen pines (cada uno una nota), filtro "100% sin TACC", ficha | Igual | Se abre el filtro, entra el groove |
+| 6–7 | Descarga: ícono, badges, logo | Mandáselo: elegir a Mati, enviar, corazones | Groove + marimba |
+| 7–8,5 | — | Descarga | Cierre en tónica |
+
+Música y efectos: lo-fi original sintetizado en código (piano eléctrico, bajo, batería boom-bap,
+marimba, vinilo) — sin samples ni temas de terceros. Efectos: pop en cada burbuja, click en cada
+toque, whoosh en cada cambio de escena, una nota por pin, ding al abrir la ficha y al enviar.
+Mezcla a ≈ -14 LUFS.
+
+Ritmo visual: golpe de cámara en los momentos clave (`punches` en timing.ts), salida "zoom-through"
+del gancho, stickers que se pegan sobre el chat, empuje de cámara sobre el celular, ícono y badges
+que laten con el beat.
+
+Zonas seguras de Meta Ads en `src/celiaco/Bits.tsx` (`ads`). Revisá con `AdSosCeliaco-Guias` /
+`AdConocesCeliaco-Guias` en el Studio: rojo = siempre tapado (Stories/Reels), naranja = lo que tapan
+el texto y el botón "Instalar" en Reels ads (ahí no va texto; el celular puede bajar), azul = recorte 4:5 del feed.
+
+El mapa del celular es una ilustración (no Mapbox) y el lugar es genérico ("Tu próxima panadería favorita").

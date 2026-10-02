@@ -7,6 +7,7 @@ import { getPlacesByProvinceSlug, getProvinceLocalities } from "@/lib/seo/places
 import { isProvincePageIndexable } from "@/lib/seo/indexing-rules"
 import { ArgentinaLandingJsonLd } from "@/components/seo/ArgentinaLandingJsonLd"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     description: getArgentinaLandingDescription(),
     url: `${BASE_URL}/sin-gluten-argentina`,
     type: "website",
+    images: [OG_IMAGE],
   },
 }
 

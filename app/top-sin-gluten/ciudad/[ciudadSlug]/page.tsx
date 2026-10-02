@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { PlaceCard } from "@/components/place-card"
 import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -37,6 +38,7 @@ export async function generateMetadata({
       description: getTopRankingDescription(city),
       url: canonical,
       type: "website",
+      images: [OG_IMAGE],
     },
   }
 }

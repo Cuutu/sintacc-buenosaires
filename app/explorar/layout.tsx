@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getBaseUrl } from "@/lib/base-url";
+import { OG_IMAGE } from "@/lib/seo/og";
 
 const BASE_URL = getBaseUrl();
 
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
       "Explorá el mapa para celíacos: restaurantes, cafés y panaderías aptas en todo el mundo.",
     url: `${BASE_URL}/explorar`,
     type: "website",
+    images: [OG_IMAGE],
   },
 };
 

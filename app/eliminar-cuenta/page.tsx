@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const PATH = "/eliminar-cuenta"
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
     description,
     url: `${BASE_URL}${PATH}`,
     type: "website",
+    images: [OG_IMAGE],
   },
   robots: { index: true, follow: true },
 }

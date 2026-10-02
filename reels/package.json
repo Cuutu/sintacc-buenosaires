@@ -10,7 +10,12 @@
     "build": "npm run render && npm run portada && npm run portada-alternativa",
     "prepare-logo": "node scripts/prepare-logo.js",
     "portada-alternativa": "remotion still src/index.ts PortadaEmprendimientosAlternativa out/portada-emprendimientos-alternativa.png",
-    "ilustraciones": "remotion studio src/lab/index.ts"
+    "ilustraciones": "remotion studio src/lab/index.ts",
+    "render:ads": "npm run audio && npm run render:sos && npm run render:conoces && npm run portadas:ads",
+    "render:sos": "remotion render src/index.ts AdSosCeliaco out/ad-sos-celiaco.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=192k",
+    "render:conoces": "remotion render src/index.ts AdConocesCeliaco out/ad-conoces-celiaco.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=192k",
+    "portadas:ads": "remotion still src/index.ts PortadaSosCeliaco out/portada-sos-celiaco.png && remotion still src/index.ts PortadaConocesCeliaco out/portada-conoces-celiaco.png",
+    "audio": "tsx scripts/make-audio.ts"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.2.0",
@@ -24,6 +29,7 @@
   "devDependencies": {
     "@types/react": "^18.3.0",
     "pngjs": "^7.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.4.0"
   }
 }

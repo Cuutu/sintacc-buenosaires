@@ -6,6 +6,7 @@ import { getProvincePageTitle, getProvinceDescription } from "@/lib/seo/template
 import { decideProvincePageIndexing } from "@/lib/seo/indexing-rules"
 import { ProvincePageContent } from "@/components/seo/ProvincePageContent"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -45,6 +46,7 @@ export async function generateMetadata({
       description: getProvinceDescription(province, { total: data.total, dedicatedGf: data.dedicatedGfCount, localities: data.localities.length }),
       url: canonical,
       type: "website",
+      images: [OG_IMAGE],
     },
     keywords: [
       `sin gluten ${province.name}`,

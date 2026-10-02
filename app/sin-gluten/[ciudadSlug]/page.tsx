@@ -40,6 +40,7 @@ import { List } from "@/models/List"
 import { publicListsQuery } from "@/lib/lists/access"
 import { INDEXING_THRESHOLDS } from "@/lib/seo/indexing-config"
 import { canonicalCityPlaceFilter } from "@/lib/seo/city-place-match"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -187,6 +188,7 @@ export async function generateMetadata({
       description,
       url: baseCanonical,
       type: "website",
+      images: [OG_IMAGE],
     },
   }
 }

@@ -20,6 +20,7 @@ import { getCityPageStats } from "@/lib/seo/places"
 
 import { getBaseUrl } from "@/lib/base-url"
 import { decideCityCategoryIndexing, decisionToRobots } from "@/lib/seo/indexing-rules"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -73,6 +74,7 @@ export async function generateMetadata({
       description: getCategoryDescription(city, categoriaSlug, total),
       url: baseCanonical,
       type: "website",
+      images: [OG_IMAGE],
     },
   }
 }

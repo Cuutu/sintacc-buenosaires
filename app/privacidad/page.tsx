@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const UPDATED_AT = "7 de septiembre de 2026"
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
       "Datos personales, autenticación Google/Apple, ubicación, Mapbox, Cloudinary y eliminación de cuenta desde Perfil.",
     url: `${BASE_URL}/privacidad`,
     type: "website",
+    images: [OG_IMAGE],
   },
   robots: { index: true, follow: true },
 }

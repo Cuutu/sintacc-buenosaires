@@ -13,6 +13,7 @@ import { recordIntentSignal } from "@/lib/analytics-discovery"
 import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
+import { parseMapTypeParam } from "@/lib/map-url-filters"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
   buildMapFilterKey,
@@ -65,7 +66,7 @@ function MapaContent() {
   const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
     tags: [],
-    type: undefined,
+    type: parseMapTypeParam(searchParams.get("type")),
     neighborhood: undefined,
     safetyLevel: undefined,
   }))

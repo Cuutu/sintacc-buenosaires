@@ -8,6 +8,7 @@ import { Pagination } from "@/components/seo/Pagination"
 import { CATEGORIES, isValidCategorySlug } from "@/lib/seo/cities"
 
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -42,6 +43,7 @@ export async function generateMetadata({
       description: getCategoryDescription(null, category, total),
       url: page === 1 ? `${BASE_URL}/${category}-sin-gluten` : canonical,
       type: "website",
+      images: [OG_IMAGE],
     },
   }
 }

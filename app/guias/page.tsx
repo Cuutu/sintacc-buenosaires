@@ -6,6 +6,7 @@ import { getPublishedGuides, getAllGuides } from "@/lib/seo/guides"
 import { isDraftGuidePreviewEnv } from "@/lib/seo/guide-access"
 import { CELIMAP_NAME } from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
       "Guías prácticas sobre clasificaciones sin TACC y hábitos al comer afuera.",
     url: `${BASE_URL}/guias`,
     type: "website",
+    images: [OG_IMAGE],
   },
   // Hub indexable solo cuando haya al menos una guía published
   robots:

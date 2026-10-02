@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { MapLandingPage } from "@/components/seo/MapLandingPage"
 import { getBaseUrl } from "@/lib/base-url"
+import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 const CANONICAL = `${BASE_URL}/mapa`
@@ -42,6 +43,7 @@ export const metadata: Metadata = {
       "Mapa celíaco con lugares sin gluten en Argentina. Reseñas de la comunidad y filtros por ciudad.",
     url: CANONICAL,
     type: "website",
+    images: [OG_IMAGE],
   },
 }
 
