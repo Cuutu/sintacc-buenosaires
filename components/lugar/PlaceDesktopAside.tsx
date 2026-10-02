@@ -1,10 +1,33 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Clock, MapPin, Phone } from "lucide-react"
-import { getOpenStatusDetail } from "@/lib/opening-hours"
+import { getOpenStatusDetail, type OpenStatusDetail } from "@/lib/opening-hours"
 import { PlacePrimaryActions } from "./PlacePrimaryActions"
 import { PlaceReportCard } from "./PlaceReportCard"
 import { placeCardClass } from "./place-detail-ui"
+
+function useClientOpenStatus(hours: string | undefined): OpenStatusDetail | null {
+  const [detail, setDetail] = useState<OpenStatusDetail | null>(() => {
+    if (!hours) return null
+    const initial = getOpenStatusDetail(hours)
+    if (!initial) return null
+    return { ...initial, relativeText: undefined }
+  })
+
+  useEffect(() => {
+    if (!hours) return
+    const updateStatus = () => {
+      const fresh = getOpenStatusDetail(hours)
+      setDetail(fresh)
+    }
+    updateStatus()
+    const interval = setInterval(updateStatus, 60000)
+    return () => clearInterval(interval)
+  }, [hours])
+
+  return detail
+}
 
 interface PlaceDesktopAsideProps {
   mapsUrl: string
@@ -27,7 +50,7 @@ export function PlaceDesktopAside({
   phone,
   onReportSuccess,
 }: PlaceDesktopAsideProps) {
-  const openStatusDetail = openingHours ? getOpenStatusDetail(openingHours) : null
+  const openStatusDetail = useClientOpenStatus(openingHours)
 
   return (
     <aside className="hidden lg:block">

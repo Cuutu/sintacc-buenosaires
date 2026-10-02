@@ -1,12 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronDown, Clock } from "lucide-react"
-import { getOpenStatusDetail } from "@/lib/opening-hours"
+import { getOpenStatusDetail, type OpenStatusDetail } from "@/lib/opening-hours"
+
+function useClientOpenStatus(hours: string): OpenStatusDetail | null {
+  const [detail, setDetail] = useState<OpenStatusDetail | null>(() => {
+    const initial = getOpenStatusDetail(hours)
+    if (!initial) return null
+    return { ...initial, relativeText: undefined }
+  })
+
+  useEffect(() => {
+    const updateStatus = () => {
+      const fresh = getOpenStatusDetail(hours)
+      setDetail(fresh)
+    }
+    updateStatus()
+    const interval = setInterval(updateStatus, 60000)
+    return () => clearInterval(interval)
+  }, [hours])
+
+  return detail
+}
 
 export function PlaceHoursToggle({ hours }: { hours: string }) {
   const [expanded, setExpanded] = useState(false)
-  const detail = getOpenStatusDetail(hours)
+  const detail = useClientOpenStatus(hours)
 
   if (!detail) {
     return (
