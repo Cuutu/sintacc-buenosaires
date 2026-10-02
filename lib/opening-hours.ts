@@ -389,14 +389,49 @@ export const WEEK_DAYS = [
   { key: "dom", label: "Domingo", aliases: ["dom", "domingo"] },
 ] as const
 
-export type DayHours = { open: string; close: string; closed: boolean }
+export type TimeRange = { open: string; close: string }
+export type DayHours = { ranges: TimeRange[]; closed: boolean; explicit?: boolean }
 
 export type WeekHours = Record<(typeof WEEK_DAYS)[number]["key"], DayHours>
 
 export function emptyWeekHours(): WeekHours {
   return Object.fromEntries(
-    WEEK_DAYS.map((d) => [d.key, { open: "09:00", close: "18:00", closed: true }])
+    WEEK_DAYS.map((d) => [d.key, { ranges: [], closed: true, explicit: false }])
   ) as WeekHours
+}
+
+function parseDayRangeForEditor(token: string): number[] {
+  const s = token.toLowerCase().trim()
+  if (s === "todos los días" || s === "todos los dias") {
+    return [0, 1, 2, 3, 4, 5, 6]
+  }
+  
+  const days: number[] = []
+  const parts = s.split(/\s*(?:[-–—]|a|al)\s*/)
+  
+  if (parts.length === 2) {
+    const start = WEEK_DAYS.find((d) => d.aliases.some((a) => parts[0].startsWith(a)))
+    const end = WEEK_DAYS.find((d) => d.aliases.some((a) => parts[1].startsWith(a)))
+    
+    if (start && end) {
+      const startIdx = WEEK_DAYS.findIndex((d) => d.key === start.key)
+      const endIdx = WEEK_DAYS.findIndex((d) => d.key === end.key)
+      
+      if (startIdx !== -1 && endIdx !== -1) {
+        for (let i = startIdx; i <= endIdx; i++) {
+          days.push(i)
+        }
+      }
+    }
+  } else {
+    const day = WEEK_DAYS.find((d) => d.aliases.some((a) => s.startsWith(a)))
+    if (day) {
+      const idx = WEEK_DAYS.findIndex((d) => d.key === day.key)
+      if (idx !== -1) days.push(idx)
+    }
+  }
+  
+  return days
 }
 
 export function parseOpeningHours(raw?: string): WeekHours {
@@ -404,28 +439,95 @@ export function parseOpeningHours(raw?: string): WeekHours {
   if (!raw?.trim()) return week
 
   const chunks = repairUtf8Mojibake(raw)
-    .split(/[·\n|;]+/)
+    .split(/[;]+/)
     .map((c) => c.trim())
     .filter(Boolean)
 
   for (const chunk of chunks) {
-    const day = WEEK_DAYS.find((d) =>
-      d.aliases.some((alias) => chunk.toLowerCase().startsWith(alias))
-    )
-    if (!day) continue
-    const times = chunk.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/)
-    if (!times) continue
-    week[day.key] = {
-      open: times[1].padStart(5, "0"),
-      close: times[2].padStart(5, "0"),
-      closed: false,
+    const lowerChunk = chunk.toLowerCase()
+    
+    if (lowerChunk.includes("cerrado")) {
+      const dayPart = chunk.split(/\s+cerrado/i)[0].trim()
+      const dayIndices = parseDayRangeForEditor(dayPart)
+      for (const idx of dayIndices) {
+        week[WEEK_DAYS[idx].key] = { ranges: [], closed: true, explicit: true }
+      }
+      continue
+    }
+
+    const dayPart = chunk.split(/\d/)[0].trim()
+    const dayIndices = parseDayRangeForEditor(dayPart)
+    
+    if (dayIndices.length === 0) continue
+
+    const timeRanges: TimeRange[] = []
+    const rangeMatches = chunk.matchAll(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/g)
+    
+    for (const match of rangeMatches) {
+      timeRanges.push({
+        open: match[1].padStart(5, "0"),
+        close: match[2].padStart(5, "0"),
+      })
+    }
+
+    if (timeRanges.length > 0) {
+      for (const idx of dayIndices) {
+        week[WEEK_DAYS[idx].key] = {
+          ranges: timeRanges,
+          closed: false,
+          explicit: true,
+        }
+      }
     }
   }
+  
   return week
 }
 
 export function formatOpeningHours(week: WeekHours): string {
-  return WEEK_DAYS.filter((d) => !week[d.key].closed)
-    .map((d) => `${d.label.slice(0, 3)} ${week[d.key].open}–${week[d.key].close}`)
-    .join(" · ")
+  const dayGroups: Array<{ days: number[]; ranges: TimeRange[] }> = []
+  
+  for (let i = 0; i < WEEK_DAYS.length; i++) {
+    const dayKey = WEEK_DAYS[i].key
+    const dayData = week[dayKey]
+    
+    if (!dayData.explicit) continue
+    
+    if (dayData.closed) {
+      dayGroups.push({ days: [i], ranges: [] })
+      continue
+    }
+    
+    if (dayData.ranges.length === 0) continue
+    
+    const lastGroup = dayGroups[dayGroups.length - 1]
+    const rangesMatch = lastGroup && 
+      lastGroup.ranges.length === dayData.ranges.length &&
+      lastGroup.ranges.every((r, idx) => 
+        r.open === dayData.ranges[idx].open && r.close === dayData.ranges[idx].close
+      )
+    
+    if (rangesMatch && lastGroup.days[lastGroup.days.length - 1] === i - 1) {
+      lastGroup.days.push(i)
+    } else {
+      dayGroups.push({ days: [i], ranges: [...dayData.ranges] })
+    }
+  }
+  
+  return dayGroups
+    .filter((g) => g.days.length > 0)
+    .map((group) => {
+      const dayLabels = group.days.length > 1 && 
+        group.days.every((d, i) => i === 0 || d === group.days[i - 1] + 1)
+        ? `${WEEK_DAYS[group.days[0]].label.slice(0, 3)}–${WEEK_DAYS[group.days[group.days.length - 1]].label.slice(0, 3)}`
+        : group.days.map((i) => WEEK_DAYS[i].label.slice(0, 3)).join(", ")
+      
+      if (group.ranges.length === 0) {
+        return `${dayLabels} cerrado`
+      }
+      
+      const timeStr = group.ranges.map((r) => `${r.open}–${r.close}`).join(" y ")
+      return `${dayLabels} ${timeStr}`
+    })
+    .join("; ")
 }
