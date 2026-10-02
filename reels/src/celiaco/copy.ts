@@ -46,9 +46,10 @@ export const lugarEjemplo = {
   meta: ['Panadería', 'Palermo', '350 m'],
 };
 
-/** CeliMap está publicada SOLO en App Store (no en Google Play). */
+/** CeliMap está publicada en App Store y Google Play. `ratio` = ancho/alto del arte oficial. */
 export const tiendas = {
-  ios: {badge: 'brand/app-store-badge-es.svg', alt: 'Consíguelo en el App Store'},
+  ios: {badge: 'brand/app-store-badge-es.svg', alt: 'Consíguelo en el App Store', ratio: 119.66407 / 40},
+  android: {badge: 'brand/google-play-badge-es.png', alt: 'Descargar en Google Play', ratio: 646 / 192},
   web: 'celimap.com.ar',
 };
 

@@ -53,21 +53,23 @@ export const AdsGuides: React.FC = () => (
 );
 
 /**
- * Badge oficial de Apple "Consíguelo en el App Store" (ES, negro), sin modificar.
- * CeliMap está SOLO en App Store: no agregar Google Play hasta que la app esté publicada ahí.
- * Proporción oficial 119.66 x 40 — escalar sólo por alto.
+ * Badges oficiales de las tiendas en español, sin modificar el arte:
+ * - Apple "Consíguelo en el App Store" (SVG, negro).
+ * - Google Play "Descargar en Google Play" (PNG oficial es-419, recortado sólo el margen transparente).
+ * Se igualan por alto, como piden las guías de ambas marcas.
  */
-const APP_STORE_RATIO = 119.66407 / 40;
-
 export const StoreBadges: React.FC<{scale?: number}> = ({scale = 1}) => {
-  const h = 150 * scale; // 138px con scale .92: queda arriba de ads.textBottom (1248)
+  const h = 128 * scale; // ~118px con scale .92: los dos entran en el ancho útil y quedan arriba de ads.textBottom
   return (
-    <div style={{display: 'flex', justifyContent: 'center'}}>
-      <Img
-        src={staticFile(tiendas.ios.badge)}
-        alt={tiendas.ios.alt}
-        style={{height: h, width: h * APP_STORE_RATIO, display: 'block', filter: 'drop-shadow(0 18px 24px rgba(0,0,0,0.35))'}}
-      />
+    <div style={{display: 'flex', gap: 24 * scale, justifyContent: 'center', alignItems: 'center'}}>
+      {[tiendas.ios, tiendas.android].map((t) => (
+        <Img
+          key={t.badge}
+          src={staticFile(t.badge)}
+          alt={t.alt}
+          style={{height: h, width: h * t.ratio, display: 'block', filter: 'drop-shadow(0 18px 24px rgba(0,0,0,0.35))'}}
+        />
+      ))}
     </div>
   );
 };

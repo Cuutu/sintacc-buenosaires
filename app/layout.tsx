@@ -21,6 +21,7 @@ import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
 import { ChatWidgetHost } from "@/components/chat/ChatWidgetHost";
 import { getBaseUrl } from "@/lib/base-url";
+import { DEVICE_HINT_SCRIPT } from "@/lib/device-hint";
 import {
   CELIMAP_DESCRIPTION,
   CELIMAP_DESCRIPTION_SHORT,
@@ -121,8 +122,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${nunito.variable} ${fraunces.variable}`}>
+    <html
+      lang="es"
+      className={`${nunito.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <body className="font-sans antialiased bg-cream text-olive">
+        <script dangerouslySetInnerHTML={{ __html: DEVICE_HINT_SCRIPT }} />
         <JsonLdScript />
         <Providers>
           <AnalyticsSessionInit />

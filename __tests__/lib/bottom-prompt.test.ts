@@ -64,20 +64,23 @@ describe("resolveBottomPrompt", () => {
     ).toBe(false)
   })
 
-  it("desktop y Android (Play apagado) → install", () => {
-    expect(
-      resolveBottomPrompt({
-        platform: "desktop",
-        browser: "safari",
-        nativeApp: false,
-        standalone: false,
-        dismissedUntil: 0,
-      })
-    ).toBe("install")
+  it("Android → store (Play Store)", () => {
     expect(
       resolveBottomPrompt({
         platform: "android",
         browser: "chrome",
+        nativeApp: false,
+        standalone: false,
+        dismissedUntil: 0,
+      })
+    ).toBe("store")
+  })
+
+  it("desktop → install", () => {
+    expect(
+      resolveBottomPrompt({
+        platform: "desktop",
+        browser: "safari",
         nativeApp: false,
         standalone: false,
         dismissedUntil: 0,

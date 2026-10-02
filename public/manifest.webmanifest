@@ -10,6 +10,18 @@
   "theme_color": "#2D4A34",
   "lang": "es-AR",
   "categories": ["food", "health", "navigation", "travel"],
+  "prefer_related_applications": true,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.celimap.mobile",
+      "id": "com.celimap.mobile"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/ar/app/celimap/id6797278308"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Abrir mapa",

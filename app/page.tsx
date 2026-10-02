@@ -114,6 +114,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <TakeCeliMapWithYou />
+
       <section className="px-4 py-8 md:py-16">
         <div className="container mx-auto max-w-6xl">
           <HomeFeatured places={featuredPlaces.length ? featuredPlaces : undefined} />
@@ -135,8 +137,6 @@ export default async function HomePage() {
       </section>
 
       <CommunityBand stats={initialStats} />
-
-      <TakeCeliMapWithYou />
 
       <FaqSection />
     </div>

@@ -84,10 +84,12 @@ describe("getStoreBannerBrowser / Smart App Banner audience", () => {
     expect(isNativeIosSafari({ userAgent: UA.desktop, maxTouchPoints: 0 })).toBe(false)
   })
 
-  it("Android store queda apagado hasta Play Store", () => {
-    expect(STORE_BANNER_ANDROID_ENABLED).toBe(false)
-    expect(CELIMAP_PLAY_STORE_URL).toBe("")
-    expect(isStoreConfigured("android")).toBe(false)
+  it("Android usa la ficha oficial de Play Store", () => {
+    expect(STORE_BANNER_ANDROID_ENABLED).toBe(true)
+    expect(CELIMAP_PLAY_STORE_URL).toBe(
+      "https://play.google.com/store/apps/details?id=com.celimap.mobile"
+    )
+    expect(isStoreConfigured("android")).toBe(true)
     expect(isStoreConfigured("ios")).toBe(true)
   })
 })

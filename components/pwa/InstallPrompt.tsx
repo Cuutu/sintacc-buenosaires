@@ -7,6 +7,7 @@ import { isNativeApp } from "@/lib/native-app"
 import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
 import {
   CELIMAP_APP_STORE_URL,
+  CELIMAP_PLAY_STORE_URL,
   getDevicePlatform,
   isStandaloneDisplay,
 } from "@/lib/device-platform"
@@ -75,7 +76,7 @@ export function InstallPrompt() {
     setOpen(false)
   }
 
-  const installAndroid = async () => {
+  const installPwa = async () => {
     const outcome = await promptPwaInstall()
     if (outcome === "accepted") {
       setOpen(false)
@@ -87,7 +88,10 @@ export function InstallPrompt() {
   if (!open || onPrivateList || suppressForStoreBanner) return null
 
   const ios = platform === "ios"
-  const androidInstallable = platform === "android" && canPromptPwaInstall()
+  const android = platform === "android"
+  const storeUrl = ios ? CELIMAP_APP_STORE_URL : android ? CELIMAP_PLAY_STORE_URL : ""
+  const pwaInstallable = !storeUrl && canPromptPwaInstall()
+  if (!storeUrl && !pwaInstallable) return null
 
   return (
     <div className="pointer-events-auto fixed inset-0 z-[80] flex items-end justify-center p-3 pb-[calc(var(--bottom-nav-clearance)+0.5rem)] md:items-center md:pb-3">
@@ -107,12 +111,14 @@ export function InstallPrompt() {
         <div className="flex items-start justify-between gap-3 border-b border-[#E8E1D6] px-5 py-4">
           <div>
             <h2 id="install-prompt-title" className="text-base font-semibold">
-              {ios ? "Descargá CeliMap" : "Instalá CeliMap"}
+              {storeUrl ? "Descargá CeliMap" : "Instalá CeliMap"}
             </h2>
             <p className="mt-1 text-sm text-[#5F6B63]">
               {ios
                 ? "Tenés la app oficial para iPhone y iPad."
-                : "Accedé rápidamente al mapa, favoritos y sugerencias."}
+                : android
+                  ? "Tenés la app oficial para Android."
+                  : "Accedé rápidamente al mapa, favoritos y sugerencias."}
             </p>
           </div>
           <button
@@ -131,36 +137,28 @@ export function InstallPrompt() {
             className="flex min-h-[48px] flex-1 items-center justify-center rounded-2xl px-4 text-sm font-semibold text-[#2D4A34] hover:bg-[#1F4D35]/6"
             onClick={dismiss}
           >
-            {ios ? "Ahora no" : "Después"}
+            {storeUrl ? "Ahora no" : "Después"}
           </button>
-          {ios ? (
+          {storeUrl ? (
             <a
-              href={CELIMAP_APP_STORE_URL}
+              href={storeUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-[#C85A2E] px-4 text-sm font-semibold text-white hover:bg-[#BE552C]"
               onClick={() => setOpen(false)}
             >
-              Descargar en App Store
+              {ios ? "Descargar en App Store" : "Descargar en Google Play"}
             </a>
-          ) : androidInstallable ? (
+          ) : (
             <button
               type="button"
               className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#C85A2E] px-4 text-sm font-semibold text-white hover:bg-[#BE552C]"
               onClick={() => {
-                void installAndroid()
+                void installPwa()
               }}
             >
               <Download className="h-4 w-4" aria-hidden />
               Instalar ahora
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-[#E8E1D6] px-4 text-sm font-semibold text-[#6B746C]"
-              onClick={dismiss}
-            >
-              Android · Próximamente
             </button>
           )}
         </div>

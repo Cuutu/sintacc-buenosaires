@@ -454,3 +454,17 @@
   color: var(--color-terracotta);
   pointer-events: none;
 }
+
+/* Badges de tiendas: cada teléfono ve sólo su tienda; desktop ve las dos.
+   data-device / data-app-shell los pone DEVICE_HINT_SCRIPT (lib/device-hint.ts) antes de pintar. */
+html[data-device="android"] [data-store-badge="ios"],
+html[data-device="ios"] [data-store-badge="android"],
+html[data-app-shell] [data-get-app] {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  [data-get-app] {
+    display: none;
+  }
+}

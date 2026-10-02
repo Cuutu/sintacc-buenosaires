@@ -12,10 +12,10 @@ export type StoreBannerBrowser =
 
 export const CELIMAP_APP_STORE_URL = "https://apps.apple.com/ar/app/celimap/id6797278308"
 
-/** Vacío hasta que exista ficha en Play Store. */
-export const CELIMAP_PLAY_STORE_URL = ""
+export const CELIMAP_PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.celimap.mobile"
 
-export const STORE_BANNER_ANDROID_ENABLED = false
+export const STORE_BANNER_ANDROID_ENABLED = true
 
 export const CELIMAP_STORE_URLS: Record<StoreId, string> = {
   ios: CELIMAP_APP_STORE_URL,

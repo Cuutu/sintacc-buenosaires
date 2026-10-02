@@ -8,6 +8,7 @@ export const CHAT_MAX_PAYLOAD_CHARS = 16000
 export const CHAT_MAX_OUTPUT_TOKENS = 800
 export const CHAT_MAX_STEPS = 5
 export const CHAT_APP_STORE_URL = "https://apps.apple.com/app/id6797278308"
+export const CHAT_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.celimap.mobile"
 export const CHAT_ANMAT_LIST_URL = "https://listadoalg.anmat.gob.ar/Home"
 
 const DEFAULT_MODEL = "openai/gpt-4.1-mini"
