@@ -3,6 +3,8 @@
  */
 import { readFileSync } from "fs"
 import path from "path"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import { placeOfferPhrase } from "@/lib/seo/place-metadata"
 
 const root = path.join(__dirname, "../../..")
 const read = (rel: string) => readFileSync(path.join(root, rel), "utf8")
@@ -63,6 +65,58 @@ describe("public copy: claims y marca", () => {
     for (const rel of files) {
       const src = read(rel)
       expect(src).not.toContain("Celimap")
+    }
+  })
+
+  it("PlaceJsonLd usa inferSafetyLevel para clasificación consistente con badge", () => {
+    const src = read("components/seo/PlaceJsonLd.tsx")
+    expect(src).toContain("inferSafetyLevel")
+    expect(src).toContain('safety === "dedicated_gf"')
+    expect(src).toContain('safety === "gf_options"')
+  })
+
+  it("PlaceJsonLd description y servesCuisine reflejan clasificación real", () => {
+    const src = read("components/seo/PlaceJsonLd.tsx")
+    
+    // No debe hardcodear "con opciones" para todos
+    expect(src).not.toMatch(/description:\s*`[^`]*con opciones Sin TACC[^`]*`/)
+    
+    // servesCuisine debe ser condicional, no hardcodeado
+    expect(src).not.toMatch(/servesCuisine:\s*"Comida sin gluten",/)
+    
+    // Debe usar la inferencia
+    const lines = src.split('\n')
+    const safetyLine = lines.findIndex(l => l.includes('const safety = inferSafetyLevel'))
+    const dedicatedCheck = lines.findIndex(l => l.includes('safety === "dedicated_gf"'))
+    const optionsCheck = lines.findIndex(l => l.includes('safety === "gf_options"'))
+    
+    expect(safetyLine).toBeGreaterThan(-1)
+    expect(dedicatedCheck).toBeGreaterThan(safetyLine)
+    expect(optionsCheck).toBeGreaterThan(safetyLine)
+  })
+
+  it("layout pasa tags y safetyLevel a PlaceJsonLd", () => {
+    const src = read("app/lugar/[id]/layout.tsx")
+    expect(src).toContain("tags: place.tags")
+    expect(src).toContain("safetyLevel: place.safetyLevel")
+  })
+
+  it("inferSafetyLevel y placeOfferPhrase son consistentes", () => {
+    const testCases = [
+      { tags: ["100_gf"], safetyLevel: undefined, expectedSafety: "dedicated_gf", expectedOffer: "sin TACC" },
+      { tags: ["opciones_sin_tacc"], safetyLevel: undefined, expectedSafety: "gf_options", expectedOffer: "con opciones sin TACC" },
+      { tags: undefined, safetyLevel: "dedicated_gf" as const, expectedSafety: "dedicated_gf", expectedOffer: "sin TACC" },
+      { tags: undefined, safetyLevel: "gf_options" as const, expectedSafety: "gf_options", expectedOffer: "con opciones sin TACC" },
+      { tags: undefined, safetyLevel: "unknown" as const, expectedSafety: "unknown", expectedOffer: "" },
+      { tags: [], safetyLevel: undefined, expectedSafety: undefined, expectedOffer: "" },
+    ]
+
+    for (const tc of testCases) {
+      const safety = inferSafetyLevel({ tags: tc.tags, safetyLevel: tc.safetyLevel })
+      const offer = placeOfferPhrase({ tags: tc.tags, safetyLevel: tc.safetyLevel, name: "Test", type: "restaurant" })
+      
+      expect(safety).toBe(tc.expectedSafety)
+      expect(offer).toBe(tc.expectedOffer)
     }
   })
 })

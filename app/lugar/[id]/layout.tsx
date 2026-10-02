@@ -46,6 +46,8 @@ export default async function LugarLayout({ params, children }: LugarLayoutProps
           photos: place.photos,
           contact: place.contact,
           openingHours: place.openingHours,
+          tags: place.tags,
+          safetyLevel: place.safetyLevel,
           stats: {
             avgRating: liveStats.avgRating,
             totalReviews: liveStats.totalReviews,

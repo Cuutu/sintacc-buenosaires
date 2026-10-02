@@ -3,6 +3,7 @@ import { getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getCityBySlug } from "@/lib/seo/cities"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -45,6 +46,8 @@ interface PlaceJsonLdProps {
     photos?: string[]
     contact?: { url?: string; phone?: string; instagram?: string }
     openingHours?: string
+    tags?: string[]
+    safetyLevel?: "dedicated_gf" | "gf_options" | "cross_contamination_risk" | "unknown" | null
     stats?: { avgRating?: number; totalReviews?: number }
   }
 }
@@ -57,11 +60,27 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   const sameAs = [place.contact?.url, normalizeInstagramUrl(place.contact?.instagram)].filter(Boolean)
 
   const area = getCanonicalPlaceArea(place)
+  const safety = inferSafetyLevel(place)
+  
+  let offerPhrase = ""
+  let servesCuisine: string | undefined = undefined
+  
+  if (safety === "dedicated_gf") {
+    offerPhrase = "100% Sin TACC"
+    servesCuisine = "Comida sin gluten"
+  } else if (safety === "gf_options") {
+    offerPhrase = "con opciones Sin TACC"
+  }
+  
+  const description = offerPhrase
+    ? `${place.name} - ${typeLabel} ${offerPhrase}${area ? ` en ${area}` : ""}, según la información cargada en CeliMap.`
+    : `${place.name} - ${typeLabel}${area ? ` en ${area}` : ""}, según la información cargada en CeliMap.`
+
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: place.name,
-    description: `${place.name} - ${typeLabel} con opciones Sin TACC${area ? ` en ${area}` : ""}, según la información cargada en CeliMap.`,
+    description,
     url: placeUrl,
     image: imageUrl,
     address: place.address
@@ -84,7 +103,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
       "@type": "Place",
       name: area || place.neighborhood,
     },
-    servesCuisine: "Comida sin gluten",
+    ...(servesCuisine ? { servesCuisine } : {}),
     telephone: place.contact?.phone || undefined,
     ...(sameAs.length ? { sameAs } : {}),
   }
