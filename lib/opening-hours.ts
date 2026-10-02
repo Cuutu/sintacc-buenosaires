@@ -49,7 +49,7 @@ const DAY_NAMES: Record<string, number> = {
 const AMPM = "(?:a\\.?m\\.?|p\\.?m\\.?|am|pm|hs?)"
 const TIME_TOKEN = `\\d{1,2}(?:[:.]\\d{2})?\\s*${AMPM}?`
 const TIME_RANGE_RE = new RegExp(
-  `(${TIME_TOKEN})\\s*(?:[–—-]|\\ba\\b)\\s*(${TIME_TOKEN})`,
+  `(?<!\\d)(${TIME_TOKEN})\\s*(?:[–—-]|\\ba\\b)\\s*(${TIME_TOKEN})(?!\\d)`,
   "i"
 )
 const TIME_PARSE_RE = new RegExp(
@@ -65,7 +65,8 @@ function parseTimeStr(str: string): number | null {
   const ampm = (m[3] || "").toLowerCase().replace(/\./g, "")
   if (ampm.startsWith("p") && h < 12) h += 12
   if (ampm.startsWith("a") && h === 12) h = 0
-  return Math.min(23 * 60 + 59, h * 60 + min)
+  if (h > 23 || min > 59) return null
+  return h * 60 + min
 }
 
 function parseDayToken(token: string): number | null {

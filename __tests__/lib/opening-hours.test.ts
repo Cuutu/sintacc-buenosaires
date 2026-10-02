@@ -319,3 +319,47 @@ describe("horarios reales de Google y manuales que antes fallaban", () => {
     expect(detail!.relativeText).toBe("abre el miércoles a las 12:00")
   })
 })
+
+describe("phone number parsing regression", () => {
+  /** Jueves 1 oct 2026 03:45 AR = 06:45 UTC */
+  const THURSDAY_EARLY = new Date("2026-10-01T06:45:00.000Z")
+  /** Jueves 1 oct 2026 10:00 AR = 13:00 UTC */
+  const THURSDAY_MORNING = new Date("2026-10-01T13:00:00.000Z")
+
+  it("phone numbers like +54 260 433-8227 should not be parsed as hours", () => {
+    const hours = "Lun–Sáb 09:00–15:00 (phone +54 260 433-8227)"
+    expect(isOpenNow(hours, THURSDAY_EARLY)).toBe(false)
+    expect(isOpenNow(hours, THURSDAY_MORNING)).toBe(true)
+  })
+
+  it("WhatsApp note with phone should not affect parsing", () => {
+    const hours = "WhatsApp/atención Lun–Sáb 09:00–15:00 (contact +54 260 433-8227)"
+    expect(isOpenNow(hours, THURSDAY_EARLY)).toBe(false)
+    expect(isOpenNow(hours, THURSDAY_MORNING)).toBe(true)
+  })
+
+  it("hour ranges without phone numbers still work", () => {
+    const hours = "Lun–Vie 08:00–12:30 y 16:00–20:00; Sáb 08:00–12:00"
+    /** Viernes 2 oct 2026 10:00 AR = 13:00 UTC */
+    expect(isOpenNow(hours, new Date("2026-10-02T13:00:00.000Z"))).toBe(true)
+    /** Viernes 2 oct 2026 14:00 AR = 17:00 UTC (siesta) */
+    expect(isOpenNow(hours, new Date("2026-10-02T17:00:00.000Z"))).toBe(false)
+    /** Viernes 2 oct 2026 18:00 AR = 21:00 UTC */
+    expect(isOpenNow(hours, new Date("2026-10-02T21:00:00.000Z"))).toBe(true)
+  })
+
+  it("rejects invalid hours over 23", () => {
+    const hours = "Lun–Sáb 09:00–15:00 (data: 433-8227)"
+    const status = getOpenStatusLabel(hours, THURSDAY_MORNING)
+    expect(status).not.toBeNull()
+    expect(status).not.toBe("Abierto ahora")
+  })
+
+  it("overnight ranges like 20:00–02:00 still work", () => {
+    const hours = "Mié–Sáb 20:00–02:00"
+    /** Jueves 1 oct 2026 21:00 AR = 00:00 UTC (viernes) */
+    expect(isOpenNow(hours, new Date("2026-10-02T00:00:00.000Z"))).toBe(true)
+    /** Viernes 2 oct 2026 01:00 AR = 04:00 UTC */
+    expect(isOpenNow(hours, new Date("2026-10-02T04:00:00.000Z"))).toBe(true)
+  })
+})
