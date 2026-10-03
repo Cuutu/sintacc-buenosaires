@@ -9,6 +9,7 @@ import type { PlaceDuplicatePair } from "@/lib/place-duplicates-scan"
 import type { AiResearchItem } from "@/components/admin/types"
 import { PlaceResearchPanel } from "@/components/admin/PlaceResearchPanel"
 import type { EnrichmentCatalog } from "@/lib/place-enrichment-eligibility"
+import { pollWhileVisible, queueHasPendingWork } from "@/lib/admin-queue-polling"
 
 type QueueStats = {
   queued: number
@@ -247,9 +248,13 @@ export function AdminPlaceReviewTools({
     void load()
   }, [mode, catalog])
 
+  // Poll de 5 s sólo con la pestaña visible y mientras la cola tenga trabajo.
+  const enrichmentQueueBusy = queueHasPendingWork(queueStats)
+  const googleQueueBusy = queueHasPendingWork(googleStats)
+
   useEffect(() => {
-    if (mode !== "incomplete") return
-    const timer = setInterval(() => {
+    if (mode !== "incomplete" || !enrichmentQueueBusy) return
+    return pollWhileVisible(() => {
       void refreshIncomplete()
         .then(async () => {
           onRefreshPlaces()
@@ -270,12 +275,11 @@ export function AdminPlaceReviewTools({
         })
         .catch(() => {})
     }, 5000)
-    return () => clearInterval(timer)
-  }, [mode, onRefreshPlaces, catalog])
+  }, [mode, onRefreshPlaces, catalog, enrichmentQueueBusy])
 
   useEffect(() => {
-    if (mode !== "google") return
-    const timer = setInterval(() => {
+    if (mode !== "google" || !googleQueueBusy) return
+    return pollWhileVisible(() => {
       void refreshGoogle()
         .then(async () => {
           onRefreshPlaces()
@@ -296,8 +300,7 @@ export function AdminPlaceReviewTools({
         })
         .catch(() => {})
     }, 5000)
-    return () => clearInterval(timer)
-  }, [mode, onRefreshPlaces])
+  }, [mode, onRefreshPlaces, googleQueueBusy])
 
   const startQueue = async () => {
     setEnriching(true)
