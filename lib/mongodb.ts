@@ -24,11 +24,14 @@ function isSrvDnsFail(error: unknown): boolean {
   return /querySrv|ENOTFOUND.*mongodb/i.test(msg)
 }
 
+// maxIdleTimeMS también fija cuánto vive la instancia después de cada request:
+// attachDatabasePool hace waitUntil(maxIdleTimeMS + 100 ms) en cada connectionCheckedOut,
+// y en Vercel ese tiempo se cobra como memoria provisionada. Bajo = más barato, pero más reconexiones.
 const MONGO_OPTS = {
   bufferCommands: false,
   maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 1),
   minPoolSize: 0,
-  maxIdleTimeMS: 10_000,
+  maxIdleTimeMS: Number(process.env.MONGODB_MAX_IDLE_MS || 4000),
   serverSelectionTimeoutMS: 5_000,
   socketTimeoutMS: 12_000,
   connectTimeoutMS: 5_000,

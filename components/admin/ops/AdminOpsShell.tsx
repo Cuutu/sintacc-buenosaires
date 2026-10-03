@@ -12,6 +12,8 @@ import { adminUi } from "@/lib/admin-ui"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { cn } from "@/lib/utils"
 
+const COUNTS_POLL_MS = 5 * 60_000
+
 export function AdminOpsShell({
   children,
   initialCounts,
@@ -27,24 +29,39 @@ export function AdminOpsShell({
 
   useEffect(() => {
     let active = true
+    let timer: ReturnType<typeof setInterval> | null = null
+    const isVisible = () => document.visibilityState === "visible"
     const refresh = () => {
-      if (typeof document !== "undefined" && document.hidden) return
+      if (!isVisible()) return
       fetch("/api/admin/counts", { cache: "no-store" })
         .then(r => r.ok ? r.json() : null)
         .then(data => { if (active && data) setCounts(data) })
         .catch(() => undefined)
     }
-    const timer = setInterval(refresh, 120000)
-    const onVisible = () => {
-      if (!document.hidden) refresh()
+    // Cada invocación mantiene viva la función en Vercel (ver lib/mongodb.ts): poll lento y sólo con la pestaña visible.
+    const startPolling = () => {
+      if (timer === null) timer = setInterval(refresh, COUNTS_POLL_MS)
     }
+    const stopPolling = () => {
+      if (timer !== null) clearInterval(timer)
+      timer = null
+    }
+    const onVisibilityChange = () => {
+      if (isVisible()) {
+        refresh()
+        startPolling()
+      } else {
+        stopPolling()
+      }
+    }
+    if (isVisible()) startPolling()
     window.addEventListener("admin:counts-changed", refresh)
-    document.addEventListener("visibilitychange", onVisible)
+    document.addEventListener("visibilitychange", onVisibilityChange)
     return () => {
       active = false
-      clearInterval(timer)
+      stopPolling()
       window.removeEventListener("admin:counts-changed", refresh)
-      document.removeEventListener("visibilitychange", onVisible)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
     }
   }, [])
 
