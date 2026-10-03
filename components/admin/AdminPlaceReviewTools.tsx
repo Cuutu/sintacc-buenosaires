@@ -219,12 +219,13 @@ export function AdminPlaceReviewTools({
     setQueueStats(data.queue || null)
   }
 
-  const refreshGoogle = async () => {
+  const refreshGoogle = async (): Promise<GoogleQueueStats> => {
     const res = await fetch("/api/admin/places/google-sync-queue")
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Error al leer cola Google")
     setGoogleStats(data)
     setGooglePlaces(data.places || [])
+    return data
   }
 
   useEffect(() => {
@@ -281,11 +282,9 @@ export function AdminPlaceReviewTools({
     if (mode !== "google" || !googleQueueBusy) return
     return pollWhileVisible(() => {
       void refreshGoogle()
-        .then(async () => {
+        .then(async (stats) => {
           onRefreshPlaces()
-          const res = await fetch("/api/admin/places/google-sync-queue")
-          if (!res.ok) return
-          const stats = (await res.json()) as GoogleQueueStats
+          // Las stats vienen en la misma respuesta que refreshGoogle: no volver a pedirlas.
           if (stats.stalled && (stats.queued > 0 || (stats.stuckRunning ?? 0) > 0)) {
             const now = Date.now()
             if (now - lastAutoResumeRef.current > 60_000) {
