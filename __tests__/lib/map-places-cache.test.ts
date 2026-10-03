@@ -9,8 +9,10 @@ import {
   mergeCachedPlaces,
   mergeIntoPlacesCache,
   getPlacesFromMemory,
+  claimAdjacentPrefetch,
   hasFreshCompleteList,
   isCompletePlacesResponse,
+  prefetchPlacesIfStale,
   readPlacesCache,
   _resetMapPlacesCacheForTests,
   _viewportLruSize,
@@ -207,6 +209,81 @@ describe("lista completa (sin bbox)", () => {
     } finally {
       idb.uninstall()
     }
+  })
+})
+
+describe("precarga de barrios vecinos: frescura y dedupe", () => {
+  beforeEach(() => {
+    _resetMapPlacesCacheForTests()
+    jest.restoreAllMocks()
+  })
+
+  it("saltea una clave fresca en memoria", async () => {
+    await writePlacesCache("k", [fakePlace("1")])
+    const fetcher = jest.fn().mockResolvedValue(undefined)
+    await prefetchPlacesIfStale("k", fetcher)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it("saltea una clave fresca que sólo está en IndexedDB y la carga en memoria", async () => {
+    const idb = installFakeIndexedDb()
+    try {
+      await writePlacesCache("k", [fakePlace("1")])
+      _resetMapPlacesCacheForTests()
+      const fetcher = jest.fn().mockResolvedValue(undefined)
+      await prefetchPlacesIfStale("k", fetcher)
+      expect(fetcher).not.toHaveBeenCalled()
+      expect(getPlacesFromMemory("k")?.places).toHaveLength(1)
+    } finally {
+      idb.uninstall()
+    }
+  })
+
+  it("pide si no hay caché o si venció (8 min)", async () => {
+    const fetcher = jest.fn().mockResolvedValue(undefined)
+    await prefetchPlacesIfStale("nueva", fetcher)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+
+    const t0 = 1_700_000_000_000
+    const now = jest.spyOn(Date, "now").mockReturnValue(t0)
+    await writePlacesCache("vieja", [fakePlace("1")])
+    now.mockReturnValue(t0 + MAP_CACHE_TTL_MS)
+    const staleFetcher = jest.fn().mockResolvedValue(undefined)
+    await prefetchPlacesIfStale("vieja", staleFetcher)
+    expect(staleFetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it("comparte el pedido en vuelo para la misma clave", async () => {
+    let release: () => void = () => {}
+    const fetcher = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve
+        })
+    )
+    const a = prefetchPlacesIfStale("k", fetcher)
+    const b = prefetchPlacesIfStale("k", fetcher)
+    expect(b).toBe(a)
+    await new Promise((r) => setTimeout(r, 0))
+    release()
+    await Promise.all([a, b])
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it("si el pedido falla, libera la clave y el siguiente reintenta", async () => {
+    const failing = jest.fn().mockRejectedValue(new Error("red"))
+    await expect(prefetchPlacesIfStale("k", failing)).rejects.toThrow("red")
+    const retry = jest.fn().mockResolvedValue(undefined)
+    await prefetchPlacesIfStale("k", retry)
+    expect(retry).toHaveBeenCalledTimes(1)
+  })
+
+  it("la precarga de vecinos se dispara una vez por clave hasta que vence", () => {
+    const t0 = 1_700_000_000_000
+    expect(claimAdjacentPrefetch("palermo", t0)).toBe(true)
+    expect(claimAdjacentPrefetch("palermo", t0 + 1000)).toBe(false)
+    expect(claimAdjacentPrefetch("recoleta", t0 + 1000)).toBe(true)
+    expect(claimAdjacentPrefetch("palermo", t0 + MAP_CACHE_TTL_MS)).toBe(true)
   })
 })
 

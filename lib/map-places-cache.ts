@@ -233,6 +233,38 @@ export async function mergeIntoPlacesCache(
   return merged
 }
 
+const inflightPrefetches = new Map<string, Promise<void>>()
+const adjacentPrefetchAt = new Map<string, number>()
+
+/**
+ * Precarga `filterKey` sólo si no hay entrada fresca (memoria o IndexedDB) ni otro pedido
+ * en vuelo para esa clave. Una entrada fresca de IndexedDB queda cargada en memoria.
+ */
+export function prefetchPlacesIfStale(
+  filterKey: string,
+  fetcher: () => Promise<unknown>
+): Promise<void> {
+  const inflight = inflightPrefetches.get(filterKey)
+  if (inflight) return inflight
+  const task = (async () => {
+    const cached = await readPlacesCache(filterKey)
+    if (cached && isFresh(cached.fetchedAt)) return
+    await fetcher()
+  })().finally(() => {
+    inflightPrefetches.delete(filterKey)
+  })
+  inflightPrefetches.set(filterKey, task)
+  return task
+}
+
+/** true una vez por clave; después false hasta que venza MAP_CACHE_TTL_MS. */
+export function claimAdjacentPrefetch(primaryKey: string, now = Date.now()): boolean {
+  const last = adjacentPrefetchAt.get(primaryKey)
+  if (last !== undefined && isFresh(last, now)) return false
+  adjacentPrefetchAt.set(primaryKey, now)
+  return true
+}
+
 export function viewportTileCacheKey(
   filterKey: string,
   bounds: MapViewportBounds,
@@ -277,4 +309,6 @@ export function _viewportLruSize(): number {
 export function _resetMapPlacesCacheForTests(): void {
   memoryPlaces.clear()
   memoryTiles.clear()
+  inflightPrefetches.clear()
+  adjacentPrefetchAt.clear()
 }

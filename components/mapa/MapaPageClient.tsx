@@ -17,12 +17,14 @@ import { parseMapTypeParam } from "@/lib/map-url-filters"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
   buildMapFilterKey,
+  claimAdjacentPrefetch,
   hasFreshCompleteList,
   hasFreshViewportTile,
   isCompletePlacesResponse,
   isPlacesCacheFresh,
   mergeCachedPlaces,
   mergeIntoPlacesCache,
+  prefetchPlacesIfStale,
   readPlacesCache,
   rememberViewportTile,
   viewportTileCacheKey,
@@ -289,13 +291,15 @@ function MapaContent() {
         })
       )
       const run = () => {
+        // Una vez por filtro mientras esté fresco; cada vecino mira memoria + IndexedDB
+        // y comparte el pedido si ya hay uno en vuelo.
+        if (!claimAdjacentPrefetch(primaryKey)) {
+          applyMerged(primaryKey, extraKeys)
+          return
+        }
         neighbors.forEach((name, index) => {
           const key = extraKeys[index]
-          if (isPlacesCacheFresh(key)) {
-            applyMerged(primaryKey, extraKeys)
-            return
-          }
-          void networkFetch(key, name, "")
+          void prefetchPlacesIfStale(key, () => networkFetch(key, name, ""))
             .then(() => applyMerged(primaryKey, extraKeys))
             .catch(() => {
               /* prefetch silencioso */
