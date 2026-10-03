@@ -17,7 +17,9 @@ import { parseMapTypeParam } from "@/lib/map-url-filters"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
   buildMapFilterKey,
+  hasFreshCompleteList,
   hasFreshViewportTile,
+  isCompletePlacesResponse,
   isPlacesCacheFresh,
   mergeCachedPlaces,
   mergeIntoPlacesCache,
@@ -236,7 +238,11 @@ function MapaContent() {
     ) => {
       const data = await fetchPage(neighborhood, searchText, viewport, 1)
       const incoming = data.places || []
-      await mergeIntoPlacesCache(key, incoming)
+      await mergeIntoPlacesCache(
+        key,
+        incoming,
+        viewport ? {} : { complete: isCompletePlacesResponse(data.pagination, incoming.length) }
+      )
       return incoming
     }
 
@@ -396,7 +402,11 @@ function MapaContent() {
     (zoom: number, bounds: MapViewportBounds) => {
       const filterKey = lastFetchedFilterKeyRef.current ?? ""
       const tileKey = viewportTileCacheKey(filterKey, bounds, zoom)
-      if (forceRefreshRef.current || !hasFreshViewportTile(tileKey)) {
+      if (!forceRefreshRef.current && hasFreshCompleteList(filterKey)) {
+        // Ya tenemos todo el filtro: el bbox no traería nada nuevo. Guardamos el viewport
+        // para que un cambio de filtro pida el área que se está viendo, no una vieja.
+        lastBoundsRef.current = bounds
+      } else if (forceRefreshRef.current || !hasFreshViewportTile(tileKey)) {
         void fetchPlaces({ bounds, silent: true }).then((ok) => {
           if (ok) rememberViewportTile(tileKey, [])
         })

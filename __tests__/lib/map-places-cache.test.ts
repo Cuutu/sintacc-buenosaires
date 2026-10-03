@@ -9,6 +9,9 @@ import {
   mergeCachedPlaces,
   mergeIntoPlacesCache,
   getPlacesFromMemory,
+  hasFreshCompleteList,
+  isCompletePlacesResponse,
+  readPlacesCache,
   _resetMapPlacesCacheForTests,
   _viewportLruSize,
 } from "@/lib/map-places-cache"
@@ -70,6 +73,140 @@ describe("map places cache", () => {
     )
     expect(key.split(":")).toHaveLength(5)
     expect(key.endsWith(":13")).toBe(true)
+  })
+})
+
+/** IndexedDB mínimo (open / get / put) para probar la persistencia sin fake-indexeddb. */
+function installFakeIndexedDb() {
+  const stores = new Map<string, Map<string, unknown>>()
+  const keyPaths = new Map<string, string>()
+  const clone = <T,>(value: T): T => (value === undefined ? value : JSON.parse(JSON.stringify(value)))
+  const db = {
+    objectStoreNames: { contains: (name: string) => stores.has(name) },
+    createObjectStore: (name: string, opts: { keyPath: string }) => {
+      stores.set(name, new Map())
+      keyPaths.set(name, opts.keyPath)
+    },
+    transaction: (name: string) => {
+      const tx: { oncomplete?: () => void; objectStore: () => unknown } = {
+        objectStore: () => ({
+          get: (key: string) => {
+            const req: { result?: unknown; onsuccess?: () => void } = {}
+            setTimeout(() => {
+              req.result = clone(stores.get(name)?.get(key))
+              req.onsuccess?.()
+            }, 0)
+            return req
+          },
+          put: (value: Record<string, unknown>) => {
+            stores.get(name)?.set(String(value[keyPaths.get(name) ?? ""]), clone(value))
+            setTimeout(() => tx.oncomplete?.(), 0)
+            return {}
+          },
+        }),
+      }
+      return tx
+    },
+  }
+  const fake = {
+    open: () => {
+      const req: { result: typeof db; onupgradeneeded?: () => void; onsuccess?: () => void } = {
+        result: db,
+      }
+      setTimeout(() => {
+        if (stores.size === 0) req.onupgradeneeded?.()
+        req.onsuccess?.()
+      }, 0)
+      return req
+    },
+  }
+  ;(globalThis as { indexedDB?: unknown }).indexedDB = fake
+  return {
+    stores,
+    uninstall: () => {
+      delete (globalThis as { indexedDB?: unknown }).indexedDB
+    },
+  }
+}
+
+describe("lista completa (sin bbox)", () => {
+  beforeEach(() => {
+    _resetMapPlacesCacheForTests()
+    jest.restoreAllMocks()
+  })
+
+  it("es completa sólo si total <= recibidos", () => {
+    expect(isCompletePlacesResponse({ total: 2432 }, 2432)).toBe(true)
+    expect(isCompletePlacesResponse({ total: 0 }, 0)).toBe(true)
+    expect(isCompletePlacesResponse({ total: 6000 }, 5000)).toBe(false)
+    expect(isCompletePlacesResponse(undefined, 10)).toBe(false)
+  })
+
+  it("marca puesta con total <= recibidos", async () => {
+    const places = [fakePlace("1"), fakePlace("2")]
+    await mergeIntoPlacesCache("k", places, {
+      complete: isCompletePlacesResponse({ total: 2 }, places.length),
+    })
+    expect(hasFreshCompleteList("k")).toBe(true)
+    expect(getPlacesFromMemory("k")?.complete).toBe(true)
+  })
+
+  it("marca no puesta con total > recibidos (y un fetch sin bbox incompleto la saca)", async () => {
+    await mergeIntoPlacesCache("k", [fakePlace("1")], { complete: true })
+    expect(hasFreshCompleteList("k")).toBe(true)
+    await mergeIntoPlacesCache("k", [fakePlace("2")], {
+      complete: isCompletePlacesResponse({ total: 6000 }, 1),
+    })
+    expect(hasFreshCompleteList("k")).toBe(false)
+    expect(hasFreshCompleteList("otra")).toBe(false)
+  })
+
+  it("vence a los 8 minutos", async () => {
+    await mergeIntoPlacesCache("k", [fakePlace("1")], { complete: true })
+    const fetchedAt = getPlacesFromMemory("k")!.fetchedAt
+    expect(hasFreshCompleteList("k", fetchedAt + MAP_CACHE_TTL_MS - 1)).toBe(true)
+    expect(hasFreshCompleteList("k", fetchedAt + MAP_CACHE_TTL_MS)).toBe(false)
+  })
+
+  it("un merge por bbox no pisa la marca ni renueva su frescura", async () => {
+    const t0 = 1_700_000_000_000
+    const now = jest.spyOn(Date, "now").mockReturnValue(t0)
+    await mergeIntoPlacesCache("k", [fakePlace("1")], { complete: true })
+    now.mockReturnValue(t0 + 5 * 60 * 1000)
+    const merged = await mergeIntoPlacesCache("k", [fakePlace("2")])
+    expect(merged.map((p) => String(p._id)).sort()).toEqual(["1", "2"])
+    const entry = getPlacesFromMemory("k")!
+    expect(entry.complete).toBe(true)
+    expect(entry.fetchedAt).toBe(t0)
+    expect(hasFreshCompleteList("k", t0 + MAP_CACHE_TTL_MS)).toBe(false)
+  })
+
+  it("un merge por bbox no pone la marca", async () => {
+    await mergeIntoPlacesCache("k", [fakePlace("1")])
+    await mergeIntoPlacesCache("k", [fakePlace("2")])
+    expect(getPlacesFromMemory("k")?.complete).toBeUndefined()
+    expect(hasFreshCompleteList("k")).toBe(false)
+  })
+
+  it("se persiste en IndexedDB y cuenta como completa al leerla de ahí", async () => {
+    const idb = installFakeIndexedDb()
+    try {
+      await mergeIntoPlacesCache("k", [fakePlace("1")], { complete: true })
+      await writePlacesCache("legacy", [fakePlace("2")])
+      expect(idb.stores.get("places-by-filter")?.get("k")).toMatchObject({ complete: true })
+
+      _resetMapPlacesCacheForTests()
+      expect(hasFreshCompleteList("k")).toBe(false)
+
+      const fromDisk = await readPlacesCache("k")
+      expect(fromDisk?.complete).toBe(true)
+      expect(hasFreshCompleteList("k")).toBe(true)
+
+      await readPlacesCache("legacy")
+      expect(hasFreshCompleteList("legacy")).toBe(false)
+    } finally {
+      idb.uninstall()
+    }
   })
 })
 

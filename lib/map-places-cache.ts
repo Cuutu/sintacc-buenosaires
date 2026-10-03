@@ -13,6 +13,8 @@ export type CachedPlacesEntry = {
   filterKey: string
   places: IPlace[]
   fetchedAt: number
+  /** Un fetch sin bbox trajo todo el filtro (total <= recibidos): pedir por bbox no suma nada. */
+  complete?: boolean
 }
 
 type TileEntry = {
@@ -173,21 +175,46 @@ export async function readPlacesCache(filterKey: string): Promise<CachedPlacesEn
   return disk
 }
 
-export async function writePlacesCache(filterKey: string, places: IPlace[]): Promise<void> {
+export async function writePlacesCache(
+  filterKey: string,
+  places: IPlace[],
+  opts: { complete?: boolean; fetchedAt?: number } = {}
+): Promise<void> {
   const entry: CachedPlacesEntry = {
     filterKey,
     places,
-    fetchedAt: Date.now(),
+    fetchedAt: opts.fetchedAt ?? Date.now(),
+    ...(opts.complete ? { complete: true } : {}),
   }
   memoryPlaces.set(filterKey, entry)
   await idbPut(STORE_PLACES, entry)
 }
 
+/** Página 1 de un fetch sin bbox: trae todo el filtro si el total entra en lo recibido. */
+export function isCompletePlacesResponse(
+  pagination: { total?: number } | undefined,
+  received: number
+): boolean {
+  const total = pagination?.total
+  return typeof total === "number" && total <= received
+}
+
+export function hasFreshCompleteList(filterKey: string, now = Date.now()): boolean {
+  const entry = memoryPlaces.get(filterKey)
+  return Boolean(entry?.complete && isFresh(entry.fetchedAt, now))
+}
+
+/**
+ * `complete` sólo lo define un fetch sin bbox (true/false). Sin `complete` (merge por bbox)
+ * se conserva la marca y el fetchedAt de la lista completa: un bbox no la renueva.
+ */
 export async function mergeIntoPlacesCache(
   filterKey: string,
-  incoming: IPlace[]
+  incoming: IPlace[],
+  opts: { complete?: boolean } = {}
 ): Promise<IPlace[]> {
-  const existing = memoryPlaces.get(filterKey)?.places ?? []
+  const entry = memoryPlaces.get(filterKey)
+  const existing = entry?.places ?? []
   const byId = new Map<string, IPlace>()
   for (const place of existing) {
     const id = place._id != null ? String(place._id) : ""
@@ -198,7 +225,11 @@ export async function mergeIntoPlacesCache(
     if (id) byId.set(id, place)
   }
   const merged = [...byId.values()]
-  await writePlacesCache(filterKey, merged)
+  if (opts.complete === undefined && entry?.complete) {
+    await writePlacesCache(filterKey, merged, { complete: true, fetchedAt: entry.fetchedAt })
+  } else {
+    await writePlacesCache(filterKey, merged, { complete: opts.complete === true })
+  }
   return merged
 }
 
