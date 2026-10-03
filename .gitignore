@@ -70,3 +70,4 @@ secrets/
 .codemagic-credentials/
 icons/
 .env*
+.tmp-icons/

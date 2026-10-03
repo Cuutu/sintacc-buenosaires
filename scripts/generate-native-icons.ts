@@ -5,12 +5,11 @@ import path from "node:path"
 
 const ROOT = process.cwd()
 const BRAND_ICON = path.join(ROOT, "public/brand/app-icon.png")
-const MARK_PIN = path.join(ROOT, "public/brand/mark.png") // Pin shape with wheat
 const ANDROID_RES = path.join(ROOT, "android/app/src/main/res")
 const IOS_ASSETS = path.join(ROOT, "ios/App/App/Assets.xcassets/AppIcon.appiconset")
+const TEMP_DIR = path.join(ROOT, ".tmp-icons")
 
 const DARK_GREEN_BG: [number, number, number, number] = [45, 74, 52, 255] // #2D4A34
-const CREAM_FG: [number, number, number, number] = [247, 243, 235, 255] // #F7F3EB (for monochrome)
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -89,39 +88,6 @@ function compositeOverBackground(src: PNG, bgRgba: [number, number, number, numb
   return out
 }
 
-/** Strip alpha channel, save as RGB PNG (iOS requirement) */
-// NOTE: This function is kept for reference but not used.
-// Sharp is used instead for iOS icon generation (more reliable RGB output).
-function stripAlphaToRgb(png: PNG): Buffer {
-  // Create RGB PNG (colorType 2 = RGB, 3 bytes per pixel)
-  const width = png.width
-  const height = png.height
-  const rgbPng = new PNG({
-    width,
-    height,
-    colorType: 2, // RGB
-    inputColorType: 2,
-    inputHasAlpha: false,
-  })
-  
-  // Allocate buffer: width * height * 3 bytes (RGB, no alpha)
-  rgbPng.data = Buffer.alloc(width * height * 3)
-  
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const rgbaIdx = (width * y + x) << 2 // Source: RGBA (4 bytes)
-      const rgbIdx = (width * y + x) * 3   // Target: RGB (3 bytes)
-      
-      rgbPng.data[rgbIdx] = png.data[rgbaIdx]         // R
-      rgbPng.data[rgbIdx + 1] = png.data[rgbaIdx + 1] // G
-      rgbPng.data[rgbIdx + 2] = png.data[rgbaIdx + 2] // B
-      // Skip alpha (rgbaIdx + 3)
-    }
-  }
-  
-  return PNG.sync.write(rgbPng)
-}
-
 function createCircleMask(size: number): PNG {
   const png = new PNG({ width: size, height: size })
   const cx = size / 2
@@ -191,7 +157,7 @@ function createAdaptiveForeground(srcIcon: PNG, outSize: number): PNG {
 function createMonochrome(src: PNG, outSize: number): PNG {
   const resized = createAdaptiveForeground(src, outSize)
   const mono = new PNG({ width: outSize, height: outSize })
-  
+
   for (let y = 0; y < outSize; y++) {
     for (let x = 0; x < outSize; x++) {
       const idx = (outSize * y + x) << 2
@@ -199,36 +165,81 @@ function createMonochrome(src: PNG, outSize: number): PNG {
       const g = resized.data[idx + 1]
       const b = resized.data[idx + 2]
       const a = resized.data[idx + 3]
-      
+
       // Convert to grayscale (luminance formula)
       const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
-      
+
       mono.data[idx] = gray
       mono.data[idx + 1] = gray
       mono.data[idx + 2] = gray
       mono.data[idx + 3] = a
     }
   }
-  
+
   return mono
 }
 
-const brandIcon = PNG.sync.read(fs.readFileSync(BRAND_ICON))
-console.log(`[native-icons] Brand icon: ${BRAND_ICON} (${brandIcon.width}x${brandIcon.height})`)
+/**
+ * Extract cream pin from app-icon.png by removing dark green background.
+ * Returns path to extracted pin PNG with transparent background.
+ */
+async function extractCreamPinFromAppIcon(): Promise<string> {
+  ensureDir(TEMP_DIR)
+  const outputPath = path.join(TEMP_DIR, "cream-pin.png")
 
-// For adaptive foreground, try mark.png (pin shape) if available, else use brandIcon
-let adaptiveForegroundSource = brandIcon
-if (fs.existsSync(MARK_PIN)) {
-  adaptiveForegroundSource = PNG.sync.read(fs.readFileSync(MARK_PIN))
-  console.log(
-    `[native-icons] Adaptive foreground: ${MARK_PIN} (${adaptiveForegroundSource.width}x${adaptiveForegroundSource.height})`,
-  )
-} else {
-  console.log("[native-icons] Adaptive foreground: using brand icon (mark.png not found)")
+  // Extract pin by removing dark green background (#2D4A34)
+  // Use sharp's threshold/color removal
+  await sharp(BRAND_ICON)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+    .then(async ({ data, info }) => {
+      const { width, height, channels } = info
+      // Process pixel by pixel: make dark green (#2D4A34 ± tolerance) transparent
+      const darkGreenR = 45
+      const darkGreenG = 74
+      const darkGreenB = 52
+      const tolerance = 15 // Allow some variation
+
+      for (let i = 0; i < data.length; i += channels) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+        const a = data[i + 3]
+
+        // Check if pixel is close to dark green
+        const rDiff = Math.abs(r - darkGreenR)
+        const gDiff = Math.abs(g - darkGreenG)
+        const bDiff = Math.abs(b - darkGreenB)
+
+        if (rDiff <= tolerance && gDiff <= tolerance && bDiff <= tolerance) {
+          // Make this pixel transparent
+          data[i + 3] = 0
+        }
+      }
+
+      // Write back as PNG
+      await sharp(data, { raw: { width, height, channels } })
+        .png()
+        .toFile(outputPath)
+    })
+
+  console.log(`[extract] Cream pin extracted to ${outputPath}`)
+  return outputPath
 }
+
+console.log(`[native-icons] Source: ${BRAND_ICON}`)
 
 // Main execution wrapped in async function
 ;(async () => {
+  // Step 1: Extract cream pin from app-icon.png
+  console.log("[native-icons] Extracting cream pin from app-icon.png...")
+  const creamPinPath = await extractCreamPinFromAppIcon()
+
+  // Load the extracted cream pin
+  const creamPinPng = PNG.sync.read(fs.readFileSync(creamPinPath))
+  console.log(`[native-icons] Cream pin: ${creamPinPng.width}x${creamPinPng.height}`)
+
   // Android mipmap densities for legacy icons
   const androidSizes = [
     { density: "ldpi", size: 36 },
@@ -249,14 +260,14 @@ if (fs.existsSync(MARK_PIN)) {
     { density: "xxxhdpi", size: 432 },
   ]
 
-  console.log("[native-icons] Generating Android icons...")
+  console.log("[native-icons] Generating Android legacy icons...")
 
   for (const { density, size } of androidSizes) {
     const dir = path.join(ANDROID_RES, `mipmap-${density}`)
     ensureDir(dir)
 
-    // Legacy icon: brand icon composited over dark green (no transparency)
-    const resized = resize(brandIcon, size, size)
+    // Legacy icon: cream pin composited over dark green (no transparency)
+    const resized = resize(creamPinPng, size, size)
     const composite = compositeOverBackground(resized, DARK_GREEN_BG)
     fs.writeFileSync(path.join(dir, "ic_launcher.png"), PNG.sync.write(composite))
 
@@ -268,13 +279,15 @@ if (fs.existsSync(MARK_PIN)) {
     console.log(`  ✓ mipmap-${density}: ic_launcher.png, ic_launcher_round.png (${size}x${size})`)
   }
 
-  // Adaptive icon layers (foreground + background + monochrome)
+  console.log("[native-icons] Generating Android adaptive icons...")
+
+  // Adaptive icon layers: use cream pin for foreground
   for (const { density, size } of adaptiveSizes) {
     const dir = path.join(ANDROID_RES, `mipmap-${density}`)
     ensureDir(dir)
 
-    // Foreground: pin+wheat in safe zone on transparent
-    const foreground = createAdaptiveForeground(adaptiveForegroundSource, size)
+    // Foreground: cream pin in safe zone on transparent
+    const foreground = createAdaptiveForeground(creamPinPng, size)
     fs.writeFileSync(path.join(dir, "ic_launcher_foreground.png"), PNG.sync.write(foreground))
 
     // Background: solid dark green
@@ -282,36 +295,75 @@ if (fs.existsSync(MARK_PIN)) {
     fill(background, DARK_GREEN_BG)
     fs.writeFileSync(path.join(dir, "ic_launcher_background.png"), PNG.sync.write(background))
 
-    // Monochrome: grayscale for Android 13 themed icons (optional but recommended)
-    const monochrome = createMonochrome(adaptiveForegroundSource, size)
+    // Monochrome: grayscale for Android 13 themed icons
+    const monochrome = createMonochrome(creamPinPng, size)
     fs.writeFileSync(path.join(dir, "ic_launcher_monochrome.png"), PNG.sync.write(monochrome))
 
     console.log(`  ✓ mipmap-${density}: adaptive (foreground + background + monochrome, ${size}x${size})`)
   }
 
-  // iOS AppIcon: full-bleed square, RGB (no alpha channel), dark green to edges
+  // Generate preview composite for verification
+  console.log("[native-icons] Generating preview composite (hdpi, 162x162)...")
+  const previewSize = 162
+  const previewFg = createAdaptiveForeground(creamPinPng, previewSize)
+  const previewBg = new PNG({ width: previewSize, height: previewSize })
+  fill(previewBg, DARK_GREEN_BG)
+  const previewComposite = compositeOverBackground(previewFg, DARK_GREEN_BG)
+  const previewMask = createCircleMask(previewSize)
+  const previewCircle = applyMask(previewComposite, previewMask)
+  const previewPath = path.join(TEMP_DIR, "android-adaptive-preview-circle.png")
+  fs.writeFileSync(previewPath, PNG.sync.write(previewCircle))
+  console.log(`  ✓ Preview: ${previewPath}`)
+
+  // iOS AppIcon: solid green canvas + cream pin composited on top
   console.log("[native-icons] Generating iOS icon...")
   ensureDir(IOS_ASSETS)
 
   const iosSize = 1024
   const iosPath = path.join(IOS_ASSETS, "AppIcon-512@2x.png")
 
-  // Use sharp to resize, flatten alpha over dark green background, and ensure RGB output
-  await sharp(BRAND_ICON)
-    .resize(iosSize, iosSize, { fit: "fill" })
-    .flatten({ background: { r: 45, g: 74, b: 52 } }) // Flatten alpha over dark green
-    .removeAlpha() // Explicitly remove alpha channel
-    .toColorspace("srgb")
-    .png({ compressionLevel: 9, palette: false, force: true })
+  // Create solid dark green canvas
+  const iosCanvas = await sharp({
+    create: {
+      width: iosSize,
+      height: iosSize,
+      channels: 3,
+      background: { r: 45, g: 74, b: 52 },
+    },
+  })
+    .png()
+    .toBuffer()
+
+  // Resize cream pin to fit iOS icon (same proportions as icon-512.png, ~70% of canvas)
+  const pinSize = Math.round(iosSize * 0.7)
+  const pinResized = await sharp(creamPinPath).resize(pinSize, pinSize, { fit: "contain" }).toBuffer()
+
+  // Composite pin on canvas (centered)
+  await sharp(iosCanvas)
+    .composite([
+      {
+        input: pinResized,
+        gravity: "center",
+      },
+    ])
+    .flatten({ background: { r: 45, g: 74, b: 52 } })
+    .removeAlpha()
+    .png({ compressionLevel: 9, force: true })
     .toFile(iosPath)
 
-  // Verify the generated file
+  // Verify
   const iosStats = fs.statSync(iosPath)
   console.log(`  ✓ AppIcon-512@2x.png (${iosSize}x${iosSize}, ${(iosStats.size / 1024).toFixed(1)} KB)`)
 
+  // Cleanup temp files
+  if (fs.existsSync(TEMP_DIR)) {
+    const tempFiles = fs.readdirSync(TEMP_DIR)
+    console.log(`[native-icons] Temp files in ${TEMP_DIR}: ${tempFiles.join(", ")}`)
+  }
+
   console.log("[native-icons] ✨ Done!")
   console.log()
-  console.log("Android adaptive icon: foreground uses safe zone (66dp of 108dp canvas)")
-  console.log("iOS icon: RGB (no alpha), full-bleed square, dark green corners")
-  console.log("Android monochrome layer: generated for Android 13+ themed icons")
+  console.log("Android adaptive: cream pin foreground on dark green background")
+  console.log("iOS: solid dark green canvas + cream pin composited (RGB, no alpha)")
+  console.log(`Preview: ${previewPath}`)
 })()
