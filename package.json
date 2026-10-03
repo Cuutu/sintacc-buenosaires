@@ -44,7 +44,7 @@
     "cap:add:ios": "npx cap add ios",
     "android:keystore": "node scripts/generate-android-keystore.js",
     "android:bundle": "cd android && gradlew.bat bundleRelease",
-    "assets:generate": "npx capacitor-assets generate --android --ios --assetPath assets --iconBackgroundColor #0b1220 --iconBackgroundColorDark #0b1220 --splashBackgroundColor #0b1220 --splashBackgroundColorDark #0b1220"
+    "assets:generate": "npx capacitor-assets generate --android --ios --assetPath assets --iconBackgroundColor #2D4A34 --iconBackgroundColorDark #2D4A34 --splashBackgroundColor #F7F3EB --splashBackgroundColorDark #F7F3EB"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.258",
