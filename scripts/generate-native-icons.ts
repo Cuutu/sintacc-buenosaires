@@ -124,25 +124,31 @@ function applyMask(src: PNG, mask: PNG): PNG {
 
 /** Android adaptive icon: center srcIcon in 108dp canvas with safe zone padding */
 function createAdaptiveForeground(srcIcon: PNG, outSize: number): PNG {
-  // Adaptive icon: 108dp canvas, 66dp safe zone = 61.1% of canvas
-  // Safe zone starts at 21dp inset = 19.4% inset
-  const safeZoneRatio = 66 / 108 // ~0.611
-  const insetRatio = (108 - 66) / 2 / 108 // ~0.194
+  // Pin should be 58-60dp of 108dp canvas to fit well in 66dp safe circle
+  // That's ~54-55.5% of the canvas
+  const pinHeightRatio = 0.545 // 58.86dp / 108dp
+  const pinTargetHeight = Math.round(outSize * pinHeightRatio)
 
   const out = new PNG({ width: outSize, height: outSize })
   // Initialize transparent
   fill(out, [0, 0, 0, 0])
 
-  const safeSize = Math.round(outSize * safeZoneRatio)
-  const offset = Math.round(outSize * insetRatio)
+  // Calculate aspect ratio and target dimensions
+  const aspectRatio = srcIcon.width / srcIcon.height
+  const pinTargetWidth = Math.round(pinTargetHeight * aspectRatio)
 
-  const scaled = resize(srcIcon, safeSize, safeSize)
+  // Resize pin to target size
+  const scaled = resize(srcIcon, pinTargetWidth, pinTargetHeight)
+
+  // Center the pin in the canvas
+  const offsetX = Math.round((outSize - pinTargetWidth) / 2)
+  const offsetY = Math.round((outSize - pinTargetHeight) / 2)
 
   // Blit scaled icon into center
-  for (let y = 0; y < scaled.height && y + offset < out.height; y++) {
-    for (let x = 0; x < scaled.width && x + offset < out.width; x++) {
+  for (let y = 0; y < scaled.height && y + offsetY < out.height; y++) {
+    for (let x = 0; x < scaled.width && x + offsetX < out.width; x++) {
       const si = (scaled.width * y + x) << 2
-      const oi = (out.width * (y + offset) + (x + offset)) << 2
+      const oi = (out.width * (y + offsetY) + (x + offsetX)) << 2
       out.data[oi] = scaled.data[si]
       out.data[oi + 1] = scaled.data[si + 1]
       out.data[oi + 2] = scaled.data[si + 2]
@@ -180,51 +186,76 @@ function createMonochrome(src: PNG, outSize: number): PNG {
 }
 
 /**
- * Extract cream pin from app-icon.png by removing dark green background.
- * Returns path to extracted pin PNG with transparent background.
+ * Extract cream pin from app-icon.png by cropping to pin bounding box.
+ * Avoids anti-aliased rounded-square edges by detecting cream pin bbox and cropping.
+ * Returns path to cropped pin PNG.
  */
 async function extractCreamPinFromAppIcon(): Promise<string> {
   ensureDir(TEMP_DIR)
-  const outputPath = path.join(TEMP_DIR, "cream-pin.png")
+  const outputPath = path.join(TEMP_DIR, "cream-pin-cropped.png")
 
-  // Extract pin by removing dark green background (#2D4A34)
-  // Use sharp's threshold/color removal
-  await sharp(BRAND_ICON)
+  // Find bounding box of cream pin (cream color: R > 220, G > 220, B > 200)
+  const { data, info } = await sharp(BRAND_ICON)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
-    .then(async ({ data, info }) => {
-      const { width, height, channels } = info
-      // Process pixel by pixel: make dark green (#2D4A34 ± tolerance) transparent
-      const darkGreenR = 45
-      const darkGreenG = 74
-      const darkGreenB = 52
-      const tolerance = 15 // Allow some variation
 
-      for (let i = 0; i < data.length; i += channels) {
-        const r = data[i]
-        const g = data[i + 1]
-        const b = data[i + 2]
-        const a = data[i + 3]
+  const { width, height, channels } = info
+  let minX = width
+  let minY = height
+  let maxX = 0
+  let maxY = 0
+  let creamPixelCount = 0
 
-        // Check if pixel is close to dark green
-        const rDiff = Math.abs(r - darkGreenR)
-        const gDiff = Math.abs(g - darkGreenG)
-        const bDiff = Math.abs(b - darkGreenB)
+  // Detect cream pixels (high RGB values, excluding dark green and orange)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * channels
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
 
-        if (rDiff <= tolerance && gDiff <= tolerance && bDiff <= tolerance) {
-          // Make this pixel transparent
-          data[i + 3] = 0
-        }
+      // Cream pin: R > 230, G > 230, B > 220 (very restrictive, only pure cream)
+      const isCream = r > 230 && g > 230 && b > 220
+
+      if (isCream) {
+        creamPixelCount++
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
       }
+    }
+  }
 
-      // Write back as PNG
-      await sharp(data, { raw: { width, height, channels } })
-        .png()
-        .toFile(outputPath)
-    })
+  console.log(`[extract] Found ${creamPixelCount} cream pixels`)
 
-  console.log(`[extract] Cream pin extracted to ${outputPath}`)
+  if (creamPixelCount === 0) {
+    throw new Error("No cream pixels found in app-icon.png")
+  }
+
+  // Add 2% padding to bbox
+  const bboxW = maxX - minX + 1
+  const bboxH = maxY - minY + 1
+  const paddingX = Math.max(1, Math.round(bboxW * 0.02))
+  const paddingY = Math.max(1, Math.round(bboxH * 0.02))
+
+  const cropX = Math.max(0, minX - paddingX)
+  const cropY = Math.max(0, minY - paddingY)
+  const cropW = Math.min(width - cropX, bboxW + paddingX * 2)
+  const cropH = Math.min(height - cropY, bboxH + paddingY * 2)
+
+  console.log(
+    `[extract] Cream pin bbox: (${minX},${minY}) to (${maxX},${maxY}), size ${bboxW}x${bboxH}`,
+  )
+  console.log(`[extract] Crop with 2% padding: (${cropX},${cropY}) ${cropW}x${cropH}`)
+
+  // Crop app-icon.png to bbox
+  // This crop is inside the rounded square, so no anti-aliased edges
+  // Green pixels inside are same #2D4A34 as background, invisible when composited
+  await sharp(BRAND_ICON).extract({ left: cropX, top: cropY, width: cropW, height: cropH }).toFile(outputPath)
+
+  console.log(`[extract] Cream pin cropped to ${outputPath}`)
   return outputPath
 }
 
@@ -322,8 +353,17 @@ console.log(`[native-icons] Source: ${BRAND_ICON}`)
   const iosSize = 1024
   const iosPath = path.join(IOS_ASSETS, "AppIcon-512@2x.png")
 
-  // Create solid dark green canvas
-  const iosCanvas = await sharp({
+  // Pin height should be 62-65% of canvas to match icon-512.png proportions
+  const pinHeightRatio = 0.635 // ~63.5% of canvas
+  const pinTargetHeight = Math.round(iosSize * pinHeightRatio) // ~650px
+
+  // Resize cream pin to target height, maintaining aspect ratio
+  const pinResized = await sharp(creamPinPath)
+    .resize({ height: pinTargetHeight, fit: "contain" })
+    .toBuffer()
+
+  // Create solid dark green canvas and composite pin centered
+  await sharp({
     create: {
       width: iosSize,
       height: iosSize,
@@ -331,15 +371,6 @@ console.log(`[native-icons] Source: ${BRAND_ICON}`)
       background: { r: 45, g: 74, b: 52 },
     },
   })
-    .png()
-    .toBuffer()
-
-  // Resize cream pin to fit iOS icon (same proportions as icon-512.png, ~70% of canvas)
-  const pinSize = Math.round(iosSize * 0.7)
-  const pinResized = await sharp(creamPinPath).resize(pinSize, pinSize, { fit: "contain" }).toBuffer()
-
-  // Composite pin on canvas (centered)
-  await sharp(iosCanvas)
     .composite([
       {
         input: pinResized,
@@ -353,7 +384,9 @@ console.log(`[native-icons] Source: ${BRAND_ICON}`)
 
   // Verify
   const iosStats = fs.statSync(iosPath)
-  console.log(`  ✓ AppIcon-512@2x.png (${iosSize}x${iosSize}, ${(iosStats.size / 1024).toFixed(1)} KB)`)
+  console.log(
+    `  ✓ AppIcon-512@2x.png (${iosSize}x${iosSize}, pin height ${pinTargetHeight}px = ${(pinHeightRatio * 100).toFixed(1)}%, ${(iosStats.size / 1024).toFixed(1)} KB)`,
+  )
 
   // Cleanup temp files
   if (fs.existsSync(TEMP_DIR)) {
