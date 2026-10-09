@@ -6,6 +6,7 @@ import { resolveMapVariant, useIsMobile } from "./useMediaQuery"
 import type { MapFilters } from "./MapTopBar"
 import type { MapViewportBounds } from "./MapboxMap"
 import type { IPlace } from "@/models/Place"
+import type { MapSearchPin } from "@/lib/map-address-search"
 
 interface MapScreenProps {
   places: IPlace[]
@@ -16,6 +17,8 @@ interface MapScreenProps {
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
   searchQuery?: string
+  /** Búsqueda por dirección geocodificada: pin + cámara en ese punto. */
+  searchPin?: MapSearchPin | null
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
   onPlaceDeselect?: () => void
@@ -37,6 +40,7 @@ export function MapScreen({
   onFiltersChange,
   onSearchChange,
   searchQuery,
+  searchPin = null,
   selectedPlaceId,
   onPlaceSelect,
   onPlaceDeselect,
@@ -77,6 +81,7 @@ export function MapScreen({
           onFiltersChange={onFiltersChange}
           onSearchChange={onSearchChange}
           searchQuery={searchQuery}
+          searchPin={searchPin}
           selectedPlaceId={selectedPlaceId}
           onPlaceSelect={onPlaceSelect}
           onPlaceDeselect={onPlaceDeselect}
@@ -103,6 +108,7 @@ export function MapScreen({
         onFiltersChange={onFiltersChange}
         onSearchChange={onSearchChange}
         searchQuery={searchQuery}
+        searchPin={searchPin}
         selectedPlaceId={selectedPlaceId}
         onPlaceSelect={onPlaceSelect}
         onPlaceDeselect={onPlaceDeselect}

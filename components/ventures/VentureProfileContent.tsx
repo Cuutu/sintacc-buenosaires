@@ -131,8 +131,16 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                 <p className="text-sm leading-relaxed text-[#5F6B63]">
-                  Este emprendimiento no entra en el listado de Argentina. Ubicación según datos
-                  cargados: <strong className="text-[#1F4D35]">{venture.zone}</strong>.
+                  Este emprendimiento está fuera de Argentina (
+                  <strong className="text-[#1F4D35]">{venture.zone}</strong>, según datos cargados).
+                  Lo listamos en{" "}
+                  <Link
+                    href="/emprendimientos#fuera-de-argentina"
+                    className="font-medium text-[#1F4D35] underline underline-offset-2"
+                  >
+                    Fuera de Argentina
+                  </Link>
+                  .
                 </p>
               </div>
             ) : null}

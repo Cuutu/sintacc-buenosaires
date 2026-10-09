@@ -29,6 +29,7 @@ import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
 import type { IPlace } from "@/models/Place"
+import type { MapSearchPin } from "@/lib/map-address-search"
 
 interface MapMobileProps {
   places: IPlace[]
@@ -39,6 +40,7 @@ interface MapMobileProps {
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
   searchQuery?: string
+  searchPin?: MapSearchPin | null
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
   onPlaceDeselect?: () => void
@@ -86,6 +88,7 @@ export function MapMobile({
   onFiltersChange,
   onSearchChange,
   searchQuery,
+  searchPin = null,
   selectedPlaceId,
   onPlaceSelect,
   onPlaceDeselect,
@@ -165,6 +168,8 @@ export function MapMobile({
   )
   const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
   const activeQuery = searchQuery?.trim() ?? ""
+  // Chip de búsqueda: en modo dirección el texto no filtra, pero se puede quitar igual.
+  const queryChip = searchPin?.query ?? activeQuery
 
   const selectedPlace = React.useMemo(
     () => places.find((p) => p._id.toString() === selectedPlaceId) ?? null,
@@ -365,8 +370,8 @@ export function MapMobile({
         onFiltersOpen={() => setMoreOpen(true)}
         compact={listOpen}
         placeholder="Buscar lugar o zona..."
-        activeQuery={activeQuery}
-        onClearQuery={activeQuery ? () => onSearchChange("") : undefined}
+        activeQuery={queryChip}
+        onClearQuery={queryChip ? () => onSearchChange("") : undefined}
       />
 
       <div className="absolute inset-0">
@@ -383,6 +388,7 @@ export function MapMobile({
             onBoundsChange={setBounds}
             onMoveEnd={onMapMoveEnd}
             searchQuery={searchQuery}
+            searchPin={searchPin}
             initialCenter={initialCenter}
             initialZoom={initialZoom}
             reduceMotion={reduceMotion}

@@ -15,7 +15,9 @@
     "render:sos": "remotion render src/index.ts AdSosCeliaco out/ad-sos-celiaco.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=192k",
     "render:conoces": "remotion render src/index.ts AdConocesCeliaco out/ad-conoces-celiaco.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=192k",
     "portadas:ads": "remotion still src/index.ts PortadaSosCeliaco out/portada-sos-celiaco.png && remotion still src/index.ts PortadaConocesCeliaco out/portada-conoces-celiaco.png",
-    "audio": "tsx scripts/make-audio.ts"
+    "audio": "tsx scripts/make-audio.ts",
+    "audio:android": "tsx scripts/make-audio-android.ts",
+    "render:android": "npm run audio:android && remotion render src/index.ts ReelAndroid out/reel-android.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=192k && remotion still src/index.ts PortadaAndroid out/portada-android.png"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.2.0",

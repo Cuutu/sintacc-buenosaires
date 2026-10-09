@@ -10,8 +10,10 @@ import {
 } from "@/lib/device-platform"
 
 function AppleGlyph() {
+  // El trazo de la manzana ocupa menos del viewBox que el de Play: un poco más grande
+  // y 1px arriba para que ambos badges se vean del mismo peso.
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden fill="currentColor">
+    <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 -translate-y-px" aria-hidden fill="currentColor">
       <path d="M16.7 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.8zM14.8 6.3c.6-.8 1.1-1.9.9-3-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.3-.6 3-1.4z" />
     </svg>
   )
@@ -104,7 +106,7 @@ export function TakeCeliMapWithYou() {
             <StoreBadge
               store="ios"
               href={CELIMAP_APP_STORE_URL}
-              kicker="Descargalo en el"
+              kicker="Disponible en"
               name="App Store"
               label="Descargar CeliMap en el App Store"
               glyph={<AppleGlyph />}

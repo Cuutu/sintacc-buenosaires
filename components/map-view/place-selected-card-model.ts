@@ -81,6 +81,29 @@ export function getPlaceDirectionsUrl(place: Pick<IPlace, "name" | "location">):
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`
 }
 
+/**
+ * Ficha del lugar en Google Maps (fotos, reseñas, horarios de Google). Con
+ * `googlePlaceId` abre exactamente ese lugar; si no, busca nombre + dirección.
+ * "Cómo llegar" (getPlaceDirectionsUrl) sigue siendo la ruta.
+ */
+export function getPlaceGoogleMapsUrl(
+  place: Pick<IPlace, "name" | "location" | "address" | "googlePlaceId">
+): string {
+  const name = place.name?.trim() ?? ""
+  const address = place.address?.trim() ?? ""
+  const lat = place.location?.lat
+  const lng = place.location?.lng
+  const query = address
+    ? [name, address].filter(Boolean).join(", ")
+    : !place.googlePlaceId && Number.isFinite(lat) && Number.isFinite(lng)
+      ? `${lat},${lng}`
+      : name
+  const params = new URLSearchParams({ api: "1", query })
+  const googlePlaceId = place.googlePlaceId?.trim()
+  if (googlePlaceId) params.set("query_place_id", googlePlaceId)
+  return `https://www.google.com/maps/search/?${params.toString()}`
+}
+
 export function getPlaceDetailPath(place: IPlace): string {
   return getPlacePath(place)
 }

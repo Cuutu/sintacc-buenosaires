@@ -4,7 +4,7 @@ import EmprendimientosPageContent from "./EmprendimientosPageContent"
 import { VentureCardSkeleton } from "@/components/ventures/VentureCard"
 import { getBaseUrl } from "@/lib/base-url"
 import { getVentureIndexMetadata } from "@/lib/venture-seo"
-import { getApprovedVentures } from "@/lib/ventures-server"
+import { getApprovedVentures, getForeignApprovedVentures } from "@/lib/ventures-server"
 
 export const revalidate = 3600
 
@@ -29,12 +29,13 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function EmprendimientosPage() {
-  let initialVentures: Awaited<ReturnType<typeof getApprovedVentures>> = []
-  try {
-    initialVentures = await getApprovedVentures({ limit: "all" })
-  } catch {
-    initialVentures = []
-  }
+  // Feed AR y sección "Fuera de Argentina" por separado: si falla una, la otra se muestra igual.
+  const [arResult, foreignResult] = await Promise.allSettled([
+    getApprovedVentures({ limit: "all" }),
+    getForeignApprovedVentures(),
+  ])
+  const initialVentures = arResult.status === "fulfilled" ? arResult.value : []
+  const foreignVentures = foreignResult.status === "fulfilled" ? foreignResult.value : []
 
   return (
     <Suspense
@@ -48,7 +49,10 @@ export default async function EmprendimientosPage() {
         </div>
       }
     >
-      <EmprendimientosPageContent initialVentures={initialVentures} />
+      <EmprendimientosPageContent
+        initialVentures={initialVentures}
+        foreignVentures={foreignVentures}
+      />
     </Suspense>
   )
 }

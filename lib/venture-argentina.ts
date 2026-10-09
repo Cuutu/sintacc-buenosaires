@@ -23,6 +23,16 @@ export function argentinaVentureMongoFilter(): Record<string, unknown> {
   }
 }
 
+/** Inverso de `argentinaVentureMongoFilter`: sección "Fuera de Argentina" de /emprendimientos. */
+export function foreignVentureMongoFilter(): Record<string, unknown> {
+  return {
+    $or: [
+      { zone: { $regex: BR_GEO_HINT.source, $options: "i" } },
+      { zone: { $regex: UY_GEO_HINT.source, $options: "i" } },
+    ],
+  }
+}
+
 export function isArgentinaVentureZoneLanding(
   landing: Pick<VentureZoneLandingConfig, "countryCode">
 ): boolean {

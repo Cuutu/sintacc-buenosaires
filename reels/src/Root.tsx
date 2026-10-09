@@ -7,6 +7,7 @@ import {PortadaGancho} from './scenes/PortadaGancho';
 import {useFonts} from './components/useFonts';
 import {AdCeliaco, PortadaCeliaco} from './celiaco/AdCeliaco';
 import {timing} from './celiaco/timing';
+import {PortadaAndroid, REEL_ANDROID_DURATION, ReelAndroid} from './android/ReelAndroid';
 
 const PortadaAlternativa: React.FC = () => {
   useFonts();
@@ -94,6 +95,25 @@ export const RemotionRoot: React.FC = () => (
       component={AdCeliaco}
       defaultProps={{v: 'conoces' as const, guides: true}}
       durationInFrames={timing('conoces').total}
+      fps={video.fps}
+      width={video.width}
+      height={video.height}
+    />
+    {/* Reel "CeliMap llegó a Android" (reel de prueba): src/android/ (textos en src/android/copy.ts) */}
+    <Composition
+      id="ReelAndroid"
+      component={ReelAndroid}
+      durationInFrames={REEL_ANDROID_DURATION}
+      fps={video.fps}
+      width={video.width}
+      height={video.height}
+    />
+    <Still id="PortadaAndroid" component={PortadaAndroid} width={video.width} height={video.height} />
+    <Composition
+      id="ReelAndroid-Guias"
+      component={ReelAndroid}
+      defaultProps={{guides: true}}
+      durationInFrames={REEL_ANDROID_DURATION}
       fps={video.fps}
       width={video.width}
       height={video.height}

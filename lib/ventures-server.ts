@@ -6,7 +6,7 @@ import { getSingleVentureReviewStats, getVentureReviewStatsMap } from "@/lib/ven
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { ensureVentureSlug } from "@/lib/venture-slug"
 import type { VentureZoneLandingConfig } from "@/lib/venture-seo"
-import { argentinaVentureMongoFilter } from "@/lib/venture-argentina"
+import { argentinaVentureMongoFilter, foreignVentureMongoFilter } from "@/lib/venture-argentina"
 import {
   dedicatedVentureMongoFilter,
   getVentureCategories,
@@ -96,6 +96,25 @@ export async function getApprovedVentures(options?: {
     options?.limit === "all"
       ? await found.lean()
       : await found.limit(options?.limit ?? 50).lean()
+
+  const ids = ventures.map((v) => v._id as mongoose.Types.ObjectId)
+  const statsMap = await getVentureReviewStatsMap(ids)
+
+  return ventures.map((v) =>
+    serializeVenture(v as Record<string, unknown> & { _id: mongoose.Types.ObjectId }, statsMap.get(v._id.toString()))
+  )
+}
+
+/** Aprobados fuera de AR (BR/UY por zona). Van en una sección aparte, nunca mezclados con el feed AR. */
+export async function getForeignApprovedVentures(): Promise<VenturePublic[]> {
+  await connectDB()
+  const ventures = await Venture.find({
+    status: "approved",
+    ...dedicatedVentureMongoFilter(),
+    ...foreignVentureMongoFilter(),
+  })
+    .sort({ createdAt: -1 })
+    .lean()
 
   const ids = ventures.map((v) => v._id as mongoose.Types.ObjectId)
   const statsMap = await getVentureReviewStatsMap(ids)

@@ -3,7 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, MapPin, Navigation, Share2 } from "lucide-react"
+import { ArrowRight, ExternalLink, MapPin, Navigation, Share2 } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
 import { FavoriteButton } from "@/components/favorite-button"
@@ -14,6 +14,7 @@ import {
   getCanonicalPlaceArea,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
+  getPlaceGoogleMapsUrl,
   getPlaceSheetDetailTags,
   getPlaceTypeKey,
   getPlaceTypeLabel,
@@ -193,7 +194,7 @@ export function MobileMapBottomSheet({
 
   const onPointerDown = (event: React.PointerEvent) => {
     if (closingRef.current) return
-    if ((event.target as HTMLElement).closest("[data-directions],[data-favorite]")) return
+    if ((event.target as HTMLElement).closest("[data-directions],[data-favorite],[data-google-maps]")) return
     draggedRef.current = false
     draggingRef.current = true
     stopSpring()
@@ -230,6 +231,7 @@ export function MobileMapBottomSheet({
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
+  const googleMapsUrl = getPlaceGoogleMapsUrl(place)
   const photoSrc = getPlaceImageUrl(place.photos?.[0], "thumb")
   const TypeIcon = PLACE_TYPE_ICONS[getPlaceTypeKey(place)] ?? MapPin
   const openLabel = getOpenStatusLabel(place.openingHours)
@@ -342,7 +344,21 @@ export function MobileMapBottomSheet({
                 <p className="mt-1 truncate text-[12.5px] font-medium text-[#5F6B63]">{meta}</p>
               ) : null}
               {address ? (
-                <p className="mt-0.5 truncate text-[12px] text-[#5F6B63]/90">{address}</p>
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-google-maps="true"
+                  title="Abrir en Google Maps"
+                  onClick={(event) => event.stopPropagation()}
+                  className="pointer-events-auto relative z-[2] mt-0.5 flex max-w-full items-center gap-1.5 text-[12px] text-[#5F6B63]/90"
+                >
+                  <span className="min-w-0 truncate">{address}</span>
+                  <span className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-[#1F4D35] underline underline-offset-2">
+                    Google Maps
+                    <ExternalLink className="h-3 w-3 stroke-[2]" aria-hidden />
+                  </span>
+                </a>
               ) : null}
               {expanded && detailTags.length > 0 ? (
                 <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">

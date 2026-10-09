@@ -85,6 +85,8 @@ const CAMERA_FOCUS_MS = 420
 const CAMERA_PADDING_MS = 300
 const PIN_KEEP_ZOOM = 15.5
 const PIN_ENTRANCE_IDLE_FALLBACK_MS = 600
+/** Búsqueda por dirección: cuadras alrededor, no un solo pin. */
+const SEARCH_PIN_ZOOM = 15
 
 function overlayPaddingKey(padding: MapOverlayPadding | null | undefined): string {
   if (!padding) return ""
@@ -127,6 +129,8 @@ interface MapboxMapProps {
   /** Llamado al terminar move/zoom con el nivel de zoom actual y bounds visibles */
   onMoveEnd?: (zoom: number, bounds: MapViewportBounds) => void
   searchQuery?: string
+  /** Dirección buscada (geocodificada): pin propio + cámara ahí. null = sin pin. */
+  searchPin?: { lng: number; lat: number; label: string } | null
   /** Centro inicial [lng, lat]. Si no se pasa, usa CABA */
   initialCenter?: [number, number]
   /** Zoom inicial. Si no se pasa, usa CABA_ZOOM */
@@ -169,6 +173,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       onBoundsChange,
       onMoveEnd,
       searchQuery,
+      searchPin = null,
       initialCenter,
       initialZoom,
       darkStyle = false,
@@ -196,6 +201,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const mapTeardownRef = useRef(createMapInstanceTeardown())
     const markerEntriesRef = useRef<Map<string, MarkerEntry>>(new Map())
     const userLocationMarkerRef = useRef<mapboxgl.Marker | null>(null)
+    const searchPinMarkerRef = useRef<mapboxgl.Marker | null>(null)
     const sharedPopupRef = useRef<mapboxgl.Popup | null>(null)
     const geolocateControlRef = useRef<mapboxgl.GeolocateControl | null>(null)
     const lastCenteredSearchRef = useRef<string | null>(null)
@@ -471,6 +477,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           /* ignore */
         }
         userLocationMarkerRef.current = null
+        try {
+          searchPinMarkerRef.current?.remove()
+        } catch {
+          /* ignore */
+        }
+        searchPinMarkerRef.current = null
         geolocateControlRef.current = null
 
         // Ownership: anular map ref antes; teardown.destroy → map.remove() una sola vez.
@@ -746,6 +758,61 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         easing: easeOutUnit,
       })
     }, [searchQuery, places, reduceMotion])
+
+    const searchPinLng = searchPin?.lng
+    const searchPinLat = searchPin?.lat
+    const searchPinLabel = searchPin?.label
+    useEffect(() => {
+      const m = map.current
+      if (!m || disposedRef.current) return
+      if (
+        searchPinLng == null ||
+        searchPinLat == null ||
+        !Number.isFinite(searchPinLng) ||
+        !Number.isFinite(searchPinLat)
+      ) {
+        try {
+          searchPinMarkerRef.current?.remove()
+        } catch {
+          /* mapa destruido */
+        }
+        searchPinMarkerRef.current = null
+        return
+      }
+      try {
+        if (!searchPinMarkerRef.current) {
+          // Mapbox escribe `transform` en el elemento del marker: la gota rotada va en un hijo.
+          const el = document.createElement("div")
+          el.setAttribute("role", "img")
+          el.style.cssText = "width:30px;height:38px;pointer-events:none;"
+          const drop = document.createElement("div")
+          drop.style.cssText = `
+            width: 26px;
+            height: 26px;
+            margin: 2px;
+            border-radius: 9999px 9999px 9999px 0;
+            transform: rotate(-45deg);
+            background: #1F4D35;
+            border: 3px solid #F8F5EF;
+            box-shadow: 0 8px 18px rgba(31, 77, 53, 0.35);
+          `
+          el.appendChild(drop)
+          searchPinMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        }
+        searchPinMarkerRef.current
+          .getElement()
+          .setAttribute("aria-label", `Dirección buscada: ${searchPinLabel ?? ""}`)
+        searchPinMarkerRef.current.setLngLat([searchPinLng, searchPinLat]).addTo(m)
+        m.flyTo({
+          center: [searchPinLng, searchPinLat],
+          zoom: SEARCH_PIN_ZOOM,
+          duration: reduceMotionRef.current ? 0 : MOTION_MS.pan,
+          easing: easeOutUnit,
+        })
+      } catch {
+        /* mapa destruido / mock e2e */
+      }
+    }, [searchPinLng, searchPinLat, searchPinLabel])
 
     useEffect(() => {
       const m = map.current

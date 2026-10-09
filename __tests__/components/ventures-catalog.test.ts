@@ -71,6 +71,20 @@ describe("catálogo /emprendimientos", () => {
     expect(content).not.toContain("/api/ventures")
   })
 
+  it("BR/UY van en sección aparte, nunca mezclados con el feed AR", () => {
+    const page = read("app/emprendimientos/page.tsx")
+    const content = read("app/emprendimientos/EmprendimientosPageContent.tsx")
+    const server = read("lib/ventures-server.ts")
+    expect(page).toContain("getForeignApprovedVentures()")
+    expect(server).toContain("foreignVentureMongoFilter")
+    expect(content).toContain('id="fuera-de-argentina"')
+    expect(content).toContain("Fuera de Argentina")
+    expect(content).toContain("isArgentinaVentureZone(v.zone) && v.safetyLevel !== \"gf_options\"")
+    expect(read("components/ventures/VentureProfileContent.tsx")).toContain(
+      "/emprendimientos#fuera-de-argentina"
+    )
+  })
+
   it("chips tienen pista de scroll en mobile", () => {
     const src = read("app/emprendimientos/EmprendimientosPageContent.tsx")
     expect(src).toContain("Deslizá para ver más categorías")

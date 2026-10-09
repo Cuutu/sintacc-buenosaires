@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, MapPin, Navigation, Share2 } from "lucide-react"
+import { ArrowRight, ExternalLink, MapPin, Navigation, Share2 } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import type { MapboxMapRef } from "./MapboxMap"
 import { computePopoverPlacement, type PopoverPlacement } from "./popover-placement"
@@ -11,6 +11,7 @@ import {
   getCanonicalPlaceArea,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
+  getPlaceGoogleMapsUrl,
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
 import { PlaceRatingRow, PlaceSafetyBadge, PlaceTypeGlyph } from "./PlaceCardBits"
@@ -111,6 +112,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
+  const googleMapsUrl = getPlaceGoogleMapsUrl(place)
 
   const handleShare = async () => {
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
@@ -167,9 +169,20 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
           {address ? (
             <p className="mt-2.5 flex items-start gap-2 text-[13px] leading-snug text-[#5F6B63]">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 stroke-[1.85] text-[#1F4D35]" aria-hidden />
-              <span className="line-clamp-1">{address}</span>
+              <span className="line-clamp-1 min-w-0">{address}</span>
             </p>
           ) : null}
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-google-maps="true"
+            onClick={(event) => event.stopPropagation()}
+            className="pointer-events-auto mt-1.5 inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#1F4D35] underline underline-offset-2 hover:text-[#1F4D35]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+          >
+            Ver en Google Maps
+            <ExternalLink className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
+          </a>
           <PlaceRatingRow place={place} className="mt-2.5" />
           <div className="mt-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

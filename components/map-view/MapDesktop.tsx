@@ -14,6 +14,7 @@ import { filterPlacesInBounds } from "./geo"
 import { listHasRatings, sortPlaces, LOCATION_SORT_CTA } from "./place-sort"
 import { useMapPlaceSort } from "./useMapPlaceSort"
 import type { IPlace } from "@/models/Place"
+import type { MapSearchPin } from "@/lib/map-address-search"
 
 interface MapDesktopProps {
   places: IPlace[]
@@ -24,6 +25,7 @@ interface MapDesktopProps {
   onFiltersChange: (f: MapFilters) => void
   onSearchChange: (search: string) => void
   searchQuery?: string
+  searchPin?: MapSearchPin | null
   selectedPlaceId: string | null
   onPlaceSelect: (place: IPlace) => void
   onPlaceDeselect?: () => void
@@ -51,6 +53,7 @@ export function MapDesktop({
   onFiltersChange,
   onSearchChange,
   searchQuery,
+  searchPin = null,
   selectedPlaceId,
   onPlaceSelect,
   onPlaceDeselect,
@@ -109,6 +112,8 @@ export function MapDesktop({
   )
   const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
   const activeQuery = searchQuery?.trim() ?? ""
+  // Chip de búsqueda: en modo dirección el texto no filtra, pero se puede quitar igual.
+  const queryChip = searchPin?.query ?? activeQuery
   const locationCta = showLocationCta ? LOCATION_SORT_CTA : null
 
   const selectedPlace = React.useMemo(
@@ -145,6 +150,7 @@ export function MapDesktop({
             onBoundsChange={setBounds}
             onMoveEnd={onMapMoveEnd}
             searchQuery={searchQuery}
+            searchPin={searchPin}
             initialCenter={initialCenter}
             initialZoom={initialZoom}
             reduceMotion={reduceMotion}
@@ -193,8 +199,8 @@ export function MapDesktop({
           sort={sort}
           onSortChange={setSort}
           resultCount={sortedPlaces.length}
-          activeQuery={activeQuery}
-          onClearQuery={activeQuery ? () => onSearchChange("") : undefined}
+          activeQuery={queryChip}
+          onClearQuery={queryChip ? () => onSearchChange("") : undefined}
           hasRatings={hasRatings}
           locationCta={locationCta}
           onRequestLocation={() => setSort("nearest")}

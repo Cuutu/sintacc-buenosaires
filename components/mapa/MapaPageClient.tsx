@@ -30,6 +30,11 @@ import {
   viewportTileCacheKey,
 } from "@/lib/map-places-cache"
 import { nextViewportPage, paginationTotalPages } from "@/lib/map-viewport-pages"
+import {
+  geocodeMapSearchAddress,
+  looksLikeStreetAddress,
+  type MapSearchPin,
+} from "@/lib/map-address-search"
 
 const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
@@ -85,6 +90,29 @@ function MapaContent() {
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
   const lastSearchTrackKey = useRef("")
+  // Búsqueda por dirección: si el texto no matchea lugares, geocodificamos y el mapa
+  // vuela a ese punto mostrando lo que hay alrededor (el texto deja de filtrar).
+  const [searchPin, setSearchPin] = useState<MapSearchPin | null>(null)
+  const debouncedSearchRef = useRef(debouncedSearch)
+  debouncedSearchRef.current = debouncedSearch
+  const geocodeAbortRef = useRef<AbortController | null>(null)
+  const addressMode = searchPin != null && searchPin.query === debouncedSearch.trim()
+
+  const requestAddressPin = useCallback(async (query: string) => {
+    geocodeAbortRef.current?.abort()
+    const controller = new AbortController()
+    geocodeAbortRef.current = controller
+    try {
+      const pin = await geocodeMapSearchAddress(query, controller.signal)
+      if (controller.signal.aborted || !pin) return
+      if (debouncedSearchRef.current.trim() !== query) return
+      setSearchPin(pin)
+    } catch {
+      /* sin red o geocoder caído: queda el "sin resultados" de siempre */
+    }
+  }, [])
+
+  useEffect(() => () => geocodeAbortRef.current?.abort(), [])
 
   useEffect(() => {
     if (mapOpenTracked.current) return
@@ -161,7 +189,7 @@ function MapaContent() {
   const fetchPlaces = useCallback(async (opts?: { bounds?: MapViewportBounds; silent?: boolean }) => {
     const search = debouncedSearch.trim()
     const searchNeighborhood = findKnownNeighborhoodSearch(search)
-    const freeTextSearch = searchNeighborhood ? "" : search
+    const freeTextSearch = searchNeighborhood || addressMode ? "" : search
     const effectiveNeighborhood = searchNeighborhood ?? filters.neighborhood ?? ""
     if (opts?.bounds) lastBoundsRef.current = opts.bounds
     const bounds = opts?.bounds ?? lastBoundsRef.current ?? undefined
@@ -182,6 +210,11 @@ function MapaContent() {
     }
 
     const reportSearch = (resultCount: number) => {
+      if (resultCount === 0 && freeTextSearch && looksLikeStreetAddress(freeTextSearch)) {
+        void requestAddressPin(freeTextSearch.trim())
+      }
+      // En modo dirección ya se reportó la búsqueda de texto (0 resultados): no duplicar.
+      if (addressMode) return
       const query = sanitizeSearchQuery(search)
       if (!query) return
       const key = `${filterKey}|${resultCount}`
@@ -388,6 +421,8 @@ function MapaContent() {
     provinceSlugsFromUrl,
     localitySlugsFromUrl,
     debouncedSearch,
+    addressMode,
+    requestAddressPin,
     filters.type,
     filters.neighborhood,
     filters.tags,
@@ -468,7 +503,8 @@ function MapaContent() {
       filters={filters}
       onFiltersChange={handleFiltersChange}
       onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
-      searchQuery={debouncedSearch}
+      searchQuery={addressMode ? "" : debouncedSearch}
+      searchPin={addressMode ? searchPin : null}
       selectedPlaceId={selectedPlaceId}
       onPlaceSelect={(place) => setSelectedPlaceId(place._id.toString())}
       onPlaceDeselect={() => setSelectedPlaceId(null)}
@@ -495,4 +531,4 @@ export function MapaPageClient() {
       <MapaContent />
     </Suspense>
   )
-}
+}

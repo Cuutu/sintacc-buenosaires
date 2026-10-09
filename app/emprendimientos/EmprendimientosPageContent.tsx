@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { VentureCard, VentureCardSkeleton, type VentureCardData } from "@/components/ventures/VentureCard"
@@ -43,8 +43,11 @@ function buildListPath(params: URLSearchParams): string {
 
 export default function EmprendimientosPageContent({
   initialVentures,
+  foreignVentures: initialForeignVentures = [],
 }: {
   initialVentures: VentureCardData[]
+  /** BR/UY: sección aparte al final, nunca mezclados con el feed AR. */
+  foreignVentures?: VentureCardData[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -60,6 +63,13 @@ export default function EmprendimientosPageContent({
         (v) => isArgentinaVentureZone(v.zone) && v.safetyLevel !== "gf_options"
       ),
     [initialVentures]
+  )
+  const foreignVentures = useMemo(
+    () =>
+      initialForeignVentures.filter(
+        (v) => !isArgentinaVentureZone(v.zone) && v.safetyLevel !== "gf_options"
+      ),
+    [initialForeignVentures]
   )
   const [searchInput, setSearchInput] = useState(searchParam)
   const [suggestOpen, setSuggestOpen] = useState(false)
@@ -152,8 +162,8 @@ export default function EmprendimientosPageContent({
     setSuggestOpen(false)
   }
 
-  const displayedVentures = useMemo(() => {
-    return ventures.filter((v) => {
+  const matchesFilters = useCallback(
+    (v: VentureCardData) => {
       if (
         selectedCategories.length &&
         !getVentureCategories(v).some((id) => (selectedCategories as string[]).includes(id))
@@ -162,16 +172,24 @@ export default function EmprendimientosPageContent({
       }
       if (modalityParam && !(v.modalities ?? []).some((m) => m === modalityParam)) return false
       return matchesVentureSearch(v, searchParam)
-    })
-  }, [ventures, selectedCategories, modalityParam, searchParam])
+    },
+    [selectedCategories, modalityParam, searchParam]
+  )
+
+  const displayedVentures = useMemo(() => ventures.filter(matchesFilters), [ventures, matchesFilters])
+  const displayedForeign = useMemo(
+    () => foreignVentures.filter(matchesFilters),
+    [foreignVentures, matchesFilters]
+  )
 
   const categoryGuess = !categoryParam ? resolveVentureCategoryFromQuery(searchParam) : null
-  const categoryFallback =
-    displayedVentures.length === 0 && categoryGuess
-      ? ventures.filter((v) => getVentureCategories(v).includes(categoryGuess))
-      : []
-  const list = displayedVentures.length > 0 ? displayedVentures : categoryFallback
-  const usedCategoryFallback = displayedVentures.length === 0 && categoryFallback.length > 0
+  const noTextMatches = displayedVentures.length === 0 && displayedForeign.length === 0
+  const inGuessedCategory = (v: VentureCardData) =>
+    Boolean(categoryGuess && getVentureCategories(v).includes(categoryGuess))
+  const useFallback = noTextMatches && Boolean(categoryGuess)
+  const list = useFallback ? ventures.filter(inGuessedCategory) : displayedVentures
+  const foreignList = useFallback ? foreignVentures.filter(inGuessedCategory) : displayedForeign
+  const usedCategoryFallback = useFallback && list.length + foreignList.length > 0
 
   const suggestions = useMemo((): Suggestion[] => {
     const q = searchInput.trim().toLowerCase()
@@ -202,7 +220,7 @@ export default function EmprendimientosPageContent({
         })
       }
     }
-    for (const v of ventures) {
+    for (const v of [...ventures, ...foreignVentures]) {
       if (brands.length >= 5) break
       if (v.name.toLowerCase().includes(q)) {
         brands.push({
@@ -214,15 +232,16 @@ export default function EmprendimientosPageContent({
       }
     }
     return [...cats, ...zones, ...brands].slice(0, 8)
-  }, [searchInput, ventures])
+  }, [searchInput, ventures, foreignVentures])
 
-  const showEmpty = list.length === 0
+  const showEmpty = list.length === 0 && foreignList.length === 0
+  const onlyForeignResults = list.length === 0 && foreignList.length > 0
   const hasActiveSearch = searchParam.trim().length >= 2
   const hasFilter = Boolean(categoryParam || modalityParam || hasActiveSearch)
   const isSearchPending =
     searchInput.trim() !== searchParam.trim() && searchInput.trim().length >= 2
 
-  const countLabel = showEmpty
+  const countLabel = list.length === 0
     ? hasActiveSearch
       ? `0 resultados para “${searchParam}”`
       : selectedCategories.length
@@ -365,6 +384,11 @@ export default function EmprendimientosPageContent({
             </div>
           ) : showEmpty ? (
             <VenturesEmptyState search={hasActiveSearch ? searchParam : undefined} categoryId={categoryParam} />
+          ) : onlyForeignResults ? (
+            <p className="rounded-xl border border-[#E8E1D6] bg-white px-4 py-3 text-sm text-[#5F6B63]">
+              No encontramos emprendimientos en Argentina con este filtro. Mirá abajo los que hay
+              fuera del país.
+            </p>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {list.map((v) => (
@@ -373,6 +397,35 @@ export default function EmprendimientosPageContent({
             </div>
           )}
         </section>
+
+        {!isSearchPending && foreignList.length > 0 ? (
+          <section
+            id="fuera-de-argentina"
+            aria-labelledby="foreign-heading"
+            className="mb-14 scroll-mt-[calc(var(--desktop-nav-clearance)+0.75rem)] border-t border-[#E8E1D6] pt-10"
+          >
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+              <div className="max-w-xl">
+                <h2 id="foreign-heading" className="text-lg font-semibold text-[#1F4D35]">
+                  Fuera de Argentina
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-[#5F6B63]">
+                  Emprendimientos sugeridos por la comunidad en otros países. Consultá envíos y
+                  disponibilidad directamente con cada uno.
+                </p>
+              </div>
+              <p className="text-sm font-medium text-[#5F6B63]">
+                {foreignList.length}{" "}
+                {foreignList.length === 1 ? "emprendimiento" : "emprendimientos"}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {foreignList.map((v) => (
+                <VentureCard key={v._id} venture={v} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <VentureExploreSections />
       </div>
