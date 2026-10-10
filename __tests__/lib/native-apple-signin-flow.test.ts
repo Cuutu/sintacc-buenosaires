@@ -189,6 +189,39 @@ describe("Apple sign-in client flow", () => {
     expect(signIn).not.toHaveBeenCalled()
   })
 
+  it("Android: inicializa Capgo sin Apple (si no, Google nativo falla por apple.android.redirectUrl)", async () => {
+    isNativeIosApp.mockReturnValue(false)
+    ;(window as unknown as { Capacitor?: unknown }).Capacitor = {
+      isPluginAvailable: (name: string) => name === "SocialLogin",
+    }
+    social.login.mockRejectedValue(new Error("User cancelled"))
+    const quiet = jest.spyOn(console, "error").mockImplementation(() => {})
+
+    await signInWithGoogle("/perfil")
+    quiet.mockRestore()
+
+    expect(social.initialize).toHaveBeenCalledTimes(1)
+    const opts = social.initialize.mock.calls[0][0]
+    expect(opts.google).toBeDefined()
+    expect(opts).not.toHaveProperty("apple")
+  })
+
+  it("iOS: inicializa Capgo con Google y Apple", async () => {
+    isNativeIosApp.mockReturnValue(true)
+    ;(window as unknown as { Capacitor?: unknown }).Capacitor = {
+      isPluginAvailable: (name: string) => name === "SocialLogin",
+    }
+    social.login.mockRejectedValue(new Error("User cancelled"))
+    const quiet = jest.spyOn(console, "error").mockImplementation(() => {})
+
+    await signInWithGoogle("/perfil")
+    quiet.mockRestore()
+
+    const opts = social.initialize.mock.calls[0][0]
+    expect(opts.google).toBeDefined()
+    expect(opts.apple).toEqual({ clientId: "com.celimap.app" })
+  })
+
   it("Google web no se rompe (NextAuth google)", async () => {
     isNativeApp.mockReturnValue(false)
     isNativeIosApp.mockReturnValue(false)

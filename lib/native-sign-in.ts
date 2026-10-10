@@ -138,9 +138,16 @@ async function ensureNativeSocialLoginReady(): Promise<void> {
         // Do not pass an empty redirectUrl string from JS.
         // clientId is typed for web/Android; on iOS native ASAuthorization it is ignored,
         // but documents the expected JWT audience (bundle id, not a Service ID).
-        apple: {
-          clientId: "com.celimap.app",
-        },
+        // Apple only on iOS: on Android Capgo requires apple.android.redirectUrl and,
+        // without it, the WHOLE initialize() rejects — breaking native Google too
+        // ("apple.android.redirectUrl is null or empty"). Apple isn't offered on Android.
+        ...(isNativeIosApp()
+          ? {
+              apple: {
+                clientId: "com.celimap.app",
+              },
+            }
+          : {}),
       })
     })().catch((error) => {
       socialLoginInit = null
