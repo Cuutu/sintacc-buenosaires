@@ -1,34 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ChevronDown, Clock } from "lucide-react"
-import { getOpenStatusDetail, type OpenStatusDetail } from "@/lib/opening-hours"
-
-function useClientOpenStatus(hours: string): OpenStatusDetail | null {
-  const [detail, setDetail] = useState<OpenStatusDetail | null>(() => {
-    const initial = getOpenStatusDetail(hours)
-    if (!initial) return null
-    return { ...initial, relativeText: undefined }
-  })
-
-  useEffect(() => {
-    const updateStatus = () => {
-      const fresh = getOpenStatusDetail(hours)
-      setDetail(fresh)
-    }
-    updateStatus()
-    const interval = setInterval(updateStatus, 60000)
-    return () => clearInterval(interval)
-  }, [hours])
-
-  return detail
-}
+import { useClientOpenStatus } from "./use-client-open-status"
 
 export function PlaceHoursToggle({ hours }: { hours: string }) {
   const [expanded, setExpanded] = useState(false)
-  const detail = useClientOpenStatus(hours)
+  const status = useClientOpenStatus(hours)
 
-  if (!detail) {
+  if (status.kind === "raw") {
     return (
       <div className="flex items-start gap-3 py-4">
         <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
@@ -37,7 +17,11 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
     )
   }
 
-  const hasSchedule = detail.fullSchedule.length > 0
+  // Antes de montar no hay "Abierto/Cerrado" (depende de la hora): label neutro.
+  const detail = status.kind === "ready" ? status.detail : null
+  const fullSchedule = status.kind === "ready" ? status.detail.fullSchedule : status.fullSchedule
+  const hasSchedule = fullSchedule.length > 0
+  const labelColor = !detail ? "text-[#1F4D35]" : detail.isOpen ? "text-[#2D7A4E]" : "text-[#8B5A3C]"
 
   return (
     <div className="flex items-start gap-3 py-4">
@@ -46,11 +30,11 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p
-              className={`text-base font-semibold ${detail.isOpen ? "text-[#2D7A4E]" : "text-[#8B5A3C]"}`}
+              className={`text-base font-semibold ${labelColor}`}
             >
-              {detail.label}
+              {detail ? detail.label : "Horarios"}
             </p>
-            {detail.relativeText && (
+            {detail?.relativeText && (
               <p className="mt-0.5 text-sm text-[#5F6B63]">{detail.relativeText}</p>
             )}
           </div>
@@ -71,7 +55,7 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
         </div>
         {hasSchedule && expanded && (
           <ul className="mt-3 space-y-1 text-sm text-[#5F6B63]">
-            {detail.fullSchedule.map((line) => (
+            {fullSchedule.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>

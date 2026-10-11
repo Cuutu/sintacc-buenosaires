@@ -1,33 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Clock, MapPin, Phone } from "lucide-react"
-import { getOpenStatusDetail, type OpenStatusDetail } from "@/lib/opening-hours"
 import { PlacePrimaryActions } from "./PlacePrimaryActions"
 import { PlaceReportCard } from "./PlaceReportCard"
 import { placeCardClass } from "./place-detail-ui"
-
-function useClientOpenStatus(hours: string | undefined): OpenStatusDetail | null {
-  const [detail, setDetail] = useState<OpenStatusDetail | null>(() => {
-    if (!hours) return null
-    const initial = getOpenStatusDetail(hours)
-    if (!initial) return null
-    return { ...initial, relativeText: undefined }
-  })
-
-  useEffect(() => {
-    if (!hours) return
-    const updateStatus = () => {
-      const fresh = getOpenStatusDetail(hours)
-      setDetail(fresh)
-    }
-    updateStatus()
-    const interval = setInterval(updateStatus, 60000)
-    return () => clearInterval(interval)
-  }, [hours])
-
-  return detail
-}
+import { useClientOpenStatus } from "./use-client-open-status"
 
 interface PlaceDesktopAsideProps {
   mapsUrl: string
@@ -50,7 +27,9 @@ export function PlaceDesktopAside({
   phone,
   onReportSuccess,
 }: PlaceDesktopAsideProps) {
-  const openStatusDetail = useClientOpenStatus(openingHours)
+  const hoursStatus = useClientOpenStatus(openingHours)
+  // Antes de montar: label neutro (el estado depende de la hora y la ficha es ISR).
+  const openStatusDetail = hoursStatus.kind === "ready" ? hoursStatus.detail : null
 
   return (
     <aside className="hidden lg:block">
@@ -73,16 +52,22 @@ export function PlaceDesktopAside({
               <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
               <span className="text-base leading-relaxed text-[#1F4D35]">{address}</span>
             </a>
-            {openStatusDetail ? (
+            {hoursStatus.kind !== "raw" ? (
               <div className="flex items-start gap-3 py-4">
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
                 <div>
                   <p
-                    className={`text-base font-semibold ${openStatusDetail.isOpen ? "text-[#2D7A4E]" : "text-[#8B5A3C]"}`}
+                    className={`text-base font-semibold ${
+                      !openStatusDetail
+                        ? "text-[#1F4D35]"
+                        : openStatusDetail.isOpen
+                          ? "text-[#2D7A4E]"
+                          : "text-[#8B5A3C]"
+                    }`}
                   >
-                    {openStatusDetail.label}
+                    {openStatusDetail ? openStatusDetail.label : "Horarios"}
                   </p>
-                  {openStatusDetail.relativeText && (
+                  {openStatusDetail?.relativeText && (
                     <p className="mt-0.5 text-sm text-[#5F6B63]">
                       {openStatusDetail.relativeText}
                     </p>

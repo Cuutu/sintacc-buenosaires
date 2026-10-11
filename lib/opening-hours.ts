@@ -48,8 +48,13 @@ const DAY_NAMES: Record<string, number> = {
 
 const AMPM = "(?:a\\.?m\\.?|p\\.?m\\.?|am|pm|hs?)"
 const TIME_TOKEN = `\\d{1,2}(?:[:.]\\d{2})?\\s*${AMPM}?`
+// Sin lookbehind negativo de dígito: Safari/WKWebView < 16.4 no lo soporta y, como este
+// RegExp se construye al importar el módulo, tiraba "Invalid regular expression:
+// invalid group specifier name" y rompía el chunk entero (home, mapa) en iPhones
+// viejos. `(?:^|\D)` consume el carácter previo pero no captura, así que
+// match[1]/match[2] y la semántica (no empezar en medio de un número) no cambian.
 const TIME_RANGE_RE = new RegExp(
-  `(?<!\\d)(${TIME_TOKEN})\\s*(?:[–—-]|\\ba\\b)\\s*(${TIME_TOKEN})(?!\\d)`,
+  `(?:^|\\D)(${TIME_TOKEN})\\s*(?:[–—-]|\\ba\\b)\\s*(${TIME_TOKEN})(?!\\d)`,
   "i"
 )
 const TIME_PARSE_RE = new RegExp(
@@ -274,6 +279,14 @@ function parseOpenStatus(
 ): ParsedOpenStatus | null {
   const intervals = parseWeeklyIntervals(openingHours)
   return intervals ? evaluateIntervals(intervals, now) : null
+}
+
+/**
+ * ¿El horario se puede interpretar? No depende de la hora actual, así que es
+ * seguro usarlo en el render del servidor (fichas ISR) para decidir el layout.
+ */
+export function hasInterpretableOpeningHours(openingHours: string | undefined | null): boolean {
+  return parseWeeklyIntervals(openingHours) !== null
 }
 
 /**

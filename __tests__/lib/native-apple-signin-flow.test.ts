@@ -206,6 +206,49 @@ describe("Apple sign-in client flow", () => {
     expect(opts).not.toHaveProperty("apple")
   })
 
+  it("Android: Google en modo online y sin scopes custom (el binario no tiene la MainActivity modificada)", async () => {
+    isNativeIosApp.mockReturnValue(false)
+    ;(window as unknown as { Capacitor?: unknown }).Capacitor = {
+      isPluginAvailable: (name: string) => name === "SocialLogin",
+    }
+    social.login.mockResolvedValue({
+      provider: "google",
+      result: { idToken: "id-token-android", responseType: "online" },
+    })
+    ;(global.fetch as jest.Mock).mockResolvedValue(
+      jsonResponse(200, { grant: "g".repeat(64) })
+    )
+
+    await signInWithGoogle("/perfil")
+
+    expect(social.initialize.mock.calls[0][0].google.mode).toBe("online")
+    const loginArgs = social.login.mock.calls[0][0]
+    expect(loginArgs.provider).toBe("google")
+    expect(loginArgs.options).not.toHaveProperty("scopes")
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)
+    expect(body).toEqual({ idToken: "id-token-android" })
+    expect(signIn).toHaveBeenCalledWith("native-google", {
+      grant: "g".repeat(64),
+      callbackUrl: "/perfil",
+      redirect: true,
+    })
+  })
+
+  it("iOS: Google sigue en modo offline con scopes", async () => {
+    isNativeIosApp.mockReturnValue(true)
+    ;(window as unknown as { Capacitor?: unknown }).Capacitor = {
+      isPluginAvailable: (name: string) => name === "SocialLogin",
+    }
+    social.login.mockRejectedValue(new Error("User cancelled"))
+    const quiet = jest.spyOn(console, "error").mockImplementation(() => {})
+
+    await signInWithGoogle("/perfil")
+    quiet.mockRestore()
+
+    expect(social.initialize.mock.calls[0][0].google.mode).toBe("offline")
+    expect(social.login.mock.calls[0][0].options.scopes).toEqual(["email", "profile"])
+  })
+
   it("iOS: inicializa Capgo con Google y Apple", async () => {
     isNativeIosApp.mockReturnValue(true)
     ;(window as unknown as { Capacitor?: unknown }).Capacitor = {

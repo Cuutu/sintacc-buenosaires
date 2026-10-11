@@ -131,7 +131,13 @@ async function ensureNativeSocialLoginReady(): Promise<void> {
           webClientId,
           iOSClientId,
           iOSServerClientId: webClientId,
-          mode: "offline",
+          // Android: "offline" (y pasar `scopes`) exige que MainActivity implemente
+          // ModifiedMainActivityForSocialLoginPlugin; el binario actual no lo hace y
+          // Capgo rechaza con "You CANNOT use offline mode without modifying the main
+          // activity" → caía siempre al login por navegador. En "online" Credential
+          // Manager devuelve un idToken (aud = webClientId) que /api/auth/native/google
+          // ya valida. iOS sigue en "offline" (serverAuthCode), que funciona.
+          mode: isNativeIosApp() ? "offline" : "online",
         },
         // Capgo 8.3.39 iOS: AppleProvider.initialize(redirectUrl?, useProperTokenExchange?).
         // Omitting redirectUrl keeps the provider default (no web redirect path).
@@ -197,10 +203,11 @@ async function signInWithNativeGoogleSdk(callbackUrl: string): Promise<void> {
   const { SocialLogin } = await import("@capgo/capacitor-social-login")
   const response = await SocialLogin.login({
     provider: "google",
-    options: {
-      forceRefreshToken: true,
-      scopes: ["email", "profile"],
-    },
+    // Android: sin `scopes` (Capgo ya pide openid + email + profile por defecto y
+    // con scopes custom exige la MainActivity modificada). iOS: igual que antes.
+    options: isNativeIosApp()
+      ? { forceRefreshToken: true, scopes: ["email", "profile"] }
+      : {},
   })
 
   if (response.provider !== "google") {
