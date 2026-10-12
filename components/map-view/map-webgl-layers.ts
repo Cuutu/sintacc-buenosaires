@@ -54,8 +54,9 @@ export const PIN_STROKE_COLOR = "#FFFFFF"
  * "100% sin TACC": un "14" verde se leía como "14 lugares 100%". El estado de
  * seguridad sólo lo comunican los pines individuales.
  */
-export const CLUSTER_FILL_COLOR = "#F7F3EB"
-export const CLUSTER_STROKE_COLOR = "#D6CCB8"
+// Blanco cálido + aro oliva: en el mapa beige el crema #F7F3EB se perdía (visto en prueba).
+export const CLUSTER_FILL_COLOR = "#FFFDF8"
+export const CLUSTER_STROKE_COLOR = "#4E6B55"
 export const CLUSTER_TEXT_COLOR = "#2D4A34"
 /** Popup arriba del pin. Sin esto la ficha tapa el pin. */
 export const PIN_POPUP_OFFSET = 64
