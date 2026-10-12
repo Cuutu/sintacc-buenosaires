@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
 import {
   useMobileBodyLock,
@@ -15,6 +16,8 @@ const HINT_DELAY_MS = 1400
 const HINT_LEAVE_MS = 300
 const HINT_KEY = "celimap-celibot-hello"
 const HINT_TEXT = "Hola, soy CeliBot"
+/** En inicio y mapa el globo tapaba contenido ("Ver todos", hoja de lugares): ahí sólo queda el botón. */
+const HINT_HIDDEN_PATHS = new Set(["/", "/mapa"])
 
 function readHintDismissed(): boolean {
   try {
@@ -46,7 +49,8 @@ export function ChatWidget() {
   const dockRef = useRef<HTMLDivElement>(null)
   const mobileBox = useVisualViewportBox(mounted)
   const [hintIdle, setHintIdle] = useState(false)
-  const showHint = hintReady && !hintDismissed && !open
+  const pathname = usePathname() || "/"
+  const showHint = hintReady && !hintDismissed && !open && !HINT_HIDDEN_PATHS.has(pathname)
   const pulse = !open && !hintDismissed
   useMobileBodyLock(mounted)
 

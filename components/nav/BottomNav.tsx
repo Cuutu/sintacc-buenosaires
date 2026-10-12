@@ -35,50 +35,49 @@ const BASE_NAV_ITEMS = [
 
 const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck }
 
+// Rediseño Edición: barra oscura (oliva noche) con texto bajo cada ícono.
+// Activo = píldora crema con contenido oliva. Inactivo = crema al 68% (≈5:1 sobre #1F3527).
 const navItemClass =
-  "group relative flex h-10 w-10 min-h-[44px] min-w-[44px] shrink items-center justify-center rounded-full transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-11 sm:w-11"
+  "group relative flex h-11 min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center gap-[3px] rounded-[1.25rem] px-1 min-[360px]:px-2 transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/70 sm:px-2.5"
 
-const centerItemClass =
-  "group relative flex h-10 w-12 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-[1.5rem] transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-14"
+const centerItemClass = navItemClass
 
 function NavGlyph({
   Icon,
   active,
-  center = false,
+  label,
 }: {
   Icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>
   active: boolean
   center?: boolean
+  label: string
 }) {
   return (
     <>
-      <span
-        className={cn(
-          "absolute rounded-full transition-opacity duration-200",
-          center ? "inset-1" : "inset-1.5",
-          active
-            ? "opacity-0"
-            : "opacity-0 group-hover:opacity-100 group-hover:bg-olive/[0.08]"
-        )}
-        aria-hidden
-      />
       <Icon
         className={cn(
-          "relative z-[1] transition-all duration-200",
-          center ? "h-6 w-6" : "h-[22px] w-[22px]",
-          active
-            ? "text-primary drop-shadow-none"
-            : "text-olive/55 group-hover:text-olive",
-          center ? "stroke-[2.1]" : "stroke-[1.9]"
+          "relative z-[1] h-[21px] w-[21px] transition-colors duration-200",
+          active ? "stroke-[2.2]" : "stroke-[1.9]"
         )}
         aria-hidden
       />
-      {active ? (
-        <span className="absolute bottom-[3px] h-[3px] w-2.5 rounded-full bg-primary" aria-hidden />
-      ) : null}
+      <span
+        className={cn(
+          "relative z-[1] whitespace-nowrap text-[10px] leading-none tracking-[-0.01em] min-[360px]:text-[10.5px]",
+          active ? "font-extrabold" : "font-bold"
+        )}
+        aria-hidden
+      >
+        {label}
+      </span>
     </>
   )
 }
+
+const itemTone = (active: boolean) =>
+  active
+    ? "bg-[#F7F3EB] text-[#2D4A34] shadow-[0_4px_12px_-6px_rgba(0,0,0,0.45)]"
+    : "text-[#F7F3EB]/[0.68] hover:text-[#F7F3EB]"
 
 export function BottomNav() {
   const pathname = usePathname()
@@ -103,7 +102,7 @@ export function BottomNav() {
     const slotKey = BOTTOM_NAV_SLOT_KEYS[index] ?? `slot-${index}`
 
     if (slotKey === "home-map" && isOnMap) {
-      return { ...item, href: "/", label: "Home", icon: Home, slotKey }
+      return { ...item, href: "/", label: "Inicio", icon: Home, slotKey }
     }
 
     if ("fallbackHref" in item) {
@@ -120,7 +119,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="map-chrome fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] sm:left-3 sm:right-3"
+      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] bg-[#1F3527] shadow-[0_18px_40px_-14px_rgba(20,34,25,0.65)] ring-1 ring-black/5 sm:left-3 sm:right-3"
       style={{
         bottom: "calc(var(--bottom-nav-float-gap) + var(--bottom-nav-edge))",
       }}
@@ -128,16 +127,16 @@ export function BottomNav() {
       aria-label="Navegacion principal"
       data-testid="bottom-nav"
     >
-      <div className="flex h-14 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-3">
+      <div className="flex h-14 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-2">
         {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle, slotKey }: any) => {
           const hrefStr = href ?? "/"
           const stableKey = slotKey || hrefStr
-          const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Home" && !hasMapListToggle
+          // En /mapa el slot central lleva a Inicio: se muestra como acción, no como pestaña activa.
+          const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Inicio" && !hasMapListToggle
           const isExplorarActive = isListToggle && pathname === "/mapa"
           const isActive = isListToggle
             ? isExplorarActive
-            : isMapHomeAction ||
-              (hrefStr === "/" ? pathname === "/" : pathname === hrefStr) ||
+            : (!isMapHomeAction && (hrefStr === "/" ? pathname === "/" : pathname === hrefStr)) ||
               (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
               (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
 
@@ -160,12 +159,12 @@ export function BottomNav() {
                     recordBottomNavIntent(pathname || "/", to, stableKey)
                     router.replace(to, { scroll: false })
                   }}
-                  className={cn(navItemClass, isExplorarActive ? "text-primary" : "text-olive/70")}
+                  className={cn(navItemClass, itemTone(isExplorarActive))}
                   aria-current={isExplorarActive ? "page" : undefined}
                   aria-label={listOpen ? "Cerrar lista del mapa" : "Abrir lista del mapa"}
                   title={label}
                 >
-                  <NavGlyph Icon={Icon} active={isExplorarActive} />
+                  <NavGlyph Icon={Icon} active={isExplorarActive} label={label} />
                 </button>
               )
             }
@@ -176,11 +175,11 @@ export function BottomNav() {
                 data-nav-slot={stableKey}
                 href="/mapa"
                 onClick={() => recordBottomNavIntent(pathname || "/", "/mapa", stableKey)}
-                className={cn(navItemClass, "text-olive/70")}
+                className={cn(navItemClass, itemTone(false))}
                 aria-label={label}
                 title={label}
               >
-                <NavGlyph Icon={Icon} active={false} />
+                <NavGlyph Icon={Icon} active={false} label={label} />
               </Link>
             )
           }
@@ -192,15 +191,12 @@ export function BottomNav() {
                 data-nav-slot={stableKey}
                 href={hrefStr}
                 onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
-                className={cn(
-                  centerItemClass,
-                  isActive ? "text-primary" : "bg-[#1F4D35]/[0.06] text-olive hover:bg-[#1F4D35]/[0.10]"
-                )}
+                className={cn(centerItemClass, itemTone(isActive))}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
                 title={label}
               >
-                <NavGlyph Icon={Icon} active={isActive} center />
+                <NavGlyph Icon={Icon} active={isActive} center label={label} />
               </Link>
             )
           }
@@ -211,12 +207,12 @@ export function BottomNav() {
               data-nav-slot={stableKey}
               href={hrefStr}
               onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
-              className={cn(navItemClass, isActive ? "text-primary" : "text-olive/70")}
+              className={cn(navItemClass, itemTone(isActive))}
               aria-current={isActive ? "page" : undefined}
               aria-label={hrefStr === "/admin" ? "Panel de administracion" : label}
               title={label}
             >
-              <NavGlyph Icon={Icon} active={isActive} />
+              <NavGlyph Icon={Icon} active={isActive} label={label} />
             </Link>
           )
         })}

@@ -74,8 +74,11 @@ describe("Lote 3 responsive contracts", () => {
     expect(src).toContain("right-2")
     expect(src).toContain("min-w-[44px]")
     expect(src).toContain('data-testid="bottom-nav"')
-    // Sin labels de texto visibles que ensanchen
-    expect(src).not.toMatch(/>\s*\{label\}\s*</)
+    // Rediseño Edición: hay labels visibles bajo cada ícono. Para que sigan
+    // entrando en 320 px van sin salto de línea, a 10px y con padding chico
+    // bajo 360 px (medido con Playwright: 5 slots dentro de 304 px, sin solaparse).
+    expect(src).toContain("whitespace-nowrap text-[10px]")
+    expect(src).toContain("px-1 min-[360px]:px-2")
   })
 
   it("ficha lugar sin barra flotante Ir (BottomNav alcanza)", () => {

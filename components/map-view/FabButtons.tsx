@@ -10,6 +10,7 @@ interface FabButtonsProps {
   bottomOffset?: string
 }
 
+/** Ubicación es acción secundaria: botón blanco (la terracota queda para la acción principal). */
 export function FabButtons({
   onNearMe,
   locating = false,
@@ -22,7 +23,7 @@ export function FabButtons({
     >
       <Button
         size="icon"
-        className="h-12 w-12 min-h-[48px] min-w-[48px] rounded-full border border-white/35 bg-primary shadow-[0_8px_24px_-10px_rgba(184,68,32,0.45),inset_0_1px_0_rgba(255,255,255,0.28)] hover:bg-primary/90"
+        className="h-12 w-12 min-h-[48px] min-w-[48px] rounded-full border border-[#2D4A34]/[0.08] bg-white text-[#2D4A34] shadow-[0_8px_20px_-8px_rgba(31,42,34,0.40)] hover:bg-[#F7F3EB]"
         onClick={onNearMe}
         disabled={locating}
         aria-label="Ir a mi ubicación"
