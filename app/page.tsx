@@ -12,6 +12,7 @@ import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroPins } from "@/components/home/HeroPins"
 import { floorDisplayCount, formatFlooredPrefix } from "@/lib/stats/floor-display-count"
 import { HomeGuides } from "@/components/home/HomeGuides"
+import { SafetyModeSwitch } from "@/components/home/SafetyModeSwitch"
 import { HomeSuggestBand } from "@/components/home/HomeSuggestBand"
 import { CategoryChips } from "@/components/home/CategoryChips"
 import { HomeFeatured } from "@/components/home/HomeFeatured"
@@ -120,6 +121,8 @@ export default async function HomePage() {
               Abrir el mapa
               <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
             </Link>
+            {/* Modo "Sólo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
+            <SafetyModeSwitch />
           </div>
         </div>
       </section>

@@ -24,6 +24,8 @@ const PUBLIC_COPY_FILES = [
   "lib/venture-seo.ts",
   "docs/store/LISTING-COPY.md",
   "README.md",
+  "components/onboarding/OnboardingModal.tsx",
+  "components/home/SafetyModeSwitch.tsx",
 ]
 
 const BANNED = [
@@ -37,6 +39,7 @@ const BANNED = [
   /100% seguro/i,
   /apto garantizado/i,
   /lugares seguros para celíacos/i,
+  /máxima seguridad/i,
 ]
 
 describe("public copy: claims y marca", () => {

@@ -39,6 +39,7 @@ First-party (Mongo), además de Vercel:
 - `login_started`, `login_completed`, `login_error`
 - `map_load_error`, `place_load_error`
 - `city_page_view`, `onboarding_complete`, `list_create`, `list_open`
+- `safety_mode_set` (modo "Sólo 100% sin TACC": `source` = `home_hero` | `onboarding`, `mode` = `only100` | `all`)
 
 Solo Vercel (no Mongo, poco valor en Admin):
 

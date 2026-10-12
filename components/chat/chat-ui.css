@@ -333,3 +333,9 @@
     display: none;
   }
 }
+
+/* Bienvenida abierta (OnboardingModal marca <html data-onboarding>): el botón de CeliBot
+   quedaba encima del modal y pisaba el botón "siguiente". */
+html[data-onboarding="open"] .celimap-chat-dock {
+  display: none;
+}

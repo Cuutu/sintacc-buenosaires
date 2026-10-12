@@ -42,6 +42,8 @@ type ChatPanelProps = {
   variant: "widget" | "page"
   onClose?: () => void
   keyboardOpen?: boolean
+  /** Texto precargado en el campo (p. ej. lo escrito en el buscador del inicio). No se envía solo. */
+  initialPrompt?: string
 }
 
 function requestBrowserLocation(): Promise<{ lat: number; lng: number } | null> {
@@ -155,7 +157,7 @@ function ChatChipRow({
   )
 }
 
-export function ChatPanel({ variant, onClose, keyboardOpen }: ChatPanelProps) {
+export function ChatPanel({ variant, onClose, keyboardOpen, initialPrompt }: ChatPanelProps) {
   const [bootMessages, setBootMessages] = useState<ReturnType<typeof loadChatHistory> | null>(null)
 
   useEffect(() => {
@@ -171,6 +173,7 @@ export function ChatPanel({ variant, onClose, keyboardOpen }: ChatPanelProps) {
       variant={variant}
       onClose={onClose}
       keyboardOpen={keyboardOpen}
+      initialPrompt={initialPrompt}
       initialMessages={bootMessages}
     />
   )
@@ -180,9 +183,10 @@ function ChatPanelLive({
   variant,
   onClose,
   keyboardOpen,
+  initialPrompt,
   initialMessages,
 }: ChatPanelProps & { initialMessages: ReturnType<typeof loadChatHistory> }) {
-  const [input, setInput] = useState("")
+  const [input, setInput] = useState(initialPrompt ?? "")
   const [locating, setLocating] = useState(false)
   const [blockedCerca, setBlockedCerca] = useState<string | null>(null)
   const [sendCooldown, setSendCooldown] = useState(false)
@@ -286,6 +290,12 @@ function ChatPanelLive({
     el.style.height = `${Math.min(Math.max(el.scrollHeight, 22), cap)}px`
     el.scrollTop = el.scrollHeight
   }, [])
+
+  useEffect(() => {
+    if (!initialPrompt) return
+    setInput(initialPrompt)
+    requestAnimationFrame(fitComposer)
+  }, [initialPrompt, fitComposer])
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()

@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
+import { openCeliBot } from "@/lib/celibot-open"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
 import { MapLegend } from "./MapLegend"
@@ -468,6 +470,16 @@ export function MapTopBar({
             <SlidersHorizontal className="h-4 w-4 stroke-[1.85]" />
           </button>
         )}
+        {/* CeliBot vive acá en el mapa mobile (ya no flota sobre la hoja de lugares). */}
+        <button
+          type="button"
+          onClick={() => openCeliBot()}
+          aria-label="Preguntale a CeliBot"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_-3px_rgba(31,42,34,0.35)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          data-testid="map-celibot-entry"
+        >
+          <Image src="/brand/celibot.png" alt="" width={34} height={34} className="h-[34px] w-[34px] rounded-full object-contain" />
+        </button>
       </div>
 
       {queryLabel ? (

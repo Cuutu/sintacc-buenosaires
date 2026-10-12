@@ -9,6 +9,7 @@ import {
   useVisualViewportBox,
 } from "@/components/chat/use-visual-viewport-box"
 import { cn } from "@/lib/utils"
+import { OPEN_CELIBOT_EVENT, type OpenCeliBotDetail } from "@/lib/celibot-open"
 import "@/components/chat/chat-ui.css"
 
 const CLOSE_MS = 300
@@ -18,6 +19,11 @@ const HINT_KEY = "celimap-celibot-hello"
 const HINT_TEXT = "Hola, soy CeliBot"
 /** En inicio y mapa el globo tapaba contenido ("Ver todos", hoja de lugares): ahí sólo queda el botón. */
 const HINT_HIDDEN_PATHS = new Set(["/", "/mapa"])
+/**
+ * En mobile, inicio y mapa no llevan el botón flotante: CeliBot se abre desde el buscador
+ * (inicio) y desde la barra de búsqueda del mapa. Flotando siempre tapaba algo.
+ */
+const FAB_HIDDEN_MOBILE_PATHS = new Set(["/", "/mapa"])
 
 function readHintDismissed(): boolean {
   try {
@@ -43,6 +49,7 @@ export function ChatWidget() {
   const [hintReady, setHintReady] = useState(false)
   const [hintLeaving, setHintLeaving] = useState(false)
   const [fabEnter, setFabEnter] = useState(true)
+  const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined)
   const leaveTimer = useRef<number>(0)
   const hintLeaveTimer = useRef<number>(0)
   const hintRef = useRef<HTMLDivElement>(null)
@@ -98,7 +105,8 @@ export function ChatWidget() {
     }, HINT_LEAVE_MS)
   }
 
-  const show = () => {
+  const show = (prompt?: string) => {
+    setInitialPrompt(prompt)
     persistHintDismissed()
     setHintDismissed(true)
     setHintReady(false)
@@ -110,6 +118,18 @@ export function ChatWidget() {
     setMounted(true)
     setOpen(true)
   }
+
+  const showRef = useRef(show)
+  showRef.current = show
+
+  useEffect(() => {
+    function onOpen(event: Event) {
+      const detail = (event as CustomEvent<OpenCeliBotDetail>).detail
+      showRef.current(detail?.prompt)
+    }
+    window.addEventListener(OPEN_CELIBOT_EVENT, onOpen)
+    return () => window.removeEventListener(OPEN_CELIBOT_EVENT, onOpen)
+  }, [])
 
   const hide = () => {
     setOpen(false)
@@ -144,7 +164,12 @@ export function ChatWidget() {
                 : undefined
             }
           >
-            <ChatPanel variant="widget" onClose={hide} keyboardOpen={Boolean(mobileBox?.keyboard)} />
+            <ChatPanel
+              variant="widget"
+              onClose={hide}
+              keyboardOpen={Boolean(mobileBox?.keyboard)}
+              initialPrompt={initialPrompt}
+            />
           </div>
         </div>
       ) : null}
@@ -153,7 +178,8 @@ export function ChatWidget() {
         className={cn(
           "celimap-chat-dock fixed bottom-6 right-6 z-[90]",
           "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+0.75rem)] max-md:right-4",
-          open && "max-md:hidden"
+          open && "max-md:hidden",
+          FAB_HIDDEN_MOBILE_PATHS.has(pathname) && "max-md:hidden"
         )}
       >
         {showHint || hintLeaving ? (
@@ -184,7 +210,7 @@ export function ChatWidget() {
             </button>
             <button
               type="button"
-              onClick={show}
+              onClick={() => show()}
               className="block w-full whitespace-nowrap text-left text-[13px] font-medium leading-[1.35] text-[#333]"
             >
               {HINT_TEXT}

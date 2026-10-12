@@ -14,6 +14,7 @@ import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { parseMapTypeParam } from "@/lib/map-url-filters"
+import { applyOnly100ToTags, isOnly100Tags, readOnly100, writeOnly100 } from "@/lib/safety-mode"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
   buildMapFilterKey,
@@ -37,6 +38,16 @@ import {
 } from "@/lib/map-address-search"
 
 const SEARCH_DEBOUNCE_MS = 650
+/** Mismo corte que useIsMobile(): el modo "Sólo 100%" usa el selector del mapa mobile. */
+const MOBILE_MAP_QUERY = "(max-width: 768px)"
+
+function isMobileMapViewport(): boolean {
+  try {
+    return window.matchMedia(MOBILE_MAP_QUERY).matches
+  } catch {
+    return false
+  }
+}
 const MIN_SEARCH_LENGTH = 2
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
@@ -79,6 +90,9 @@ function MapaContent() {
     neighborhood: undefined,
     safetyLevel: undefined,
   }))
+  // El modo "Sólo 100%" vive en localStorage: se aplica después de montar (la página se
+  // renderiza en el servidor sin saberlo) y el primer fetch espera a que esté aplicado.
+  const [safetyModeReady, setSafetyModeReady] = useState(false)
   const [debouncedSearch, setDebouncedSearch] = useState(
     () => searchParams.get("search") || ""
   )
@@ -124,8 +138,20 @@ function MapaContent() {
     if (selectedPlaceId) unlockStoreBanner()
   }, [selectedPlaceId])
 
+  useEffect(() => {
+    if (isMobileMapViewport() && readOnly100()) {
+      setFilters((f) => ({ ...f, tags: applyOnly100ToTags(f.tags, true) }))
+    }
+    setSafetyModeReady(true)
+  }, [])
+
   const handleFiltersChange = useCallback((next: MapFilters) => {
     setFilters(next)
+    // El selector del mapa mobile es otra puerta al modo: lo último elegido queda guardado.
+    if (isMobileMapViewport()) {
+      const only100 = isOnly100Tags(next.tags ?? [])
+      if (only100 !== readOnly100()) writeOnly100(only100)
+    }
     const key = JSON.stringify({
       type: next.type ?? "",
       tags: [...(next.tags ?? [])].sort(),
@@ -430,8 +456,9 @@ function MapaContent() {
   ])
 
   useEffect(() => {
+    if (!safetyModeReady) return
     fetchPlaces()
-  }, [fetchPlaces])
+  }, [fetchPlaces, safetyModeReady])
 
   useEffect(() => {
     if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
@@ -531,4 +558,4 @@ export function MapaPageClient() {
       <MapaContent />
     </Suspense>
   )
-}
+}
