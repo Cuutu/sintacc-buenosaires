@@ -85,10 +85,10 @@ export default async function HomePage() {
             <BrandLogo inverse size="sm" />
             <Link
               href="/sugerir"
-              aria-label="Sugerir un lugar"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#F7F3EB]/30 bg-[#1F3527]/45 text-[#F7F3EB] transition-colors hover:bg-[#1F3527]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60"
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#F7F3EB]/30 bg-[#1F3527]/50 pl-3 pr-4 text-[13px] font-extrabold text-[#F7F3EB] transition-colors hover:bg-[#1F3527]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60"
             >
-              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+              <Plus className="h-4 w-4" strokeWidth={2.4} aria-hidden />
+              Sugerir lugar
             </Link>
           </div>
 
@@ -131,13 +131,13 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="mt-6 md:mt-10">
+      <div className="mt-7 md:mt-10">
         <CategoryChips />
       </div>
 
       <TakeCeliMapWithYou />
 
-      <section className="px-4 pb-4 pt-10 md:px-5 md:py-16">
+      <section className="px-4 pb-4 pt-12 md:px-5 md:py-16">
         {/* px-0: el container de Tailwind suma 2rem y duplicaba el margen lateral (24 vs 58 px). */}
         <div className="container mx-auto max-w-6xl px-0">
           <HomeFeatured places={featuredPlaces.length ? featuredPlaces : undefined} />

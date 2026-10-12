@@ -152,7 +152,7 @@ export function ChatWidget() {
         ref={dockRef}
         className={cn(
           "celimap-chat-dock fixed bottom-6 right-6 z-[90]",
-          "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+1.75rem)]",
+          "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+0.75rem)] max-md:right-4",
           open && "max-md:hidden"
         )}
       >

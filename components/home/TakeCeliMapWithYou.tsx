@@ -28,7 +28,7 @@ function PlayGlyph() {
 }
 
 const storeBadgeClass =
-  "inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#2D4A34] px-3.5 text-[#F7F3EB] transition-colors hover:bg-[#234A33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 sm:flex-none"
+  "inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#2D4A34] pl-3 pr-4 text-[#F7F3EB] transition-colors hover:bg-[#234A33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40"
 
 function StoreBadge({
   store,
@@ -78,10 +78,11 @@ export function TakeCeliMapWithYou() {
   if (hidden) return null
 
   return (
-    <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-6 md:px-5 md:pt-10">
+    <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-8 md:px-5 md:pt-10">
       <div className="container mx-auto max-w-6xl px-0">
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#E8E1D6] bg-[#FDFBF7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-5">
-          <div className="flex min-w-0 items-center gap-3">
+        {/* Una sola fila en el teléfono (CSS deja sólo el badge de su tienda); en desktop los dos badges bajan si no entran. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-3 rounded-[22px] border border-[#E6DFD2] bg-white py-3 pl-3 pr-3 sm:justify-between sm:gap-6 md:px-5">
+          <div className="flex min-w-0 flex-1 basis-[170px] items-center gap-3">
             <Image
               src="/brand/app-icon.png"
               alt=""
@@ -92,17 +93,17 @@ export function TakeCeliMapWithYou() {
             <div className="min-w-0">
               <h2
                 id="take-celimap-heading"
-                className="text-base font-extrabold leading-tight tracking-[-0.02em] text-[#2D4A34]"
+                className="text-[15px] font-extrabold leading-tight tracking-[-0.02em] text-[#2D4A34]"
               >
                 Llevá CeliMap con vos
               </h2>
-              <p className="text-sm leading-snug text-[#55635A]">
+              <p className="text-[13px] leading-snug text-[#55635A]">
                 El mapa sin gluten, siempre a mano.
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2 sm:shrink-0">
+          <div className="flex shrink-0 gap-2">
             <StoreBadge
               store="ios"
               href={CELIMAP_APP_STORE_URL}
