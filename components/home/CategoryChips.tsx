@@ -1,13 +1,15 @@
 import Link from "next/link"
+import { Coffee, CookingPot, Croissant, IceCream, ShoppingBag, type LucideIcon } from "lucide-react"
 
-const CATEGORIES = [
-  { label: "Restaurantes", href: "/mapa?type=restaurant" },
-  { label: "Cafés", href: "/mapa?type=cafe" },
-  { label: "Panaderías", href: "/mapa?type=bakery" },
-  { label: "Tiendas", href: "/mapa?type=store" },
-  { label: "Heladerías", href: "/mapa?type=icecream" },
-] as const
+const CATEGORIES: readonly { label: string; href: string; Icon: LucideIcon }[] = [
+  { label: "Restaurantes", href: "/mapa?type=restaurant", Icon: CookingPot },
+  { label: "Cafés", href: "/mapa?type=cafe", Icon: Coffee },
+  { label: "Panaderías", href: "/mapa?type=bakery", Icon: Croissant },
+  { label: "Heladerías", href: "/mapa?type=icecream", Icon: IceCream },
+  { label: "Tiendas", href: "/mapa?type=store", Icon: ShoppingBag },
+]
 
+/** Atajos por tipo: píldoras de 44px (toque cómodo) con ícono terracota. */
 export function CategoryChips() {
   return (
     <div
@@ -16,15 +18,16 @@ export function CategoryChips() {
     >
       <nav
         aria-label="Categorías"
-        className="flex w-max min-w-full justify-start gap-1.5 pr-3 sm:w-full sm:flex-wrap sm:justify-center sm:pr-0"
+        className="flex w-max min-w-full justify-start gap-2 px-4 md:px-5"
       >
-        {CATEGORIES.map((cat) => (
+        {CATEGORIES.map(({ label, href, Icon }) => (
           <Link
-            key={cat.href}
-            href={cat.href}
-            className="inline-flex h-7 shrink-0 items-center rounded-full border border-[#D9DED4] bg-white px-2.5 text-[12px] font-medium text-[#2D4A34] transition-colors hover:border-olive/35 hover:bg-[#F6F1E8] sm:h-9 sm:px-3.5 sm:text-sm"
+            key={href}
+            href={href}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-[#E6DFD2] bg-white pl-3.5 pr-4 text-sm font-extrabold text-[#2D4A34] transition-colors hover:border-olive/30 hover:bg-[#FBF8F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
           >
-            {cat.label}
+            <Icon className="h-[18px] w-[18px] text-[#B84420]" strokeWidth={2} aria-hidden />
+            {label}
           </Link>
         ))}
       </nav>

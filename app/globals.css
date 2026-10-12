@@ -176,6 +176,33 @@
   opacity: 0.07;
 }
 
+/* Rediseño Edición — texturas de trigo para portadas y bloques de color */
+.celi-trigo-crema {
+  background-image: url("/brand/hero/trigo-crema.svg");
+  background-size: 150px 150px;
+}
+.celi-trigo-oliva {
+  background-image: url("/brand/hero/trigo-oliva.svg");
+  background-size: 150px 150px;
+}
+/* Hero oliva: mapa nocturno de fondo + velo para leer el texto (no es decoración de color). */
+.celi-hero-mapa {
+  background-color: #2d4a34;
+  background-image:
+    linear-gradient(180deg, rgba(45, 74, 52, 0.08) 0%, rgba(45, 74, 52, 0.28) 30%, rgba(45, 74, 52, 0.94) 56%, #2d4a34 70%),
+    url("/brand/hero/mapa-noche.svg");
+  background-size: 100% 100%, 420px auto;
+  background-position: 0 0, center top;
+  background-repeat: no-repeat, repeat-x;
+}
+@media (min-width: 769px) {
+  /* Desktop: una sola imagen escalada (sin repetir) para que no se vea la costura. */
+  .celi-hero-mapa {
+    background-size: 100% 100%, cover;
+    background-repeat: no-repeat, no-repeat;
+  }
+}
+
 /* Textura solo en hero (home); evita grain global que Chrome mezcla mal con blur */
 .celimap-hero-noise {
   position: absolute;

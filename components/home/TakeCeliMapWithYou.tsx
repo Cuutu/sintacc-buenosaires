@@ -78,8 +78,8 @@ export function TakeCeliMapWithYou() {
   if (hidden) return null
 
   return (
-    <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-6 md:pt-10">
-      <div className="container mx-auto max-w-6xl">
+    <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-6 md:px-5 md:pt-10">
+      <div className="container mx-auto max-w-6xl px-0">
         <div className="flex flex-col gap-3 rounded-2xl border border-[#E8E1D6] bg-[#FDFBF7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <Image

@@ -38,7 +38,8 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).toContain("CommunityBand")
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
-    expect(src).toContain("order-4")
+    // CTA "Abrir el mapa" antes que el buscador (antes se lograba con order-4).
+    expect(src.indexOf('data-testid="home-open-map"')).toBeLessThan(src.indexOf("<SearchBar />"))
     expect(src).toContain('data-testid="home-open-map"')
     expect(src).toContain("max-md:sr-only")
     expect(directory).toContain("`/${c.slug}-sin-gluten`")

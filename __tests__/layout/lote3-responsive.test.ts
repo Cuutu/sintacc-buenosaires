@@ -62,9 +62,10 @@ describe("Lote 3 responsive contracts", () => {
 
   it("SearchBar: píldora integrada, target ≥56px", () => {
     const src = read("components/search-bar.tsx")
-    expect(src).toContain("min-h-[52px]")
+    // Rediseño Edición: píldora de 60px y placeholder corto (el largo se cortaba en 390px).
+    expect(src).toContain("min-h-[60px]")
     expect(src).toContain("min-w-0")
-    expect(src).toContain("Buscar cafeterías, restaurantes o ciudades")
+    expect(src).toContain("Buscá un lugar o una ciudad")
     expect(src).not.toContain("flex-col")
   })
 

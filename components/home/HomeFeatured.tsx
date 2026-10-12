@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import {
   Carousel,
   CarouselContent,
@@ -72,15 +73,22 @@ export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[]
 
   return (
     <section id="lugares" aria-labelledby="featured-heading">
-      <div className="mb-6 flex items-end justify-between gap-4 md:mb-8">
+      <div className="mb-5 flex items-end justify-between gap-4 md:mb-8">
         <div>
-          <h2 id="featured-heading" className="font-display text-2xl font-bold text-olive md:text-3xl">
+          <p className="font-serif text-lg font-medium italic text-[#B84420]">elegidos por la comunidad</p>
+          <h2
+            id="featured-heading"
+            className="mt-0.5 text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive md:text-4xl"
+          >
             Lugares destacados
           </h2>
-          <p className="mt-1 text-sm text-[#4D6554]">Recomendados por la comunidad celíaca</p>
         </div>
-        <Link href="/mapa" className="shrink-0 text-sm font-semibold text-olive hover:text-terracotta">
-          Ver todos
+        <Link
+          href="/mapa"
+          aria-label="Ver todos los lugares"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E6DFD2] bg-white text-olive transition-colors hover:border-olive/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
+        >
+          <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden />
         </Link>
       </div>
 
@@ -90,7 +98,7 @@ export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[]
             {items.map((item, index) => (
               <CarouselItem
                 key={item === "skeleton" ? `sk-${index}` : item._id.toString()}
-                className="h-auto basis-full pl-4 md:basis-1/2 lg:basis-1/3"
+                className="h-auto basis-[78%] pl-4 sm:basis-[46%] md:basis-1/2 lg:basis-1/3"
               >
                 {item === "skeleton" ? <FeaturedSkeleton /> : <HomeFeaturedCard place={item} />}
               </CarouselItem>

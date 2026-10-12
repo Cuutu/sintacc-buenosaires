@@ -69,7 +69,8 @@ describe("skip link y lazy footer logo", () => {
     const home = read("app/page.tsx")
     expect(footer).toContain('loading="lazy"')
     expect(footer).toContain("BrandLogo inverse")
-    expect(home).toContain('<BrandLogo size="lg" />')
-    expect(home).not.toMatch(/BrandLogo size="lg"[^/]*loading/)
+    // Rediseño Edición: hero oliva → lockup inverso; sigue sin lazy (está en el fold).
+    expect(home).toContain('<BrandLogo inverse size="sm" />')
+    expect(home).not.toMatch(/BrandLogo inverse size="sm"[^/]*loading/)
   })
 })
