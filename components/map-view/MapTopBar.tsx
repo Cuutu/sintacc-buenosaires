@@ -82,9 +82,9 @@ function FilterChip({
       className={cn(
         "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         active && tone === "olive" && "border-olive bg-olive text-cream",
-        active && tone === "terracotta" && "border-[#C85A2E] bg-[#C85A2E] text-white",
+        active && tone === "terracotta" && "border-[#B84420] bg-[#B84420] text-white",
         active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
-        active && tone === "amber" && "border-[#C85A2E] bg-[#C85A2E] text-white",
+        active && tone === "amber" && "border-[#B84420] bg-[#B84420] text-white",
         active && tone === "neutral" && "border-primary bg-primary text-primary-foreground",
         !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"
       )}
@@ -180,14 +180,6 @@ export function MapTopBar({
 
   const handleChipsMouseUp = () => {
     isDraggingRef.current = false
-  }
-
-  const handleChipClick = (e: React.MouseEvent, tagId: string) => {
-    if (didDragRef.current) {
-      e.preventDefault()
-      return
-    }
-    toggleTag(tagId)
   }
 
   React.useEffect(() => {
@@ -406,7 +398,7 @@ export function MapTopBar({
               <button
                 type="button"
                 onClick={onRequestLocation}
-                className="text-left text-xs font-semibold text-[#C85A2E] hover:underline"
+                className="text-left text-xs font-semibold text-[#B84420] hover:underline"
               >
                 {locationCta}
               </button>
@@ -420,10 +412,27 @@ export function MapTopBar({
     )
   }
 
-  // Mobile overlay: safety via tags (comportamiento actual) + más filtros abre panel
-  const mobileSafetyChips = [
-    { id: "100_gf", label: "100% sin TACC", safety: "dedicated_gf" as const },
-    { id: "opciones_sin_tacc", label: "Tiene opciones", safety: "gf_options" as const },
+  // Mobile overlay: selector único de seguridad (Todos / 100% / Con opciones).
+  // Mismo filtro por tags que antes, pero excluyente: elegir uno saca el otro.
+  // El punto de color de cada opción reemplaza a la leyenda fija.
+  const SAFETY_TAGS = ["100_gf", "opciones_sin_tacc"] as const
+  const hasCien = filters.tags.includes("100_gf")
+  const hasOpc = filters.tags.includes("opciones_sin_tacc")
+  const safetyMode: "todos" | "cien" | "opc" =
+    hasCien && !hasOpc ? "cien" : hasOpc && !hasCien ? "opc" : "todos"
+
+  const setSafetyMode = (mode: "todos" | "cien" | "opc") => {
+    if (didDragRef.current) return
+    const rest = filters.tags.filter((t) => !(SAFETY_TAGS as readonly string[]).includes(t))
+    const tags =
+      mode === "cien" ? [...rest, "100_gf"] : mode === "opc" ? [...rest, "opciones_sin_tacc"] : rest
+    onFiltersChange({ ...filters, tags })
+  }
+
+  const safetyOptions = [
+    { mode: "todos" as const, label: "Todos", short: "Todos", dot: null, activeDot: null },
+    { mode: "cien" as const, label: "100% sin TACC", short: "100%", dot: "bg-[#1F4D35]", activeDot: "bg-[#F7F3EB]" },
+    { mode: "opc" as const, label: "Con opciones", short: "Opciones", dot: "bg-[#C85A2E]", activeDot: "bg-[#C85A2E]" },
   ]
 
   return (
@@ -484,37 +493,49 @@ export function MapTopBar({
 
       <div
         ref={chipsRef}
-        role="region"
-        aria-label="Filtros de búsqueda"
+        role="radiogroup"
+        aria-label="Qué lugares mostrar"
         onMouseDown={handleChipsMouseDown}
         onMouseMove={handleChipsMouseMove}
         onMouseUp={handleChipsMouseUp}
         onMouseLeave={handleChipsMouseUp}
-        className="scrollbar-hide -mx-0.5 flex max-w-full cursor-grab select-none snap-x snap-mandatory gap-1.5 overflow-x-auto border-t border-[#1F4D35]/[0.06] pt-2 pb-0.5 active:cursor-grabbing"
+        className="scrollbar-hide -mx-0.5 grid max-w-full min-w-0 select-none grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] gap-0.5 overflow-x-auto rounded-full bg-[#1F4D35]/[0.06] p-1"
         data-overflow-allowed="map-chips"
       >
-        {mobileSafetyChips.map((chip) => {
-          const active = filters.tags.includes(chip.id)
-          const isDedicated = chip.id === "100_gf"
+        {safetyOptions.map((opt) => {
+          const active = safetyMode === opt.mode
           return (
             <button
-              key={chip.id}
+              key={opt.mode}
               type="button"
-              onClick={(e) => handleChipClick(e, chip.id)}
-              aria-pressed={active}
+              role="radio"
+              aria-checked={active}
+              aria-label={opt.label}
+              onClick={() => setSafetyMode(opt.mode)}
               className={cn(
-                "min-h-[34px] shrink-0 snap-center rounded-full border px-3 py-1.5 text-[13px] font-medium tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100",
-                active && isDedicated && "border-[#1F4D35] bg-[#1F4D35] text-[#F7F3EB]",
-                active && !isDedicated && "border-[#C85A2E] bg-[#C85A2E] text-white",
-                !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"
+                "inline-flex min-h-[40px] min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[13px] font-bold tracking-[0.005em] transition-[color,background-color,box-shadow,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 motion-reduce:transition-none motion-reduce:active:scale-100",
+                active
+                  ? "bg-[#2D4A34] text-[#F7F3EB] shadow-[0_4px_12px_-6px_rgba(31,42,34,0.55)]"
+                  : "text-[#1F4D35]/80 hover:text-[#1F4D35]"
               )}
             >
-              {chip.label}
+              {opt.dot ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-2 w-2 shrink-0 rounded-full ring-2",
+                    active ? opt.activeDot : opt.dot,
+                    active ? "ring-[#F7F3EB]/40" : "ring-white"
+                  )}
+                />
+              ) : null}
+              {/* En pantallas angostas (<380px) el texto completo no entra: versión corta. */}
+              <span className="truncate max-[379px]:hidden">{opt.label}</span>
+              <span className="truncate min-[380px]:hidden">{opt.short}</span>
             </button>
           )
         })}
       </div>
-      {!compact && <MapLegend className="mt-2 px-0.5" />}
     </div>
   )
 }

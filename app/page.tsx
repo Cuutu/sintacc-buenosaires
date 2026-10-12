@@ -89,7 +89,7 @@ export default async function HomePage() {
               <Link
                 href="/mapa"
                 data-testid="home-open-map"
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[#C85A2E] text-base font-semibold text-white shadow-[0_8px_18px_-10px_rgba(200,90,46,0.5)] transition-colors hover:bg-[#BE552C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/45 md:h-[52px]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[#B84420] text-base font-semibold text-white shadow-[0_8px_18px_-10px_rgba(184,68,32,0.5)] transition-colors hover:bg-[#9A3A1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/45 md:h-[52px]"
               >
                 <MapPin className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 Abrir el mapa

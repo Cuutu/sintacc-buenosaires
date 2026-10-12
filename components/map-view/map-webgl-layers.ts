@@ -45,10 +45,18 @@ export const PIN_FILL_OPACITY = 0.95
 export const MARKER_TRANSITION_MS = MOTION_MS.base
 export const DIMMED_OPACITY = 0.4
 export const CLUSTER_HALO_PX = 10
-export const CLUSTER_HALO_OPACITY = 0.3
+export const CLUSTER_HALO_OPACITY = 0.55
 export const CLUSTER_STROKE_WIDTH = 2
 export const FALLBACK_PIN_RADIUS = 9
 export const PIN_STROKE_COLOR = "#FFFFFF"
+/**
+ * Grupos neutros (crema + número oliva). Antes eran #1F4D35, el mismo verde que
+ * "100% sin TACC": un "14" verde se leía como "14 lugares 100%". El estado de
+ * seguridad sólo lo comunican los pines individuales.
+ */
+export const CLUSTER_FILL_COLOR = "#F7F3EB"
+export const CLUSTER_STROKE_COLOR = "#D6CCB8"
+export const CLUSTER_TEXT_COLOR = "#2D4A34"
 /** Popup arriba del pin. Sin esto la ficha tapa el pin. */
 export const PIN_POPUP_OFFSET = 64
 
@@ -303,7 +311,7 @@ export function ensurePlacesLayers(
     source: PLACES_SOURCE,
     filter: ["all", ["has", "point_count"], [">=", ["get", "point_count"], 50]],
     paint: {
-      "circle-color": "#1F4D35",
+      "circle-color": CLUSTER_FILL_COLOR,
       "circle-radius": CLUSTER_HALO_RADIUS_EXPR as unknown as number,
       "circle-opacity": CLUSTER_HALO_OPACITY,
     },
@@ -315,10 +323,10 @@ export function ensurePlacesLayers(
     source: PLACES_SOURCE,
     filter: ["has", "point_count"],
     paint: {
-      "circle-color": "#1F4D35",
+      "circle-color": CLUSTER_FILL_COLOR,
       "circle-radius": CLUSTER_RADIUS_EXPR as unknown as number,
       "circle-stroke-width": CLUSTER_STROKE_WIDTH,
-      "circle-stroke-color": PIN_STROKE_COLOR,
+      "circle-stroke-color": CLUSTER_STROKE_COLOR,
       "circle-stroke-opacity": PIN_FILL_OPACITY,
       "circle-opacity": PIN_FILL_OPACITY,
       "circle-opacity-transition": { duration: fadeMs, delay: 0 },
@@ -339,8 +347,8 @@ export function ensurePlacesLayers(
       "text-ignore-placement": true,
     },
     paint: {
-      "text-color": "#FFFFFF",
-      "text-halo-color": "#1F4D35",
+      "text-color": CLUSTER_TEXT_COLOR,
+      "text-halo-color": CLUSTER_FILL_COLOR,
       "text-halo-width": 0.8,
       "text-opacity": 1,
       "text-opacity-transition": { duration: fadeMs, delay: 0 },
@@ -447,6 +455,7 @@ export function ensurePlacesLayers(
         "circle-radius",
         CLUSTER_HALO_RADIUS_EXPR as unknown as number
       )
+      map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-color", CLUSTER_FILL_COLOR)
       map.setPaintProperty(LAYER_CLUSTER_HALO, "circle-opacity", CLUSTER_HALO_OPACITY)
     } catch {
       /* capa vieja */
@@ -456,7 +465,8 @@ export function ensurePlacesLayers(
     try {
       map.setPaintProperty(LAYER_CLUSTERS, "circle-radius", CLUSTER_RADIUS_EXPR as unknown as number)
       map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-width", CLUSTER_STROKE_WIDTH)
-      map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-color", PIN_STROKE_COLOR)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-color", CLUSTER_FILL_COLOR)
+      map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-color", CLUSTER_STROKE_COLOR)
       map.setPaintProperty(LAYER_CLUSTERS, "circle-opacity", PIN_FILL_OPACITY)
       map.setPaintProperty(LAYER_CLUSTERS, "circle-stroke-opacity", PIN_FILL_OPACITY)
     } catch {
@@ -487,7 +497,8 @@ export function ensurePlacesLayers(
         200,
         16,
       ])
-      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-color", "#1F4D35")
+      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-color", CLUSTER_TEXT_COLOR)
+      map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-color", CLUSTER_FILL_COLOR)
       map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-halo-width", 0.8)
       map.setPaintProperty(LAYER_CLUSTER_COUNT, "text-opacity", 1)
     } catch {

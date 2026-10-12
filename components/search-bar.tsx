@@ -38,7 +38,7 @@ export function SearchBar() {
       />
       <Button
         type="submit"
-        className="h-10 min-h-[40px] shrink-0 rounded-[12px] bg-[#C85A2E] px-3.5 text-sm text-white shadow-none hover:bg-[#A84A26] md:h-11 md:min-h-[44px] md:rounded-[14px] md:px-5 sm:px-6"
+        className="h-10 min-h-[40px] shrink-0 rounded-[12px] bg-[#B84420] px-3.5 text-sm text-white shadow-none hover:bg-[#9A3A1B] md:h-11 md:min-h-[44px] md:rounded-[14px] md:px-5 sm:px-6"
       >
         Buscar
       </Button>
