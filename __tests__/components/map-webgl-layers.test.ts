@@ -50,6 +50,8 @@ describe("mapa público WebGL", () => {
     expect(src).toContain("if (!useNumberedMarkers)")
     expect(src).toContain("new mapboxgl.Marker")
     expect(src).toContain("mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831")
+    expect(src).toContain('language: "es"')
+    expect(src).toContain('worldview: "AR"')
     expect(src).not.toContain("mapbox://styles/mapbox/light-v11")
     expect(src).not.toContain("softenLightMap")
     expect(src).toContain("pinsReadyRef")

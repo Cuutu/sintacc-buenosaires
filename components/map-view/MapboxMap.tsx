@@ -56,12 +56,16 @@ import {
 } from "./map-webgl-layers"
 import { easeOutUnit, MOTION_MS } from "./motion"
 import { isNativeApp } from "@/lib/native-app"
+import { configuredMapStyleUrl, mapStyleIdFromUrl } from "@/lib/mapbox-style"
 
 export { TYPE_MARKERS } from "./map-popup-html"
 export type { MapViewportBounds }
 
 /** Estilo publicado CeliMap. No pisar con light-v11 ni paint runtime. */
-export const CELIMAP_MAP_STYLE = "mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831"
+export const CELIMAP_DEFAULT_MAP_STYLE = "mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831"
+/** El que usa el mapa: `NEXT_PUBLIC_MAPBOX_STYLE_URL` si es válido (otro estilo de Studio), si no el de arriba. */
+export const CELIMAP_MAP_STYLE = configuredMapStyleUrl(CELIMAP_DEFAULT_MAP_STYLE)
+const CELIMAP_MAP_STYLE_ID = mapStyleIdFromUrl(CELIMAP_MAP_STYLE)
 
 export interface MapboxMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void
@@ -525,13 +529,17 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
               : CELIMAP_MAP_STYLE,
             center: initialCenter ?? CABA_CENTER,
             zoom: initialZoom ?? CABA_ZOOM,
+            // Nombres del mapa en castellano y con la vista argentina (Islas Malvinas, no "Falkland Islands").
+            language: "es",
+            worldview: "AR",
             failIfMajorPerformanceCaveat: false,
             transformRequest: (url, resourceType) => {
               // Studio publish queda cacheado en CDN. fresh=true pide el style publicado ya.
               if (
                 !darkStyle &&
                 resourceType === "Style" &&
-                url.includes("cmtnrjtlq003a01qmclt69831") &&
+                CELIMAP_MAP_STYLE_ID &&
+                url.includes(CELIMAP_MAP_STYLE_ID) &&
                 !url.includes("fresh=true")
               ) {
                 return { url: `${url}${url.includes("?") ? "&" : "?"}fresh=true` }
