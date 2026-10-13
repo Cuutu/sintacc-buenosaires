@@ -5,6 +5,7 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { openCeliBot } from "@/lib/celibot-open"
+import { safetyModeFromTags, withSafetyMode, type SafetyMode } from "@/lib/safety-mode"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
 import { MapLegend } from "./MapLegend"
@@ -155,10 +156,14 @@ export function MapTopBar({
     })
   }
 
-  const toggleSafety = (level: string) => {
+  // Mismo filtro de seguridad que el selector mobile (tags excluyentes): así el modo
+  // "Sólo 100% sin TACC" se ve y se cambia igual en escritorio.
+  const safetyMode = safetyModeFromTags(filters.tags)
+  const toggleSafety = (mode: Exclude<SafetyMode, "todos">) => {
     onFiltersChange({
       ...filters,
-      safetyLevel: filters.safetyLevel === level ? undefined : level,
+      safetyLevel: undefined,
+      tags: withSafetyMode(filters.tags, safetyMode === mode ? "todos" : mode),
     })
   }
 
@@ -242,18 +247,18 @@ export function MapTopBar({
         <div ref={moreRef} className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <FilterChip
-              active={filters.safetyLevel === "dedicated_gf"}
+              active={safetyMode === "cien"}
               label="100% sin TACC"
               tone="olive"
-              onClick={() => toggleSafety("dedicated_gf")}
-              onClear={() => toggleSafety("dedicated_gf")}
+              onClick={() => toggleSafety("cien")}
+              onClear={() => toggleSafety("cien")}
             />
             <FilterChip
-              active={filters.safetyLevel === "gf_options"}
+              active={safetyMode === "opc"}
               label="Tiene opciones"
               tone="terracotta"
-              onClick={() => toggleSafety("gf_options")}
-              onClear={() => toggleSafety("gf_options")}
+              onClick={() => toggleSafety("opc")}
+              onClear={() => toggleSafety("opc")}
             />
             <FilterChip
               active={Boolean(filters.type)}
@@ -417,18 +422,9 @@ export function MapTopBar({
   // Mobile overlay: selector único de seguridad (Todos / 100% / Con opciones).
   // Mismo filtro por tags que antes, pero excluyente: elegir uno saca el otro.
   // El punto de color de cada opción reemplaza a la leyenda fija.
-  const SAFETY_TAGS = ["100_gf", "opciones_sin_tacc"] as const
-  const hasCien = filters.tags.includes("100_gf")
-  const hasOpc = filters.tags.includes("opciones_sin_tacc")
-  const safetyMode: "todos" | "cien" | "opc" =
-    hasCien && !hasOpc ? "cien" : hasOpc && !hasCien ? "opc" : "todos"
-
-  const setSafetyMode = (mode: "todos" | "cien" | "opc") => {
+  const setSafetyMode = (mode: SafetyMode) => {
     if (didDragRef.current) return
-    const rest = filters.tags.filter((t) => !(SAFETY_TAGS as readonly string[]).includes(t))
-    const tags =
-      mode === "cien" ? [...rest, "100_gf"] : mode === "opc" ? [...rest, "opciones_sin_tacc"] : rest
-    onFiltersChange({ ...filters, tags })
+    onFiltersChange({ ...filters, tags: withSafetyMode(filters.tags, mode) })
   }
 
   const safetyOptions = [
@@ -446,13 +442,13 @@ export function MapTopBar({
     )}>
       <div className="mb-2 flex min-w-0 items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 stroke-[1.85] text-[#1F4D35]/45 sm:left-3.5" aria-hidden />
+          <Search className="absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 stroke-[1.85] text-[#1F4D35]/45 max-[359px]:left-2.5 sm:left-3.5" aria-hidden />
           <input
             placeholder={placeholder}
             value={filters.search}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Buscar lugar o zona"
-            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-full bg-transparent pl-10 pr-2 text-base outline-none transition placeholder:text-[#5F6B63]/70 focus-visible:ring-0 sm:pl-11"
+            className="flex h-11 min-h-[44px] w-full min-w-0 rounded-full bg-transparent pl-10 pr-2 text-base max-[359px]:pl-9 max-[359px]:pr-1 outline-none transition placeholder:text-[#5F6B63]/70 focus-visible:ring-0 sm:pl-11"
             style={{
               color: "#2D4A34",
               WebkitTextFillColor: "#2D4A34",
@@ -475,10 +471,10 @@ export function MapTopBar({
           type="button"
           onClick={() => openCeliBot()}
           aria-label="Preguntale a CeliBot"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_-3px_rgba(31,42,34,0.35)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_-3px_rgba(31,42,34,0.35)] max-[359px]:h-9 max-[359px]:w-9 transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           data-testid="map-celibot-entry"
         >
-          <Image src="/brand/celibot.png" alt="" width={34} height={34} className="h-[34px] w-[34px] rounded-full object-contain" />
+          <Image src="/brand/celibot.png" alt="" width={34} height={34} className="h-[34px] w-[34px] rounded-full object-contain max-[359px]:h-[30px] max-[359px]:w-[30px]" />
         </button>
       </div>
 

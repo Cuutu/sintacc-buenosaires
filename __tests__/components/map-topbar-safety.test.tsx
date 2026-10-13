@@ -76,4 +76,27 @@ describe("MapTopBar — selector de seguridad mobile", () => {
     render({ search: "", tags: ["100_gf", "opciones_sin_tacc"] })
     expect(radio("Todos").getAttribute("aria-checked")).toBe("true")
   })
+
+  it("escritorio: los chips usan el mismo filtro por tags (así el modo 100% se ve igual)", () => {
+    const onChange = jest.fn()
+    act(() => {
+      root.render(
+        <MapTopBar
+          variant="sidebar"
+          filters={{ search: "", tags: ["100_gf", "delivery"] }}
+          onFiltersChange={onChange}
+          onSearchChange={jest.fn()}
+        />
+      )
+    })
+    const chip = (label: string) =>
+      Array.from(container.querySelectorAll("button")).find((b) => b.textContent?.trim() === label) as HTMLButtonElement
+    expect(chip("100% sin TACC").getAttribute("aria-pressed")).toBe("true")
+    act(() => chip("Tiene opciones").click())
+    expect(onChange).toHaveBeenCalledWith({
+      search: "",
+      tags: ["delivery", "opciones_sin_tacc"],
+      safetyLevel: undefined,
+    })
+  })
 })

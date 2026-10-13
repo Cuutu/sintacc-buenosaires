@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, Suspense } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { MapScreen, type MapFilters } from "@/components/map-view"
 import type { MapViewportBounds } from "@/components/map-view/geo"
@@ -14,7 +14,15 @@ import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
 import { parseMapTypeParam } from "@/lib/map-url-filters"
-import { applyOnly100ToTags, isOnly100Tags, readOnly100, writeOnly100 } from "@/lib/safety-mode"
+import {
+  applyOnly100ToTags,
+  readOnly100,
+  refinePlacesBySafetyMode,
+  SAFETY_MODE_EVENT,
+  safetyModeFromTags,
+  withSafetyMode,
+  writeOnly100,
+} from "@/lib/safety-mode"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
   buildMapFilterKey,
@@ -38,16 +46,6 @@ import {
 } from "@/lib/map-address-search"
 
 const SEARCH_DEBOUNCE_MS = 650
-/** Mismo corte que useIsMobile(): el modo "Sólo 100%" usa el selector del mapa mobile. */
-const MOBILE_MAP_QUERY = "(max-width: 768px)"
-
-function isMobileMapViewport(): boolean {
-  try {
-    return window.matchMedia(MOBILE_MAP_QUERY).matches
-  } catch {
-    return false
-  }
-}
 const MIN_SEARCH_LENGTH = 2
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
@@ -93,6 +91,11 @@ function MapaContent() {
   // El modo "Sólo 100%" vive en localStorage: se aplica después de montar (la página se
   // renderiza en el servidor sin saberlo) y el primer fetch espera a que esté aplicado.
   const [safetyModeReady, setSafetyModeReady] = useState(false)
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+  // Un link directo a un lugar (?place=, desde una ficha, una lista o el chat) tiene que
+  // mostrarlo aunque sea "con opciones": ahí no se aplica el modo guardado.
+  const initialPlaceParamRef = useRef(placeIdFromUrl)
   const [debouncedSearch, setDebouncedSearch] = useState(
     () => searchParams.get("search") || ""
   )
@@ -139,19 +142,42 @@ function MapaContent() {
   }, [selectedPlaceId])
 
   useEffect(() => {
-    if (isMobileMapViewport() && readOnly100()) {
+    if (!initialPlaceParamRef.current && readOnly100()) {
       setFilters((f) => ({ ...f, tags: applyOnly100ToTags(f.tags, true) }))
     }
     setSafetyModeReady(true)
   }, [])
 
+  // El modo también se cambia desde la bienvenida, que puede abrirse encima del mapa.
+  useEffect(() => {
+    const onSafetyMode = () => {
+      const only100 = readOnly100()
+      setFilters((f) => {
+        const mode = safetyModeFromTags(f.tags)
+        if (only100 && mode !== "cien") return { ...f, safetyLevel: undefined, tags: withSafetyMode(f.tags, "cien") }
+        if (!only100 && mode === "cien") return { ...f, tags: withSafetyMode(f.tags, "todos") }
+        return f
+      })
+    }
+    window.addEventListener(SAFETY_MODE_EVENT, onSafetyMode)
+    return () => window.removeEventListener(SAFETY_MODE_EVENT, onSafetyMode)
+  }, [])
+
   const handleFiltersChange = useCallback((next: MapFilters) => {
     setFilters(next)
-    // El selector del mapa mobile es otra puerta al modo: lo último elegido queda guardado.
-    if (isMobileMapViewport()) {
-      const only100 = isOnly100Tags(next.tags ?? [])
+    // El selector del mapa es otra puerta al modo: si el usuario cambia el filtro de
+    // seguridad, lo último que eligió queda guardado. Otros filtros no lo tocan.
+    const prevSafety = safetyModeFromTags(filtersRef.current.tags)
+    const nextSafety = safetyModeFromTags(next.tags ?? [])
+    if (prevSafety !== nextSafety) {
+      const only100 = nextSafety === "cien"
       if (only100 !== readOnly100()) writeOnly100(only100)
     }
+    // Desde la fase 1 el filtro de seguridad viaja en tags; para Insights se sigue
+    // reportando como safetyLevel.
+    const trackedSafety =
+      next.safetyLevel ||
+      (nextSafety === "cien" ? "dedicated_gf" : nextSafety === "opc" ? "gf_options" : "")
     const key = JSON.stringify({
       type: next.type ?? "",
       tags: [...(next.tags ?? [])].sort(),
@@ -165,10 +191,10 @@ function MapaContent() {
       type: next.type || "",
       tagCount: next.tags?.length ?? 0,
       neighborhood: next.neighborhood || "",
-      safetyLevel: next.safetyLevel || "",
+      safetyLevel: trackedSafety,
       hasType: Boolean(next.type),
       hasNeighborhood: Boolean(next.neighborhood),
-      hasSafety: Boolean(next.safetyLevel),
+      hasSafety: Boolean(trackedSafety),
       hasSearch: Boolean(next.search?.trim()),
     })
     recordIntentSignal("map_filter")
@@ -517,9 +543,15 @@ function MapaContent() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [pathname, router, searchParams])
 
+  // Que el selector y los pines digan lo mismo (ver refinePlacesBySafetyMode).
+  const visiblePlaces = useMemo(
+    () => refinePlacesBySafetyMode(places, safetyModeFromTags(filters.tags)),
+    [places, filters.tags]
+  )
+
   return (
     <MapScreen
-      places={places}
+      places={visiblePlaces}
       loading={loading}
       loadError={placesError}
       onRetryLoad={() => {

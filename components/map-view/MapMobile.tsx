@@ -369,7 +369,7 @@ export function MapMobile({
         onSearchChange={onSearchChange}
         onFiltersOpen={() => setMoreOpen(true)}
         compact={listOpen}
-        placeholder="Buscar lugar o zona..."
+        placeholder="Buscar lugar o zona"
         activeQuery={queryChip}
         onClearQuery={queryChip ? () => onSearchChange("") : undefined}
       />

@@ -15,6 +15,8 @@ import { listHasRatings, sortPlaces, LOCATION_SORT_CTA } from "./place-sort"
 import { useMapPlaceSort } from "./useMapPlaceSort"
 import type { IPlace } from "@/models/Place"
 import type { MapSearchPin } from "@/lib/map-address-search"
+import { safetyModeFromTags } from "@/lib/safety-mode"
+import { cn } from "@/lib/utils"
 
 interface MapDesktopProps {
   places: IPlace[]
@@ -71,16 +73,17 @@ export function MapDesktop({
   const [popoverPlace, setPopoverPlace] = React.useState<IPlace | null>(null)
   const [popoverOpen, setPopoverOpen] = React.useState(false)
 
+  const safetyMode = safetyModeFromTags(filters.tags)
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
-    if (filters.safetyLevel === "dedicated_gf") parts.push("100% sin TACC")
-    if (filters.safetyLevel === "gf_options") parts.push("Tiene opciones")
+    if (safetyMode === "cien") parts.push("100% sin TACC")
+    if (safetyMode === "opc") parts.push("Tiene opciones")
     if (filters.type) parts.push(TYPE_LABELS[filters.type] ?? filters.type)
     if (filters.tags.includes("certificado_sin_tacc")) parts.push("Insumos certificados")
     if (filters.tags.includes("cocina_separada")) parts.push("Cocina separada")
     if (filters.tags.includes("delivery")) parts.push("Delivery")
     return parts
-  }, [filters])
+  }, [filters, safetyMode])
 
   const hasActiveFilters = activeFilters.length > 0
 
@@ -172,7 +175,13 @@ export function MapDesktop({
         {hasActiveFilters && (
           <div className="pointer-events-auto absolute left-1/2 top-4 z-10 -translate-x-1/2">
             <div className="flex max-w-[540px] items-center gap-2 overflow-hidden rounded-full border border-olive/15 bg-cream/90 px-3 py-2 text-xs font-medium text-olive shadow-[0_8px_24px_rgba(31,77,53,0.12)] backdrop-blur-2xl">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+              {/* Mismo código de color que los pines: verde = 100%, terracota = con opciones. */}
+              <span
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full",
+                  safetyMode === "cien" ? "bg-[#1F4D35]" : safetyMode === "opc" ? "bg-[#C85A2E]" : "bg-olive/40"
+                )}
+              />
               <span className="truncate">
                 {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
               </span>
@@ -221,9 +230,6 @@ export function MapDesktop({
             onPlaceHover={setHoveredPlaceId}
             onClearFilters={hasActiveFilters ? clearAllFilters : undefined}
             userLocation={location.coords}
-            locationCta={locationCta}
-            onRequestLocation={() => setSort("nearest")}
-            locationMessage={location.message}
           />
         </div>
       </aside>

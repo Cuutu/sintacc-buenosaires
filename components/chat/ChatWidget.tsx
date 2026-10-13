@@ -9,7 +9,7 @@ import {
   useVisualViewportBox,
 } from "@/components/chat/use-visual-viewport-box"
 import { cn } from "@/lib/utils"
-import { OPEN_CELIBOT_EVENT, type OpenCeliBotDetail } from "@/lib/celibot-open"
+import { OPEN_CELIBOT_EVENT, setCeliBotWidgetReady, type OpenCeliBotDetail } from "@/lib/celibot-open"
 import "@/components/chat/chat-ui.css"
 
 const CLOSE_MS = 300
@@ -128,7 +128,12 @@ export function ChatWidget() {
       showRef.current(detail?.prompt)
     }
     window.addEventListener(OPEN_CELIBOT_EVENT, onOpen)
-    return () => window.removeEventListener(OPEN_CELIBOT_EVENT, onOpen)
+    const pendingOpen = setCeliBotWidgetReady(true)
+    if (pendingOpen) showRef.current(pendingOpen.prompt)
+    return () => {
+      setCeliBotWidgetReady(false)
+      window.removeEventListener(OPEN_CELIBOT_EVENT, onOpen)
+    }
   }, [])
 
   const hide = () => {

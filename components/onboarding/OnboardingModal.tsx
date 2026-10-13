@@ -353,7 +353,7 @@ export function OnboardingModal() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[400px] gap-0 overflow-hidden border-[#E8E1D6] bg-[#F7F3EB] p-0 text-[#2D4A34] shadow-[0_24px_48px_-24px_rgba(31,77,53,0.35)] sm:rounded-[24px]">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[400px] gap-0 overflow-y-auto overflow-x-hidden rounded-[24px] border-[#E8E1D6] bg-[#F7F3EB] p-0 text-[#2D4A34] shadow-[0_24px_48px_-24px_rgba(31,77,53,0.35)] sm:rounded-[24px]">
         <DialogTitle className="sr-only">Bienvenido a CeliMap</DialogTitle>
 
         <div className="px-5 pb-1 pt-5 pr-12">

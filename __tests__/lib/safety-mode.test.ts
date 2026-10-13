@@ -6,7 +6,10 @@ import {
   isOnly100Tags,
   ONLY_100_STORAGE_KEY,
   readOnly100,
+  refinePlacesBySafetyMode,
   SAFETY_MODE_EVENT,
+  safetyModeFromTags,
+  withSafetyMode,
   writeOnly100,
 } from "@/lib/safety-mode"
 
@@ -45,5 +48,26 @@ describe("modo Sólo 100% sin TACC", () => {
     expect(isOnly100Tags([])).toBe(false)
     expect(isOnly100Tags(["opciones_sin_tacc"])).toBe(false)
     expect(isOnly100Tags(["100_gf", "opciones_sin_tacc"])).toBe(false)
+  })
+
+  it("selector excluyente: lee y reemplaza el filtro de seguridad sin tocar otros tags", () => {
+    expect(safetyModeFromTags([])).toBe("todos")
+    expect(safetyModeFromTags(["100_gf", "delivery"])).toBe("cien")
+    expect(safetyModeFromTags(["opciones_sin_tacc"])).toBe("opc")
+    expect(safetyModeFromTags(["100_gf", "opciones_sin_tacc"])).toBe("todos")
+    expect(withSafetyMode(["opciones_sin_tacc", "delivery"], "cien")).toEqual(["delivery", "100_gf"])
+    expect(withSafetyMode(["100_gf", "cocina_separada"], "todos")).toEqual(["cocina_separada"])
+  })
+
+  it("en 100% saca los lugares que se muestran como Con opciones (tags mandan), sin reclasificar", () => {
+    const places = [
+      { id: "a", tags: ["100_gf"] },
+      { id: "b", tags: ["100_gf", "opciones_sin_tacc"] },
+      { id: "c", tags: [], safetyLevel: "dedicated_gf" as const },
+      { id: "d", tags: ["opciones_sin_tacc"] },
+    ]
+    expect(refinePlacesBySafetyMode(places, "cien").map((p) => p.id)).toEqual(["a", "c"])
+    expect(refinePlacesBySafetyMode(places, "opc").map((p) => p.id)).toEqual(["b", "d"])
+    expect(refinePlacesBySafetyMode(places, "todos")).toBe(places)
   })
 })

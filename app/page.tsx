@@ -112,17 +112,20 @@ export default async function HomePage() {
               CeliMap es un mapa colaborativo Sin TACC en Argentina. Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
-            <Link
-              href="/mapa"
-              data-testid="home-open-map"
-              className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F7F3EB] px-6 text-base font-extrabold text-[#2D4A34] shadow-[0_14px_30px_-14px_rgba(0,0,0,0.55)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4A34] sm:w-auto"
-            >
-              <MapPin className="h-5 w-5" strokeWidth={2} aria-hidden />
-              Abrir el mapa
-              <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
-            </Link>
-            {/* Modo "Sólo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
-            <SafetyModeSwitch />
+            {/* CTA + modo "Sólo 100%": apilados en mobile, en fila desde sm. */}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              <Link
+                href="/mapa"
+                data-testid="home-open-map"
+                className="inline-flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-[18px] bg-[#F7F3EB] px-6 text-base font-extrabold text-[#2D4A34] shadow-[0_14px_30px_-14px_rgba(0,0,0,0.55)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4A34] sm:w-auto"
+              >
+                <MapPin className="h-5 w-5" strokeWidth={2} aria-hidden />
+                Abrir el mapa
+                <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
+              </Link>
+              {/* Modo "Sólo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
+              <SafetyModeSwitch />
+            </div>
           </div>
         </div>
       </section>
