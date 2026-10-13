@@ -79,7 +79,7 @@ export function TakeCeliMapWithYou() {
 
   return (
     <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-8 md:px-5 md:pt-10">
-      <div className="container mx-auto max-w-6xl px-0">
+      <div className="container mx-auto max-w-5xl px-0">
         {/* Una sola fila en el teléfono (CSS deja sólo el badge de su tienda); en desktop los dos badges bajan si no entran. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-3 rounded-[22px] border border-[#E6DFD2] bg-white py-3 pl-3 pr-3 sm:justify-between sm:gap-6 md:px-5">
           <div className="flex min-w-0 flex-1 basis-[170px] items-center gap-3">

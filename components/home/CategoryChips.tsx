@@ -9,7 +9,8 @@ const CATEGORIES: readonly { label: string; href: string; Icon: LucideIcon }[] =
   { label: "Tiendas", href: "/mapa?type=store", Icon: ShoppingBag },
 ]
 
-/** Atajos por tipo: píldoras de 44px (toque cómodo) con ícono terracota. */
+/** Atajos por tipo: píldoras de 44px (toque cómodo) con ícono terracota.
+ *  En mobile se desplazan de borde a borde; desde md se alinean con el buscador. */
 export function CategoryChips() {
   return (
     <div
@@ -18,7 +19,7 @@ export function CategoryChips() {
     >
       <nav
         aria-label="Categorías"
-        className="flex w-max min-w-full justify-start gap-2 px-4 md:px-5"
+        className="flex w-max min-w-full justify-start gap-2 px-4 md:mx-auto md:w-full md:min-w-0 md:max-w-5xl md:flex-wrap md:px-5"
       >
         {CATEGORIES.map(({ label, href, Icon }) => (
           <Link

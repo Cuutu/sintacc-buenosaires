@@ -3,23 +3,25 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ExternalLink, MapPin, Navigation, Share2 } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, Info, Navigation, Share2, Star, X } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import { cn } from "@/lib/utils"
 import { FavoriteButton } from "@/components/favorite-button"
 import { getPlaceImageUrl } from "@/lib/place-image"
 import { getOpenStatusLabel } from "@/lib/opening-hours"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import {
   formatShortPlaceAddress,
   getCanonicalPlaceArea,
+  getPlaceCardRating,
+  getPlaceCoverTheme,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
   getPlaceGoogleMapsUrl,
+  getPlaceSafety,
   getPlaceSheetDetailTags,
-  getPlaceTypeKey,
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
-import { PLACE_TYPE_ICONS, PlaceRatingRow, PlaceSafetyBadge } from "./PlaceCardBits"
 import { animateSpring, EASE_OUT, MOTION_MS } from "./motion"
 import { trackEvent } from "@/lib/analytics"
 import { recordCommitment } from "@/lib/analytics-discovery"
@@ -194,7 +196,7 @@ export function MobileMapBottomSheet({
 
   const onPointerDown = (event: React.PointerEvent) => {
     if (closingRef.current) return
-    if ((event.target as HTMLElement).closest("[data-directions],[data-favorite],[data-google-maps]")) return
+    if ((event.target as HTMLElement).closest("[data-directions],[data-favorite],[data-google-maps],[data-sheet-action]")) return
     draggedRef.current = false
     draggingRef.current = true
     stopSpring()
@@ -232,12 +234,20 @@ export function MobileMapBottomSheet({
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
   const googleMapsUrl = getPlaceGoogleMapsUrl(place)
-  const photoSrc = getPlaceImageUrl(place.photos?.[0], "thumb")
-  const TypeIcon = PLACE_TYPE_ICONS[getPlaceTypeKey(place)] ?? MapPin
+  const photoSrc = getPlaceImageUrl(place.photos?.[0], "popup")
+  const safety = getPlaceSafety(place)
+  const safetyLevel = inferSafetyLevel(place) ?? "unknown"
+  const cover = getPlaceCoverTheme(place)
+  const rating = getPlaceCardRating(place)
   const openLabel = getOpenStatusLabel(place.openingHours)
   const openNow = openLabel != null && openLabel !== "Cerrado"
   const detailTags = getPlaceSheetDetailTags(place.tags)
   const placeId = String(place._id)
+  const onPhoto = Boolean(photoSrc)
+  const coverInk = onPhoto ? "#FFFFFF" : cover.ink
+  const lightInk = coverInk !== "#2D4A34"
+  const nameSize =
+    place.name.length > 30 ? "text-[21px]" : place.name.length > 18 ? "text-[25px]" : "text-[30px]"
 
   const handleShare = async () => {
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
@@ -255,9 +265,18 @@ export function MobileMapBottomSheet({
     }
   }
 
+  const coverButtonClass = cn(
+    "pointer-events-auto relative z-[2] flex h-10 w-10 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
+    onPhoto
+      ? "bg-black/35 text-white backdrop-blur-sm hover:bg-black/45 focus-visible:ring-white/70"
+      : lightInk
+        ? "bg-[#F7F3EB]/[0.14] text-[#F7F3EB] hover:bg-[#F7F3EB]/[0.22] focus-visible:ring-[#F7F3EB]/60"
+        : "bg-[#2D4A34]/10 text-[#2D4A34] hover:bg-[#2D4A34]/[0.16] focus-visible:ring-[#2D4A34]/40"
+  )
+
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 h-[320px] overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 h-[320px] overflow-hidden [mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent)]"
       data-overflow-allowed="decoration"
     >
       {expanded && (
@@ -269,9 +288,12 @@ export function MobileMapBottomSheet({
           }}
         />
       )}
+      {/* Tarjeta flotante "Edición": portada + datos + acciones. Mide siempre lo mismo
+          (la portada absorbe el espacio libre) para que el modo compacto muestre
+          portada y tipo/barrio. */}
       <section
         ref={sheetRef}
-        className="map-paper pointer-events-auto absolute inset-x-0 top-0 h-[320px] overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0"
+        className="pointer-events-auto absolute inset-x-0 top-0 h-[320px] touch-none select-none px-3 pb-3"
         style={{ transform: `translate3d(0, ${ENTER_FROM_Y}px, 0)`, opacity: 0 }}
         aria-label={place.name}
         onPointerDown={onPointerDown}
@@ -279,156 +301,209 @@ export function MobileMapBottomSheet({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <div className="flex justify-center pb-1.5 pt-2.5">
-          <span className="map-handle" aria-hidden />
-        </div>
-
-        <div className="relative h-[calc(100%-22px)] overflow-hidden px-4 pb-3">
+        <article className="relative flex h-full flex-col rounded-[28px] bg-white p-2.5 shadow-[0_24px_50px_-20px_rgba(31,42,34,0.55),0_0_0_1px_rgba(45,74,52,0.06)]">
+          {/* touch-none + draggable=false: el gesto vertical mueve la tarjeta (si no, el
+              navegador lo toma como scroll o arrastre del link y cancela el pointer). */}
           <Link
             href={detailPath}
-            className="absolute inset-0 z-0"
+            draggable={false}
+            className="absolute inset-0 z-0 rounded-[28px]"
             aria-label={`Ver ${place.name}`}
             onClick={(event) => {
               if (draggedRef.current) event.preventDefault()
             }}
           />
 
-          <div className="pointer-events-none relative z-[1] flex items-start gap-3">
-            <span className="relative mt-0.5 h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] bg-[#1F4D35]/[0.08]">
-              {photoSrc ? (
+          <div
+            className={cn(
+              "pointer-events-none relative z-[1] min-h-[112px] flex-1 overflow-hidden rounded-[22px]",
+              !onPhoto && cover.texture
+            )}
+            style={onPhoto ? undefined : { backgroundColor: cover.bg }}
+          >
+            {photoSrc ? (
+              <>
                 <Image
                   src={photoSrc}
                   alt=""
                   fill
                   className="object-cover"
-                  sizes="72px"
+                  sizes="(max-width: 480px) 100vw, 480px"
                 />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-[#1F4D35]" aria-hidden>
-                  <TypeIcon className="h-6 w-6 stroke-[1.85]" />
-                </span>
-              )}
-            </span>
+                <span
+                  className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,30,23,0.28)_0%,rgba(20,30,23,0)_34%,rgba(20,30,23,0.12)_52%,rgba(20,30,23,0.74)_100%)]"
+                  aria-hidden
+                />
+              </>
+            ) : null}
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <h2
-                  className={cn(
-                    "min-w-0 font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]",
-                    expanded ? "line-clamp-2 text-[18px]" : "line-clamp-1 text-[16px]"
-                  )}
-                >
-                  {place.name}
-                </h2>
-                <div
-                  data-favorite="true"
-                  className="pointer-events-auto relative z-[2] -mr-1 -mt-1 shrink-0"
-                  onClick={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
-                >
-                  <FavoriteButton
-                    placeId={String(place._id)}
-                    className="h-9 w-9 text-[#1F4D35]/70"
+            <span
+              className="absolute left-1/2 top-1.5 h-1 w-9 -translate-x-1/2 rounded-full"
+              style={{ backgroundColor: coverInk, opacity: 0.35 }}
+              aria-hidden
+            />
+
+            <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+              <span className="mt-1 inline-flex h-7 min-w-0 items-center gap-1.5 rounded-full bg-[#F7F3EB] px-2.5 text-[12px] font-black leading-none text-[#1F4D35] shadow-[0_4px_12px_-6px_rgba(20,30,23,0.45)]">
+                {safetyLevel === "dedicated_gf" ? (
+                  <Check className="h-3 w-3 shrink-0" strokeWidth={3.2} aria-hidden />
+                ) : (
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: safety.accent }}
+                    aria-hidden
                   />
-                </div>
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <PlaceSafetyBadge place={place} size="sm" />
-                <PlaceRatingRow
-                  place={place}
-                  className="text-[12px]"
-                  emptyCommunity={expanded ? "when-google" : "never"}
-                />
-              </div>
-              {meta ? (
-                <p className="mt-1 truncate text-[12.5px] font-medium text-[#5F6B63]">{meta}</p>
-              ) : null}
-              {address ? (
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-google-maps="true"
-                  title="Abrir en Google Maps"
-                  onClick={(event) => event.stopPropagation()}
-                  className="pointer-events-auto relative z-[2] mt-0.5 flex max-w-full items-center gap-1.5 text-[12px] text-[#5F6B63]/90"
+                )}
+                <span className="truncate">{safety.label}</span>
+              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  data-sheet-action="share"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    void handleShare()
+                  }}
+                  aria-label="Compartir"
+                  className={coverButtonClass}
                 >
-                  <span className="min-w-0 truncate">{address}</span>
-                  <span className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-[#1F4D35] underline underline-offset-2">
-                    Google Maps
-                    <ExternalLink className="h-3 w-3 stroke-[2]" aria-hidden />
+                  <Share2 className="h-[18px] w-[18px]" strokeWidth={2.1} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  data-sheet-action="close"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    closeSheet()
+                  }}
+                  aria-label="Cerrar"
+                  className={coverButtonClass}
+                >
+                  <X className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden />
+                </button>
+              </div>
+            </div>
+
+            <h2
+              className={cn(
+                "absolute inset-x-4 bottom-3 line-clamp-2 font-serif font-medium italic leading-[1.0] tracking-[-0.02em]",
+                nameSize,
+                onPhoto && "[text-shadow:0_1px_12px_rgba(0,0,0,0.35)]"
+              )}
+              style={{ color: coverInk }}
+            >
+              {place.name}
+            </h2>
+          </div>
+
+          <div className="pointer-events-none relative z-[1] shrink-0 px-1.5 pt-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-[14.5px] font-extrabold text-[#2D4A34]">
+                {meta || "Lugar"}
+              </p>
+              {rating ? (
+                <p
+                  className="flex shrink-0 items-center gap-1 text-[14.5px] font-black text-[#2D4A34]"
+                  title={rating.label}
+                >
+                  <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" aria-hidden />
+                  <span aria-hidden>{rating.score}</span>
+                  <span className="text-[11.5px] font-bold text-[#5E6A60]" aria-hidden>
+                    {rating.source}
                   </span>
-                </a>
+                  <span className="sr-only">{rating.label}</span>
+                </p>
               ) : null}
-              {expanded && detailTags.length > 0 ? (
-                <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                  {detailTags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5F6B63]"
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1F4D35]/35" aria-hidden />
-                      {tag.label}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              <div className="mt-1 flex items-center justify-between gap-2">
+            </div>
+
+            {openLabel || address ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[12.5px] text-[#5E6A60]">
                 {openLabel ? (
-                  <p
+                  <span
                     className={cn(
-                      "min-w-0 truncate text-[12px] font-semibold",
-                      openNow ? "text-[#1F4D35]" : "text-[#5F6B63]"
+                      "shrink-0 font-bold",
+                      openNow ? "text-[#1F4D35]" : "text-[#5E6A60]"
                     )}
                   >
                     {openLabel}
-                  </p>
-                ) : (
-                  <span />
-                )}
-                {expanded ? (
-                  <div className="pointer-events-auto relative z-[2] flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
-                    >
-                      <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                      Compartir
-                    </button>
-                    <a
-                      href={directionsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-directions="true"
-                      data-place-id={placeId}
-                      onClick={(event) => event.stopPropagation()}
-                      className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-[#1F4D35]/20 bg-white/55 px-2.5 text-[11px] font-semibold tracking-[0.01em] text-[#1F4D35]"
-                    >
-                      <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                      Cómo llegar
-                    </a>
-                  </div>
+                  </span>
                 ) : null}
-              </div>
-            </div>
-          </div>
+                {openLabel && address ? <span aria-hidden>·</span> : null}
+                {address ? (
+                  <a
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-google-maps="true"
+                    title="Abrir en Google Maps"
+                    onClick={(event) => event.stopPropagation()}
+                    className="pointer-events-auto relative z-[2] inline-flex min-w-0 items-center gap-1 underline decoration-[#5E6A60]/40 underline-offset-2"
+                  >
+                    <span className="min-w-0 truncate">{address}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+                    <span className="sr-only">(abre Google Maps)</span>
+                  </a>
+                ) : null}
+              </p>
+            ) : null}
 
-          {expanded ? (
-            <div className="pointer-events-none relative z-[1] mt-3 border-t border-[#1F4D35]/[0.06] pt-3">
+            {detailTags.length > 0 ? (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {detailTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex h-[22px] items-center rounded-full bg-[#F1ECE2] px-2 text-[11px] font-bold text-[#2D4A34]"
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-[1.35] text-[#5E6A60] [text-wrap:pretty]">
+              <Info className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+              Información de la comunidad. Confirmá siempre en el local.
+            </p>
+
+            <div className="mt-2.5 grid grid-cols-[46px_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+              <div
+                data-favorite="true"
+                className="pointer-events-auto relative z-[2]"
+                onClick={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                <FavoriteButton
+                  placeId={placeId}
+                  className="h-[46px] w-[46px] rounded-[16px] border-[1.5px] border-[#DDD5C6] bg-white text-[#2D4A34] hover:bg-[#FBF8F1] hover:text-[#2D4A34]"
+                />
+              </div>
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-directions="true"
+                data-place-id={placeId}
+                onClick={(event) => event.stopPropagation()}
+                className="pointer-events-auto relative z-[2] inline-flex h-[46px] min-w-0 items-center justify-center gap-1.5 rounded-[16px] border-[1.5px] border-[#DDD5C6] bg-white px-2 text-[14px] font-black text-[#2D4A34] transition-colors hover:bg-[#FBF8F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/30 max-[359px]:px-1 max-[359px]:text-[13.5px]"
+              >
+                {/* En 320px el texto completo no entra con ícono: se va el ícono, no el texto. */}
+                <Navigation className="h-4 w-4 shrink-0 max-[359px]:hidden" strokeWidth={2.1} aria-hidden />
+                <span className="truncate">Cómo llegar</span>
+              </a>
               <Link
                 href={detailPath}
+                draggable={false}
                 onClick={(event) => {
                   if (draggedRef.current) event.preventDefault()
                 }}
-                className="pointer-events-auto flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C85A2E] px-4 py-3 text-[13px] font-semibold tracking-[0.01em] text-white hover:bg-[#B64320] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
+                className="pointer-events-auto relative z-[2] inline-flex h-[46px] min-w-0 items-center justify-center gap-1 rounded-[16px] bg-[#B84420] px-2 text-[14px] font-black text-white transition-colors hover:bg-[#A33B1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/50 focus-visible:ring-offset-2 max-[359px]:px-1 max-[359px]:text-[13.5px]"
               >
-                Ver ficha completa
-                <ArrowRight className="h-4 w-4 stroke-[2]" aria-hidden />
+                <span className="truncate">Ver ficha</span>
+                <ArrowRight className="h-4 w-4 shrink-0 max-[359px]:hidden" strokeWidth={2.2} aria-hidden />
               </Link>
             </div>
-          ) : null}
-        </div>
+          </div>
+        </article>
       </section>
     </div>
   )

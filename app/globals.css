@@ -202,6 +202,19 @@
     background-repeat: no-repeat, no-repeat;
   }
 }
+@media (min-width: 1024px) {
+  /* Desktop ancho: texto a la izquierda sobre oliva liso y el mapa a la derecha,
+     a toda la altura, con los pines encima (antes la mitad derecha quedaba vacía). */
+  .celi-hero-mapa {
+    background-image:
+      linear-gradient(180deg, rgba(45, 74, 52, 0) 72%, #2d4a34 100%),
+      linear-gradient(90deg, #2d4a34 0%, rgba(45, 74, 52, 0.97) 34%, rgba(45, 74, 52, 0.6) 58%, rgba(45, 74, 52, 0.3) 100%),
+      url("/brand/hero/mapa-noche.svg");
+    background-size: 100% 100%, 100% 100%, cover;
+    background-position: 0 0, 0 0, center;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+}
 
 /* Textura solo en hero (home); evita grain global que Chrome mezcla mal con blur */
 .celimap-hero-noise {
@@ -375,16 +388,17 @@
   animation: map-popover-out var(--motion-close) var(--ease-in-out) both;
 }
 
+/* Velo muy leve: con el mapa "papel" un velo negro lo dejaba gris y sucio. */
 @keyframes map-sheet-backdrop-in {
   from { opacity: 0; }
-  to { opacity: 0.2; }
+  to { opacity: 0.08; }
 }
 @keyframes map-sheet-backdrop-out {
-  from { opacity: 0.2; }
+  from { opacity: 0.08; }
   to { opacity: 0; }
 }
 .map-sheet-backdrop {
-  background: #000;
+  background: #1f2a22;
   animation: map-sheet-backdrop-in var(--motion-sheet) var(--ease-out) both;
 }
 .map-sheet-backdrop.is-leaving {

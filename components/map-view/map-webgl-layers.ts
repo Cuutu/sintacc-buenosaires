@@ -71,6 +71,15 @@ const SAFETY_COLOR_EXPR = [
   "#CFC9BF",
 ] as const
 
+/**
+ * Halo del pin elegido (en la punta): disco del color del lugar con borde nítido.
+ * Con 14% y borde crema se veía como una mancha gris sobre el mapa "papel".
+ */
+const SELECTED_HALO_RADIUS = 15
+const SELECTED_HALO_OPACITY = 0.2
+const SELECTED_HALO_STROKE_WIDTH = 1.5
+const SELECTED_HALO_STROKE_OPACITY = 0.45
+
 /** 1–9 / 10–49 / 50–199 / 200+ */
 const CLUSTER_RADIUS_EXPR = [
   "step",
@@ -401,12 +410,12 @@ export function ensurePlacesLayers(
     type: "circle",
     source: SELECTED_SOURCE,
     paint: {
-      "circle-radius": ["case", ["==", ["get", "mode"], "selected"], 16, 10],
+      "circle-radius": ["case", ["==", ["get", "mode"], "selected"], SELECTED_HALO_RADIUS, 10],
       "circle-color": SAFETY_COLOR_EXPR as unknown as string,
-      "circle-opacity": 0.14,
-      "circle-stroke-width": 1.5,
-      "circle-stroke-color": "#F6F1E8",
-      "circle-stroke-opacity": 0.14,
+      "circle-opacity": SELECTED_HALO_OPACITY,
+      "circle-stroke-width": SELECTED_HALO_STROKE_WIDTH,
+      "circle-stroke-color": SAFETY_COLOR_EXPR as unknown as string,
+      "circle-stroke-opacity": SELECTED_HALO_STROKE_OPACITY,
     },
   })
 
@@ -513,13 +522,13 @@ export function ensurePlacesLayers(
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-radius", [
         "case",
         ["==", ["get", "mode"], "selected"],
-        16,
+        SELECTED_HALO_RADIUS,
         10,
       ])
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-opacity", 0.14)
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-width", 1.5)
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-color", "#F6F1E8")
-      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-opacity", 0.14)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-opacity", SELECTED_HALO_OPACITY)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-width", SELECTED_HALO_STROKE_WIDTH)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-color", SAFETY_COLOR_EXPR as unknown as string)
+      map.setPaintProperty(LAYER_SELECTED_HALO, "circle-stroke-opacity", SELECTED_HALO_STROKE_OPACITY)
       map.setPaintProperty(LAYER_SELECTED_HALO, "circle-translate", [0, 0])
     } catch {
       /* capa vieja */

@@ -77,7 +77,7 @@ describe("MapTopBar — selector de seguridad mobile", () => {
     expect(radio("Todos").getAttribute("aria-checked")).toBe("true")
   })
 
-  it("escritorio: los chips usan el mismo filtro por tags (así el modo 100% se ve igual)", () => {
+  it("escritorio: el mismo selector por tags (así el modo 100% se ve igual)", () => {
     const onChange = jest.fn()
     act(() => {
       root.render(
@@ -89,14 +89,34 @@ describe("MapTopBar — selector de seguridad mobile", () => {
         />
       )
     })
-    const chip = (label: string) =>
-      Array.from(container.querySelectorAll("button")).find((b) => b.textContent?.trim() === label) as HTMLButtonElement
-    expect(chip("100% sin TACC").getAttribute("aria-pressed")).toBe("true")
-    act(() => chip("Tiene opciones").click())
+    expect(radio("100% sin TACC").getAttribute("aria-checked")).toBe("true")
+    expect(radio("Todos").getAttribute("aria-checked")).toBe("false")
+    act(() => radio("Con opciones").click())
     expect(onChange).toHaveBeenCalledWith({
       search: "",
       tags: ["delivery", "opciones_sin_tacc"],
       safetyLevel: undefined,
     })
+  })
+
+  it("escritorio: los filtros activos se ven y se sacan sin abrir el panel", () => {
+    const onChange = jest.fn()
+    act(() => {
+      root.render(
+        <MapTopBar
+          variant="sidebar"
+          filters={{ search: "", tags: ["100_gf", "cocina_separada"], type: "cafe" }}
+          onFiltersChange={onChange}
+          onSearchChange={jest.fn()}
+        />
+      )
+    })
+    const filtros = Array.from(container.querySelectorAll("button")).find((b) =>
+      b.textContent?.startsWith("Filtros")
+    )
+    expect(filtros?.textContent).toBe("Filtros2")
+    const quitar = container.querySelector('[aria-label="Quitar filtro Cocina separada"]') as HTMLButtonElement
+    act(() => quitar.click())
+    expect(onChange).toHaveBeenCalledWith({ search: "", tags: ["100_gf"], type: "cafe" })
   })
 })

@@ -32,8 +32,9 @@ export function HomeDirectoryLinks() {
     .filter((city): city is NonNullable<typeof city> => Boolean(city))
 
   return (
-    <section className="px-4 py-8 md:py-16" aria-labelledby="directory-heading">
-      <div className="container mx-auto max-w-5xl">
+    <section className="px-4 py-8 md:px-5 md:py-16" aria-labelledby="directory-heading">
+      {/* px-0: mismo borde que Guías y Destacados (el container de Tailwind suma 2rem). */}
+      <div className="container mx-auto max-w-5xl px-0">
         <h2
           id="directory-heading"
           className="font-display text-2xl font-bold tracking-[-0.02em] text-olive md:text-3xl"

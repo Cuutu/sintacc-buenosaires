@@ -6,6 +6,7 @@ import {
   type PlaceLocationFields,
 } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
+import type { PlaceReviewSource } from "@/lib/place-review-display"
 import type { IPlace } from "@/models/Place"
 
 export { getCanonicalPlaceArea }
@@ -66,6 +67,55 @@ export function getPlaceSafety(place: IPlace): PlaceCardSafety {
     badgeBorder: "rgba(207,201,191,0.9)",
     badgeText: "#6B645C",
   }
+}
+
+export type PlaceCoverTheme = {
+  bg: string
+  ink: string
+  texture: "celi-trigo-crema" | "celi-trigo-oliva"
+}
+
+/** Portada editorial de la tarjeta cuando el lugar no tiene foto. */
+export function getPlaceCoverTheme(place: IPlace): PlaceCoverTheme {
+  const level = inferSafetyLevel(place) ?? "unknown"
+  if (level === "dedicated_gf") {
+    return { bg: "#2D4A34", ink: "#F7F3EB", texture: "celi-trigo-crema" }
+  }
+  if (level === "gf_options") {
+    return { bg: "#EAD9C6", ink: "#2D4A34", texture: "celi-trigo-oliva" }
+  }
+  return { bg: "#E4E0D6", ink: "#2D4A34", texture: "celi-trigo-oliva" }
+}
+
+export type PlaceCardRating = {
+  score: string
+  source: "CeliMap" | "Google"
+  /** Texto completo para lectores de pantalla: "Google 4.5 · 120 reseñas". */
+  label: string
+}
+
+/**
+ * Un solo puntaje para la tarjeta, siempre con su fuente: el de la comunidad si
+ * hay reseñas en CeliMap, si no el de Google. Nunca inventa uno.
+ */
+export function getPlaceCardRating(place: PlaceReviewSource): PlaceCardRating | null {
+  const totalReviews = place.stats?.totalReviews ?? 0
+  const avgRating = place.stats?.avgRating ?? 0
+  if (totalReviews > 0 && avgRating > 0) {
+    const score = avgRating.toFixed(1)
+    return {
+      score,
+      source: "CeliMap",
+      label: `CeliMap ${score} · ${totalReviews} reseña${totalReviews === 1 ? "" : "s"}`,
+    }
+  }
+  const googleRating = place.googleSnapshot?.rating
+  if (googleRating == null) return null
+  const score = googleRating.toFixed(1)
+  const count = place.googleSnapshot?.userRatingCount
+  const countBit =
+    count != null ? ` · ${count.toLocaleString("es-AR")} reseña${count === 1 ? "" : "s"}` : ""
+  return { score, source: "Google", label: `Google ${score}${countBit}` }
 }
 
 export function formatShortPlaceAddress(place: PlaceLocationFields): string {

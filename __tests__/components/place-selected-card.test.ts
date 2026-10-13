@@ -1,5 +1,12 @@
 import type { IPlace } from "@/models/Place"
-import { formatShortPlaceAddress, getPlaceSheetDetailTags } from "@/components/map-view/place-selected-card-model"
+import fs from "fs"
+import path from "path"
+import {
+  formatShortPlaceAddress,
+  getPlaceCardRating,
+  getPlaceCoverTheme,
+  getPlaceSheetDetailTags,
+} from "@/components/map-view/place-selected-card-model"
 import { buildPlacePopupHtml } from "@/components/map-view/map-popup-html"
 import { getPlaceReviewLines } from "@/lib/place-review-display"
 
@@ -72,5 +79,37 @@ describe("ficha seleccionada del mapa", () => {
     expect(getPlaceSheetDetailTags(["certificado_sin_tacc"])).toEqual([
       { id: "certificado_sin_tacc", label: "Insumos certificados" },
     ])
+  })
+
+  it("tarjeta: un solo puntaje, con fuente; comunidad primero; nunca inventado", () => {
+    expect(getPlaceCardRating(fakePlace())).toBeNull()
+    expect(
+      getPlaceCardRating(fakePlace({ googleSnapshot: { rating: 5, userRatingCount: 9 } } as Partial<IPlace>))
+    ).toEqual({ score: "5.0", source: "Google", label: "Google 5.0 · 9 reseñas" })
+    expect(
+      getPlaceCardRating(
+        fakePlace({
+          googleSnapshot: { rating: 4.2, userRatingCount: 300 },
+          stats: { avgRating: 4.6, totalReviews: 1 },
+        } as unknown as Partial<IPlace>)
+      )
+    ).toEqual({ score: "4.6", source: "CeliMap", label: "CeliMap 4.6 · 1 reseña" })
+  })
+
+  it("tarjeta: portada sin foto según el estado (tags mandan)", () => {
+    expect(getPlaceCoverTheme(fakePlace({ tags: ["100_gf"] })).bg).toBe("#2D4A34")
+    expect(getPlaceCoverTheme(fakePlace({ tags: ["100_gf", "opciones_sin_tacc"] })).bg).toBe("#EAD9C6")
+    expect(getPlaceCoverTheme(fakePlace({ tags: [] })).bg).toBe("#E4E0D6")
+  })
+
+  it("tarjeta mobile: aviso de la comunidad, sin la línea de reseñas vacías", () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), "components/map-view/MobileMapBottomSheet.tsx"),
+      "utf8"
+    )
+    expect(src).toContain("Información de la comunidad. Confirmá siempre en el local.")
+    expect(src).toContain("getPlaceCardRating")
+    expect(src).not.toContain("PlaceRatingRow")
+    expect(src).toContain('data-sheet-action="close"')
   })
 })

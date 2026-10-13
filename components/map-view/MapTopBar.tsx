@@ -8,7 +8,6 @@ import { openCeliBot } from "@/lib/celibot-open"
 import { safetyModeFromTags, withSafetyMode, type SafetyMode } from "@/lib/safety-mode"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
-import { MapLegend } from "./MapLegend"
 import { CountUp } from "./CountUp"
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion"
 import type { PlaceSortOption } from "./place-sort"
@@ -62,50 +61,53 @@ interface MapTopBarProps {
   locationMessage?: string | null
 }
 
-function FilterChip({
-  active,
+const TAG_CHIP_IDS = new Set<string>(TAG_CHIPS.map((chip) => chip.id))
+
+const SAFETY_OPTIONS = [
+  { mode: "todos" as const, label: "Todos", short: "Todos", dot: null, activeDot: null },
+  { mode: "cien" as const, label: "100% sin TACC", short: "100%", dot: "bg-[#1F4D35]", activeDot: "bg-[#F7F3EB]" },
+  { mode: "opc" as const, label: "Con opciones", short: "Opciones", dot: "bg-[#C85A2E]", activeDot: "bg-[#C85A2E]" },
+]
+
+/** Filtro activo en escritorio: se ve sin abrir el panel y se saca con la cruz. */
+function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex h-9 items-center gap-0.5 rounded-full bg-[#2D4A34]/[0.08] pl-3 pr-1 text-[13px] font-bold text-[#2D4A34]">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Quitar filtro ${label}`}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#2D4A34]/70 hover:bg-[#2D4A34]/10 hover:text-[#2D4A34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden />
+      </button>
+    </span>
+  )
+}
+
+function PanelChip({
   label,
+  active,
   onClick,
-  onClear,
-  tone = "primary",
-  pressed,
 }: {
-  active: boolean
   label: string
+  active: boolean
   onClick: () => void
-  onClear?: () => void
-  tone?: "primary" | "amber" | "neutral" | "olive" | "terracotta"
-  pressed?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-pressed={pressed ?? active}
+      aria-pressed={active}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
-        active && tone === "olive" && "border-olive bg-olive text-cream",
-        active && tone === "terracotta" && "border-[#B84420] bg-[#B84420] text-white",
-        active && tone === "primary" && "border-primary bg-primary text-primary-foreground",
-        active && tone === "amber" && "border-[#B84420] bg-[#B84420] text-white",
-        active && tone === "neutral" && "border-primary bg-primary text-primary-foreground",
-        !active && "border-[#1F4D35]/12 bg-transparent text-[#1F4D35]/70 hover:border-[#1F4D35]/22 hover:text-[#1F4D35]"
+        "inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-bold transition-[color,background-color,border-color,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        active
+          ? "border-[#2D4A34] bg-[#2D4A34] text-[#F7F3EB]"
+          : "border-[#E6DFD2] bg-white text-[#2D4A34] hover:border-[#2D4A34]/30 hover:bg-[#FBF8F1]"
       )}
     >
-      <span>{label}</span>
-      {active && onClear && (
-        <span
-          role="presentation"
-          onClick={(e) => {
-            e.stopPropagation()
-            onClear()
-          }}
-          className="ml-0.5 inline-flex rounded-full p-0.5 opacity-80 hover:opacity-100"
-          aria-hidden
-        >
-          <X className="h-3 w-3" />
-        </span>
-      )}
+      {label}
     </button>
   )
 }
@@ -159,13 +161,6 @@ export function MapTopBar({
   // Mismo filtro de seguridad que el selector mobile (tags excluyentes): así el modo
   // "Sólo 100% sin TACC" se ve y se cambia igual en escritorio.
   const safetyMode = safetyModeFromTags(filters.tags)
-  const toggleSafety = (mode: Exclude<SafetyMode, "todos">) => {
-    onFiltersChange({
-      ...filters,
-      safetyLevel: undefined,
-      tags: withSafetyMode(filters.tags, safetyMode === mode ? "todos" : mode),
-    })
-  }
 
   const handleChipsMouseDown = (e: React.MouseEvent) => {
     if (!chipsRef.current) return
@@ -244,115 +239,151 @@ export function MapTopBar({
           </div>
         ) : null}
 
+        {/* Mismo selector que en mobile: excluyente, y el punto de color hace de leyenda. */}
+        <div
+          role="radiogroup"
+          aria-label="Qué lugares mostrar"
+          className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] gap-0.5 rounded-full bg-[#1F4D35]/[0.06] p-1"
+        >
+          {SAFETY_OPTIONS.map((opt) => {
+            const active = safetyMode === opt.mode
+            return (
+              <button
+                key={opt.mode}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={opt.label}
+                onClick={() =>
+                  onFiltersChange({
+                    ...filters,
+                    safetyLevel: undefined,
+                    tags: withSafetyMode(filters.tags, opt.mode),
+                  })
+                }
+                className={cn(
+                  "inline-flex h-10 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-bold tracking-[0.005em] transition-[color,background-color,box-shadow,transform] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:duration-[80ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 motion-reduce:transition-none motion-reduce:active:scale-100",
+                  active
+                    ? "bg-[#2D4A34] text-[#F7F3EB] shadow-[0_4px_12px_-6px_rgba(31,42,34,0.55)]"
+                    : "text-[#1F4D35]/80 hover:text-[#1F4D35]"
+                )}
+              >
+                {opt.dot ? (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "h-2 w-2 shrink-0 rounded-full ring-2",
+                      active ? opt.activeDot : opt.dot,
+                      active ? "ring-[#F7F3EB]/40" : "ring-white"
+                    )}
+                  />
+                ) : null}
+                <span className="truncate">{opt.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
         <div ref={moreRef} className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={safetyMode === "cien"}
-              label="100% sin TACC"
-              tone="olive"
-              onClick={() => toggleSafety("cien")}
-              onClear={() => toggleSafety("cien")}
-            />
-            <FilterChip
-              active={safetyMode === "opc"}
-              label="Tiene opciones"
-              tone="terracotta"
-              onClick={() => toggleSafety("opc")}
-              onClear={() => toggleSafety("opc")}
-            />
-            <FilterChip
-              active={Boolean(filters.type)}
-              label={filters.type ? TYPE_LABELS[filters.type] ?? "Tipo" : "Tipo de lugar"}
-              tone="neutral"
-              onClick={() => setMoreOpen(true)}
-              onClear={
-                filters.type
-                  ? () => onFiltersChange({ ...filters, type: undefined })
-                  : undefined
-              }
-            />
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               aria-expanded={moreOpen}
               aria-controls="mapa-more-filters"
               className={cn(
-                "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
-                moreActiveCount > 0 || moreOpen
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-olive/15 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-olive"
+                "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-bold text-[#2D4A34] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                moreOpen
+                  ? "border-[#2D4A34]/40 bg-[#2D4A34]/[0.06]"
+                  : "border-[#2D4A34]/15 bg-white hover:border-[#2D4A34]/30"
               )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
-              Más filtros
+              <SlidersHorizontal className="h-4 w-4" aria-hidden />
+              Filtros
               {moreActiveCount > 0 && (
-                <span className="rounded-full bg-black/20 px-1.5 text-[10px]">{moreActiveCount}</span>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2D4A34] px-1.5 text-[11px] font-black text-[#F7F3EB]">
+                  {moreActiveCount}
+                </span>
               )}
             </button>
-          </div>
 
-          <MapLegend />
+            {/* Filtros activos a la vista, cada uno se saca con su cruz. */}
+            {filters.type ? (
+              <ActiveFilterChip
+                label={TYPE_LABELS[filters.type] ?? "Tipo"}
+                onRemove={() => onFiltersChange({ ...filters, type: undefined })}
+              />
+            ) : null}
+            {TAG_CHIPS.filter((chip) => filters.tags.includes(chip.id)).map((chip) => (
+              <ActiveFilterChip key={chip.id} label={chip.label} onRemove={() => toggleTag(chip.id)} />
+            ))}
+          </div>
 
           {/* Inline panel: evita corte por overflow del aside */}
           {moreOpen && (
             <div
               id="mapa-more-filters"
               role="region"
-              aria-label="Más filtros"
-              className="max-h-[min(50vh,360px)] overflow-y-auto rounded-2xl border border-olive/15 bg-card p-4"
+              aria-label="Filtros"
+              className="max-h-[min(55vh,380px)] overflow-y-auto rounded-[20px] border border-[#E6DFD2] bg-white p-4 shadow-[0_14px_30px_-20px_rgba(31,42,34,0.35)]"
             >
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Tipo de lugar
-                </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] font-extrabold text-[#2D4A34]">Tipo de lugar</p>
                 <button
                   type="button"
                   onClick={() => setMoreOpen(false)}
-                  className="rounded-full p-1 text-muted-foreground hover:bg-olive/10 hover:text-olive"
+                  className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#2D4A34]/60 hover:bg-[#2D4A34]/[0.06] hover:text-[#2D4A34]"
                   aria-label="Cerrar filtros"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {TYPES.map((type) => (
-                  <button
+                  <PanelChip
                     key={type.value}
-                    type="button"
+                    label={TYPE_LABELS[type.value] ?? type.label}
+                    active={filters.type === type.value}
                     onClick={() => toggleType(type.value)}
-                    aria-pressed={filters.type === type.value}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                      filters.type === type.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-olive/10 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-muted-foreground"
-                    )}
-                  >
-                    {TYPE_LABELS[type.value] ?? type.label}
-                  </button>
+                  />
                 ))}
               </div>
 
-              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Características
-              </p>
-              <div className="flex flex-wrap gap-1.5">
+              <p className="mt-4 text-[13px] font-extrabold text-[#2D4A34]">Características</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {TAG_CHIPS.map((chip) => (
-                  <button
+                  <PanelChip
                     key={chip.id}
-                    type="button"
+                    label={chip.label}
+                    active={filters.tags.includes(chip.id)}
                     onClick={() => toggleTag(chip.id)}
-                    aria-pressed={filters.tags.includes(chip.id)}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                      filters.tags.includes(chip.id)
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-olive/10 bg-olive/5 text-muted-foreground hover:border-olive/20 hover:text-muted-foreground"
-                    )}
-                  >
-                    {chip.label}
-                  </button>
+                  />
                 ))}
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#2D4A34]/[0.08] pt-3">
+                {moreActiveCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        type: undefined,
+                        tags: filters.tags.filter((tag) => !TAG_CHIP_IDS.has(tag)),
+                      })
+                    }
+                    className="h-9 rounded-full px-3 text-[13px] font-bold text-[#5E6A60] hover:text-[#2D4A34]"
+                  >
+                    Borrar
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="h-9 rounded-full bg-[#2D4A34] px-4 text-[13px] font-extrabold text-[#F7F3EB] hover:bg-[#24402D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 focus-visible:ring-offset-2"
+                >
+                  Listo
+                </button>
               </div>
             </div>
           )}
@@ -426,12 +457,6 @@ export function MapTopBar({
     if (didDragRef.current) return
     onFiltersChange({ ...filters, tags: withSafetyMode(filters.tags, mode) })
   }
-
-  const safetyOptions = [
-    { mode: "todos" as const, label: "Todos", short: "Todos", dot: null, activeDot: null },
-    { mode: "cien" as const, label: "100% sin TACC", short: "100%", dot: "bg-[#1F4D35]", activeDot: "bg-[#F7F3EB]" },
-    { mode: "opc" as const, label: "Con opciones", short: "Opciones", dot: "bg-[#C85A2E]", activeDot: "bg-[#C85A2E]" },
-  ]
 
   return (
     <div
@@ -510,7 +535,7 @@ export function MapTopBar({
         className="scrollbar-hide -mx-0.5 grid max-w-full min-w-0 select-none grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] gap-0.5 overflow-x-auto rounded-full bg-[#1F4D35]/[0.06] p-1"
         data-overflow-allowed="map-chips"
       >
-        {safetyOptions.map((opt) => {
+        {SAFETY_OPTIONS.map((opt) => {
           const active = safetyMode === opt.mode
           return (
             <button

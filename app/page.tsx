@@ -145,7 +145,7 @@ export default async function HomePage() {
 
       <section className="px-4 pb-4 pt-12 md:px-5 md:py-16">
         {/* px-0: el container de Tailwind suma 2rem y duplicaba el margen lateral (24 vs 58 px). */}
-        <div className="container mx-auto max-w-6xl px-0">
+        <div className="container mx-auto max-w-5xl px-0">
           <HomeFeatured places={featuredPlaces.length ? featuredPlaces : undefined} />
         </div>
       </section>
