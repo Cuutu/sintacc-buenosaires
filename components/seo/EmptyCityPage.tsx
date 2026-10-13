@@ -84,7 +84,7 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
   }
 
   return (
-    <div className="container py-8 overflow-x-hidden">
+    <div className="container max-w-5xl overflow-x-hidden px-4 py-8 md:px-5 md:py-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -103,7 +103,7 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
 
       {/* Hero */}
       <section className="mb-12 pt-4">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
+        <h1 className="mb-4 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
           Lugares sin TACC en {nombre} — Guía para celíacos
         </h1>
         <p className="text-muted-foreground text-lg max-w-3xl leading-relaxed mb-6">

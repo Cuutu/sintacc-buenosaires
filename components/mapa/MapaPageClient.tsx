@@ -49,6 +49,8 @@ const SEARCH_DEBOUNCE_MS = 650
 const MIN_SEARCH_LENGTH = 2
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
+/** Si el mapa no avisa su área (sin WebGL, red lenta), la lista no espera más que esto. */
+const VIEWPORT_WAIT_MAX_MS = 8000
 
 function bboxParam(bounds: MapViewportBounds): string {
   return `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`
@@ -81,6 +83,12 @@ function MapaContent() {
   const [loading, setLoading] = useState(true)
   const [placesError, setPlacesError] = useState<string | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(placeIdFromUrl)
+  // La primera página sin bbox es de todo el país: filtrada al área del mapa a veces deja
+  // 1 lugar. Hasta que llega lo del área visible, la lista muestra el esqueleto.
+  const [awaitingViewport, setAwaitingViewport] = useState(true)
+  // Un ?place= de otra ciudad no viene en lo que trae el mapa al abrir: se pide aparte
+  // para que la tarjeta se abra y el mapa vaya hasta ese lugar.
+  const [deepLinkPlace, setDeepLinkPlace] = useState<IPlace | null>(null)
   const [filters, setFilters] = useState<MapFilters>(() => ({
     search: searchParams.get("search") || "",
     tags: [],
@@ -140,6 +148,34 @@ function MapaContent() {
   useEffect(() => {
     if (selectedPlaceId) unlockStoreBanner()
   }, [selectedPlaceId])
+
+  useEffect(() => {
+    if (!awaitingViewport) return
+    const timer = window.setTimeout(() => setAwaitingViewport(false), VIEWPORT_WAIT_MAX_MS)
+    return () => window.clearTimeout(timer)
+  }, [awaitingViewport])
+
+  useEffect(() => {
+    if (!placeIdFromUrl) {
+      setDeepLinkPlace(null)
+      return
+    }
+    let cancelled = false
+    fetchApi<IPlace>(`/api/places/${encodeURIComponent(placeIdFromUrl)}`)
+      .then((place) => {
+        if (cancelled || place?._id == null) return
+        setDeepLinkPlace(place)
+        // ?place= también acepta el slug; la selección va siempre por _id.
+        const id = String(place._id)
+        setSelectedPlaceId((current) => (current === placeIdFromUrl ? id : current))
+      })
+      .catch(() => {
+        /* lugar inexistente o sin red: el mapa abre como siempre */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [placeIdFromUrl])
 
   useEffect(() => {
     if (!initialPlaceParamRef.current && readOnly100()) {
@@ -348,6 +384,7 @@ function MapaContent() {
         await mergeIntoPlacesCache(key, batch)
         if (requestSeq !== fetchRequestSeqRef.current) return false
         applyMerged(key)
+        setAwaitingViewport(false)
         const next = nextViewportPage({
           page,
           received: batch.length,
@@ -416,7 +453,10 @@ function MapaContent() {
         setLoading(false)
         return true
       } catch {
-        if (requestSeq === fetchRequestSeqRef.current) setLoading(false)
+        if (requestSeq === fetchRequestSeqRef.current) {
+          setLoading(false)
+          setAwaitingViewport(false)
+        }
         return false
       }
     }
@@ -498,10 +538,13 @@ function MapaContent() {
         // Ya tenemos todo el filtro: el bbox no traería nada nuevo. Guardamos el viewport
         // para que un cambio de filtro pida el área que se está viendo, no una vieja.
         lastBoundsRef.current = bounds
+        setAwaitingViewport(false)
       } else if (forceRefreshRef.current || !hasFreshViewportTile(tileKey)) {
         void fetchPlaces({ bounds, silent: true }).then((ok) => {
           if (ok) rememberViewportTile(tileKey, [])
         })
+      } else {
+        setAwaitingViewport(false)
       }
 
       const params = new URLSearchParams(searchParams.toString())
@@ -544,15 +587,22 @@ function MapaContent() {
   }, [pathname, router, searchParams])
 
   // Que el selector y los pines digan lo mismo (ver refinePlacesBySafetyMode).
-  const visiblePlaces = useMemo(
-    () => refinePlacesBySafetyMode(places, safetyModeFromTags(filters.tags)),
-    [places, filters.tags]
-  )
+  const visiblePlaces = useMemo(() => {
+    const refined = refinePlacesBySafetyMode(places, safetyModeFromTags(filters.tags))
+    if (!deepLinkPlace) return refined
+    const deepLinkId = String(deepLinkPlace._id)
+    if (selectedPlaceId !== deepLinkId) return refined
+    if (refined.some((place) => String(place._id) === deepLinkId)) return refined
+    return [...refined, deepLinkPlace]
+  }, [places, filters.tags, deepLinkPlace, selectedPlaceId])
+
+  // Con búsqueda la lista no se recorta al área del mapa: no hace falta esperarla.
+  const listLoading = loading || (awaitingViewport && !debouncedSearch.trim())
 
   return (
     <MapScreen
       places={visiblePlaces}
-      loading={loading}
+      loading={listLoading}
       loadError={placesError}
       onRetryLoad={() => {
         lastFetchedFilterKeyRef.current = null

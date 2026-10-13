@@ -18,7 +18,7 @@ export function PlaceGoogleSection({ snapshot }: Props) {
       className={`${placeCardClass} p-5`}
       aria-labelledby="google-reviews-heading"
     >
-      <h2 id="google-reviews-heading" className="text-lg font-semibold text-[#1F4D35]">
+      <h2 id="google-reviews-heading" className="text-lg font-semibold text-[#1F4D35] lg:text-[22px] lg:font-extrabold lg:tracking-[-0.02em]">
         En Google
       </h2>
       <p className="mt-1 text-base text-[#5F6B63]">Reseñas externas, no de CeliMap.</p>

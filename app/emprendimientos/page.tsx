@@ -41,7 +41,7 @@ export default async function EmprendimientosPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#F3EEE4] px-5 py-16 md:px-8">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <VentureCardSkeleton key={i} />
             ))}

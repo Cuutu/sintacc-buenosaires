@@ -63,6 +63,7 @@ export const metadata: Metadata = {
 export default function SobreNosotrosPage() {
   return (
     <InstitutionalPage
+      eyebrow="sobre CeliMap"
       breadcrumbs={[{ label: "Sobre nosotros" }]}
       h1="Sobre nosotros"
       intro={description}

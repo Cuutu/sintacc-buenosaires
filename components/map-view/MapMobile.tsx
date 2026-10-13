@@ -426,15 +426,20 @@ export function MapMobile({
             className="pointer-events-auto inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-[#1F4D35]/12 bg-[#FDFBF7]/92 px-4 py-2.5 text-sm font-semibold tracking-[0.01em] text-[#1F4D35] shadow-[0_8px_24px_-12px_rgba(45,74,52,0.28)] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-5"
           >
             <List className="h-4 w-4 shrink-0 stroke-[1.85]" aria-hidden />
-            <span className="inline-flex items-baseline gap-1">
-              <span>Ver</span>
-              <VerLugaresCount count={sortedPlaces.length} reduceMotion={reduceMotion} />
-              <span>
-                {activeQuery
-                  ? `en ${activeQuery}`
-                  : `lugar${sortedPlaces.length !== 1 ? "es" : ""}`}
+            {loading ? (
+              // Mientras llega lo del área visible, sin número (no "Ver 1 lugar").
+              <span>Ver lugares</span>
+            ) : (
+              <span className="inline-flex items-baseline gap-1">
+                <span>Ver</span>
+                <VerLugaresCount count={sortedPlaces.length} reduceMotion={reduceMotion} />
+                <span>
+                  {activeQuery
+                    ? `en ${activeQuery}`
+                    : `lugar${sortedPlaces.length !== 1 ? "es" : ""}`}
+                </span>
               </span>
-            </span>
+            )}
           </button>
         </div>
       )}

@@ -21,7 +21,7 @@ export function VentureLandingPage({
 }: VentureLandingPageProps) {
   return (
     <div className="min-h-screen bg-[#F3EEE4]">
-      <div className="container mx-auto max-w-6xl px-5 py-8 md:px-8">
+      <div className="container mx-auto max-w-5xl px-5 py-8">
         <Link
           href="/emprendimientos"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"

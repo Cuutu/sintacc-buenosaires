@@ -66,6 +66,7 @@ export const metadata: Metadata = {
 export default function MapaParaCeliacosPage() {
   return (
     <InstitutionalPage
+      eyebrow="para la comunidad celíaca"
       breadcrumbs={[{ label: "Mapa para celíacos" }]}
       h1="Mapa para celíacos: encontrá lugares sin TACC"
       intro={`${CELIMAP_DESCRIPTION_SHORT} Esta página resume cómo usar el mapa y las guías por ciudad.`}

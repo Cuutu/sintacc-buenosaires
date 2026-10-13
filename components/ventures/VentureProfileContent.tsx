@@ -91,7 +91,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
   const hasBuyLinks = Boolean(links.whatsapp || links.instagram || links.web)
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-12">
+    <div className="container mx-auto max-w-2xl px-4 py-8 pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-12 lg:max-w-5xl lg:px-5 lg:pt-10">
       <Breadcrumbs
         items={[
           { label: "Emprendimientos", href: "/emprendimientos" },
@@ -99,8 +99,9 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
         ]}
       />
 
-      <article className="mt-6 overflow-hidden rounded-2xl border border-olive/10 bg-olive/5">
-        <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden">
+      {/* Compu: foto a la izquierda (alto completo) y datos a la derecha. */}
+      <article className="mt-6 overflow-hidden rounded-2xl border border-olive/10 bg-olive/5 lg:grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:rounded-[28px]">
+        <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden lg:aspect-auto lg:min-h-[480px]">
           {photo ? (
             <Image
               src={photo}
@@ -108,7 +109,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               fill
               className="object-cover"
               priority
-              sizes="(max-width: 768px) 100vw, 672px"
+              sizes="(max-width: 1024px) 100vw, 480px"
             />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1F4D35]/10 px-6 text-center">
@@ -169,7 +170,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
             </p>
 
             <div>
-              <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl">
+              <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl lg:font-serif lg:text-[46px] lg:font-medium lg:italic lg:leading-[1.0] lg:tracking-[-0.02em] lg:text-[#2D4A34]">
                 {venture.name}
               </h1>
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground md:text-base">
@@ -300,7 +301,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
       {related.length > 0 && (
         <section className="mt-12 space-y-4">
           <h2 className="text-lg font-bold">Emprendimientos relacionados</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((v) => (
               <VentureCard key={v._id} venture={v} />
             ))}

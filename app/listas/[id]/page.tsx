@@ -76,7 +76,7 @@ export default function ListaDetailPage() {
 
   if (loading || !list) {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="container mx-auto max-w-5xl px-4 py-8 md:px-5">
         <div className="py-12 text-center text-muted-foreground">
           {loading ? "Cargando..." : "Lista no encontrada"}
         </div>
@@ -97,7 +97,7 @@ export default function ListaDetailPage() {
     : null
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
+    <div className="container mx-auto max-w-5xl px-4 py-6 md:px-5 md:py-8">
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-olive">
           Inicio

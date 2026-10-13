@@ -102,7 +102,7 @@ export default async function SinGlutenCiudadCategoriaPage({
 
   if (total === 0) {
     return (
-      <div className="container py-12">
+      <div className="container max-w-5xl px-4 py-12 md:px-5">
         <p className="text-muted-foreground">
           No hay {catName.toLowerCase()} registradas aún en {city.name}.
         </p>
@@ -111,7 +111,7 @@ export default async function SinGlutenCiudadCategoriaPage({
   }
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-5xl px-4 py-8 md:px-5 md:py-12">
       <Breadcrumbs
         items={[
           { label: "Sin gluten Argentina", href: "/sin-gluten-argentina" },
@@ -126,7 +126,7 @@ export default async function SinGlutenCiudadCategoriaPage({
         totalPlaces={total}
         faqs={faqs}
       />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
+      <h1 className="mt-5 mb-6 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getCategoryH1(city, categoriaSlug)}
       </h1>
       <p className="mb-6 max-w-3xl text-muted-foreground">
@@ -140,14 +140,14 @@ export default async function SinGlutenCiudadCategoriaPage({
         topNeighborhoods={topNeighborhoods}
       />
       <section className="mt-10" aria-labelledby="cat-faq">
-        <h2 id="cat-faq" className="mb-4 text-xl font-semibold">
+        <h2 id="cat-faq" className="mb-2 text-[24px] font-extrabold tracking-[-0.025em] text-olive">
           Preguntas frecuentes
         </h2>
-        <dl className="space-y-4">
+        <dl className="border-b border-[#E2DACB]">
           {faqs.map((faq) => (
-            <div key={faq.question} className="rounded-xl border border-border bg-card p-4">
-              <dt className="font-medium">{faq.question}</dt>
-              <dd className="mt-2 text-sm text-muted-foreground">{faq.answer}</dd>
+            <div key={faq.question} className="border-t border-[#E2DACB] py-5">
+              <dt className="text-[17px] font-extrabold leading-snug text-olive">{faq.question}</dt>
+              <dd className="mt-2 text-[15.5px] leading-relaxed text-[#5E6A60]">{faq.answer}</dd>
             </div>
           ))}
         </dl>

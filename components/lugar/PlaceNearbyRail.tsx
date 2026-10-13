@@ -15,11 +15,11 @@ export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
 
   return (
     <section aria-labelledby="nearby-heading">
-      <h2 id="nearby-heading" className="mb-4 text-lg font-semibold text-[#1F4D35]">
+      <h2 id="nearby-heading" className="mb-4 text-lg font-semibold text-[#1F4D35] lg:text-[22px] lg:font-extrabold lg:tracking-[-0.02em]">
         Cerca de este lugar
       </h2>
       <div
-        className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1"
+        className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible lg:px-0"
         data-overflow-allowed="nearby-rail"
       >
         {items.map((place) => {
@@ -30,7 +30,7 @@ export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
             <Link
               key={place._id}
               href={getPlacePath(place)}
-              className="w-[220px] shrink-0 rounded-[20px] border border-[#E8E1D6] bg-[#FDFBF7] p-3 transition-transform active:scale-[0.99]"
+              className="w-[220px] shrink-0 rounded-[20px] border border-[#E8E1D6] bg-[#FDFBF7] p-3 transition-[transform,border-color] hover:border-[#1F4D35]/25 active:scale-[0.99] lg:w-auto"
             >
               <div className="relative mb-3 h-16 w-16 overflow-hidden rounded-2xl bg-[#1F4D35]/10">
                 {photo ? (

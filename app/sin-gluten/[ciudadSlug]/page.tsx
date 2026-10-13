@@ -233,7 +233,7 @@ export default async function SinGlutenCiudadPage({
   }
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-5xl px-4 py-8 md:px-5 md:py-12">
       <TrackPageView event="city_page_view" properties={{ city: ciudadSlug, total }} />
       <Breadcrumbs
         items={[
@@ -250,13 +250,13 @@ export default async function SinGlutenCiudadPage({
         ]}
       />
       <CityPageJsonLd city={city} places={places} totalPlaces={total} faqs={faqs} />
-      <h1 className="mt-4 mb-3 text-2xl font-bold md:text-3xl">
+      <h1 className="mt-5 mb-4 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getCityH1(city, stats)}
       </h1>
       {HUB_SPOKE_SLUGS[ciudadSlug] ? (
         <CityHubIntro city={city} stats={stats} />
       ) : (
-        <p className="mb-6 max-w-3xl text-muted-foreground">
+        <p className="mb-8 max-w-3xl text-lg leading-relaxed text-[#5E6A60]">
           En {city.name} hay {stats.total} lugar{stats.total === 1 ? "" : "es"} en CeliMap
           {stats.dedicatedGf > 0
             ? `, de los cuales ${stats.dedicatedGf} figuran como 100% libres de gluten`
@@ -289,14 +289,14 @@ export default async function SinGlutenCiudadPage({
         nearbyCities={nearbyCities}
       />
       <section className="mt-10" aria-labelledby="city-faq">
-        <h2 id="city-faq" className="mb-4 text-xl font-semibold">
+        <h2 id="city-faq" className="mb-2 text-[24px] font-extrabold tracking-[-0.025em] text-olive">
           Preguntas frecuentes
         </h2>
-        <dl className="space-y-4">
+        <dl className="border-b border-[#E2DACB]">
           {faqs.map((faq) => (
-            <div key={faq.question} className="rounded-xl border border-border bg-card p-4">
-              <dt className="font-medium">{faq.question}</dt>
-              <dd className="mt-2 text-sm text-muted-foreground">{faq.answer}</dd>
+            <div key={faq.question} className="border-t border-[#E2DACB] py-5">
+              <dt className="text-[17px] font-extrabold leading-snug text-olive">{faq.question}</dt>
+              <dd className="mt-2 text-[15.5px] leading-relaxed text-[#5E6A60]">{faq.answer}</dd>
             </div>
           ))}
         </dl>

@@ -1,24 +1,32 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ExternalLink, MapPin, Navigation, Share2 } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, Info, Navigation, Share2, Star, X } from "lucide-react"
 import type { IPlace } from "@/models/Place"
 import type { MapboxMapRef } from "./MapboxMap"
 import { computePopoverPlacement, type PopoverPlacement } from "./popover-placement"
 import {
   formatShortPlaceAddress,
   getCanonicalPlaceArea,
+  getPlaceCardRating,
+  getPlaceCoverTheme,
   getPlaceDetailPath,
   getPlaceDirectionsUrl,
   getPlaceGoogleMapsUrl,
+  getPlaceSafety,
+  getPlaceSheetDetailTags,
   getPlaceTypeLabel,
 } from "./place-selected-card-model"
-import { PlaceRatingRow, PlaceSafetyBadge, PlaceTypeGlyph } from "./PlaceCardBits"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import { getPlaceImageUrl } from "@/lib/place-image"
+import { getOpenStatusLabel } from "@/lib/opening-hours"
 import { trackEvent } from "@/lib/analytics"
 import { recordCommitment } from "@/lib/analytics-discovery"
 import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
 import { FavoriteButton } from "@/components/favorite-button"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 interface DesktopMapPopoverProps {
@@ -28,6 +36,7 @@ interface DesktopMapPopoverProps {
   closing?: boolean
 }
 
+/** Misma tarjeta "Edición" que en el celular, anclada al pin. */
 export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: DesktopMapPopoverProps) {
   const cardRef = React.useRef<HTMLElement>(null)
   const [placement, setPlacement] = React.useState<PopoverPlacement | null>(null)
@@ -108,14 +117,28 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
     }
   }, [onClose])
 
-  const meta = [getPlaceTypeLabel(place), getCanonicalPlaceArea(place)].filter(Boolean).join(" • ")
+  const meta = [getPlaceTypeLabel(place), getCanonicalPlaceArea(place)].filter(Boolean).join(" · ")
   const address = formatShortPlaceAddress(place)
   const detailPath = getPlaceDetailPath(place)
   const directionsUrl = getPlaceDirectionsUrl(place)
   const googleMapsUrl = getPlaceGoogleMapsUrl(place)
+  const photoSrc = getPlaceImageUrl(place.photos?.[0], "popup")
+  const safety = getPlaceSafety(place)
+  const safetyLevel = inferSafetyLevel(place) ?? "unknown"
+  const cover = getPlaceCoverTheme(place)
+  const rating = getPlaceCardRating(place)
+  // El popover sólo existe después de un click (nunca en el HTML del servidor).
+  const openLabel = getOpenStatusLabel(place.openingHours)
+  const openNow = openLabel != null && openLabel !== "Cerrado"
+  const detailTags = getPlaceSheetDetailTags(place.tags)
+  const onPhoto = Boolean(photoSrc)
+  const coverInk = onPhoto ? "#FFFFFF" : cover.ink
+  const lightInk = coverInk !== "#2D4A34"
+  const nameSize =
+    place.name.length > 34 ? "text-[22px]" : place.name.length > 20 ? "text-[26px]" : "text-[31px]"
 
   const handleShare = async () => {
-    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${detailPath}`
+    const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${detailPath}`
     try {
       if (navigator.share) {
         await navigator.share({ title: place.name, url: shareUrl })
@@ -129,6 +152,15 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
       // User cancelled
     }
   }
+
+  const coverButtonClass = cn(
+    "pointer-events-auto relative z-[2] flex h-9 w-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
+    onPhoto
+      ? "bg-black/35 text-white backdrop-blur-sm hover:bg-black/50 focus-visible:ring-white/70"
+      : lightInk
+        ? "bg-[#F7F3EB]/[0.14] text-[#F7F3EB] hover:bg-[#F7F3EB]/[0.24] focus-visible:ring-[#F7F3EB]/60"
+        : "bg-[#2D4A34]/10 text-[#2D4A34] hover:bg-[#2D4A34]/[0.16] focus-visible:ring-[#2D4A34]/40"
+  )
 
   return (
     <>
@@ -145,7 +177,7 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
         ref={cardRef}
         role="dialog"
         aria-label={place.name}
-        className={`pointer-events-auto absolute z-30 w-[min(340px,calc(100%-24px))] overflow-visible ${
+        className={`pointer-events-auto absolute z-30 w-[min(360px,calc(100%-24px))] overflow-visible ${
           closing ? "map-popover-leave" : "map-popover-enter"
         }`}
         style={
@@ -154,46 +186,158 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
             : { left: 16, top: 16, visibility: "hidden" }
         }
       >
-      <div className="relative overflow-hidden rounded-[22px] border border-[var(--map-paper-border)] bg-[var(--map-paper-bg)] p-4 shadow-[0_12px_32px_-14px_rgba(45,74,52,0.22)]">
-        <div className="pointer-events-none relative z-[1]">
-          <div className="flex items-center justify-between gap-3">
-            <PlaceSafetyBadge place={place} />
-            <PlaceTypeGlyph place={place} />
-          </div>
-          <h2 className="mt-3 line-clamp-2 text-[20px] font-bold leading-[1.18] tracking-[-0.02em] text-[#1F4D35]">
-            {place.name}
-          </h2>
-          {meta ? (
-            <p className="mt-1 text-[13px] font-medium text-[#5F6B63]">{meta}</p>
-          ) : null}
-          {address ? (
-            <p className="mt-2.5 flex items-start gap-2 text-[13px] leading-snug text-[#5F6B63]">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 stroke-[1.85] text-[#1F4D35]" aria-hidden />
-              <span className="line-clamp-1 min-w-0">{address}</span>
-            </p>
-          ) : null}
-          <a
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-google-maps="true"
-            onClick={(event) => event.stopPropagation()}
-            className="pointer-events-auto mt-1.5 inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#1F4D35] underline underline-offset-2 hover:text-[#1F4D35]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+        <div className="relative rounded-[28px] bg-white p-2 shadow-[0_28px_60px_-24px_rgba(31,42,34,0.5),0_0_0_1px_rgba(45,74,52,0.07)]">
+          {/* Toda la tarjeta lleva a la ficha; los botones van por encima. */}
+          <Link
+            href={detailPath}
+            className="absolute inset-0 z-0 rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/30"
+            aria-label={`Ver ${place.name}`}
+          />
+
+          <div
+            className={cn(
+              "pointer-events-none relative z-[1] h-[156px] overflow-hidden rounded-[21px]",
+              !onPhoto && cover.texture
+            )}
+            style={onPhoto ? undefined : { backgroundColor: cover.bg }}
           >
-            Ver en Google Maps
-            <ExternalLink className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-          </a>
-          <PlaceRatingRow place={place} className="mt-2.5" />
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleShare}
-                className="pointer-events-auto inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+            {photoSrc ? (
+              <>
+                <Image src={photoSrc} alt="" fill className="object-cover" sizes="360px" />
+                <span
+                  className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,30,23,0.3)_0%,rgba(20,30,23,0)_34%,rgba(20,30,23,0.1)_52%,rgba(20,30,23,0.74)_100%)]"
+                  aria-hidden
+                />
+              </>
+            ) : null}
+
+            <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+              <span className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-full bg-[#F7F3EB] px-2.5 text-[12px] font-black leading-none text-[#1F4D35] shadow-[0_4px_12px_-6px_rgba(20,30,23,0.45)]">
+                {safetyLevel === "dedicated_gf" ? (
+                  <Check className="h-3 w-3 shrink-0" strokeWidth={3.2} aria-hidden />
+                ) : (
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: safety.accent }}
+                    aria-hidden
+                  />
+                )}
+                <span className="truncate">{safety.label}</span>
+              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    void handleShare()
+                  }}
+                  aria-label="Compartir"
+                  title="Compartir"
+                  className={coverButtonClass}
+                >
+                  <Share2 className="h-4 w-4" strokeWidth={2.1} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onClose()
+                  }}
+                  aria-label="Cerrar"
+                  title="Cerrar (Esc)"
+                  className={coverButtonClass}
+                >
+                  <X className="h-4 w-4" strokeWidth={2.2} aria-hidden />
+                </button>
+              </div>
+            </div>
+
+            <h2
+              className={cn(
+                "absolute inset-x-4 bottom-3 line-clamp-2 font-serif font-medium italic leading-[1.0] tracking-[-0.02em]",
+                nameSize,
+                onPhoto && "[text-shadow:0_1px_12px_rgba(0,0,0,0.35)]"
+              )}
+              style={{ color: coverInk }}
+            >
+              {place.name}
+            </h2>
+          </div>
+
+          <div className="pointer-events-none relative z-[1] px-2 pb-1 pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-[14.5px] font-extrabold text-[#2D4A34]">
+                {meta || "Lugar"}
+              </p>
+              {rating ? (
+                <p
+                  className="flex shrink-0 items-center gap-1 text-[14.5px] font-black text-[#2D4A34]"
+                  title={rating.label}
+                >
+                  <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" aria-hidden />
+                  <span aria-hidden>{rating.score}</span>
+                  <span className="text-[11.5px] font-bold text-[#5E6A60]" aria-hidden>
+                    {rating.source}
+                  </span>
+                  <span className="sr-only">{rating.label}</span>
+                </p>
+              ) : null}
+            </div>
+
+            {openLabel || address ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[12.5px] text-[#5E6A60]">
+                {openLabel ? (
+                  <span className={cn("shrink-0 font-bold", openNow ? "text-[#1F4D35]" : "text-[#5E6A60]")}>
+                    {openLabel}
+                  </span>
+                ) : null}
+                {openLabel && address ? <span aria-hidden>·</span> : null}
+                {address ? (
+                  <a
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-google-maps="true"
+                    title="Abrir en Google Maps"
+                    onClick={(event) => event.stopPropagation()}
+                    className="pointer-events-auto relative z-[2] inline-flex min-w-0 items-center gap-1 underline decoration-[#5E6A60]/40 underline-offset-2 hover:text-[#2D4A34]"
+                  >
+                    <span className="min-w-0 truncate">{address}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+                    <span className="sr-only">(abre Google Maps)</span>
+                  </a>
+                ) : null}
+              </p>
+            ) : null}
+
+            {detailTags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {detailTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex h-[22px] items-center rounded-full bg-[#F1ECE2] px-2 text-[11px] font-bold text-[#2D4A34]"
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <p className="mt-2 flex items-start gap-1.5 text-[12px] leading-[1.35] text-[#5E6A60] [text-wrap:pretty]">
+              <Info className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+              Información de la comunidad. Confirmá siempre en el local.
+            </p>
+
+            <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+              <div
+                className="pointer-events-auto relative z-[2]"
+                onClick={(event) => event.stopPropagation()}
               >
-                <Share2 className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                Compartir
-              </button>
+                <FavoriteButton
+                  placeId={placeId}
+                  className="h-11 w-11 rounded-[15px] border-[1.5px] border-[#DDD5C6] bg-white text-[#2D4A34] hover:bg-[#FBF8F1] hover:text-[#2D4A34]"
+                />
+              </div>
               <a
                 href={directionsUrl}
                 target="_blank"
@@ -201,33 +345,23 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
                 data-directions="true"
                 data-place-id={placeId}
                 onClick={(event) => event.stopPropagation()}
-                className="pointer-events-auto relative z-[2] inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#1F4D35]/20 bg-white/55 px-3.5 text-[12px] font-semibold tracking-[0.01em] text-[#1F4D35] hover:bg-[#1F4D35]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
+                className="pointer-events-auto relative z-[2] inline-flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-[15px] border-[1.5px] border-[#DDD5C6] bg-white px-2 text-[14px] font-black text-[#2D4A34] transition-colors hover:bg-[#FBF8F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/30"
               >
-                <Navigation className="h-3.5 w-3.5 stroke-[1.85]" aria-hidden />
-                Cómo llegar
+                <Navigation className="h-4 w-4 shrink-0" strokeWidth={2.1} aria-hidden />
+                <span className="truncate">Cómo llegar</span>
               </a>
-            </div>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="pointer-events-auto"
-            >
-              <FavoriteButton
-                placeId={placeId}
-                className="h-10 w-10 text-[#1F4D35]"
-              />
+              <Link
+                href={detailPath}
+                className="pointer-events-auto relative z-[2] inline-flex h-11 min-w-0 items-center justify-center gap-1 rounded-[15px] bg-[#B84420] px-2 text-[14px] font-black text-white transition-colors hover:bg-[#A33B1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/50 focus-visible:ring-offset-2"
+              >
+                <span className="truncate">Ver ficha</span>
+                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+              </Link>
             </div>
           </div>
-          <Link
-            href={detailPath}
-            className="pointer-events-auto mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C85A2E] px-4 py-2.5 text-[13px] font-semibold tracking-[0.01em] text-white hover:bg-[#B64320] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
-          >
-            Ver ficha completa
-            <ArrowRight className="h-4 w-4 stroke-[2]" aria-hidden />
-          </Link>
         </div>
-      </div>
-      {placement ? <PopoverArrow side={placement.side} x={placement.arrowX} y={placement.arrowY} /> : null}
-    </article>
+        {placement ? <PopoverArrow side={placement.side} x={placement.arrowX} y={placement.arrowY} /> : null}
+      </article>
     </>
   )
 }
@@ -241,8 +375,7 @@ function PopoverArrow({
   x: number
   y: number
 }) {
-    const base =
-    "pointer-events-none absolute h-3.5 w-3.5 rotate-45 border-[var(--map-paper-border)] bg-[var(--map-paper-bg)]"
+  const base = "pointer-events-none absolute h-3.5 w-3.5 rotate-45 border-[rgba(45,74,52,0.07)] bg-white"
   if (side === "top") {
     return (
       <span

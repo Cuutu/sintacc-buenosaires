@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
-import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
+import { EditorialArticle } from "@/components/seo/EditorialArticle"
 import { getPublishedGuides, getAllGuides } from "@/lib/seo/guides"
 import { isDraftGuidePreviewEnv } from "@/lib/seo/guide-access"
 import { CELIMAP_NAME } from "@/lib/seo/brand"
@@ -38,84 +38,73 @@ export default function GuiasIndexPage() {
     : []
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 md:py-14">
-      <Breadcrumbs items={[{ label: "Guías" }]} />
-      <h1 className="mt-6 mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-        Guías para celíacos
-      </h1>
-      <p className="mb-8 text-lg text-muted-foreground">
-        Artículos prácticos sobre cómo leer las fichas de CeliMap y qué preguntar al comer
-        afuera.
-      </p>
-
-      {published.length === 0 ? (
-        <p className="mb-8 rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
-          Todavía no hay guías publicadas. Mientras tanto podés explorar el{" "}
-          <Link href="/mapa" className="text-primary hover:underline">
-            mapa
+    <EditorialArticle
+      breadcrumbs={[{ label: "Guías" }]}
+      eyebrow="para comer afuera"
+      h1="Guías para celíacos"
+      intro="Artículos prácticos sobre cómo leer las fichas de CeliMap y qué preguntar al comer afuera."
+      secondaryCta={{ href: "/como-verificamos-los-lugares", label: "Metodología de datos" }}
+      after={
+        <p className="mt-10 text-[15px] leading-relaxed text-[#5E6A60]">
+          También:{" "}
+          <Link href="/que-es-celimap" className="font-bold text-[#B84420] underline decoration-[#B84420]/35 underline-offset-[3px]">
+            qué es CeliMap
+          </Link>
+          ,{" "}
+          <Link href="/por-que-usar-celimap" className="font-bold text-[#B84420] underline decoration-[#B84420]/35 underline-offset-[3px]">
+            por qué usarlo
           </Link>{" "}
-          o leer{" "}
-          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
-            cómo trabajamos la información
+          y{" "}
+          <Link href="/comprar-productos-sin-tacc" className="font-bold text-[#B84420] underline decoration-[#B84420]/35 underline-offset-[3px]">
+            dónde comprar productos Sin TACC
           </Link>
           .
         </p>
+      }
+    >
+      {published.length === 0 ? (
+        <p>
+          Todavía no hay guías publicadas. Mientras tanto podés explorar el{" "}
+          <Link href="/mapa">mapa</Link> o leer{" "}
+          <Link href="/como-verificamos-los-lugares">cómo trabajamos la información</Link>.
+        </p>
       ) : (
-        <ul className="space-y-4">
-          {published.map((guide) => (
-            <li key={guide.slug} className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-lg font-semibold">
-                <Link href={`/guias/${guide.slug}`} className="hover:text-primary">
-                  {guide.title}
-                </Link>
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">{guide.summary}</p>
+        <ol className="border-b border-[#E2DACB]">
+          {published.map((guide, i) => (
+            <li key={guide.slug} className="border-t border-[#E2DACB]">
+              <Link
+                href={`/guias/${guide.slug}`}
+                className="group grid grid-cols-[56px_1fr_24px] items-start gap-2 py-5 !font-normal !no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
+              >
+                <span className="font-serif text-[36px] italic leading-none text-[#B84420]" aria-hidden>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <span className="block text-[19px] font-extrabold leading-snug text-olive group-hover:underline group-hover:decoration-olive/30 group-hover:underline-offset-4">
+                    {guide.title}
+                  </span>
+                  <span className="mt-1 block text-[15px] leading-relaxed text-[#5E6A60]">{guide.summary}</span>
+                </span>
+                <ArrowRight className="mt-1 h-5 w-5 text-olive transition-transform group-hover:translate-x-0.5" strokeWidth={2} aria-hidden />
+              </Link>
             </li>
           ))}
-        </ul>
+        </ol>
       )}
 
       {drafts.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-lg font-semibold text-amber-700 dark:text-amber-400">
-            Borradores (solo desarrollo / preview)
-          </h2>
+        <section>
+          <h2 className="!text-amber-700">Borradores (solo desarrollo / preview)</h2>
           <ul className="space-y-3">
             {drafts.map((guide) => (
               <li key={guide.slug} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-                <Link href={`/guias/${guide.slug}`} className="font-medium hover:underline">
-                  {guide.title}
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">No indexable · no aparece en producción</p>
+                <Link href={`/guias/${guide.slug}`}>{guide.title}</Link>
+                <p className="mt-1 text-xs">No indexable · no aparece en producción</p>
               </li>
             ))}
           </ul>
         </section>
       )}
-
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-        <Button asChild>
-          <Link href="/mapa">Explorar el mapa</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/como-verificamos-los-lugares">Metodología de datos</Link>
-        </Button>
-      </div>
-      <p className="mt-6 text-sm text-muted-foreground">
-        También:{" "}
-        <Link href="/que-es-celimap" className="text-primary hover:underline">
-          qué es CeliMap
-        </Link>
-        ,{" "}
-        <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
-          por qué usarlo
-        </Link>{" "}
-        y{" "}
-        <Link href="/comprar-productos-sin-tacc" className="text-primary hover:underline">
-          dónde comprar productos Sin TACC
-        </Link>
-        .
-      </p>
-    </main>
+    </EditorialArticle>
   )
 }

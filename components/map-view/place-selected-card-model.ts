@@ -77,7 +77,11 @@ export type PlaceCoverTheme = {
 
 /** Portada editorial de la tarjeta cuando el lugar no tiene foto. */
 export function getPlaceCoverTheme(place: IPlace): PlaceCoverTheme {
-  const level = inferSafetyLevel(place) ?? "unknown"
+  return getCoverThemeForLevel(inferSafetyLevel(place))
+}
+
+/** Misma portada a partir del nivel ya resuelto (p. ej. la ficha, que lo calcula en el servidor). */
+export function getCoverThemeForLevel(level: string | null | undefined): PlaceCoverTheme {
   if (level === "dedicated_gf") {
     return { bg: "#2D4A34", ink: "#F7F3EB", texture: "celi-trigo-crema" }
   }

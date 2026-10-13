@@ -43,11 +43,12 @@ describe("catálogo /emprendimientos", () => {
     expect(src).not.toContain("placeholderWash")
   })
 
-  it("grid 4 columnas y CTA sugerir visible, no banner de dueño", () => {
+  it("grid de 3 columnas (mismo ancho que el resto del sitio) y CTA sugerir visible, no banner de dueño", () => {
     const page = read("app/emprendimientos/EmprendimientosPageContent.tsx")
     const explore = read("components/ventures/VentureExploreSections.tsx")
     const cta = read("components/ventures/SuggestVentureCta.tsx")
-    expect(page).toContain("xl:grid-cols-4")
+    expect(page).toContain("lg:grid-cols-3")
+    expect(page).toContain("max-w-5xl")
     expect(page).toContain("SuggestVentureCta")
     expect(cta).toContain("/sugerir-emprendimiento")
     expect(cta).toContain("Sugerir emprendimiento")

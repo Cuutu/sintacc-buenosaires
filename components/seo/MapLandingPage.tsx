@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { EditorialArticle } from "@/components/seo/EditorialArticle"
 import { MapPin, ArrowRight, CheckCircle2 } from "lucide-react"
 import { CITIES } from "@/lib/seo/cities"
 import { getBaseUrl } from "@/lib/base-url"
@@ -62,113 +62,104 @@ export function MapLandingPage({
   crossLink,
 }: MapLandingPageProps) {
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 md:py-14">
+    <>
       <MapLandingJsonLd
         canonicalPath={canonicalPath}
         metaTitle={metaTitle}
         metaDescription={metaDescription}
         faq={faq}
       />
-
-      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">CeliMap</p>
-      <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">{h1}</h1>
-      <p className="mb-4 text-muted-foreground leading-relaxed">{intro}</p>
-      <p className="mb-8 text-sm text-muted-foreground">
-        CeliMap es un mapa colaborativo para encontrar lugares Sin TACC en Argentina.{" "}
-        <Link href="/que-es-celimap" className="text-primary hover:underline">
-          Qué es CeliMap
-        </Link>
-        .
-      </p>
-
-      <div className="mb-10 flex flex-col gap-3 sm:flex-row">
-        <Button asChild size="lg" className="min-h-[48px] gap-2">
-          <Link href="/mapa">
-            <MapPin className="h-5 w-5" />
-            Abrir mapa interactivo
-          </Link>
-        </Button>
-        <Button asChild size="lg" variant="outline" className="min-h-[48px] gap-2">
-          <Link href="/sin-gluten-argentina">
-            Ver por ciudad
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-
-      <section className="mb-10 space-y-4">
-        {keywordParagraphs.map((paragraph) => (
-          <p key={paragraph.slice(0, 40)} className="text-sm text-muted-foreground leading-relaxed">
-            {paragraph}
+      <EditorialArticle
+        breadcrumbs={[{ label: h1 }]}
+        eyebrow="el mapa de la comunidad"
+        h1={h1}
+        intro={intro}
+        faqs={faq}
+        primaryCta={{ href: "/mapa", label: "Abrir mapa interactivo" }}
+        secondaryCta={{ href: "/sin-gluten-argentina", label: "Ver por ciudad" }}
+        after={
+          crossLink ? (
+            <p className="mt-10 text-[15px] text-[#5E6A60]">
+              ¿Llegaste por otra búsqueda?{" "}
+              <Link
+                href={crossLink.href}
+                className="font-bold text-[#B84420] underline decoration-[#B84420]/35 underline-offset-[3px]"
+              >
+                {crossLink.label}
+              </Link>
+              .
+            </p>
+          ) : null
+        }
+      >
+        <section>
+          <p>
+            CeliMap es un mapa colaborativo para encontrar lugares Sin TACC en Argentina.{" "}
+            <Link href="/que-es-celimap">Qué es CeliMap</Link>.
           </p>
-        ))}
-      </section>
-
-      <section className="mb-10">
-        <h2 className="mb-4 text-xl font-semibold">Ciudades para explorar</h2>
-        <div className="flex flex-wrap gap-2">
-          {CITIES.slice(0, 8).map((city) => (
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              key={city.slug}
-              href={`/sin-gluten/${city.slug}`}
-              className="rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 hover:bg-primary/5 transition-colors"
+              href="/mapa"
+              className="inline-flex h-[50px] items-center justify-center gap-2 rounded-[16px] bg-[#B84420] px-5 text-[15px] font-extrabold !text-white !no-underline transition-colors hover:bg-[#A33B1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/50 focus-visible:ring-offset-2"
             >
-              {city.name}
+              <MapPin className="h-5 w-5" aria-hidden />
+              Abrir mapa interactivo
             </Link>
-          ))}
-        </div>
-      </section>
+            <Link
+              href="/sin-gluten-argentina"
+              className="inline-flex h-[50px] items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#DDD5C6] bg-white px-5 text-[15px] font-extrabold !text-olive !no-underline transition-colors hover:bg-[#FBF8F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
+            >
+              Ver por ciudad
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+        </section>
 
-      <section className="mb-10 rounded-xl border border-border/60 bg-card/40 p-6">
-        <h2 className="mb-4 text-lg font-semibold">¿Por qué usar CeliMap?</h2>
-        <ul className="space-y-3 text-sm text-muted-foreground">
-          {[
-            "Mapa interactivo con filtros por tipo, barrio y clasificación sin TACC",
-            "Reseñas y reportes de la comunidad celíaca cuando existen",
-            "Páginas por ciudad en Argentina, además del mapa",
-            "Gratis, sin registro para explorar",
-          ].map((item) => (
-            <li key={item} className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              {item}
-            </li>
+        <section className="space-y-4">
+          {keywordParagraphs.map((paragraph) => (
+            <p key={paragraph.slice(0, 40)}>{paragraph}</p>
           ))}
-        </ul>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Más detalle en{" "}
-          <Link href="/por-que-usar-celimap" className="text-primary hover:underline">
-            por qué usar CeliMap
-          </Link>
-          . Cómo se carga la información:{" "}
-          <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
-            metodología
-          </Link>
-          .
-        </p>
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{CELIMAP_SAFETY_DISCLAIMER}</p>
-      </section>
+        </section>
 
-      <section className="border-t border-border pt-8">
-        <h2 className="mb-4 text-lg font-semibold">Preguntas frecuentes</h2>
-        <div className="space-y-4">
-          {faq.map((item) => (
-            <div key={item.question}>
-              <h3 className="mb-1 font-medium">{item.question}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+        <section>
+          <h2>Ciudades para explorar</h2>
+          <div className="flex flex-wrap gap-2">
+            {CITIES.slice(0, 8).map((city) => (
+              <Link
+                key={city.slug}
+                href={`/sin-gluten/${city.slug}`}
+                className="inline-flex h-9 items-center rounded-full border-[1.5px] border-[#DDD5C6] bg-white px-3.5 text-sm !text-olive !no-underline transition-colors hover:border-olive/40"
+              >
+                {city.name}
+              </Link>
+            ))}
+          </div>
+        </section>
 
-      {crossLink ? (
-        <p className="mt-10 text-sm text-muted-foreground">
-          ¿Llegaste por otra búsqueda?{" "}
-          <Link href={crossLink.href} className="text-primary hover:underline">
-            {crossLink.label}
-          </Link>
-          .
-        </p>
-      ) : null}
-    </main>
+        <section>
+          <h2>¿Por qué usar CeliMap?</h2>
+          <ul className="space-y-3">
+            {[
+              "Mapa interactivo con filtros por tipo, barrio y clasificación sin TACC",
+              "Reseñas y reportes de la comunidad celíaca cuando existen",
+              "Páginas por ciudad en Argentina, además del mapa",
+              "Gratis, sin registro para explorar",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5">
+                <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-[#2D4A34]" aria-hidden />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4">
+            Más detalle en <Link href="/por-que-usar-celimap">por qué usar CeliMap</Link>. Cómo se
+            carga la información: <Link href="/como-verificamos-los-lugares">metodología</Link>.
+          </p>
+          <p className="mt-4 rounded-[18px] bg-[#F1ECE2] px-5 py-4 text-[15px] leading-relaxed">
+            {CELIMAP_SAFETY_DISCLAIMER}
+          </p>
+        </section>
+      </EditorialArticle>
+    </>
   )
 }

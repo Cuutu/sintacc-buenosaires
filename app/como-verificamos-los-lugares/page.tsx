@@ -64,6 +64,7 @@ export const metadata: Metadata = {
 export default function ComoVerificamosPage() {
   return (
     <InstitutionalPage
+      eyebrow="cómo trabajamos"
       breadcrumbs={[{ label: "Cómo trabajamos la información" }]}
       h1="Cómo trabajamos la información de los lugares en CeliMap"
       intro="Esta página explica con honestidad de dónde sale la información del mapa. No inventamos un proceso de verificación formal que hoy no exista como certificación independiente."

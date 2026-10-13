@@ -54,7 +54,7 @@ export function PlaceCommunityReviews({
   return (
     <section id="reviews-section" aria-labelledby="reviews-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 id="reviews-heading" className="text-lg font-semibold text-[#1F4D35]">
+        <h2 id="reviews-heading" className="text-lg font-semibold text-[#1F4D35] lg:text-[22px] lg:font-extrabold lg:tracking-[-0.02em]">
           Reseñas CeliMap
         </h2>
         {!showReviewForm && reviews.length > 0 && (

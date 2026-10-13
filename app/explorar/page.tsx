@@ -3,11 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { MapPin, Star, Sparkles, Navigation } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { FeaturedCard } from "@/components/featured/FeaturedCard"
+import { PlaceCard } from "@/components/place-card"
 import { TYPES } from "@/lib/constants"
 import { fetchApi } from "@/lib/fetchApi"
-import type { PlaceWithStats } from "@/components/featured/featured-utils"
 import type { IPlace } from "@/models/Place"
 
 type PlaceWithStatsType = IPlace & {
@@ -104,26 +102,47 @@ export default function ExplorarPage() {
     ),
   ]
 
+  const chipClass = (active: boolean) =>
+    `inline-flex h-10 shrink-0 snap-center items-center gap-1.5 rounded-full px-4 text-sm font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30 ${
+      active
+        ? "bg-[#2D4A34] text-[#F7F3EB]"
+        : "border-[1.5px] border-[#DDD5C6] bg-white text-[#2D4A34] hover:border-[#2D4A34]/35"
+    }`
+
+  const renderGrid = (loading: boolean, list: PlaceWithStatsType[], empty: string) =>
+    loading ? (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-[248px] animate-pulse rounded-[26px] bg-[#EFE9DE]" />
+        ))}
+      </div>
+    ) : list.length === 0 ? (
+      <p className="py-4 text-[15px] text-[#5E6A60]">{empty}</p>
+    ) : (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {list.map((place) => (
+          <PlaceCard key={place._id.toString()} place={place} />
+        ))}
+      </div>
+    )
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-2">Explorar</h1>
-      <p className="text-muted-foreground mb-6">
-        Resultados
-        <span className="font-medium text-foreground ml-2">
-          {totalResults.length} lugar{totalResults.length !== 1 ? "es" : ""}
-        </span>
+    <div className="container mx-auto max-w-5xl px-4 pb-14 pt-8 md:px-5 md:pt-12">
+      <p className="font-serif text-lg font-medium italic text-[#B84420] md:text-xl">para descubrir</p>
+      <h1 className="mt-1 text-[34px] font-extrabold leading-[1.04] tracking-[-0.035em] text-olive md:text-[50px]">
+        Explorar
+      </h1>
+      <p className="mt-3 text-[15px] font-semibold text-[#5E6A60]">
+        {totalResults.length} lugar{totalResults.length !== 1 ? "es" : ""}
       </p>
 
       {/* Category chips */}
-      <div className="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
+      <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:flex-wrap md:px-0">
         <button
           type="button"
           onClick={() => setSelectedType(null)}
-          className={`px-4 py-2 rounded-full text-sm font-medium shrink-0 snap-center transition-colors ${
-            !selectedType
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted/50 text-muted-foreground hover:bg-muted"
-          }`}
+          aria-pressed={!selectedType}
+          className={chipClass(!selectedType)}
         >
           Todos
         </button>
@@ -132,99 +151,49 @@ export default function ExplorarPage() {
             key={type.value}
             type="button"
             onClick={() => setSelectedType(type.value)}
-            className={`px-4 py-2 rounded-full text-sm font-medium shrink-0 snap-center transition-colors flex items-center gap-1.5 ${
-              selectedType === type.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted"
-            }`}
+            aria-pressed={selectedType === type.value}
+            className={chipClass(selectedType === type.value)}
           >
-            <span>{type.emoji}</span>
+            <span aria-hidden>{type.emoji}</span>
             {type.label}
           </button>
         ))}
       </div>
 
       {/* Cerca tuyo */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Navigation className="h-5 w-5 text-primary" />
+      <section className="mt-10 border-t border-[#E2DACB] pt-8">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <h2 className="flex items-center gap-2 text-[24px] font-extrabold tracking-[-0.025em] text-olive">
+            <Navigation className="h-5 w-5 text-[#B84420]" aria-hidden />
             Cerca tuyo
           </h2>
-          <Link href="/mapa">
-            <Button variant="ghost" size="sm" className="gap-1">
-              Ver mapa
-              <MapPin className="h-4 w-4" />
-            </Button>
+          <Link
+            href="/mapa"
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-extrabold text-olive underline decoration-olive/30 underline-offset-4 hover:text-[#B84420]"
+          >
+            Ver mapa
+            <MapPin className="h-4 w-4" aria-hidden />
           </Link>
         </div>
-        {nearbyLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-        ) : filteredNearby.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">
-            Activa la ubicación para ver lugares cerca tuyo
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredNearby.map((place) => (
-              <FeaturedCard key={place._id.toString()} place={place as PlaceWithStats} />
-            ))}
-          </div>
-        )}
+        {renderGrid(nearbyLoading, filteredNearby, "Activá la ubicación para ver lugares cerca tuyo.")}
       </section>
 
       {/* Mejor valorados */}
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+      <section className="mt-10 border-t border-[#E2DACB] pt-8">
+        <h2 className="mb-5 flex items-center gap-2 text-[24px] font-extrabold tracking-[-0.025em] text-olive">
+          <Star className="h-5 w-5 fill-[#B84420] text-[#B84420]" aria-hidden />
           Mejor valorados
         </h2>
-        {bestRatedLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-        ) : filteredBestRated.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">
-            Aún no hay lugares con reseñas
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredBestRated.map((place) => (
-              <FeaturedCard key={place._id.toString()} place={place as PlaceWithStats} />
-            ))}
-          </div>
-        )}
+        {renderGrid(bestRatedLoading, filteredBestRated, "Todavía no hay lugares con reseñas de la comunidad.")}
       </section>
 
       {/* Nuevos */}
-      <section>
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-primary" />
+      <section className="mt-10 border-t border-[#E2DACB] pt-8">
+        <h2 className="mb-5 flex items-center gap-2 text-[24px] font-extrabold tracking-[-0.025em] text-olive">
+          <Sparkles className="h-5 w-5 text-[#B84420]" aria-hidden />
           Nuevos
         </h2>
-        {newLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-        ) : filteredNew.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">
-            No hay lugares en esta categoría
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredNew.map((place) => (
-              <FeaturedCard key={place._id.toString()} place={place as PlaceWithStats} />
-            ))}
-          </div>
-        )}
+        {renderGrid(newLoading, filteredNew, "No hay lugares en esta categoría.")}
       </section>
     </div>
   )

@@ -75,7 +75,7 @@ export default function ListasPageContent({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto max-w-5xl px-4 pb-14 pt-8 md:px-5 md:pt-12">
       <Link
         href="/"
         className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -86,10 +86,13 @@ export default function ListasPageContent({
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <p className="font-serif text-lg font-medium italic text-[#B84420] md:text-xl">
+            armadas por celíacos
+          </p>
+          <h1 className="mt-1 text-[34px] font-extrabold leading-[1.04] tracking-[-0.035em] text-olive md:text-[50px]">
             Listas de la comunidad
           </h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
+          <p className="mt-3 max-w-2xl text-lg leading-relaxed text-[#5E6A60]">
             Descubrí listas creadas por otros celíacos. Creá la tuya y
             compartila.
           </p>

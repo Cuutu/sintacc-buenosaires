@@ -26,6 +26,9 @@ const PUBLIC_COPY_FILES = [
   "README.md",
   "components/onboarding/OnboardingModal.tsx",
   "components/home/SafetyModeSwitch.tsx",
+  "components/seo/EditorialArticle.tsx",
+  "components/footer-cta.tsx",
+  "components/place-card.tsx",
 ]
 
 const BANNED = [

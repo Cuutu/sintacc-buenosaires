@@ -39,7 +39,7 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
   ]
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-5xl px-4 py-8 md:px-5 md:py-12">
       <ProvincePageJsonLd province={province} places={places} />
       <Breadcrumbs
         items={[
@@ -47,7 +47,7 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
           { label: province.name },
         ]}
       />
-      <h1 className="text-2xl md:text-4xl font-bold mt-4 mb-4">
+      <h1 className="mt-5 mb-4 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getProvincePageH1(province)}
       </h1>
       <p className="text-muted-foreground mb-6 max-w-2xl">

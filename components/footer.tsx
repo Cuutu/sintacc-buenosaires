@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { ChevronDown, Instagram, PlusCircle } from "lucide-react"
+import { ChevronDown, Instagram } from "lucide-react"
 import { BrandLogo } from "@/components/brand/BrandLogo"
+import { FooterCta } from "@/components/footer-cta"
 import { CELIMAP_SAME_AS } from "@/lib/seo/brand"
 
 const INSTAGRAM_URL = CELIMAP_SAME_AS[0]
@@ -89,35 +90,6 @@ function BrandBlock() {
   )
 }
 
-function FooterCta() {
-  return (
-    <section className="bg-[#F3EEE4]" aria-labelledby="footer-cta-heading">
-      <div className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-10">
-        <div className="flex flex-col gap-5 rounded-[24px] border border-[#E8E1D6] bg-[#FDFBF7] px-5 py-7 md:flex-row md:items-center md:justify-between md:gap-10 md:px-8 md:py-8">
-          <div className="min-w-0 md:max-w-xl">
-            <h2
-              id="footer-cta-heading"
-              className="font-display text-[1.5rem] font-semibold leading-tight text-[#1F4D35] md:text-[1.75rem]"
-            >
-              ¿Conocés un lugar sin gluten?
-            </h2>
-              <p className="mt-2 text-base leading-relaxed text-[#5F6B63]">
-              Ayudá a que más personas encuentren opciones Sin TACC.
-            </p>
-          </div>
-          <Link
-            href="/sugerir"
-            className="inline-flex h-[52px] w-full shrink-0 items-center justify-center gap-2 rounded-[16px] bg-[#C85A2E] px-6 text-base font-semibold text-white shadow-[0_8px_18px_-10px_rgba(200,90,46,0.5)] transition-colors hover:bg-[#BE552C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/45 md:w-auto"
-          >
-            <PlusCircle className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            Sugerir un lugar
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 export function Footer() {
   return (
     <div className="mt-auto">
@@ -132,7 +104,7 @@ export function Footer() {
             backgroundRepeat: "repeat",
           }}
         />
-        <div className="relative mx-auto max-w-6xl px-6 py-10 md:px-8 md:py-16">
+        <div className="relative mx-auto max-w-5xl px-6 py-10 md:px-5 md:py-16">
           <div className="lg:grid lg:grid-cols-[minmax(0,0.45fr)_1fr] lg:items-start lg:gap-16">
             <BrandBlock />
 

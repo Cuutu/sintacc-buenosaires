@@ -183,7 +183,8 @@ export function MapDesktop({
                 )}
               />
               <span className="truncate">
-                {sortedPlaces.length} lugar{sortedPlaces.length !== 1 ? "es" : ""} · {activeFilters.join(" · ")}
+                {loading ? null : `${sortedPlaces.length} lugar${sortedPlaces.length !== 1 ? "es" : ""} · `}
+                {activeFilters.join(" · ")}
               </span>
               <button
                 type="button"
@@ -207,7 +208,8 @@ export function MapDesktop({
           onSearchChange={onSearchChange}
           sort={sort}
           onSortChange={setSort}
-          resultCount={sortedPlaces.length}
+          resultCount={loading ? undefined : sortedPlaces.length}
+          resultCountLabel={loading ? "Buscando lugares en esta zona…" : undefined}
           activeQuery={queryChip}
           onClearQuery={queryChip ? () => onSearchChange("") : undefined}
           hasRatings={hasRatings}

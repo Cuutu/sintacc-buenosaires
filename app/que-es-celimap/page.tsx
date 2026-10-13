@@ -68,6 +68,7 @@ export const metadata: Metadata = {
 export default function QueEsCelimapPage() {
   return (
     <InstitutionalPage
+      eyebrow="sobre CeliMap"
       breadcrumbs={[{ label: "Qué es CeliMap" }]}
       h1="Qué es CeliMap: mapa y guía colaborativa sin TACC"
       intro={CELIMAP_DESCRIPTION}

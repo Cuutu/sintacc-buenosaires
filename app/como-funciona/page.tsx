@@ -60,6 +60,7 @@ export const metadata: Metadata = {
 export default function ComoFuncionaPage() {
   return (
     <InstitutionalPage
+      eyebrow="paso a paso"
       breadcrumbs={[{ label: "Cómo funciona" }]}
       h1="Cómo funciona CeliMap"
       intro={`${CELIMAP_DESCRIPTION_SHORT} Acá te contamos el recorrido básico para usarlo.`}

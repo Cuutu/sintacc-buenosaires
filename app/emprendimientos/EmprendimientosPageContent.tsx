@@ -251,12 +251,13 @@ export default function EmprendimientosPageContent({
 
   return (
     <div className="min-h-screen scroll-mt-[var(--desktop-nav-clearance)] bg-[#F3EEE4] pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-16">
-      <div className="mx-auto max-w-6xl px-5 pb-8 pt-6 md:px-8 md:pt-10">
+      <div className="mx-auto max-w-5xl px-5 pb-8 pt-6 md:pt-10">
         <header className="mb-8 max-w-3xl">
-          <h1 className="font-display text-[2rem] font-bold leading-[1.05] tracking-tight text-[#1F4D35] md:text-[2.75rem]">
+          <p className="font-serif text-lg font-medium italic text-[#B84420] md:text-xl">para pedir y comprar</p>
+          <h1 className="mt-1 text-[34px] font-extrabold leading-[1.04] tracking-[-0.035em] text-[#2D4A34] md:text-[50px]">
             Emprendimientos <span className="text-[#C85A2E]">100% sin gluten</span>
           </h1>
-          <p className="mt-3 max-w-xl text-base leading-relaxed text-[#5F6B63]">
+          <p className="mt-3 max-w-xl text-lg leading-relaxed text-[#5E6A60]">
             {VENTURE_CATALOG_INTRO} ¿Falta alguno? Sugerilo, lo revisamos.
           </p>
 
@@ -374,7 +375,7 @@ export default function EmprendimientosPageContent({
 
           {isSearchPending ? (
             <div
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
+              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
               aria-busy="true"
               aria-label="Cargando emprendimientos"
             >
@@ -390,7 +391,7 @@ export default function EmprendimientosPageContent({
               fuera del país.
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((v) => (
                 <VentureCard key={v._id} venture={v} />
               ))}
@@ -419,7 +420,7 @@ export default function EmprendimientosPageContent({
                 {foreignList.length === 1 ? "emprendimiento" : "emprendimientos"}
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {foreignList.map((v) => (
                 <VentureCard key={v._id} venture={v} />
               ))}

@@ -55,6 +55,7 @@ export const metadata: Metadata = {
 export default function ComprarProductosSinTaccPage() {
   return (
     <InstitutionalPage
+      eyebrow="comprar sin TACC"
       breadcrumbs={[{ label: "Comprar Sin TACC" }]}
       h1="Dónde comprar productos Sin TACC en Argentina"
       intro="Si buscás góndola de supermercado, CeliMap no reemplaza a esas cadenas. Si buscás tiendas especializadas o productores, el mapa y el directorio de emprendimientos sí pueden ayudar."

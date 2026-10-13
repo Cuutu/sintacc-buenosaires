@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
-import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
-import { Button } from "@/components/ui/button"
+import { EditorialArticle } from "@/components/seo/EditorialArticle"
+import { TrackAnalyticsClick } from "@/components/analytics/TrackAnalyticsClick"
 import {
   getGuideBySlug,
   getPublishedGuides,
@@ -16,7 +16,6 @@ import { CELIMAP_NAME, CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
 import { getBaseUrl } from "@/lib/base-url"
 import { TrackPageView } from "@/components/analytics/TrackPageView"
 import { authOptions } from "@/lib/auth"
-import { TrackAnalyticsClick } from "@/components/analytics/TrackAnalyticsClick"
 
 const BASE_URL = getBaseUrl()
 
@@ -165,126 +164,118 @@ export default async function GuiaPage({
       ? guide.relatedCitySlugs.map((s) => getCityBySlug(s)).filter(Boolean)
       : []
 
+  const updatedLabel = new Intl.DateTimeFormat("es-AR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(guide.updatedAt))
+
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 md:py-14">
+    <>
       <TrackPageView
         event="guide_page_view"
         properties={{ slug: guide.slug, status: guide.status }}
       />
       <GuideArticleJsonLd guide={guide} />
-      <Breadcrumbs
-        items={[
+      <EditorialArticle
+        breadcrumbs={[
           { label: "Guías", href: "/guias" },
           { label: guide.title },
         ]}
-      />
+        eyebrow="guía para celíacos"
+        h1={guide.title}
+        intro={guide.summary}
+        meta={
+          <>
+            Por {guide.author} · Actualizado{" "}
+            <time dateTime={guide.updatedAt}>{updatedLabel}</time>
+          </>
+        }
+        notice={
+          guide.status === "draft" ? (
+            <p
+              className="mt-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
+              role="status"
+            >
+              Borrador — solo visible en desarrollo, preview o sesión admin. No indexar.
+            </p>
+          ) : null
+        }
+        faqs={guide.faqs}
+        primaryCta={{
+          href: "/mapa",
+          label: "Explorar el mapa",
+          renderLink: (props) => (
+            <TrackAnalyticsClick
+              event="guide_to_map_click"
+              properties={{ slug: guide.slug }}
+              {...props}
+            />
+          ),
+        }}
+        secondaryCta={{
+          href: "/sugerir",
+          label: "Recomendar un lugar",
+          renderLink: (props) => <TrackAnalyticsClick event="suggest_place_click" {...props} />,
+        }}
+        after={
+          <>
+            {guide.sources.length > 0 && (
+              <section className="mt-12">
+                <h2 className="font-serif text-lg font-medium italic text-[#B84420]">Fuentes</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px] text-[#5E6A60]">
+                  {guide.sources.map((s) => (
+                    <li key={s.label}>
+                      {s.url ? (
+                        <Link
+                          href={s.url}
+                          className="font-bold text-[#B84420] underline decoration-[#B84420]/35 underline-offset-[3px]"
+                        >
+                          {s.label}
+                        </Link>
+                      ) : (
+                        s.label
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-      {guide.status === "draft" && (
-        <p
-          className="mt-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
-          role="status"
-        >
-          Borrador — solo visible en desarrollo, preview o sesión admin. No indexar.
-        </p>
-      )}
-
-      <h1 className="mt-6 mb-3 text-3xl font-bold tracking-tight md:text-4xl">
-        {guide.title}
-      </h1>
-      <p className="mb-4 text-lg text-muted-foreground">{guide.summary}</p>
-      <p className="mb-8 text-sm text-muted-foreground">
-        Por {guide.author} · Actualizado{" "}
-        <time dateTime={guide.updatedAt}>
-          {new Intl.DateTimeFormat("es-AR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }).format(new Date(guide.updatedAt))}
-        </time>
-      </p>
-
-      <div className="space-y-8">
+            {relatedCities.length > 0 && (
+              <section className="mt-10">
+                <h2 className="font-serif text-lg font-medium italic text-[#B84420]">
+                  Ciudades relacionadas
+                </h2>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {relatedCities.map((city) =>
+                    city ? (
+                      <li key={city.slug}>
+                        <Link
+                          href={`/sin-gluten/${city.slug}`}
+                          className="inline-flex h-9 items-center rounded-full border-[1.5px] border-[#DDD5C6] bg-white px-3.5 text-sm font-bold text-olive transition-colors hover:border-olive/40"
+                        >
+                          Sin TACC en {city.name}
+                        </Link>
+                      </li>
+                    ) : null
+                  )}
+                </ul>
+              </section>
+            )}
+          </>
+        }
+      >
         {guide.sections.map((section) => (
           <section key={section.heading}>
-            <h2 className="mb-3 text-xl font-semibold">{section.heading}</h2>
-            <p className="leading-7 text-muted-foreground">{section.body}</p>
+            <h2>{section.heading}</h2>
+            <p>{section.body}</p>
           </section>
         ))}
-      </div>
-
-      <p className="mt-8 text-sm text-muted-foreground">{CELIMAP_SAFETY_DISCLAIMER}</p>
-
-      {guide.faqs.length > 0 && (
-        <section className="mt-10" aria-labelledby="guide-faq">
-          <h2 id="guide-faq" className="mb-4 text-xl font-semibold">
-            Preguntas frecuentes
-          </h2>
-          <dl className="space-y-4">
-            {guide.faqs.map((faq) => (
-              <div key={faq.question} className="rounded-xl border border-border bg-card p-4">
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="mt-2 text-sm text-muted-foreground">{faq.answer}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
-      {guide.sources.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold">Fuentes</h2>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-            {guide.sources.map((s) => (
-              <li key={s.label}>
-                {s.url ? (
-                  <Link href={s.url} className="text-primary hover:underline">
-                    {s.label}
-                  </Link>
-                ) : (
-                  s.label
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {relatedCities.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold">Ciudades relacionadas</h2>
-          <ul className="flex flex-wrap gap-3 text-sm">
-            {relatedCities.map((city) =>
-              city ? (
-                <li key={city.slug}>
-                  <Link
-                    href={`/sin-gluten/${city.slug}`}
-                    className="text-primary hover:underline"
-                  >
-                    Sin TACC en {city.name}
-                  </Link>
-                </li>
-              ) : null
-            )}
-          </ul>
-        </section>
-      )}
-
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-        <Button asChild>
-          <TrackAnalyticsClick
-            event="guide_to_map_click"
-            properties={{ slug: guide.slug }}
-            href="/mapa"
-          >
-            Explorar el mapa
-          </TrackAnalyticsClick>
-        </Button>
-        <Button asChild variant="outline">
-          <TrackAnalyticsClick event="suggest_place_click" href="/sugerir">
-            Recomendar un lugar
-          </TrackAnalyticsClick>
-        </Button>
-      </div>
-    </main>
+        <p className="rounded-[18px] bg-[#F1ECE2] px-5 py-4 text-[15px] leading-relaxed">
+          {CELIMAP_SAFETY_DISCLAIMER}
+        </p>
+      </EditorialArticle>
+    </>
   )
 }

@@ -62,6 +62,7 @@ export const metadata: Metadata = {
 export default function ContactoPage() {
   return (
     <InstitutionalPage
+      eyebrow="hablemos"
       breadcrumbs={[{ label: "Contacto" }]}
       h1="Contacto"
       intro={description}

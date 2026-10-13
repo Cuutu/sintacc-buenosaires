@@ -77,7 +77,6 @@ describe("estado abierto/cerrado sin error de hidratación", () => {
         placeId="p1"
         name="Lugar"
         shareUrl="https://www.celimap.com.ar/lugar/x"
-        address="Calle 123"
         openingHours={HOURS}
       />
     )

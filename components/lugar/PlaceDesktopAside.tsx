@@ -1,9 +1,8 @@
 "use client"
 
-import { Clock, MapPin, Phone } from "lucide-react"
+import { Clock, Info } from "lucide-react"
 import { PlacePrimaryActions } from "./PlacePrimaryActions"
 import { PlaceReportCard } from "./PlaceReportCard"
-import { placeCardClass } from "./place-detail-ui"
 import { useClientOpenStatus } from "./use-client-open-status"
 
 interface PlaceDesktopAsideProps {
@@ -11,20 +10,20 @@ interface PlaceDesktopAsideProps {
   placeId: string
   name: string
   shareUrl: string
-  address: string
   openingHours?: string
-  phone?: string
   onReportSuccess?: () => void
 }
 
+/**
+ * Columna fija de la compu: acciones, estado de hoy y reporte. Dirección y teléfono
+ * ya están en "Información", a la izquierda: no se repiten acá.
+ */
 export function PlaceDesktopAside({
   mapsUrl,
   placeId,
   name,
   shareUrl,
-  address,
   openingHours,
-  phone,
   onReportSuccess,
 }: PlaceDesktopAsideProps) {
   const hoursStatus = useClientOpenStatus(openingHours)
@@ -33,8 +32,30 @@ export function PlaceDesktopAside({
 
   return (
     <aside className="hidden lg:block">
-      <div className="sticky top-24 space-y-4">
-        <div className={`${placeCardClass} p-5`}>
+      <div className="sticky top-[calc(var(--desktop-nav-clearance)+1.5rem)] space-y-4">
+        <div className="rounded-[26px] bg-white p-5 shadow-[0_20px_44px_-28px_rgba(31,42,34,0.45),0_0_0_1px_rgba(45,74,52,0.07)]">
+          {hoursStatus.kind !== "raw" ? (
+            <div className="mb-4 flex items-start gap-3 border-b border-[#EFE9DE] pb-4">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#2D4A34]" aria-hidden />
+              <div>
+                <p
+                  className={`text-base font-extrabold ${
+                    !openStatusDetail
+                      ? "text-[#2D4A34]"
+                      : openStatusDetail.isOpen
+                        ? "text-[#2D7A4E]"
+                        : "text-[#8B5A3C]"
+                  }`}
+                >
+                  {openStatusDetail ? openStatusDetail.label : "Horarios"}
+                </p>
+                {openStatusDetail?.relativeText && (
+                  <p className="mt-0.5 text-sm text-[#5E6A60]">{openStatusDetail.relativeText}</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <PlacePrimaryActions
             mapsUrl={mapsUrl}
             placeId={placeId}
@@ -42,46 +63,10 @@ export function PlaceDesktopAside({
             shareUrl={shareUrl}
           />
 
-          <div className="divide-y divide-[#E8E1D6] border-t border-[#E8E1D6]">
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-3 py-4 hover:opacity-80"
-            >
-              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
-              <span className="text-base leading-relaxed text-[#1F4D35]">{address}</span>
-            </a>
-            {hoursStatus.kind !== "raw" ? (
-              <div className="flex items-start gap-3 py-4">
-                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
-                <div>
-                  <p
-                    className={`text-base font-semibold ${
-                      !openStatusDetail
-                        ? "text-[#1F4D35]"
-                        : openStatusDetail.isOpen
-                          ? "text-[#2D7A4E]"
-                          : "text-[#8B5A3C]"
-                    }`}
-                  >
-                    {openStatusDetail ? openStatusDetail.label : "Horarios"}
-                  </p>
-                  {openStatusDetail?.relativeText && (
-                    <p className="mt-0.5 text-sm text-[#5F6B63]">
-                      {openStatusDetail.relativeText}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : null}
-            {phone ? (
-              <a href={`tel:${phone}`} className="flex items-center gap-3 py-4 hover:opacity-80">
-                <Phone className="h-5 w-5 shrink-0 text-[#1F4D35]" />
-                <span className="text-base text-[#1F4D35]">{phone}</span>
-              </a>
-            ) : null}
-          </div>
+          <p className="mt-4 flex items-start gap-2 text-[13px] leading-snug text-[#5E6A60] [text-wrap:pretty]">
+            <Info className="mt-px h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            Información de la comunidad. Confirmá siempre en el local.
+          </p>
         </div>
 
         <PlaceReportCard placeId={placeId} onSuccess={onReportSuccess} />

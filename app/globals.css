@@ -185,6 +185,43 @@
   background-image: url("/brand/hero/trigo-oliva.svg");
   background-size: 150px 150px;
 }
+/* Texto largo "Edición" (páginas institucionales y guías). Pisa los estilos sueltos que
+   trae cada página (text-xl, text-muted-foreground) para que todas se lean igual. */
+.celi-prose {
+  color: #45514a;
+  font-size: 17px;
+  line-height: 1.7;
+}
+.celi-prose > * + * {
+  margin-top: 2.5rem;
+}
+.celi-prose h2 {
+  margin-bottom: 0.625rem;
+  color: #2d4a34;
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.celi-prose p,
+.celi-prose li {
+  color: #45514a;
+}
+.celi-prose a {
+  color: #b84420;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(184, 68, 32, 0.35);
+  text-underline-offset: 3px;
+}
+.celi-prose a:hover {
+  text-decoration-color: currentColor;
+}
+@media (min-width: 768px) {
+  .celi-prose h2 {
+    font-size: 1.625rem;
+  }
+}
 /* Hero oliva: mapa nocturno de fondo + velo para leer el texto (no es decoración de color). */
 .celi-hero-mapa {
   background-color: #2d4a34;

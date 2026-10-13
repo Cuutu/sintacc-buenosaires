@@ -90,7 +90,8 @@ export default async function LugarPage({ params }: LugarPageProps) {
     <div className="min-h-full bg-[#F8F5EF] pb-8 lg:pb-16">
       <TrackPageView event="place_view" properties={placeProperties} />
       <TrackPlaceDwell placeId={placeId} properties={placeProperties} />
-      <div className="lg:mx-auto lg:grid lg:max-w-[1100px] lg:grid-cols-[minmax(0,760px)_minmax(280px,320px)] lg:items-start lg:gap-10 lg:px-8 lg:pt-8">
+      {/* Compu: mismo ancho que la barra (max-w-5xl) y columna de acciones fija a la derecha. */}
+      <div className="lg:mx-auto lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_316px] lg:items-start lg:gap-12 lg:px-5 lg:pt-10">
         <div className="min-w-0">
           <PlaceHero
             photos={place.photos}
@@ -101,13 +102,16 @@ export default async function LugarPage({ params }: LugarPageProps) {
             safetyLevel={effectiveSafety}
           />
 
-          <div className="space-y-8 px-5 pt-6 lg:px-0">
+          <div className="space-y-8 px-5 pt-6 lg:space-y-10 lg:px-0 lg:pt-8">
             <header>
-              <h1 className="text-[32px] font-bold leading-tight tracking-tight text-[#1F4D35]">
+              {/* En la compu el nombre va en Fraunces itálica, como en las tarjetas. */}
+              <h1 className="text-[32px] font-bold leading-tight tracking-tight text-[#1F4D35] lg:font-serif lg:text-[52px] lg:font-medium lg:italic lg:leading-[1.0] lg:tracking-[-0.02em] lg:text-[#2D4A34] lg:[text-wrap:balance]">
                 {place.name}
               </h1>
               {categoryLine ? (
-                <p className="mt-2 text-base text-[#5F6B63]">{categoryLine}</p>
+                <p className="mt-2 text-base text-[#5F6B63] lg:mt-3 lg:text-lg lg:font-bold lg:text-[#5E6A60]">
+                  {categoryLine}
+                </p>
               ) : null}
               {reviewLines.map((line) => (
                 <p
@@ -164,9 +168,7 @@ export default async function LugarPage({ params }: LugarPageProps) {
           placeId={placeId}
           name={place.name}
           shareUrl={shareUrl}
-          address={addressText}
           openingHours={place.openingHours}
-          phone={place.contact?.phone}
         />
       </div>
     </div>

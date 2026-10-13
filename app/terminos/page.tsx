@@ -44,6 +44,7 @@ export const metadata: Metadata = {
 export default function TerminosPage() {
   return (
     <InstitutionalPage
+      eyebrow="lo legal, claro"
       breadcrumbs={[
         { label: "Inicio", href: "/" },
         { label: title, href: PATH },

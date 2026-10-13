@@ -55,6 +55,7 @@ export const metadata: Metadata = {
 export default function PorQueUsarCelimapPage() {
   return (
     <InstitutionalPage
+      eyebrow="sobre CeliMap"
       breadcrumbs={[{ label: "Por qué usar CeliMap" }]}
       h1="Por qué usar CeliMap para buscar lugares Sin TACC"
       intro={`${CELIMAP_DESCRIPTION_SHORT} Esta página compara, sin atacar a nadie, cuándo conviene cada herramienta.`}

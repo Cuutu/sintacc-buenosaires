@@ -49,9 +49,9 @@ export default async function SinGlutenArgentinaPage() {
     .map(({ slug, name, total }) => ({ slug, name, total }))
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-5xl px-4 py-8 md:px-5 md:py-12">
       <ArgentinaLandingJsonLd cities={CITIES} />
-      <h1 className="text-2xl md:text-4xl font-bold mb-6">
+      <h1 className="mb-6 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getArgentinaLandingTitle()}
       </h1>
       <p className="text-muted-foreground mb-6 max-w-2xl">
