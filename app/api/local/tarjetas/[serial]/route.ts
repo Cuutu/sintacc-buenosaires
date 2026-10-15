@@ -5,8 +5,7 @@ import { logApiError } from "@/lib/logger"
 import { requireAuth } from "@/lib/middleware"
 import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
-import { getApplePassConfig } from "@/lib/wallet/apple-pass"
-import { notifyPassUpdated } from "@/lib/wallet/apple-push"
+import { notifyCardChanged } from "@/lib/wallet/notify"
 import {
   addStamp,
   canManageProgram,
@@ -59,8 +58,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error }, { status })
     }
 
-    const config = getApplePassConfig()
-    if (config) await notifyPassUpdated(result.card.serialNumber, config)
+    await notifyCardChanged(result.card)
 
     return NextResponse.json(
       {

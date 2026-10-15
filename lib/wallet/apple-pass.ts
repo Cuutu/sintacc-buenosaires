@@ -9,7 +9,9 @@ import path from "path"
 import { PKPass } from "passkit-generator"
 import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
-import { renderStampStrip } from "@/lib/wallet/stamp-strip"
+import type { ApplePassConfig } from "@/lib/wallet/config"
+import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
+import { appleStripBox, renderStampStrip } from "@/lib/wallet/stamp-strip"
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const ASSET_FILES = [
@@ -21,20 +23,13 @@ const ASSET_FILES = [
   "logo@3x.png",
 ] as const
 
+export { getApplePassConfig, isApplePassConfigured, type ApplePassConfig } from "@/lib/wallet/config"
+
 // Oliva / crema de marca (app/globals.css).
 const COLORS = {
   backgroundColor: "rgb(45, 74, 52)",
   foregroundColor: "rgb(247, 243, 235)",
   labelColor: "rgb(214, 205, 186)",
-}
-
-export type ApplePassConfig = {
-  passTypeIdentifier: string
-  teamIdentifier: string
-  signerCert: string
-  signerKey: string
-  signerKeyPassphrase?: string
-  wwdr: string
 }
 
 export type LoyaltyPassInput = {
@@ -53,67 +48,10 @@ export type LoyaltyPassInput = {
   webService?: { url: string; authenticationToken: string }
 }
 
-function normalizePem(raw: string): string {
-  let pem = raw.trim()
-  // .env con saltos de línea escapados como \n
-  if (pem.includes("\\n")) pem = pem.replace(/\\n/g, "\n")
-  return pem
-}
-
-export function getApplePassConfig(): ApplePassConfig | null {
-  const passTypeIdentifier = process.env.APPLE_PASS_TYPE_ID?.trim()
-  // El certificado de la tarjeta puede ser de otro equipo de Apple que el del
-  // login (APPLE_TEAM_ID). teamIdentifier tiene que coincidir con el OU del
-  // certificado; si no, el iPhone rechaza el .pkpass sin mostrar error.
-  const teamIdentifier =
-    process.env.APPLE_PASS_TEAM_ID?.trim() || process.env.APPLE_TEAM_ID?.trim()
-  const signerCert = process.env.APPLE_PASS_CERT
-  const signerKey = process.env.APPLE_PASS_KEY
-  const wwdr = process.env.APPLE_WWDR_CERT
-  if (!passTypeIdentifier || !teamIdentifier || !signerCert || !signerKey || !wwdr) {
-    return null
-  }
-  const passphrase = process.env.APPLE_PASS_KEY_PASSPHRASE?.trim()
-  return {
-    passTypeIdentifier,
-    teamIdentifier,
-    signerCert: normalizePem(signerCert),
-    signerKey: normalizePem(signerKey),
-    signerKeyPassphrase: passphrase || undefined,
-    wwdr: normalizePem(wwdr),
-  }
-}
-
-export function isApplePassConfigured(): boolean {
-  return getApplePassConfig() !== null
-}
-
 /** "●●○○○" — se lee bien en la tarjeta y en la pantalla bloqueada. */
 export function formatStampDots(stamps: number, total: number): string {
   const filled = Math.max(0, Math.min(stamps, total))
   return "●".repeat(filled) + "○".repeat(Math.max(0, total - filled))
-}
-
-/**
- * Texto de "Última novedad". Cuando cambia, el iPhone lo muestra como aviso
- * en la pantalla bloqueada (changeMessage), así que cada estado tiene uno distinto.
- */
-export function stampNewsMessage(input: {
-  stamps: number
-  total: number
-  placeName: string
-  reward: string
-  rewardsRedeemed?: number
-}): string {
-  const { stamps, total, placeName, reward } = input
-  if (stamps >= total) return `¡Completaste la tarjeta! Tu premio te espera en ${placeName}: ${reward}.`
-  if (stamps <= 0) {
-    return (input.rewardsRedeemed ?? 0) > 0
-      ? `¡Canjeaste tu premio en ${placeName}! Ya arrancás una tarjeta nueva.`
-      : `Mostrá esta tarjeta al pagar en ${placeName} y sumá tu primer sello.`
-  }
-  const left = total - stamps
-  return `¡Sumaste un sello en ${placeName}! Te ${left === 1 ? "falta" : "faltan"} ${left} para tu premio: ${reward}.`
 }
 
 async function loadAssets(): Promise<Record<string, Buffer>> {
@@ -127,9 +65,9 @@ async function loadAssets(): Promise<Record<string, Buffer>> {
 async function loadStampStrip(stamps: number, total: number): Promise<Record<string, Buffer> | null> {
   try {
     const [x1, x2, x3] = await Promise.all([
-      renderStampStrip(stamps, total, 1),
-      renderStampStrip(stamps, total, 2),
-      renderStampStrip(stamps, total, 3),
+      renderStampStrip(stamps, total, appleStripBox(1)),
+      renderStampStrip(stamps, total, appleStripBox(2)),
+      renderStampStrip(stamps, total, appleStripBox(3)),
     ])
     return { "strip.png": x1, "strip@2x.png": x2, "strip@3x.png": x3 }
   } catch (error) {
@@ -146,8 +84,7 @@ export async function buildLoyaltyPass(
   input: LoyaltyPassInput,
   config: ApplePassConfig
 ): Promise<Buffer> {
-  const total = Math.max(1, Math.floor(input.stampsForReward))
-  const stamps = Math.max(0, Math.min(Math.floor(input.stamps), total))
+  const { stamps, total } = clampStamps(input.stamps, input.stampsForReward)
   const placeUrl = absoluteUrl(input.placePath ?? "/")
   const [assets, strip] = await Promise.all([loadAssets(), loadStampStrip(stamps, total)])
 
@@ -216,7 +153,7 @@ export async function buildLoyaltyPass(
     {
       key: "how",
       label: "Cómo funciona",
-      value: `Mostrá esta tarjeta al pagar y el local te suma un sello. Con ${total} sellos: ${input.reward}.`,
+      value: stampHowText(total, input.reward),
     },
     {
       key: "place",

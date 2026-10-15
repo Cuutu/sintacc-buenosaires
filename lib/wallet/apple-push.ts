@@ -8,7 +8,7 @@ import http2 from "http2"
 import connectDB from "@/lib/mongodb"
 import { logger } from "@/lib/logger"
 import { LoyaltyDevice } from "@/models/LoyaltyDevice"
-import type { ApplePassConfig } from "@/lib/wallet/apple-pass"
+import type { ApplePassConfig } from "@/lib/wallet/config"
 
 const APNS_ORIGIN = "https://api.push.apple.com"
 const PUSH_TIMEOUT_MS = 5_000

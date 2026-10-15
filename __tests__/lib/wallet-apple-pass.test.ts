@@ -4,6 +4,7 @@
 const mockRenderStrip = jest.fn()
 jest.mock("@/lib/wallet/stamp-strip", () => ({
   renderStampStrip: (...args: unknown[]) => mockRenderStrip(...args),
+  appleStripBox: (scale: number) => ({ width: 375 * scale, height: 144 * scale }),
 }))
 jest.mock("@/lib/logger", () => ({ logger: { warn: jest.fn() } }))
 
@@ -11,9 +12,9 @@ import {
   buildLoyaltyPass,
   formatStampDots,
   getApplePassConfig,
-  stampNewsMessage,
   type ApplePassConfig,
 } from "@/lib/wallet/apple-pass"
+import { stampNewsMessage } from "@/lib/wallet/card-text"
 
 // node-forge viene con passkit-generator; acá sólo para fabricar certificados de prueba.
 const forge = require("node-forge")
@@ -66,8 +67,8 @@ describe("apple wallet loyalty pass", () => {
 
   beforeEach(() => {
     mockRenderStrip.mockReset()
-    mockRenderStrip.mockImplementation(async (_s: number, _t: number, scale: number) =>
-      Buffer.from(`strip-${scale}x`)
+    mockRenderStrip.mockImplementation(async (_s: number, _t: number, box: { width: number }) =>
+      Buffer.from(`strip-${box.width}`)
     )
   })
 
@@ -148,10 +149,10 @@ describe("apple wallet loyalty pass", () => {
         config
       )
     ).toString("latin1")
-    expect(mockRenderStrip.mock.calls.map((c) => c.slice(0, 3))).toEqual([
-      [5, 5, 1],
-      [5, 5, 2],
-      [5, 5, 3],
+    expect(mockRenderStrip.mock.calls).toEqual([
+      [5, 5, { width: 375, height: 144 }],
+      [5, 5, { width: 750, height: 288 }],
+      [5, 5, { width: 1125, height: 432 }],
     ])
     for (const name of ["strip.png", "strip@2x.png", "strip@3x.png"]) expect(text).toContain(name)
     expect(text).not.toContain('"primaryFields":[{')

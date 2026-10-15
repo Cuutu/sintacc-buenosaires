@@ -11,7 +11,7 @@ import { absoluteUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
 import { Place } from "@/models/Place"
 import { LoyaltyProgram, type ILoyaltyProgram } from "@/models/LoyaltyProgram"
-import { LoyaltyCard, type ILoyaltyCard } from "@/models/LoyaltyCard"
+import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
 import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
 
@@ -80,12 +80,16 @@ export async function getProgramWithPlace(programId: string): Promise<ProgramWit
   return { program, placeName: place.name, placePath: getPlacePath(place) }
 }
 
-export async function createCard(programId: mongoose.Types.ObjectId): Promise<ILoyaltyCard> {
+export async function createCard(
+  programId: mongoose.Types.ObjectId,
+  wallet: LoyaltyWallet = "apple"
+): Promise<ILoyaltyCard> {
   await connectDB()
   return LoyaltyCard.create({
     programId,
     serialNumber: newSerialNumber(),
     authToken: newAuthToken(),
+    wallet,
   })
 }
 

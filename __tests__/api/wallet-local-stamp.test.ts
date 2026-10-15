@@ -24,10 +24,9 @@ jest.mock("@/models/LoyaltyProgram", () => ({
 jest.mock("@/models/LoyaltyStamp", () => ({ LoyaltyStamp: { create: jest.fn() } }))
 jest.mock("@/models/Place", () => ({ Place: {} }))
 const mockNotify = jest.fn()
-jest.mock("@/lib/wallet/apple-push", () => ({
-  notifyPassUpdated: (...a: unknown[]) => mockNotify(...a),
+jest.mock("@/lib/wallet/notify", () => ({
+  notifyCardChanged: (...a: unknown[]) => mockNotify(...a),
 }))
-jest.mock("@/lib/wallet/apple-pass", () => ({ getApplePassConfig: () => ({ passTypeIdentifier: "p" }) }))
 
 import { POST } from "@/app/api/local/tarjetas/[serial]/route"
 
@@ -71,6 +70,6 @@ describe("POST /api/local/tarjetas/[serial]", () => {
     const res = await POST(req({ accion: "sello" }), params)
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ stamps: 3, stampsForReward: 5 })
-    expect(mockNotify).toHaveBeenCalledWith("s", expect.anything())
+    expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({ serialNumber: "s", stamps: 3 }))
   })
 })

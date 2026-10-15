@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
+import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
 import { getProgramWithPlace } from "@/lib/wallet/loyalty"
 
 export const dynamic = "force-dynamic"
@@ -18,6 +20,14 @@ export default async function TarjetaPage({ params }: Props) {
   const data = await getProgramWithPlace(params.programaId)
   if (!data || !data.program.active) notFound()
   const { program, placeName, placePath } = data
+  const programId = program._id.toString()
+
+  // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
+  const userAgent = headers().get("user-agent") ?? ""
+  const isAndroid = /android/i.test(userAgent)
+  const isIos = /iphone|ipad|ipod/i.test(userAgent)
+  const showApple = isApplePassConfigured() && !isAndroid
+  const showGoogle = isGoogleWalletConfigured() && !isIos
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col gap-6 px-4 py-10">
@@ -38,15 +48,28 @@ export default async function TarjetaPage({ params }: Props) {
       />
 
       {/* <a> y no <Link>: el prefetch crearía tarjetas. */}
-      <a
-        href={`/api/wallet/tarjeta/${program._id.toString()}/apple`}
-        className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-semibold text-white"
-      >
-        Agregar a Apple Wallet
-      </a>
+      <div className="flex flex-col gap-3">
+        {showApple && (
+          <a
+            href={`/api/wallet/tarjeta/${programId}/apple`}
+            className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-semibold text-white"
+          >
+            Agregar a Apple Wallet
+          </a>
+        )}
+        {showGoogle && (
+          <a
+            href={`/api/wallet/tarjeta/${programId}/google`}
+            className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-semibold text-white"
+          >
+            Agregar a Google Wallet
+          </a>
+        )}
+      </div>
       <p className="text-center text-sm text-olive/70">
-        Sin descargar nada y sin crear cuenta. Por ahora funciona en iPhone; en Android llega pronto
-        con Google Wallet.
+        {showApple || showGoogle
+          ? "Sin descargar nada y sin crear cuenta."
+          : "Esta tarjeta todavía no está disponible en tu celular."}
       </p>
 
       <Link href={placePath} className="text-center text-sm font-semibold text-terracotta-strong underline">

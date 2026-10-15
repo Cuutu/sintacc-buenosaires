@@ -2,7 +2,8 @@
  * Franja de sellos de la tarjeta de Apple Wallet (strip.png de un storeCard).
  * Cada sello es el pin de CeliMap "estampado" sobre crema; el último casillero es el premio
  * (regalo terracota vacío, pin terracota al completar). Fondo oliva con textura de espigas.
- * Se dibuja con @vercel/og (ya en el repo) y se cachea en memoria por (sellos, total, escala).
+ * También es la imagen principal de la tarjeta de Google Wallet.
+ * Se dibuja con @vercel/og (ya en el repo) y se cachea en memoria por (sellos, total, tamaño).
  */
 
 import { readFile } from "fs/promises"
@@ -10,9 +11,19 @@ import path from "path"
 import { ImageResponse } from "@vercel/og"
 import { stampGrid, stampTilt } from "@/lib/wallet/stamp-style"
 
-/** Tamaño en puntos del strip de un storeCard. */
+/** Tamaño en puntos del strip de un storeCard de Apple. */
 export const STRIP_WIDTH = 375
 export const STRIP_HEIGHT = 144
+
+export type StripBox = { width: number; height: number }
+
+/** strip.png / @2x / @3x de Apple Wallet. */
+export function appleStripBox(scale: 1 | 2 | 3): StripBox {
+  return { width: STRIP_WIDTH * scale, height: STRIP_HEIGHT * scale }
+}
+
+/** Imagen principal (heroImage) de Google Wallet: 1032×336 recomendado. */
+export const GOOGLE_HERO_BOX: StripBox = { width: 1032, height: 336 }
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const FONT_PATH = path.join(process.cwd(), "assets", "fonts", "dm-sans-latin-700-normal.woff")
@@ -31,14 +42,16 @@ const REWARD_FILL = "#404731"
 
 export type StripLayout = { cols: number; rows: number; size: number; gap: number }
 
-export function stripLayout(total: number, scale = 1): StripLayout {
+export function stripLayout(total: number, box: StripBox): StripLayout {
   const { rows, cols } = stampGrid(total)
-  const padX = 18 * scale
-  const padY = 14 * scale
-  const gap = (rows === 1 ? 12 : 8) * scale
-  const byWidth = (STRIP_WIDTH * scale - 2 * padX - (cols - 1) * gap) / cols
-  const byHeight = (STRIP_HEIGHT * scale - 2 * padY - (rows - 1) * gap) / rows
-  return { cols, rows, size: Math.floor(Math.min(byWidth, byHeight, 64 * scale)), gap }
+  // Medidas pensadas en puntos del strip de Apple; se escalan según el alto.
+  const unit = box.height / STRIP_HEIGHT
+  const padX = 18 * unit
+  const padY = 14 * unit
+  const gap = Math.round((rows === 1 ? 12 : 8) * unit)
+  const byWidth = (box.width - 2 * padX - (cols - 1) * gap) / cols
+  const byHeight = (box.height - 2 * padY - (rows - 1) * gap) / rows
+  return { cols, rows, size: Math.floor(Math.min(byWidth, byHeight, 64 * unit)), gap }
 }
 
 type Assets = { mark: string; reward: string; font: Buffer; texture: string }
@@ -136,20 +149,20 @@ function Slot({
 const cache = new Map<string, Buffer>()
 const CACHE_MAX = 200
 
-export async function renderStampStrip(stamps: number, total: number, scale: 1 | 2 | 3): Promise<Buffer> {
+export async function renderStampStrip(stamps: number, total: number, box: StripBox): Promise<Buffer> {
   const safeTotal = Math.max(1, Math.min(20, Math.floor(total)))
   const safeStamps = Math.max(0, Math.min(safeTotal, Math.floor(stamps)))
-  const key = `${safeStamps}/${safeTotal}@${scale}`
+  const key = `${safeStamps}/${safeTotal}@${box.width}x${box.height}`
   const hit = cache.get(key)
   if (hit) return hit
 
   const assets = await loadAssets()
-  const { cols, rows, size, gap } = stripLayout(safeTotal, scale)
+  const { cols, rows, size, gap } = stripLayout(safeTotal, box)
   const rowsOfSlots = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) => r * cols + c).filter((i) => i < safeTotal)
   )
 
-  const tile = 160 * scale
+  const tile = Math.round((160 * box.height) / STRIP_HEIGHT)
   const textureUrl = `data:image/svg+xml;base64,${Buffer.from(
     assets.texture.replace(/currentColor/g, TEXTURE)
   ).toString("base64")}`
@@ -188,8 +201,8 @@ export async function renderStampStrip(stamps: number, total: number, scale: 1 |
   )
 
   const response = new ImageResponse(element, {
-    width: STRIP_WIDTH * scale,
-    height: STRIP_HEIGHT * scale,
+    width: box.width,
+    height: box.height,
     fonts: [{ name: "DM Sans", data: assets.font, weight: 700, style: "normal" }],
   })
   const png = Buffer.from(await response.arrayBuffer())
