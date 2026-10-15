@@ -9,7 +9,6 @@ import {
 } from "@/lib/wallet/apple-pass"
 
 // node-forge viene con passkit-generator; acá sólo para fabricar certificados de prueba.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const forge = require("node-forge")
 
 function selfSigned(commonName: string) {
@@ -32,6 +31,7 @@ function selfSigned(commonName: string) {
 const ENV_KEYS = [
   "APPLE_PASS_TYPE_ID",
   "APPLE_TEAM_ID",
+  "APPLE_PASS_TEAM_ID",
   "APPLE_PASS_CERT",
   "APPLE_PASS_KEY",
   "APPLE_WWDR_CERT",
@@ -48,6 +48,7 @@ describe("apple wallet loyalty pass", () => {
     const wwdr = selfSigned("Test WWDR")
     process.env.APPLE_PASS_TYPE_ID = "pass.com.celimap.test"
     process.env.APPLE_TEAM_ID = "TEAM123456"
+    delete process.env.APPLE_PASS_TEAM_ID
     // Como queda en un .env de una sola línea
     process.env.APPLE_PASS_CERT = signer.cert.replace(/\r?\n/g, "\\n")
     process.env.APPLE_PASS_KEY = signer.key.replace(/\r?\n/g, "\\n")
@@ -68,6 +69,20 @@ describe("apple wallet loyalty pass", () => {
     delete process.env.APPLE_PASS_CERT
     expect(getApplePassConfig()).toBeNull()
     process.env.APPLE_PASS_CERT = cert
+  })
+
+  it("uses APPLE_TEAM_ID when there is no wallet-specific team", () => {
+    expect(config.teamIdentifier).toBe("TEAM123456")
+  })
+
+  it("prefers APPLE_PASS_TEAM_ID over the Sign in with Apple team", () => {
+    process.env.APPLE_PASS_TEAM_ID = " PASS987654 "
+    try {
+      expect(getApplePassConfig()?.teamIdentifier).toBe("PASS987654")
+    } finally {
+      delete process.env.APPLE_PASS_TEAM_ID
+    }
+    expect(process.env.APPLE_TEAM_ID).toBe("TEAM123456")
   })
 
   it("normalizes escaped newlines in PEM env vars", () => {
@@ -100,6 +115,7 @@ describe("apple wallet loyalty pass", () => {
     }
     expect(text).toContain('"storeCard"')
     expect(text).toContain('"passTypeIdentifier":"pass.com.celimap.test"')
+    expect(text).toContain('"teamIdentifier":"TEAM123456"')
     expect(text).toContain('"serialNumber":"demo-123"')
     expect(text).toContain("PKBarcodeFormatQR")
   })

@@ -56,7 +56,11 @@ function normalizePem(raw: string): string {
 
 export function getApplePassConfig(): ApplePassConfig | null {
   const passTypeIdentifier = process.env.APPLE_PASS_TYPE_ID?.trim()
-  const teamIdentifier = process.env.APPLE_TEAM_ID?.trim()
+  // El certificado de la tarjeta puede ser de otro equipo de Apple que el del
+  // login (APPLE_TEAM_ID). teamIdentifier tiene que coincidir con el OU del
+  // certificado; si no, el iPhone rechaza el .pkpass sin mostrar error.
+  const teamIdentifier =
+    process.env.APPLE_PASS_TEAM_ID?.trim() || process.env.APPLE_TEAM_ID?.trim()
   const signerCert = process.env.APPLE_PASS_CERT
   const signerKey = process.env.APPLE_PASS_KEY
   const wwdr = process.env.APPLE_WWDR_CERT
