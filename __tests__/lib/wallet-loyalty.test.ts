@@ -76,12 +76,13 @@ describe("loyalty helpers", () => {
 
   it("puts the stamp URL in the QR and the web service on the pass", () => {
     const card = { ...cardWith(2), rewardsRedeemed: 1 } as unknown as ILoyaltyCard
-    const input = passInputFor(card, { program, placeName: "Local", placePath: "/lugar/local" })
+    const input = passInputFor(card, { program, placeName: "Local", placePath: "/lugar/local", safety: "options" })
     expect(input.barcodeValue).toMatch(new RegExp(`/local/sellar/${card.serialNumber}$`))
     expect(input.webService?.url).toMatch(/\/api\/wallet\/apple$/)
     expect(input.webService?.authenticationToken).toBe(card.authToken)
     expect(input.stamps).toBe(2)
     expect(input.rewardsRedeemed).toBe(1)
+    expect(input.safety).toBe("options")
   })
 
   it("adds a stamp atomically with cap and cooldown", async () => {

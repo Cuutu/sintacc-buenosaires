@@ -14,6 +14,7 @@ import { LoyaltyProgram, type ILoyaltyProgram } from "@/models/LoyaltyProgram"
 import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
 import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
+import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 
 /** Evita sellos dobles por tocar dos veces o escanear de nuevo. */
 export const STAMP_COOLDOWN_MS = 60_000
@@ -64,6 +65,8 @@ export type ProgramWithPlace = {
   program: ILoyaltyProgram
   placeName: string
   placePath: string
+  /** 100% sin TACC o con opciones, como en el mapa; null si el lugar no tiene esa info. */
+  safety: CardSafety | null
 }
 
 export async function getProgramWithPlace(programId: string): Promise<ProgramWithPlace | null> {
@@ -71,13 +74,15 @@ export async function getProgramWithPlace(programId: string): Promise<ProgramWit
   await connectDB()
   const program = await LoyaltyProgram.findById(programId)
   if (!program) return null
-  const place = await Place.findById(program.placeId).select("name slug").lean<{
+  const place = await Place.findById(program.placeId).select("name slug safetyLevel tags").lean<{
     _id: mongoose.Types.ObjectId
     name: string
     slug?: string
+    safetyLevel?: Parameters<typeof cardSafetyFor>[0]["safetyLevel"]
+    tags?: string[]
   }>()
   if (!place) return null
-  return { program, placeName: place.name, placePath: getPlacePath(place) }
+  return { program, placeName: place.name, placePath: getPlacePath(place), safety: cardSafetyFor(place) }
 }
 
 export async function createCard(
@@ -102,6 +107,7 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace): Loyalt
     reward: data.program.reward,
     placeName: data.placeName,
     placePath: data.placePath,
+    safety: data.safety,
     rewardsRedeemed: card.rewardsRedeemed,
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),

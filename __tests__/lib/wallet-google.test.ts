@@ -3,8 +3,8 @@
  */
 jest.mock("@/lib/wallet/wallet-images", () => ({
   googleLogoUrl: async () => "https://res.cloudinary.com/demo/image/upload/wallet/logo-v1.png",
-  googleHeroUrl: async (stamps: number, total: number) =>
-    `https://res.cloudinary.com/demo/image/upload/wallet/sellos-v1-${stamps}-${total}.png`,
+  googleHeroUrl: async (stamps: number, total: number, safety: string | null) =>
+    `https://res.cloudinary.com/demo/image/upload/wallet/sellos-v1-${stamps}-${total}${safety ? `-${safety}` : ""}.png`,
 }))
 const mockWarn = jest.fn()
 jest.mock("@/lib/logger", () => ({ logger: { warn: (...a: unknown[]) => mockWarn(...a) } }))
@@ -102,6 +102,24 @@ describe("google wallet loyalty card", () => {
       reviewStatus: "UNDER_REVIEW",
     })
     expect(loyaltyClass.programLogo.sourceUri.uri).toBe("https://img/logo.png")
+  })
+
+  it("tells a 100% place from one with options, like the map", async () => {
+    const calls = mockFetch({})
+    await googleSaveLink({ ...input, safety: "dedicated" }, config)
+    const [klass, object] = calls.map((c) => c.body as Record<string, unknown>)
+    expect(klass.hexBackgroundColor).toBe("#2D4A34")
+    expect((object.heroImage as { sourceUri: { uri: string } }).sourceUri.uri).toMatch(/-dedicated\.png$/)
+    expect(object.textModulesData).toContainEqual({
+      id: "tacc",
+      header: "100% sin TACC",
+      body: "Según CeliMap, este lugar es 100% sin TACC. Igual, confirmá siempre con el local.",
+    })
+    expect(buildLoyaltyClass(config, { ...input, safety: "options" }, "https://img/logo.png").hexBackgroundColor).toBe(
+      "#A84A26"
+    )
+    const plain = buildLoyaltyObject(config, input, null)
+    expect(plain.textModulesData.map((m) => m.id)).toEqual(["how"])
   })
 
   it("puts stamps, prize, stamp QR and the stamp image on the card", () => {

@@ -39,6 +39,7 @@ export default async function SellarPage({ params }: Props) {
           reward={data.program.reward}
           initialStamps={card.stamps}
           total={total}
+          safety={data.safety}
         />
       ) : (
         <>
@@ -47,6 +48,7 @@ export default async function SellarPage({ params }: Props) {
             reward={data.program.reward}
             stamps={card.stamps}
             total={total}
+            safety={data.safety}
           />
           <p className="text-center text-olive/80">
             Mostrá este QR al pagar: el local te suma el sello.

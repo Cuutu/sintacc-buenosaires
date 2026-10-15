@@ -2,6 +2,7 @@ import Image from "next/image"
 import { Gift } from "lucide-react"
 import { posterQr, QR_QUIET_ZONE } from "@/lib/wallet/poster-qr"
 import { stampTilt } from "@/lib/wallet/stamp-style"
+import { CARD_SAFETY_LABEL, type CardSafety } from "@/lib/wallet/card-safety"
 
 /**
  * Cartel para la caja del local: el QR lleva a la página de la tarjeta (/tarjeta/<programa>).
@@ -19,6 +20,8 @@ type Props = {
   stampsForReward: number
   enrollUrl: string
   wallets: { apple: boolean; google: boolean }
+  /** Como en el mapa: verde si es 100% sin TACC, terracota si tiene opciones. */
+  safety: CardSafety | null
 }
 
 function titleSize(name: string): number {
@@ -113,7 +116,7 @@ function StampRow({ total }: { total: number }) {
   )
 }
 
-export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets }: Props) {
+export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets, safety }: Props) {
   const steps = ["Escaneá el QR con la cámara", "Guardá la tarjeta en tu Wallet", "Mostrala al pagar y sumá sellos"]
   const offer = `Juntá ${stampsForReward} sellos y te llevás ${reward}.`
   return (
@@ -151,6 +154,24 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
         >
           {placeName}
         </h2>
+        {safety && (
+          <span
+            className={`inline-flex shrink-0 items-center rounded-full font-bold text-[#F7F3EB] ${
+              safety === "dedicated" ? "bg-[#2D4A34]" : "bg-[#B84420]"
+            }`}
+            style={{ marginTop: u(2.6), padding: `${u(1.2)} ${u(3.4)}`, gap: u(1.6), fontSize: u(3.6) }}
+          >
+            <Image
+              src="/wallet/apple/logo@3x.png"
+              alt=""
+              width={110}
+              height={150}
+              priority
+              style={{ height: u(4.2), width: "auto" }}
+            />
+            {CARD_SAFETY_LABEL[safety]}
+          </span>
+        )}
         <p className="shrink-0" style={{ fontSize: u(offer.length > 50 ? 4 : 4.6), marginTop: u(3), lineHeight: 1.3 }}>
           Juntá {stampsForReward} sellos y te llevás{" "}
           <strong className="text-[#B84420]">{reward}</strong>.

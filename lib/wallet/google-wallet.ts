@@ -9,6 +9,7 @@ import { SignJWT, importPKCS8, type KeyLike } from "jose"
 import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
 import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
+import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme } from "@/lib/wallet/card-safety"
 import { googleHeroUrl, googleLogoUrl } from "@/lib/wallet/wallet-images"
 import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
 import type { GoogleWalletConfig } from "@/lib/wallet/config"
@@ -20,8 +21,6 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token"
 const SCOPE = "https://www.googleapis.com/auth/wallet_object.issuer"
 const SAVE_URL = "https://pay.google.com/gp/v/save/"
 const LANGUAGE = "es-419"
-// Oliva de marca, igual que la tarjeta de Apple.
-const BACKGROUND = "#2D4A34"
 
 /** Datos de la tarjeta (los mismos que la de Apple) más el programa, que define la clase. */
 export type GoogleCardInput = LoyaltyPassInput & { programId: string }
@@ -121,7 +120,7 @@ const image = (uri: string, description: string) => ({
 
 export function buildLoyaltyClass(
   config: GoogleWalletConfig,
-  input: Pick<GoogleCardInput, "programId" | "placeName">,
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety">,
   logoUrl: string
 ) {
   return {
@@ -129,7 +128,8 @@ export function buildLoyaltyClass(
     issuerName: "CeliMap",
     programName: input.placeName,
     programLogo: image(logoUrl, "CeliMap"),
-    hexBackgroundColor: BACKGROUND,
+    // El mismo fondo que la tarjeta de Apple.
+    hexBackgroundColor: cardTheme(input.safety ?? null).background,
     countryCode: "AR",
     // En modo demo se aprueba al toque; con acceso de publicación, Google la revisa.
     reviewStatus: "UNDER_REVIEW",
@@ -152,7 +152,12 @@ export function buildLoyaltyObject(
     secondaryLoyaltyPoints: { label: "Premio", balance: { string: input.reward } },
     barcode: { type: "QR_CODE", value: input.barcodeValue },
     ...(heroUrl ? { heroImage: image(heroUrl, `${stamps} de ${total} sellos`) } : {}),
-    textModulesData: [{ id: "how", header: "Cómo funciona", body: stampHowText(total, input.reward) }],
+    textModulesData: [
+      { id: "how", header: "Cómo funciona", body: stampHowText(total, input.reward) },
+      ...(input.safety
+        ? [{ id: "tacc", header: CARD_SAFETY_LABEL[input.safety], body: cardSafetyNote(input.safety) }]
+        : []),
+    ],
     linksModuleData: {
       uris: [{ id: "place", uri: placeUrl, description: "Ver el local en CeliMap" }],
     },
@@ -161,7 +166,10 @@ export function buildLoyaltyObject(
 
 async function buildResources(config: GoogleWalletConfig, input: GoogleCardInput) {
   const { stamps, total } = clampStamps(input.stamps, input.stampsForReward)
-  const [logoUrl, heroUrl] = await Promise.all([googleLogoUrl(), googleHeroUrl(stamps, total)])
+  const [logoUrl, heroUrl] = await Promise.all([
+    googleLogoUrl(),
+    googleHeroUrl(stamps, total, input.safety ?? null),
+  ])
   return {
     loyaltyClass: buildLoyaltyClass(config, input, logoUrl),
     loyaltyObject: buildLoyaltyObject(config, input, heroUrl),

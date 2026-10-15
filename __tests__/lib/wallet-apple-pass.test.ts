@@ -150,9 +150,9 @@ describe("apple wallet loyalty pass", () => {
       )
     ).toString("latin1")
     expect(mockRenderStrip.mock.calls).toEqual([
-      [5, 5, { width: 375, height: 144 }],
-      [5, 5, { width: 750, height: 288 }],
-      [5, 5, { width: 1125, height: 432 }],
+      [5, 5, { width: 375, height: 144 }, null],
+      [5, 5, { width: 750, height: 288 }, null],
+      [5, 5, { width: 1125, height: 432 }, null],
     ])
     for (const name of ["strip.png", "strip@2x.png", "strip@3x.png"]) expect(text).toContain(name)
     expect(text).not.toContain('"primaryFields":[{')
@@ -176,6 +176,30 @@ describe("apple wallet loyalty pass", () => {
     const text = buffer.toString("utf8")
     expect(text).not.toContain("strip.png")
     expect(text).toContain("●●○○○")
+  })
+
+  it("labels the card with the place's TACC status, as on the map", async () => {
+    const base = {
+      serialNumber: "s5",
+      barcodeValue: "s5",
+      stamps: 1,
+      stampsForReward: 5,
+      reward: "Cookie",
+      placeName: "Polvorin",
+    }
+    mockRenderStrip.mockResolvedValue(Buffer.from("png"))
+    const labeled = (await buildLoyaltyPass({ ...base, safety: "dedicated" }, config)).toString("utf8")
+    expect(mockRenderStrip).toHaveBeenLastCalledWith(1, 5, { width: 1125, height: 432 }, "dedicated")
+    expect(labeled).toContain("Según CeliMap, este lugar es 100% sin TACC. Igual, confirmá siempre con el local.")
+    expect(labeled).toContain('"backgroundColor":"rgb(45, 74, 52)"')
+
+    const unlabeled = (await buildLoyaltyPass(base, config)).toString("utf8")
+    expect(unlabeled).not.toContain("Según CeliMap")
+
+    // Sin franja, la etiqueta va como texto en el frente.
+    mockRenderStrip.mockRejectedValue(new Error("sin fuentes"))
+    const fallback = (await buildLoyaltyPass({ ...base, safety: "options" }, config)).toString("utf8")
+    expect(fallback).toContain('"label":"SIN TACC","value":"Con opciones sin TACC"')
   })
 
   it("puts the latest news on the back so the iPhone shows it as an alert", async () => {

@@ -79,6 +79,7 @@ export default async function CartelPage({ params, searchParams }: Props) {
           placeName={placeName}
           reward={program.reward}
           stampsForReward={program.stampsForReward}
+          safety={data.safety}
           enrollUrl={absoluteUrl(enrollPathFor(program._id.toString()))}
           wallets={{ apple: isApplePassConfigured(), google: isGoogleWalletConfigured() }}
         />

@@ -11,6 +11,7 @@ import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
 import type { ApplePassConfig } from "@/lib/wallet/config"
 import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
+import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme, type CardSafety } from "@/lib/wallet/card-safety"
 import { appleStripBox, renderStampStrip } from "@/lib/wallet/stamp-strip"
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
@@ -25,11 +26,20 @@ const ASSET_FILES = [
 
 export { getApplePassConfig, isApplePassConfigured, type ApplePassConfig } from "@/lib/wallet/config"
 
-// Oliva / crema de marca (app/globals.css).
-const COLORS = {
-  backgroundColor: "rgb(45, 74, 52)",
-  foregroundColor: "rgb(247, 243, 235)",
-  labelColor: "rgb(214, 205, 186)",
+/** Apple pide los colores como rgb(r, g, b). */
+function rgb(hex: string): string {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`
+}
+
+/** Fondo y etiquetas según el tema de la tarjeta; el texto, siempre crema. */
+function passColors(safety: CardSafety | null) {
+  const theme = cardTheme(safety)
+  return {
+    backgroundColor: rgb(theme.background),
+    foregroundColor: rgb("#F7F3EB"),
+    labelColor: rgb(theme.label),
+  }
 }
 
 export type LoyaltyPassInput = {
@@ -44,6 +54,8 @@ export type LoyaltyPassInput = {
   rewardsRedeemed?: number
   /** Ruta relativa de la ficha del local, ej. /lugar/slug. */
   placePath?: string
+  /** 100% sin TACC o con opciones; sin dato, la tarjeta no lleva etiqueta. */
+  safety?: CardSafety | null
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
   webService?: { url: string; authenticationToken: string }
 }
@@ -62,12 +74,16 @@ async function loadAssets(): Promise<Record<string, Buffer>> {
 }
 
 /** strip.png @1x/@2x/@3x con los sellos; null si no se pudo dibujar (la tarjeta sale igual). */
-async function loadStampStrip(stamps: number, total: number): Promise<Record<string, Buffer> | null> {
+async function loadStampStrip(
+  stamps: number,
+  total: number,
+  safety: CardSafety | null
+): Promise<Record<string, Buffer> | null> {
   try {
     const [x1, x2, x3] = await Promise.all([
-      renderStampStrip(stamps, total, appleStripBox(1)),
-      renderStampStrip(stamps, total, appleStripBox(2)),
-      renderStampStrip(stamps, total, appleStripBox(3)),
+      renderStampStrip(stamps, total, appleStripBox(1), safety),
+      renderStampStrip(stamps, total, appleStripBox(2), safety),
+      renderStampStrip(stamps, total, appleStripBox(3), safety),
     ])
     return { "strip.png": x1, "strip@2x.png": x2, "strip@3x.png": x3 }
   } catch (error) {
@@ -86,7 +102,8 @@ export async function buildLoyaltyPass(
 ): Promise<Buffer> {
   const { stamps, total } = clampStamps(input.stamps, input.stampsForReward)
   const placeUrl = absoluteUrl(input.placePath ?? "/")
-  const [assets, strip] = await Promise.all([loadAssets(), loadStampStrip(stamps, total)])
+  const safety = input.safety ?? null
+  const [assets, strip] = await Promise.all([loadAssets(), loadStampStrip(stamps, total, safety)])
 
   const pass = new PKPass(
     { ...assets, ...strip },
@@ -105,7 +122,7 @@ export async function buildLoyaltyPass(
       description: `Tarjeta de sellos · ${input.placeName}`,
       logoText: "CeliMap",
       sharingProhibited: true,
-      ...COLORS,
+      ...passColors(safety),
       ...(input.webService?.url.startsWith("https://")
         ? {
             webServiceURL: input.webService.url,
@@ -122,13 +139,16 @@ export async function buildLoyaltyPass(
     label: "SELLOS",
     value: `${stamps}/${total}`,
   })
-  // Con franja, los sellos se ven en la imagen; sin ella, quedan los puntitos.
+  // Con franja, los sellos y la etiqueta TACC se ven en la imagen; sin ella, van como texto.
   if (!strip) {
     pass.primaryFields.push({
       key: "stamps",
       label: "SELLOS",
       value: formatStampDots(stamps, total),
     })
+    if (safety) {
+      pass.auxiliaryFields.push({ key: "tacc", label: "SIN TACC", value: CARD_SAFETY_LABEL[safety] })
+    }
   }
   pass.secondaryFields.push(
     {
@@ -155,6 +175,7 @@ export async function buildLoyaltyPass(
       label: "Cómo funciona",
       value: stampHowText(total, input.reward),
     },
+    ...(safety ? [{ key: "taccNote", label: CARD_SAFETY_LABEL[safety], value: cardSafetyNote(safety) }] : []),
     {
       key: "place",
       label: "Ver el local en CeliMap",

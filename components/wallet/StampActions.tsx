@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
+import type { CardSafety } from "@/lib/wallet/card-safety"
 
 type Props = {
   serial: string
@@ -10,10 +11,11 @@ type Props = {
   reward: string
   initialStamps: number
   total: number
+  safety: CardSafety | null
 }
 
 /** Botones del local: sumar sello o, con la tarjeta completa, canjear el premio. */
-export function StampActions({ serial, placeName, reward, initialStamps, total }: Props) {
+export function StampActions({ serial, placeName, reward, initialStamps, total, safety }: Props) {
   const [stamps, setStamps] = useState(initialStamps)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
@@ -47,7 +49,7 @@ export function StampActions({ serial, placeName, reward, initialStamps, total }
 
   return (
     <div className="flex flex-col gap-4">
-      <LoyaltyCardPreview placeName={placeName} reward={reward} stamps={stamps} total={total} />
+      <LoyaltyCardPreview placeName={placeName} reward={reward} stamps={stamps} total={total} safety={safety} />
       {complete ? (
         <Button size="lg" disabled={busy} onClick={() => send("canje")}>
           Canjear premio: {reward}

@@ -19,7 +19,7 @@ type Props = { params: { programaId: string } }
 export default async function TarjetaPage({ params }: Props) {
   const data = await getProgramWithPlace(params.programaId)
   if (!data || !data.program.active) notFound()
-  const { program, placeName, placePath } = data
+  const { program, placeName, placePath, safety } = data
   const programId = program._id.toString()
 
   // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
@@ -45,6 +45,7 @@ export default async function TarjetaPage({ params }: Props) {
         reward={program.reward}
         stamps={0}
         total={program.stampsForReward}
+        safety={safety}
       />
 
       {/* <a> y no <Link>: el prefetch crearía tarjetas. */}

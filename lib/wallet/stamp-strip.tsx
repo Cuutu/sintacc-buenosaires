@@ -1,15 +1,23 @@
 /**
  * Franja de sellos de la tarjeta de Apple Wallet (strip.png de un storeCard).
  * Cada sello es el pin de CeliMap "estampado" sobre crema; el último casillero es el premio
- * (regalo terracota vacío, pin terracota al completar). Fondo oliva con textura de espigas.
+ * (regalo terracota vacío, pin terracota al completar). Fondo oliva con textura de espigas
+ * y, si el lugar lo tiene en el mapa, la etiqueta "100% sin TACC" o "Con opciones sin TACC".
  * También es la imagen principal de la tarjeta de Google Wallet.
- * Se dibuja con @vercel/og (ya en el repo) y se cachea en memoria por (sellos, total, tamaño).
+ * Se dibuja con @vercel/og (ya en el repo) y se cachea en memoria por (sellos, total, etiqueta, tamaño).
  */
 
 import { readFile } from "fs/promises"
 import path from "path"
 import { ImageResponse } from "@vercel/og"
 import { stampGrid, stampTilt } from "@/lib/wallet/stamp-style"
+import {
+  CARD_SAFETY_LABEL,
+  cardSafetyPill,
+  cardTheme,
+  type CardSafety,
+  type CardTheme,
+} from "@/lib/wallet/card-safety"
 
 /** Tamaño en puntos del strip de un storeCard de Apple. */
 export const STRIP_WIDTH = 375
@@ -29,28 +37,27 @@ const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const FONT_PATH = path.join(process.cwd(), "assets", "fonts", "dm-sans-latin-700-normal.woff")
 const TEXTURE_PATH = path.join(process.cwd(), "public", "brand", "texture-wheat.svg")
 
-// Oliva / crema / terracota de marca (app/globals.css).
+// Crema de marca (app/globals.css); el resto de los colores sale del tema de la tarjeta.
 const CREAM = "#F7F3EB"
-const TERRACOTTA = "#D4633A"
-const BACKGROUND = "linear-gradient(180deg, #2D4A34 0%, #243D2B 100%)"
 const TEXTURE = "rgba(247,243,235,0.07)"
-// Rellenos opacos para que la textura de espigas no cruce los números.
-const EMPTY_FILL = "#31503A"
 const EMPTY_RING = "rgba(247,243,235,0.45)"
 const EMPTY_TEXT = "rgba(247,243,235,0.5)"
-const REWARD_FILL = "#404731"
 
 export type StripLayout = { cols: number; rows: number; size: number; gap: number }
 
-export function stripLayout(total: number, box: StripBox): StripLayout {
+/** Alto de la etiqueta TACC más su separación con los sellos, en puntos del strip. */
+const LABEL_SPACE = 24
+
+export function stripLayout(total: number, box: StripBox, labeled = false): StripLayout {
   const { rows, cols } = stampGrid(total)
   // Medidas pensadas en puntos del strip de Apple; se escalan según el alto.
   const unit = box.height / STRIP_HEIGHT
   const padX = 18 * unit
-  const padY = 14 * unit
+  const padY = (labeled ? 10 : 14) * unit
+  const top = labeled ? LABEL_SPACE * unit : 0
   const gap = Math.round((rows === 1 ? 12 : 8) * unit)
   const byWidth = (box.width - 2 * padX - (cols - 1) * gap) / cols
-  const byHeight = (box.height - 2 * padY - (rows - 1) * gap) / rows
+  const byHeight = (box.height - 2 * padY - top - (rows - 1) * gap) / rows
   return { cols, rows, size: Math.floor(Math.min(byWidth, byHeight, 64 * unit)), gap }
 }
 
@@ -89,12 +96,14 @@ function Slot({
   filled,
   size,
   assets,
+  theme,
 }: {
   index: number
   total: number
   filled: boolean
   size: number
   assets: Assets
+  theme: CardTheme
 }) {
   const isReward = index === total - 1
   const tilt = stampTilt(index)
@@ -114,7 +123,7 @@ function Slot({
           justifyContent: "center",
           transform: `rotate(${tilt}deg)`,
           boxShadow: `0 ${Math.round(size * 0.04)}px ${Math.round(size * 0.1)}px rgba(0,0,0,0.25)`,
-          border: `${Math.max(2, Math.round(size * 0.05))}px solid ${isReward ? TERRACOTTA : CREAM}`,
+          border: `${Math.max(2, Math.round(size * 0.05))}px solid ${isReward ? theme.rewardBorder : CREAM}`,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- imagen para @vercel/og, no para el navegador */}
@@ -123,7 +132,7 @@ function Slot({
     )
   }
 
-  const ring = isReward ? TERRACOTTA : EMPTY_RING
+  const ring = isReward ? theme.accent : EMPTY_RING
   return (
     <div
       style={{
@@ -131,7 +140,7 @@ function Slot({
         height: size,
         borderRadius: size,
         border: `${Math.max(2, Math.round(size * 0.035))}px dashed ${ring}`,
-        background: isReward ? REWARD_FILL : EMPTY_FILL,
+        background: isReward ? theme.rewardFill : theme.emptyFill,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -141,7 +150,39 @@ function Slot({
         fontWeight: 700,
       }}
     >
-      {isReward ? <GiftIcon size={Math.round(size * 0.46)} color={TERRACOTTA} /> : String(index + 1)}
+      {isReward ? <GiftIcon size={Math.round(size * 0.46)} color={theme.accent} /> : String(index + 1)}
+    </div>
+  )
+}
+
+function SafetyPill({ safety, unit, assets }: { safety: CardSafety; unit: number; assets: Assets }) {
+  const pill = cardSafetyPill(safety)
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: Math.round(5 * unit),
+        height: Math.round(18 * unit),
+        padding: `0 ${Math.round(9 * unit)}px`,
+        borderRadius: 999,
+        background: pill.background,
+        color: pill.text,
+        fontFamily: "DM Sans",
+        fontWeight: 700,
+        fontSize: Math.round(9.5 * unit),
+        letterSpacing: Math.round(0.8 * unit),
+        marginBottom: Math.round(2 * unit),
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- imagen para @vercel/og, no para el navegador */}
+      <img
+        src={pill.pin === "mark" ? assets.mark : assets.reward}
+        width={Math.round(9 * unit)}
+        height={Math.round(12 * unit)}
+        alt=""
+      />
+      {CARD_SAFETY_LABEL[safety].toUpperCase()}
     </div>
   )
 }
@@ -149,15 +190,21 @@ function Slot({
 const cache = new Map<string, Buffer>()
 const CACHE_MAX = 200
 
-export async function renderStampStrip(stamps: number, total: number, box: StripBox): Promise<Buffer> {
+export async function renderStampStrip(
+  stamps: number,
+  total: number,
+  box: StripBox,
+  safety: CardSafety | null = null
+): Promise<Buffer> {
   const safeTotal = Math.max(1, Math.min(20, Math.floor(total)))
   const safeStamps = Math.max(0, Math.min(safeTotal, Math.floor(stamps)))
-  const key = `${safeStamps}/${safeTotal}@${box.width}x${box.height}`
+  const key = `${safeStamps}/${safeTotal}/${safety ?? "-"}@${box.width}x${box.height}`
   const hit = cache.get(key)
   if (hit) return hit
 
   const assets = await loadAssets()
-  const { cols, rows, size, gap } = stripLayout(safeTotal, box)
+  const theme = cardTheme(safety)
+  const { cols, rows, size, gap } = stripLayout(safeTotal, box, safety !== null)
   const rowsOfSlots = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) => r * cols + c).filter((i) => i < safeTotal)
   )
@@ -177,12 +224,13 @@ export async function renderStampStrip(stamps: number, total: number, box: Strip
         alignItems: "center",
         justifyContent: "center",
         gap,
-        backgroundColor: "#2D4A34",
-        backgroundImage: `url(${textureUrl}), ${BACKGROUND}`,
+        backgroundColor: theme.background,
+        backgroundImage: `url(${textureUrl}), linear-gradient(180deg, ${theme.background} 0%, ${theme.backgroundEnd} 100%)`,
         backgroundSize: `${tile}px ${tile}px, 100% 100%`,
         backgroundRepeat: "repeat, no-repeat",
       }}
     >
+      {safety && <SafetyPill safety={safety} unit={box.height / STRIP_HEIGHT} assets={assets} />}
       {rowsOfSlots.map((row, r) => (
         <div key={r} style={{ display: "flex", gap }}>
           {row.map((i) => (
@@ -193,6 +241,7 @@ export async function renderStampStrip(stamps: number, total: number, box: Strip
               filled={i < safeStamps}
               size={size}
               assets={assets}
+              theme={theme}
             />
           ))}
         </div>

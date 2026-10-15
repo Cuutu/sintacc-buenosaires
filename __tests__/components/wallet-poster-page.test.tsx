@@ -52,6 +52,7 @@ function program(overrides: Record<string, unknown> = {}) {
     },
     placeName: "Polvorín",
     placePath: "/lugar/polvorin",
+    safety: "dedicated",
   }
 }
 
@@ -89,6 +90,7 @@ describe("/local/cartel/[programaId]", () => {
     expect(html).toContain("size: A5 portrait")
     expect(mockPosterQr).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`/tarjeta/${programId}$`)))
     expect(html).not.toContain("está pausada")
+    expect(html).toContain("100% sin TACC")
 
     expect(await render({ tamano: "a4" })).toContain("size: A4 portrait")
   })

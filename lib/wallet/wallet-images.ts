@@ -10,6 +10,7 @@ import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
 import { uploadImageBuffer } from "@/lib/cloudinary/upload-buffer"
 import { GOOGLE_HERO_BOX, renderStampStrip } from "@/lib/wallet/stamp-strip"
+import type { CardSafety } from "@/lib/wallet/card-safety"
 
 const FOLDER = "wallet"
 // Subir la versión si cambia el diseño, así Google no muestra la imagen vieja.
@@ -62,9 +63,16 @@ export async function googleLogoUrl(): Promise<string> {
   return url ?? absoluteUrl("/wallet/logo.png")
 }
 
+const SAFETY_ID: Record<CardSafety, string> = { dedicated: "100", options: "opc" }
+
 /** Franja de sellos; null si no se pudo (la tarjeta sale sin imagen). */
-export function googleHeroUrl(stamps: number, total: number): Promise<string | null> {
-  return publicImage(`sellos-${DESIGN_VERSION}-${stamps}-${total}`, () =>
-    renderStampStrip(stamps, total, GOOGLE_HERO_BOX)
+export function googleHeroUrl(
+  stamps: number,
+  total: number,
+  safety: CardSafety | null = null
+): Promise<string | null> {
+  const suffix = safety ? `-${SAFETY_ID[safety]}` : ""
+  return publicImage(`sellos-${DESIGN_VERSION}-${stamps}-${total}${suffix}`, () =>
+    renderStampStrip(stamps, total, GOOGLE_HERO_BOX, safety)
   )
 }

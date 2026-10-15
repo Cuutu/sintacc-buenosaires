@@ -22,6 +22,17 @@ import {
 
 type SlotProps = { index: number; total: number; filled: boolean; size: number }
 
+/** Todo el texto del árbol que se le pasa a ImageResponse. */
+function textOf(node: unknown): string {
+  if (typeof node === "string") return node
+  if (Array.isArray(node)) return node.map(textOf).join("")
+  if (!node || typeof node !== "object" || !("props" in node)) return ""
+  const el = node as ReactElement
+  // Componentes propios: se renderizan para leer lo que dibujan.
+  if (typeof el.type === "function") return textOf((el.type as (p: unknown) => unknown)(el.props))
+  return textOf((el.props as { children?: unknown }).children)
+}
+
 /** Los casilleros del árbol que se le pasa a ImageResponse. */
 function slotsOf(node: unknown): SlotProps[] {
   if (Array.isArray(node)) return node.flatMap(slotsOf)
@@ -46,12 +57,29 @@ describe("wallet stamp strip", () => {
     const boxes = [appleStripBox(1), appleStripBox(2), appleStripBox(3), GOOGLE_HERO_BOX]
     for (const total of [1, 3, 5, 6, 10, 12, 20]) {
       for (const box of boxes) {
-        const { cols, rows, size, gap } = stripLayout(total, box)
-        expect(cols * size + (cols - 1) * gap).toBeLessThanOrEqual(box.width)
-        expect(rows * size + (rows - 1) * gap).toBeLessThanOrEqual(box.height)
-        expect(size).toBeGreaterThan(0)
+        for (const labeled of [false, true]) {
+          const { cols, rows, size, gap } = stripLayout(total, box, labeled)
+          // Con etiqueta, arriba quedan 24 puntos para ella.
+          const top = labeled ? (24 * box.height) / STRIP_HEIGHT : 0
+          expect(cols * size + (cols - 1) * gap).toBeLessThanOrEqual(box.width)
+          expect(top + rows * size + (rows - 1) * gap).toBeLessThanOrEqual(box.height)
+          expect(size).toBeGreaterThan(0)
+        }
       }
     }
+  })
+
+  it("adds the TACC label only when the place has one", async () => {
+    await renderStampStrip(2, 10, appleStripBox(3), "dedicated")
+    await renderStampStrip(2, 10, appleStripBox(3), "options")
+    await renderStampStrip(2, 10, appleStripBox(3))
+    const [dedicated, options, none] = mockImageResponse.mock.calls.map(([element]) => textOf(element))
+    expect(dedicated).toContain("100% SIN TACC")
+    expect(options).toContain("CON OPCIONES SIN TACC")
+    expect(none).not.toMatch(/SIN TACC/)
+    // Cada etiqueta es otra imagen.
+    await renderStampStrip(2, 10, appleStripBox(3), "dedicated")
+    expect(mockImageResponse).toHaveBeenCalledTimes(3)
   })
 
   it("draws one slot per stamp with the filled ones first", async () => {
