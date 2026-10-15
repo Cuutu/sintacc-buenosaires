@@ -45,6 +45,8 @@ export type LoyaltyPassInput = {
   placeName: string
   /** Ruta relativa de la ficha del local, ej. /lugar/slug. */
   placePath?: string
+  /** Servicio web para que el Wallet se actualice solo (sólo https). */
+  webService?: { url: string; authenticationToken: string }
 }
 
 function normalizePem(raw: string): string {
@@ -121,6 +123,12 @@ export async function buildLoyaltyPass(
       logoText: "CeliMap",
       sharingProhibited: true,
       ...COLORS,
+      ...(input.webService?.url.startsWith("https://")
+        ? {
+            webServiceURL: input.webService.url,
+            authenticationToken: input.webService.authenticationToken,
+          }
+        : {}),
     }
   )
 

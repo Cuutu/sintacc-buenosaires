@@ -119,4 +119,29 @@ describe("apple wallet loyalty pass", () => {
     expect(text).toContain('"serialNumber":"demo-123"')
     expect(text).toContain("PKBarcodeFormatQR")
   })
+
+  it("adds the web service only over https", async () => {
+    const base = {
+      serialNumber: "s1",
+      barcodeValue: "s1",
+      stamps: 0,
+      stampsForReward: 5,
+      reward: "Un café",
+      placeName: "Local",
+    }
+    const withHttps = (
+      await buildLoyaltyPass(
+        { ...base, webService: { url: "https://x.test/api/wallet/apple", authenticationToken: "t".repeat(32) } },
+        config
+      )
+    ).toString("latin1")
+    expect(withHttps).toContain('"webServiceURL":"https://x.test/api/wallet/apple"')
+    const withHttp = (
+      await buildLoyaltyPass(
+        { ...base, webService: { url: "http://localhost:3000/api/wallet/apple", authenticationToken: "t".repeat(32) } },
+        config
+      )
+    ).toString("latin1")
+    expect(withHttp).not.toContain("webServiceURL")
+  })
 })
