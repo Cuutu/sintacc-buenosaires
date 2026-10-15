@@ -8,6 +8,8 @@ import { promises as fs } from "fs"
 import path from "path"
 import { PKPass } from "passkit-generator"
 import { absoluteUrl } from "@/lib/base-url"
+import { logger } from "@/lib/logger"
+import { renderStampStrip } from "@/lib/wallet/stamp-strip"
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const ASSET_FILES = [
@@ -43,6 +45,8 @@ export type LoyaltyPassInput = {
   stampsForReward: number
   reward: string
   placeName: string
+  /** Premios ya canjeados: distingue una tarjeta nueva de una que se acaba de canjear. */
+  rewardsRedeemed?: number
   /** Ruta relativa de la ficha del local, ej. /lugar/slug. */
   placePath?: string
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
@@ -90,11 +94,52 @@ export function formatStampDots(stamps: number, total: number): string {
   return "●".repeat(filled) + "○".repeat(Math.max(0, total - filled))
 }
 
+/**
+ * Texto de "Última novedad". Cuando cambia, el iPhone lo muestra como aviso
+ * en la pantalla bloqueada (changeMessage), así que cada estado tiene uno distinto.
+ */
+export function stampNewsMessage(input: {
+  stamps: number
+  total: number
+  placeName: string
+  reward: string
+  rewardsRedeemed?: number
+}): string {
+  const { stamps, total, placeName, reward } = input
+  if (stamps >= total) return `¡Completaste la tarjeta! Tu premio te espera en ${placeName}: ${reward}.`
+  if (stamps <= 0) {
+    return (input.rewardsRedeemed ?? 0) > 0
+      ? `¡Canjeaste tu premio en ${placeName}! Ya arrancás una tarjeta nueva.`
+      : `Mostrá esta tarjeta al pagar en ${placeName} y sumá tu primer sello.`
+  }
+  const left = total - stamps
+  return `¡Sumaste un sello en ${placeName}! Te ${left === 1 ? "falta" : "faltan"} ${left} para tu premio: ${reward}.`
+}
+
 async function loadAssets(): Promise<Record<string, Buffer>> {
   const entries = await Promise.all(
     ASSET_FILES.map(async (name) => [name, await fs.readFile(path.join(ASSETS_DIR, name))] as const)
   )
   return Object.fromEntries(entries)
+}
+
+/** strip.png @1x/@2x/@3x con los sellos; null si no se pudo dibujar (la tarjeta sale igual). */
+async function loadStampStrip(stamps: number, total: number): Promise<Record<string, Buffer> | null> {
+  try {
+    const [x1, x2, x3] = await Promise.all([
+      renderStampStrip(stamps, total, 1),
+      renderStampStrip(stamps, total, 2),
+      renderStampStrip(stamps, total, 3),
+    ])
+    return { "strip.png": x1, "strip@2x.png": x2, "strip@3x.png": x3 }
+  } catch (error) {
+    logger.warn({
+      route: "wallet-pass",
+      message: "no se pudo dibujar la franja de sellos",
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
 }
 
 export async function buildLoyaltyPass(
@@ -104,9 +149,10 @@ export async function buildLoyaltyPass(
   const total = Math.max(1, Math.floor(input.stampsForReward))
   const stamps = Math.max(0, Math.min(Math.floor(input.stamps), total))
   const placeUrl = absoluteUrl(input.placePath ?? "/")
+  const [assets, strip] = await Promise.all([loadAssets(), loadStampStrip(stamps, total)])
 
   const pass = new PKPass(
-    await loadAssets(),
+    { ...assets, ...strip },
     {
       wwdr: config.wwdr,
       signerCert: config.signerCert,
@@ -139,17 +185,34 @@ export async function buildLoyaltyPass(
     label: "SELLOS",
     value: `${stamps}/${total}`,
   })
-  pass.primaryFields.push({
-    key: "stamps",
-    label: input.placeName,
-    value: formatStampDots(stamps, total),
-  })
-  pass.secondaryFields.push({
-    key: "reward",
-    label: "PREMIO",
-    value: input.reward,
-  })
+  // Con franja, los sellos se ven en la imagen; sin ella, quedan los puntitos.
+  if (!strip) {
+    pass.primaryFields.push({
+      key: "stamps",
+      label: "SELLOS",
+      value: formatStampDots(stamps, total),
+    })
+  }
+  pass.secondaryFields.push(
+    {
+      key: "placeName",
+      label: "LOCAL",
+      value: input.placeName,
+    },
+    {
+      key: "reward",
+      label: "PREMIO",
+      value: input.reward,
+      textAlignment: "PKTextAlignmentRight",
+    }
+  )
   pass.backFields.push(
+    {
+      key: "news",
+      label: "Última novedad",
+      value: stampNewsMessage({ ...input, stamps, total }),
+      changeMessage: "%@",
+    },
     {
       key: "how",
       label: "Cómo funciona",

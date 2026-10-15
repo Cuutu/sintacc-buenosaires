@@ -1,10 +1,17 @@
 /**
  * @jest-environment node
  */
+const mockRenderStrip = jest.fn()
+jest.mock("@/lib/wallet/stamp-strip", () => ({
+  renderStampStrip: (...args: unknown[]) => mockRenderStrip(...args),
+}))
+jest.mock("@/lib/logger", () => ({ logger: { warn: jest.fn() } }))
+
 import {
   buildLoyaltyPass,
   formatStampDots,
   getApplePassConfig,
+  stampNewsMessage,
   type ApplePassConfig,
 } from "@/lib/wallet/apple-pass"
 
@@ -55,6 +62,13 @@ describe("apple wallet loyalty pass", () => {
     process.env.APPLE_WWDR_CERT = wwdr.cert
     delete process.env.APPLE_PASS_KEY_PASSPHRASE
     config = getApplePassConfig() as ApplePassConfig
+  })
+
+  beforeEach(() => {
+    mockRenderStrip.mockReset()
+    mockRenderStrip.mockImplementation(async (_s: number, _t: number, scale: number) =>
+      Buffer.from(`strip-${scale}x`)
+    )
   })
 
   afterAll(() => {
@@ -118,6 +132,83 @@ describe("apple wallet loyalty pass", () => {
     expect(text).toContain('"teamIdentifier":"TEAM123456"')
     expect(text).toContain('"serialNumber":"demo-123"')
     expect(text).toContain("PKBarcodeFormatQR")
+  })
+
+  it("draws the stamps as a strip image instead of dots", async () => {
+    const text = (
+      await buildLoyaltyPass(
+        {
+          serialNumber: "s2",
+          barcodeValue: "s2",
+          stamps: 7,
+          stampsForReward: 5,
+          reward: "Un café",
+          placeName: "Local",
+        },
+        config
+      )
+    ).toString("latin1")
+    expect(mockRenderStrip.mock.calls.map((c) => c.slice(0, 3))).toEqual([
+      [5, 5, 1],
+      [5, 5, 2],
+      [5, 5, 3],
+    ])
+    for (const name of ["strip.png", "strip@2x.png", "strip@3x.png"]) expect(text).toContain(name)
+    expect(text).not.toContain('"primaryFields":[{')
+    expect(text).toContain('"label":"LOCAL","value":"Local"')
+    expect(text).toContain('"label":"PREMIO","value":"Un caf')
+  })
+
+  it("falls back to dots when the strip cannot be drawn", async () => {
+    mockRenderStrip.mockRejectedValue(new Error("sin fuentes"))
+    const buffer = await buildLoyaltyPass(
+      {
+        serialNumber: "s3",
+        barcodeValue: "s3",
+        stamps: 2,
+        stampsForReward: 5,
+        reward: "Un café",
+        placeName: "Local",
+      },
+      config
+    )
+    const text = buffer.toString("utf8")
+    expect(text).not.toContain("strip.png")
+    expect(text).toContain("●●○○○")
+  })
+
+  it("puts the latest news on the back so the iPhone shows it as an alert", async () => {
+    const text = (
+      await buildLoyaltyPass(
+        {
+          serialNumber: "s4",
+          barcodeValue: "s4",
+          stamps: 2,
+          stampsForReward: 5,
+          reward: "Cookie",
+          placeName: "Polvorin",
+        },
+        config
+      )
+    ).toString("utf8")
+    expect(text).toContain('"changeMessage":"%@"')
+    expect(text).toContain("¡Sumaste un sello en Polvorin! Te faltan 3 para tu premio: Cookie.")
+  })
+
+  it("writes a different news line for each card state", () => {
+    const base = { total: 5, placeName: "Polvorín", reward: "Cookie" }
+    expect(stampNewsMessage({ ...base, stamps: 0 })).toBe(
+      "Mostrá esta tarjeta al pagar en Polvorín y sumá tu primer sello."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 4 })).toBe(
+      "¡Sumaste un sello en Polvorín! Te falta 1 para tu premio: Cookie."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 5 })).toBe(
+      "¡Completaste la tarjeta! Tu premio te espera en Polvorín: Cookie."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 0, rewardsRedeemed: 2 })).toBe(
+      "¡Canjeaste tu premio en Polvorín! Ya arrancás una tarjeta nueva."
+    )
   })
 
   it("adds the web service only over https", async () => {

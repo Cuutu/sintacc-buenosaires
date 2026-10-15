@@ -98,6 +98,7 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace): Loyalt
     reward: data.program.reward,
     placeName: data.placeName,
     placePath: data.placePath,
+    rewardsRedeemed: card.rewardsRedeemed,
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),
       authenticationToken: card.authToken,
