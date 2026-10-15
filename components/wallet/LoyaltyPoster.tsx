@@ -1,0 +1,201 @@
+import Image from "next/image"
+import { Gift } from "lucide-react"
+import { posterQr, QR_QUIET_ZONE } from "@/lib/wallet/poster-qr"
+import { stampTilt } from "@/lib/wallet/stamp-style"
+
+/**
+ * Cartel para la caja del local: el QR lleva a la página de la tarjeta (/tarjeta/<programa>).
+ * Se diseña en milímetros de una hoja A5 (148 × 210) con la variable --u, que la página
+ * cambia según el tamaño elegido y la pantalla.
+ */
+
+const u = (n: number) => `calc(var(--u) * ${n})`
+
+const OLIVE = "#2D4A34"
+
+type Props = {
+  placeName: string
+  reward: string
+  stampsForReward: number
+  enrollUrl: string
+  wallets: { apple: boolean; google: boolean }
+}
+
+function titleSize(name: string): number {
+  if (name.length <= 14) return 13
+  if (name.length <= 22) return 11
+  if (name.length <= 32) return 9
+  return 7.5
+}
+
+function walletsLine({ apple, google }: Props["wallets"]): string {
+  if (apple && google) return "Funciona con Apple Wallet y Google Wallet."
+  if (google) return "Funciona con Google Wallet."
+  return "Funciona con Apple Wallet."
+}
+
+function PosterQrCode({ value }: { value: string }) {
+  const qr = posterQr(value)
+  const box = qr.size + QR_QUIET_ZONE * 2
+  return (
+    <svg
+      viewBox={`${-QR_QUIET_ZONE} ${-QR_QUIET_ZONE} ${box} ${box}`}
+      style={{ width: u(64), height: u(64), minHeight: 0, flex: "0 1 auto", display: "block" }}
+      role="img"
+      aria-label="Código QR de la tarjeta de sellos"
+    >
+      <rect x={-QR_QUIET_ZONE} y={-QR_QUIET_ZONE} width={box} height={box} fill="#fff" />
+      <path d={qr.dataPath} fill={OLIVE} shapeRendering="crispEdges" />
+      {qr.eyes.map((eye, i) => (
+        <g key={i} fill={OLIVE}>
+          <path d={eye.ring} fillRule="evenodd" />
+          <path d={eye.dot} />
+        </g>
+      ))}
+      {qr.logo && (
+        <image
+          href="/brand/mark.png"
+          x={qr.logo.x + qr.logo.size * 0.17}
+          y={qr.logo.y + qr.logo.size * 0.06}
+          width={qr.logo.size * 0.66}
+          height={qr.logo.size * 0.88}
+        />
+      )}
+    </svg>
+  )
+}
+
+/** Muestra de cómo se llena la tarjeta: hasta 5 lugares y, si son más sellos, "…" antes del premio. */
+function StampRow({ total }: { total: number }) {
+  const slot = { width: u(11), height: u(11) }
+  const shown = Math.min(total, 5)
+  const filled = Math.min(3, Math.max(0, shown - 2))
+  const empty = Array.from({ length: Math.max(0, shown - 1 - filled) }, (_, i) => filled + i + 1)
+  return (
+    <div className="flex items-center" style={{ gap: u(2.6) }} aria-hidden>
+      {Array.from({ length: filled }, (_, i) => (
+        <span
+          key={`sello-${i}`}
+          className="flex items-center justify-center rounded-full bg-[#F7F3EB]"
+          style={{ ...slot, transform: `rotate(${stampTilt(i)}deg)` }}
+        >
+          <Image
+            src="/wallet/apple/stamp-mark.png"
+            alt=""
+            width={179}
+            height={240}
+            priority
+            style={{ height: u(6.6), width: "auto" }}
+          />
+        </span>
+      ))}
+      {empty.map((n) => (
+        <span
+          key={`vacio-${n}`}
+          className="flex items-center justify-center rounded-full border-dashed border-[#F7F3EB]/50 font-bold text-[#F7F3EB]/60"
+          style={{ ...slot, borderWidth: u(0.45), fontSize: u(4.2) }}
+        >
+          {n}
+        </span>
+      ))}
+      {total > shown && (
+        <span className="font-bold tracking-widest text-[#F7F3EB]/60" style={{ fontSize: u(4.2) }}>
+          …
+        </span>
+      )}
+      <span
+        className="flex items-center justify-center rounded-full border-dashed border-[#D4633A] bg-[#404731]"
+        style={{ ...slot, borderWidth: u(0.45) }}
+      >
+        <Gift className="text-[#D4633A]" style={{ width: u(5), height: u(5) }} />
+      </span>
+    </div>
+  )
+}
+
+export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets }: Props) {
+  const steps = ["Escaneá el QR con la cámara", "Guardá la tarjeta en tu Wallet", "Mostrala al pagar y sumá sellos"]
+  const offer = `Juntá ${stampsForReward} sellos y te llevás ${reward}.`
+  return (
+    <div
+      data-cartel
+      className="relative flex flex-col overflow-hidden bg-[#F7F3EB] text-[#2D4A34] shadow-2xl"
+      style={{ width: u(148), height: u(210) }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{ backgroundImage: "url(/brand/texture-wheat-watermark.svg)", backgroundSize: u(80) }}
+      />
+
+      {/* Si el nombre o el premio son largos, el QR se achica para que todo entre en la hoja. */}
+      <div
+        className="relative flex min-h-0 flex-1 flex-col items-center text-center"
+        style={{ padding: `${u(10)} ${u(12)} 0` }}
+      >
+        <Image
+          src="/brand/logo-principal.png"
+          alt="CeliMap"
+          width={1200}
+          height={366}
+          priority
+          className="shrink-0"
+          style={{ height: u(10), width: "auto" }}
+        />
+        <p className="shrink-0 font-serif italic text-[#D4633A]" style={{ fontSize: u(6.4), marginTop: u(5) }}>
+          Tarjeta de sellos
+        </p>
+        <h2
+          className="shrink-0 font-extrabold leading-[1.05]"
+          style={{ fontSize: u(titleSize(placeName)), marginTop: u(1.5), overflowWrap: "anywhere" }}
+        >
+          {placeName}
+        </h2>
+        <p className="shrink-0" style={{ fontSize: u(offer.length > 50 ? 4 : 4.6), marginTop: u(3), lineHeight: 1.3 }}>
+          Juntá {stampsForReward} sellos y te llevás{" "}
+          <strong className="text-[#B84420]">{reward}</strong>.
+        </p>
+
+        <div
+          className="flex min-h-0 flex-col items-center rounded-[6%] border border-[#E8E1D6] bg-white shadow-[0_2px_10px_rgba(45,74,52,0.12)]"
+          style={{ marginTop: u(5), padding: `${u(3)} ${u(3)} ${u(2.6)}` }}
+        >
+          <PosterQrCode value={enrollUrl} />
+          <p className="shrink-0 font-bold" style={{ fontSize: u(4), marginTop: u(1) }}>
+            Apuntá la cámara del celu acá
+          </p>
+        </div>
+
+        <ol className="grid w-full shrink-0 grid-cols-3" style={{ gap: u(4), marginTop: u(5) }}>
+          {steps.map((step, i) => (
+            <li key={step} className="flex flex-col items-center">
+              <span
+                className="flex items-center justify-center rounded-full bg-[#B84420] font-bold text-white"
+                style={{ width: u(6.4), height: u(6.4), fontSize: u(3.6) }}
+              >
+                {i + 1}
+              </span>
+              <span className="font-semibold leading-tight" style={{ fontSize: u(3.5), marginTop: u(1.6) }}>
+                {step}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div
+        className="relative flex shrink-0 flex-col items-center bg-[#2D4A34] text-center text-[#F7F3EB]"
+        style={{ marginTop: u(5), padding: `${u(6)} ${u(12)} ${u(8)}` }}
+      >
+        <StampRow total={stampsForReward} />
+        <p className="font-semibold" style={{ fontSize: u(3.6), marginTop: u(4) }}>
+          {walletsLine(wallets)}
+        </p>
+        <p className="text-[#F7F3EB]/75" style={{ fontSize: u(3.3), marginTop: u(0.6) }}>
+          Sin descargar nada y sin crear cuenta ·{" "}
+          <span className="font-serif italic text-[#D6CDBA]">celimap.com.ar</span>
+        </p>
+      </div>
+    </div>
+  )
+}

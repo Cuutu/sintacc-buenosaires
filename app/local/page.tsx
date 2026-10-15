@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { getServerSession } from "next-auth"
+import { Printer } from "lucide-react"
 import { redirect } from "next/navigation"
 import mongoose from "mongoose"
 import { authOptions } from "@/lib/auth"
@@ -66,8 +68,15 @@ export default async function LocalPage() {
                     <Stat label="Volvieron (2+ sellos)" value={`${retention}%`} />
                     <Stat label="Premios canjeados" value={s.redeems} />
                   </dl>
-                  <p className="mt-4 break-all text-xs text-olive/70">
-                    Link del cartel con QR: {absoluteUrl(enrollPathFor(program._id.toString()))}
+                  <Link
+                    href={`/local/cartel/${program._id.toString()}`}
+                    className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-olive px-5 font-semibold text-cream"
+                  >
+                    <Printer className="h-4 w-4" aria-hidden />
+                    Imprimir cartel con QR
+                  </Link>
+                  <p className="mt-3 break-all text-xs text-olive/70">
+                    Link de la tarjeta: {absoluteUrl(enrollPathFor(program._id.toString()))}
                   </p>
                 </li>
               )

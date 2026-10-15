@@ -330,8 +330,11 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
             <button type="button" className={adminUi.btnGhost} onClick={() => setEditing(true)}>
               Editar
             </button>
+            <a href={`/local/cartel/${program.id}`} className={adminUi.btnGhost}>
+              Imprimir cartel
+            </a>
             <button type="button" className={adminUi.btnGhost} onClick={copyLink}>
-              {copied ? "¡Copiado!" : "Copiar link del cartel"}
+              {copied ? "¡Copiado!" : "Copiar link de la tarjeta"}
             </button>
             <a href={program.enrollPath} target="_blank" rel="noreferrer" className={adminUi.btnGhost}>
               Ver página del cliente
