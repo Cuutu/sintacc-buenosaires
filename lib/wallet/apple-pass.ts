@@ -10,7 +10,7 @@ import { PKPass } from "passkit-generator"
 import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
 import type { ApplePassConfig } from "@/lib/wallet/config"
-import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
+import { clampStamps, nearbyText, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
 import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme, type CardSafety } from "@/lib/wallet/card-safety"
 import { appleStripBox, renderStampStrip } from "@/lib/wallet/stamp-strip"
 
@@ -42,6 +42,8 @@ function passColors(safety: CardSafety | null) {
   }
 }
 
+export type PassLocation = { latitude: number; longitude: number }
+
 export type LoyaltyPassInput = {
   serialNumber: string
   /** Valor del QR que escanea el local para sumar sellos. */
@@ -56,6 +58,8 @@ export type LoyaltyPassInput = {
   placePath?: string
   /** 100% sin TACC o con opciones; sin dato, la tarjeta no lleva etiqueta. */
   safety?: CardSafety | null
+  /** Dónde está el local: cerca de ahí, el celu muestra la tarjeta en la pantalla bloqueada. */
+  location?: PassLocation | null
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
   webService?: { url: string; authenticationToken: string }
 }
@@ -183,6 +187,11 @@ export async function buildLoyaltyPass(
       attributedValue: `<a href="${placeUrl}">${placeUrl.replace(/^https?:\/\//, "")}</a>`,
     }
   )
+
+  // Cerca del local, el iPhone la sugiere en la pantalla bloqueada (sin sonido; el radio lo decide iOS).
+  if (input.location) {
+    pass.setLocations({ ...input.location, relevantText: nearbyText({ ...input, stamps, total }) })
+  }
 
   pass.setBarcodes({
     format: "PKBarcodeFormatQR",

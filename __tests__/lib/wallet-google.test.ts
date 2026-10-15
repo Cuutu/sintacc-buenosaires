@@ -122,6 +122,16 @@ describe("google wallet loyalty card", () => {
     expect(plain.textModulesData.map((m) => m.id)).toEqual(["how"])
   })
 
+  it("gives Google the place's location so Android can show the card nearby", () => {
+    const near = buildLoyaltyClass(
+      config,
+      { ...input, location: { latitude: -38.7183, longitude: -62.2663 } },
+      "https://img/logo.png"
+    )
+    expect(near.merchantLocations).toEqual([{ latitude: -38.7183, longitude: -62.2663 }])
+    expect(buildLoyaltyClass(config, input, "https://img/logo.png")).not.toHaveProperty("merchantLocations")
+  })
+
   it("puts stamps, prize, stamp QR and the stamp image on the card", () => {
     const object = buildLoyaltyObject(config, { ...input, stamps: 99 }, "https://img/hero.png")
     expect(object.id).toBe(`3388000000023221580.celimap_tarjeta_${"a".repeat(32)}`)

@@ -24,6 +24,7 @@ import {
   newSerialNumber,
   parseApplePassAuth,
   passInputFor,
+  passLocationFor,
   redeemReward,
   safeTokenEquals,
 } from "@/lib/wallet/loyalty"
@@ -76,13 +77,29 @@ describe("loyalty helpers", () => {
 
   it("puts the stamp URL in the QR and the web service on the pass", () => {
     const card = { ...cardWith(2), rewardsRedeemed: 1 } as unknown as ILoyaltyCard
-    const input = passInputFor(card, { program, placeName: "Local", placePath: "/lugar/local", safety: "options" })
+    const input = passInputFor(card, {
+      program,
+      placeName: "Local",
+      placePath: "/lugar/local",
+      safety: "options",
+      location: { latitude: -34.6, longitude: -58.4 },
+    })
     expect(input.barcodeValue).toMatch(new RegExp(`/local/sellar/${card.serialNumber}$`))
     expect(input.webService?.url).toMatch(/\/api\/wallet\/apple$/)
     expect(input.webService?.authenticationToken).toBe(card.authToken)
     expect(input.stamps).toBe(2)
     expect(input.rewardsRedeemed).toBe(1)
     expect(input.safety).toBe("options")
+    expect(input.location).toEqual({ latitude: -34.6, longitude: -58.4 })
+  })
+
+  it("only uses the place's location when it is exact", () => {
+    expect(passLocationFor({ location: { lat: -34.6, lng: -58.4 } })).toEqual({ latitude: -34.6, longitude: -58.4 })
+    expect(passLocationFor({ location: { lat: -34.6, lng: -58.4 }, locationPrecision: "exact" })).not.toBeNull()
+    expect(passLocationFor({ location: { lat: -34.6, lng: -58.4 }, locationPrecision: "approx" })).toBeNull()
+    expect(passLocationFor({})).toBeNull()
+    expect(passLocationFor({ location: { lat: 0, lng: 0 } })).toBeNull()
+    expect(passLocationFor({ location: { lat: 120, lng: -58.4 } })).toBeNull()
   })
 
   it("adds a stamp atomically with cap and cooldown", async () => {

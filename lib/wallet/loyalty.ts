@@ -13,7 +13,7 @@ import { Place } from "@/models/Place"
 import { LoyaltyProgram, type ILoyaltyProgram } from "@/models/LoyaltyProgram"
 import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
 import { LoyaltyStamp } from "@/models/LoyaltyStamp"
-import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
+import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 
 /** Evita sellos dobles por tocar dos veces o escanear de nuevo. */
@@ -67,6 +67,25 @@ export type ProgramWithPlace = {
   placePath: string
   /** 100% sin TACC o con opciones, como en el mapa; null si el lugar no tiene esa info. */
   safety: CardSafety | null
+  /** Dónde está el local, para que el celu muestre la tarjeta al pasar cerca. */
+  location: PassLocation | null
+}
+
+/**
+ * Coordenadas del local para la tarjeta. Si la ubicación del mapa es aproximada,
+ * no se usa: el aviso saltaría en otra cuadra.
+ */
+export function passLocationFor(place: {
+  location?: { lat?: number; lng?: number }
+  locationPrecision?: string
+}): PassLocation | null {
+  const lat = place.location?.lat
+  const lng = place.location?.lng
+  if (place.locationPrecision === "approx") return null
+  if (typeof lat !== "number" || typeof lng !== "number") return null
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) return null
+  return { latitude: lat, longitude: lng }
 }
 
 export async function getProgramWithPlace(programId: string): Promise<ProgramWithPlace | null> {
@@ -74,15 +93,23 @@ export async function getProgramWithPlace(programId: string): Promise<ProgramWit
   await connectDB()
   const program = await LoyaltyProgram.findById(programId)
   if (!program) return null
-  const place = await Place.findById(program.placeId).select("name slug safetyLevel tags").lean<{
+  const place = await Place.findById(program.placeId).select("name slug safetyLevel tags location locationPrecision").lean<{
     _id: mongoose.Types.ObjectId
     name: string
     slug?: string
     safetyLevel?: Parameters<typeof cardSafetyFor>[0]["safetyLevel"]
     tags?: string[]
+    location?: { lat?: number; lng?: number }
+    locationPrecision?: string
   }>()
   if (!place) return null
-  return { program, placeName: place.name, placePath: getPlacePath(place), safety: cardSafetyFor(place) }
+  return {
+    program,
+    placeName: place.name,
+    placePath: getPlacePath(place),
+    safety: cardSafetyFor(place),
+    location: passLocationFor(place),
+  }
 }
 
 export async function createCard(
@@ -108,6 +135,7 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace): Loyalt
     placeName: data.placeName,
     placePath: data.placePath,
     safety: data.safety,
+    location: data.location,
     rewardsRedeemed: card.rewardsRedeemed,
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),

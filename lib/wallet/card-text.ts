@@ -31,3 +31,15 @@ export function stampNewsMessage(input: {
 export function stampHowText(total: number, reward: string): string {
   return `Mostrá esta tarjeta al pagar y el local te suma un sello. Con ${total} sellos: ${reward}.`
 }
+
+/**
+ * Texto que muestra el iPhone en la pantalla bloqueada cuando la persona pasa cerca del local.
+ * (En Android el texto lo pone Google.)
+ */
+export function nearbyText(input: { stamps: number; total: number; placeName: string; reward: string }): string {
+  const { stamps, total, placeName, reward } = input
+  if (stamps >= total) return `Estás cerca de ${placeName} y tu premio te espera: ${reward}.`
+  if (stamps <= 0) return `Estás cerca de ${placeName}. Mostrá tu tarjeta al pagar y sumá un sello.`
+  const left = total - stamps
+  return `Estás cerca de ${placeName}. Te ${left === 1 ? "falta 1 sello" : `faltan ${left} sellos`} para tu premio.`
+}

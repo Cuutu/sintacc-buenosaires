@@ -14,7 +14,7 @@ import {
   getApplePassConfig,
   type ApplePassConfig,
 } from "@/lib/wallet/apple-pass"
-import { stampNewsMessage } from "@/lib/wallet/card-text"
+import { nearbyText, stampNewsMessage } from "@/lib/wallet/card-text"
 
 // node-forge viene con passkit-generator; acá sólo para fabricar certificados de prueba.
 const forge = require("node-forge")
@@ -234,6 +234,31 @@ describe("apple wallet loyalty pass", () => {
     expect(stampNewsMessage({ ...base, stamps: 0, rewardsRedeemed: 2 })).toBe(
       "¡Canjeaste tu premio en Polvorín! Ya arrancás una tarjeta nueva."
     )
+  })
+
+  it("shows the card on the lock screen near the place", async () => {
+    const base = {
+      serialNumber: "s6",
+      barcodeValue: "s6",
+      stamps: 2,
+      stampsForReward: 5,
+      reward: "Cookie",
+      placeName: "Polvorin",
+    }
+    const near = (
+      await buildLoyaltyPass({ ...base, location: { latitude: -38.7183, longitude: -62.2663 } }, config)
+    ).toString("utf8")
+    expect(near).toContain(
+      '"locations":[{"latitude":-38.7183,"longitude":-62.2663,"relevantText":"Estás cerca de Polvorin. Te faltan 3 sellos para tu premio."}]'
+    )
+    expect((await buildLoyaltyPass(base, config)).toString("utf8")).not.toContain('"locations"')
+  })
+
+  it("writes the nearby line for each card state", () => {
+    const base = { total: 5, placeName: "Polvorín", reward: "Cookie" }
+    expect(nearbyText({ ...base, stamps: 0 })).toBe("Estás cerca de Polvorín. Mostrá tu tarjeta al pagar y sumá un sello.")
+    expect(nearbyText({ ...base, stamps: 4 })).toBe("Estás cerca de Polvorín. Te falta 1 sello para tu premio.")
+    expect(nearbyText({ ...base, stamps: 5 })).toBe("Estás cerca de Polvorín y tu premio te espera: Cookie.")
   })
 
   it("adds the web service only over https", async () => {

@@ -53,6 +53,7 @@ function program(overrides: Record<string, unknown> = {}) {
     placeName: "Polvorín",
     placePath: "/lugar/polvorin",
     safety: "dedicated",
+    location: null,
   }
 }
 

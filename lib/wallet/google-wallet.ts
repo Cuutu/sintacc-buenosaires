@@ -120,7 +120,7 @@ const image = (uri: string, description: string) => ({
 
 export function buildLoyaltyClass(
   config: GoogleWalletConfig,
-  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety">,
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "location">,
   logoUrl: string
 ) {
   return {
@@ -134,6 +134,8 @@ export function buildLoyaltyClass(
     // En modo demo se aprueba al toque; con acceso de publicación, Google la revisa.
     reviewStatus: "UNDER_REVIEW",
     multipleDevicesAndHoldersAllowedStatus: "ONE_USER_ALL_DEVICES",
+    // Cerca del local, Android avisa en la pantalla bloqueada (el radio y el texto los pone Google).
+    ...(input.location ? { merchantLocations: [input.location] } : {}),
   }
 }
 
