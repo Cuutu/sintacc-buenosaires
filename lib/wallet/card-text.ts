@@ -16,15 +16,24 @@ export function stampNewsMessage(input: {
   placeName: string
   reward: string
   rewardsRedeemed?: number
+  /** Sellos que sumó la última visita (2 con sello doble) y por qué. */
+  lastStampAdded?: number
+  lastStampReason?: "double"
 }): string {
   const { stamps, total, placeName, reward } = input
-  if (stamps >= total) return `¡Completaste la tarjeta! Tu premio te espera en ${placeName}: ${reward}.`
   if (stamps <= 0) {
     return (input.rewardsRedeemed ?? 0) > 0
       ? `¡Canjeaste tu premio en ${placeName}! Ya arrancás una tarjeta nueva.`
       : `Mostrá esta tarjeta al pagar en ${placeName} y sumá tu primer sello.`
   }
   const left = total - stamps
+  if (input.lastStampReason === "double") {
+    const added = input.lastStampAdded ?? 2
+    return stamps >= total
+      ? `¡Sello doble! Sumaste ${added} sellos y completaste la tarjeta. Tu premio te espera en ${placeName}: ${reward}.`
+      : `¡Sello doble! Sumaste ${added} sellos en ${placeName}. Te ${left === 1 ? "falta" : "faltan"} ${left} para tu premio: ${reward}.`
+  }
+  if (stamps >= total) return `¡Completaste la tarjeta! Tu premio te espera en ${placeName}: ${reward}.`
   return `¡Sumaste un sello en ${placeName}! Te ${left === 1 ? "falta" : "faltan"} ${left} para tu premio: ${reward}.`
 }
 

@@ -13,6 +13,7 @@ import type { ApplePassConfig } from "@/lib/wallet/config"
 import { clampStamps, nearbyText, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
 import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme, type CardSafety } from "@/lib/wallet/card-safety"
 import { appleStripBox, renderStampStrip } from "@/lib/wallet/stamp-strip"
+import type { StampReason } from "@/lib/wallet/promos"
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const ASSET_FILES = [
@@ -62,6 +63,11 @@ export type LoyaltyPassInput = {
   location?: PassLocation | null
   /** Último aviso del local (de la última semana). */
   notice?: string | null
+  /** "Sello doble de lunes a viernes de 15 a 18 h…", si el local lo tiene. */
+  doubleStamp?: string | null
+  /** Cuántos sellos sumó la última visita y por qué (para "Última novedad"). */
+  lastStampAdded?: number
+  lastStampReason?: StampReason
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
   webService?: { url: string; authenticationToken: string }
 }
@@ -190,6 +196,7 @@ export async function buildLoyaltyPass(
       label: "Cómo funciona",
       value: stampHowText(total, input.reward),
     },
+    ...(input.doubleStamp ? [{ key: "double", label: "Sello doble", value: input.doubleStamp }] : []),
     ...(safety ? [{ key: "taccNote", label: CARD_SAFETY_LABEL[safety], value: cardSafetyNote(safety) }] : []),
     {
       key: "place",

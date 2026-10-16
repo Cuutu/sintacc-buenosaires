@@ -11,6 +11,7 @@ import { Place } from "@/models/Place"
 import { enrollPathFor, getProgramStats, normalizeEmail } from "@/lib/wallet/loyalty"
 import { formatNoticeTime, nextNoticeAt } from "@/lib/wallet/notice"
 import { NoticeForm } from "@/components/wallet/NoticeForm"
+import { PromosForm } from "@/components/wallet/PromosForm"
 
 export const dynamic = "force-dynamic"
 
@@ -84,6 +85,18 @@ export default async function LocalPage() {
                         : null
                     }
                     nextAt={nextNotice ? formatNoticeTime(nextNotice) : null}
+                  />
+                  <PromosForm
+                    programId={program._id.toString()}
+                    initialDoubleStamp={
+                      program.doubleStamp
+                        ? {
+                            days: [...program.doubleStamp.days],
+                            fromHour: program.doubleStamp.fromHour,
+                            toHour: program.doubleStamp.toHour,
+                          }
+                        : null
+                    }
                   />
                   <Link
                     href={`/local/cartel/${program._id.toString()}`}

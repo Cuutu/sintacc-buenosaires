@@ -152,12 +152,41 @@ describe("loyalty helpers", () => {
     const now = new Date("2026-10-15T12:00:00Z")
     mockFindOneAndUpdate.mockResolvedValue({ ...card, stamps: 3 })
     const result = await addStamp(card, program, "caja@local.com", now)
-    expect(result.ok).toBe(true)
+    expect(result).toMatchObject({ ok: true, added: 1 })
     const [filter, update] = mockFindOneAndUpdate.mock.calls[0]
-    expect(filter.stamps).toEqual({ $lt: 5 })
+    // Si la tarjeta cambió en el medio (otro sello, un canje), no suma.
+    expect(filter.stamps).toBe(2)
     expect(filter.$or[1].lastStampAt.$lt.getTime()).toBe(now.getTime() - STAMP_COOLDOWN_MS)
     expect(update.$inc).toEqual({ stamps: 1, totalStamps: 1 })
-    expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "stamp" }))
+    expect(update.$set).toEqual({ lastStampAt: now, lastStampAdded: 1 })
+    expect(update.$unset).toEqual({ lastStampReason: 1 })
+    expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "stamp", count: 1 }))
+  })
+
+  it("adds 2 stamps during the shop's double-stamp hours", async () => {
+    const card = cardWith(2)
+    // Jueves 15/10 a las 15 h en Argentina.
+    const now = new Date("2026-10-15T18:00:00Z")
+    const withDouble = { ...program, doubleStamp: { days: [4], fromHour: 14, toHour: 17 } } as unknown as ILoyaltyProgram
+    mockFindOneAndUpdate.mockResolvedValue({ ...card, stamps: 4 })
+    const result = await addStamp(card, withDouble, "caja@local.com", now)
+    expect(result).toMatchObject({ ok: true, added: 2, bonus: "double" })
+    const [, update] = mockFindOneAndUpdate.mock.calls[0]
+    expect(update.$inc).toEqual({ stamps: 2, totalStamps: 2 })
+    expect(update.$set).toEqual({ lastStampAt: now, lastStampAdded: 2, lastStampReason: "double" })
+    expect(update.$unset).toBeUndefined()
+    expect(mockStampCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "stamp", count: 2, bonus: "double" })
+    )
+  })
+
+  it("puts the double-stamp hours and the last stamp on the card", () => {
+    const withDouble = { ...program, doubleStamp: { days: [1, 2, 3, 4, 5], fromHour: 15, toHour: 18 } } as unknown as ILoyaltyProgram
+    const card = { ...cardWith(3), lastStampAdded: 2, lastStampReason: "double" } as unknown as ILoyaltyCard
+    const input = passInputFor(card, { program: withDouble, placeName: "Local", placePath: "/lugar/local", safety: null, location: null })
+    expect(input.doubleStamp).toBe("Sello doble de lunes a viernes de 15 a 18 h: cada visita suma 2 sellos.")
+    expect(input.lastStampAdded).toBe(2)
+    expect(input.lastStampReason).toBe("double")
   })
 
   it("refuses to stamp a full card or twice in a row", async () => {

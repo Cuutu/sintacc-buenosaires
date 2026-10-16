@@ -157,6 +157,7 @@ export function buildLoyaltyObject(
     ...(heroUrl ? { heroImage: image(heroUrl, `${stamps} de ${total} sellos`) } : {}),
     textModulesData: [
       { id: "how", header: "Cómo funciona", body: stampHowText(total, input.reward) },
+      ...(input.doubleStamp ? [{ id: "double", header: "Sello doble", body: input.doubleStamp }] : []),
       ...(input.safety
         ? [{ id: "tacc", header: CARD_SAFETY_LABEL[input.safety], body: cardSafetyNote(input.safety) }]
         : []),
@@ -229,6 +230,32 @@ export async function pushGoogleCardUpdate(input: GoogleCardInput, config: Googl
       message: "no se pudo actualizar la tarjeta de Google Wallet",
       error: error instanceof Error ? error.message : String(error),
     })
+  }
+}
+
+/**
+ * Actualiza la tarjeta sin mandarle aviso al celu (por ej., el local cambió una promo).
+ * Devuelve false si falló o si la tarjeta todavía no existe en Google.
+ */
+export async function refreshGoogleCard(input: GoogleCardInput, config: GoogleWalletConfig): Promise<boolean> {
+  try {
+    const { loyaltyObject } = await buildResources(config, input)
+    const patched = await walletApi(
+      config,
+      "PATCH",
+      `/loyaltyObject/${encodeURIComponent(loyaltyObject.id)}`,
+      loyaltyObject
+    )
+    if (patched.status === 404) return false
+    await expectOk(patched, "loyaltyObject patch")
+    return true
+  } catch (error) {
+    logger.warn({
+      route: "wallet-google",
+      message: "no se pudo actualizar la tarjeta de Google Wallet",
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return false
   }
 }
 

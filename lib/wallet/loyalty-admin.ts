@@ -7,6 +7,7 @@ import { Place } from "@/models/Place"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { enrollPathFor, getProgramStats, type ProgramStats } from "@/lib/wallet/loyalty"
 import { formatNoticeTime } from "@/lib/wallet/notice"
+import { doubleStampText } from "@/lib/wallet/promos"
 
 const staffEmails = z
   .array(z.string().trim().toLowerCase().email("Mail inválido"))
@@ -42,6 +43,8 @@ export type AdminProgramRow = {
   stats: ProgramStats
   /** Último aviso del local, para que el admin vea qué le mandan a los clientes. */
   notice: { text: string; sentAt: string; byEmail: string } | null
+  /** Promos que armó el local desde /local. */
+  doubleStamp: string | null
 }
 
 export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
@@ -68,6 +71,7 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
       notice: p.notice
         ? { text: p.notice.text, sentAt: formatNoticeTime(new Date(p.notice.sentAt)), byEmail: p.notice.byEmail }
         : null,
+      doubleStamp: doubleStampText(p.doubleStamp),
     }
   })
 }

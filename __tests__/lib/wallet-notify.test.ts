@@ -10,12 +10,16 @@ const mockGoogleNotice = jest.fn()
 const mockGetProgram = jest.fn()
 const mockUpdateMany = jest.fn()
 const mockCardFind = jest.fn()
+const mockGoogleRefresh = jest.fn()
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 jest.mock("@/lib/logger", () => ({ logger: { warn: jest.fn() } }))
 jest.mock("@/models/LoyaltyCard", () => ({
   LoyaltyCard: {
     updateMany: (...a: unknown[]) => mockUpdateMany(...a),
-    find: (...a: unknown[]) => ({ select: () => ({ lean: () => mockCardFind(...a) }) }),
+    find: (...a: unknown[]) => ({
+      select: () => ({ lean: () => mockCardFind(...a) }),
+      sort: () => ({ limit: () => mockCardFind(...a) }),
+    }),
   },
 }))
 jest.mock("@/lib/wallet/apple-push", () => ({
@@ -25,6 +29,7 @@ jest.mock("@/lib/wallet/apple-push", () => ({
 jest.mock("@/lib/wallet/google-wallet", () => ({
   pushGoogleCardUpdate: (...a: unknown[]) => mockGooglePush(...a),
   pushGoogleProgramNotice: (...a: unknown[]) => mockGoogleNotice(...a),
+  refreshGoogleCard: (...a: unknown[]) => mockGoogleRefresh(...a),
 }))
 jest.mock("@/lib/wallet/config", () => ({
   getApplePassConfig: () => ({ passTypeIdentifier: "p" }),
@@ -35,7 +40,7 @@ jest.mock("@/lib/wallet/loyalty", () => ({
   passInputFor: (card: { serialNumber: string }) => ({ serialNumber: card.serialNumber }),
 }))
 
-import { notifyCardChanged, notifyProgramNotice } from "@/lib/wallet/notify"
+import { notifyCardChanged, notifyProgramNotice, refreshProgramCards } from "@/lib/wallet/notify"
 import type { ProgramWithPlace } from "@/lib/wallet/loyalty"
 import type { ILoyaltyCard } from "@/models/LoyaltyCard"
 
@@ -100,5 +105,29 @@ describe("notifyProgramNotice", () => {
     const data = { program: { _id: programId }, placeName: "X" } as unknown as ProgramWithPlace
     await expect(notifyProgramNotice(data, "Hola")).resolves.toBeUndefined()
     expect(mockGoogleNotice).toHaveBeenCalled()
+  })
+})
+
+describe("refreshProgramCards", () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it("refreshes every card of the place without a lock-screen notice", async () => {
+    const data = { program: { _id: programId }, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    mockCardFind
+      .mockResolvedValueOnce([{ serialNumber: "a1" }, { serialNumber: "a2" }])
+      .mockResolvedValueOnce([{ serialNumber: "g1" }])
+    await refreshProgramCards(data as unknown as ProgramWithPlace)
+    expect(mockUpdateMany).toHaveBeenCalledWith(
+      { programId, wallet: { $ne: "google" } },
+      { $set: { updatedAt: expect.any(Date) } },
+      { timestamps: false }
+    )
+    expect(mockApplePushMany).toHaveBeenCalledWith(["a1", "a2"], expect.anything())
+    expect(mockGoogleRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ serialNumber: "g1", programId: programId.toString() }),
+      expect.anything()
+    )
+    expect(mockGooglePush).not.toHaveBeenCalled()
+    expect(mockGoogleNotice).not.toHaveBeenCalled()
   })
 })

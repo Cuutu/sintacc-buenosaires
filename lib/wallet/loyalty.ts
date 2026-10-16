@@ -16,6 +16,7 @@ import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
+import { doubleStampText, stampIncrement, type StampReason } from "@/lib/wallet/promos"
 
 /** Evita sellos dobles por tocar dos veces o escanear de nuevo. */
 export const STAMP_COOLDOWN_MS = 60_000
@@ -138,7 +139,10 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
     safety: data.safety,
     location: data.location,
     notice: activeNotice(data.program.notice, now),
+    doubleStamp: doubleStampText(data.program.doubleStamp),
     rewardsRedeemed: card.rewardsRedeemed,
+    lastStampAdded: card.lastStampAdded,
+    lastStampReason: card.lastStampReason,
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),
       authenticationToken: card.authToken,
@@ -147,10 +151,13 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
 }
 
 export type StampResult =
-  | { ok: true; card: ILoyaltyCard }
+  | { ok: true; card: ILoyaltyCard; added: number; bonus?: StampReason }
   | { ok: false; reason: "not_found" | "full" | "too_soon" | "not_ready" }
 
-/** Suma un sello de forma atómica (no pasa del máximo ni duplica en el cooldown). */
+/**
+ * Suma los sellos de una visita de forma atómica: 1, o 2 en horario de sello doble,
+ * sin pasar del máximo ni duplicar en el cooldown. Si la tarjeta cambió en el medio, no suma.
+ */
 export async function addStamp(
   card: ILoyaltyCard,
   program: ILoyaltyProgram,
@@ -158,21 +165,33 @@ export async function addStamp(
   now = new Date()
 ): Promise<StampResult> {
   if (card.stamps >= program.stampsForReward) return { ok: false, reason: "full" }
+  const { added, reason } = stampIncrement(card, program, now)
   const updated = await LoyaltyCard.findOneAndUpdate(
     {
       _id: card._id,
-      stamps: { $lt: program.stampsForReward },
+      stamps: card.stamps,
       $or: [
         { lastStampAt: { $exists: false } },
         { lastStampAt: { $lt: new Date(now.getTime() - STAMP_COOLDOWN_MS) } },
       ],
     },
-    { $inc: { stamps: 1, totalStamps: 1 }, $set: { lastStampAt: now } },
+    {
+      $inc: { stamps: added, totalStamps: added },
+      $set: { lastStampAt: now, lastStampAdded: added, ...(reason ? { lastStampReason: reason } : {}) },
+      ...(reason ? {} : { $unset: { lastStampReason: 1 } }),
+    },
     { new: true }
   )
   if (!updated) return { ok: false, reason: "too_soon" }
-  await LoyaltyStamp.create({ programId: program._id, cardId: card._id, kind: "stamp", byEmail })
-  return { ok: true, card: updated }
+  await LoyaltyStamp.create({
+    programId: program._id,
+    cardId: card._id,
+    kind: "stamp",
+    count: added,
+    ...(reason ? { bonus: reason } : {}),
+    byEmail,
+  })
+  return { ok: true, card: updated, added, ...(reason ? { bonus: reason } : {}) }
 }
 
 /** Canjea el premio: vuelve los sellos a 0. */
@@ -188,7 +207,7 @@ export async function redeemReward(
   )
   if (!updated) return { ok: false, reason: "not_ready" }
   await LoyaltyStamp.create({ programId: program._id, cardId: card._id, kind: "redeem", byEmail })
-  return { ok: true, card: updated }
+  return { ok: true, card: updated, added: 0 }
 }
 
 export type SaveNoticeResult =

@@ -65,6 +65,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         stamps: result.card.stamps,
         stampsForReward: program.stampsForReward,
         rewardsRedeemed: result.card.rewardsRedeemed,
+        added: result.added,
+        ...(result.bonus ? { bonus: result.bonus } : {}),
       },
       { headers: { "Cache-Control": "private, no-store" } }
     )

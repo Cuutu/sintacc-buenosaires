@@ -7,6 +7,7 @@ import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { StampActions } from "@/components/wallet/StampActions"
 import { canManageProgram, getProgramWithPlace, isValidSerial } from "@/lib/wallet/loyalty"
+import { doubleStampText, isDoubleStampNow } from "@/lib/wallet/promos"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,9 @@ export default async function SellarPage({ params }: Props) {
   const session = await getServerSession(authOptions)
   const isStaff = canManageProgram(data.program, session)
   const total = data.program.stampsForReward
+  // Página dinámica (no ISR): la hora del servidor es la de este momento.
+  const doubleNow = isDoubleStampNow(data.program.doubleStamp)
+  const doubleInfo = doubleStampText(data.program.doubleStamp)
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-10">
@@ -40,6 +44,7 @@ export default async function SellarPage({ params }: Props) {
           initialStamps={card.stamps}
           total={total}
           safety={data.safety}
+          doubleNow={doubleNow}
         />
       ) : (
         <>
@@ -53,6 +58,12 @@ export default async function SellarPage({ params }: Props) {
           <p className="text-center text-olive/80">
             Mostrá este QR al pagar: el local te suma el sello.
           </p>
+          {doubleInfo && (
+            <p className="rounded-2xl bg-cream-card p-4 text-center text-sm text-olive">
+              {doubleNow ? <strong>¡Ahora hay sello doble! </strong> : null}
+              {doubleInfo}
+            </p>
+          )}
           {!session?.user && (
             <Link
               href={`/login?callbackUrl=${encodeURIComponent(`/local/sellar/${card.serialNumber}`)}`}

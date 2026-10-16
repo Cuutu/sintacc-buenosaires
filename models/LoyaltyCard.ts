@@ -3,6 +3,10 @@ import mongoose, { Schema, Document, Model } from "mongoose"
 export const LOYALTY_WALLETS = ["apple", "google"] as const
 export type LoyaltyWallet = (typeof LOYALTY_WALLETS)[number]
 
+/** Por qué el último sello sumó más de uno (para el mensaje de la tarjeta). */
+export const STAMP_REASONS = ["double"] as const
+export type StampReasonValue = (typeof STAMP_REASONS)[number]
+
 /** Tarjeta de un cliente. serialNumber va en el QR; authToken sólo lo conoce el Wallet. */
 export interface ILoyaltyCard extends Document {
   programId: mongoose.Types.ObjectId
@@ -15,6 +19,9 @@ export interface ILoyaltyCard extends Document {
   totalStamps: number
   rewardsRedeemed: number
   lastStampAt?: Date
+  /** Cuántos sellos sumó la última vez y por qué (sello doble…). */
+  lastStampAdded?: number
+  lastStampReason?: StampReasonValue
   createdAt: Date
   updatedAt: Date
 }
@@ -29,6 +36,8 @@ const LoyaltyCardSchema = new Schema<ILoyaltyCard>(
     totalStamps: { type: Number, default: 0, min: 0 },
     rewardsRedeemed: { type: Number, default: 0, min: 0 },
     lastStampAt: Date,
+    lastStampAdded: { type: Number, min: 0 },
+    lastStampReason: { type: String, enum: STAMP_REASONS },
   },
   { timestamps: true }
 )

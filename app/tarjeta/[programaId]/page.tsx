@@ -8,6 +8,7 @@ import { BADGE_TRADEMARK, walletBadges } from "@/lib/wallet/badges"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
 import { getProgramWithPlace } from "@/lib/wallet/loyalty"
 import { activeNotice } from "@/lib/wallet/notice"
+import { doubleStampText } from "@/lib/wallet/promos"
 
 export const dynamic = "force-dynamic"
 
@@ -25,6 +26,7 @@ export default async function TarjetaPage({ params }: Props) {
   const { program, placeName, placePath, safety } = data
   const programId = program._id.toString()
   const notice = activeNotice(program.notice)
+  const doubleStamp = doubleStampText(program.doubleStamp)
 
   // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
   const userAgent = headers().get("user-agent") ?? ""
@@ -43,6 +45,11 @@ export default async function TarjetaPage({ params }: Props) {
           Juntá {program.stampsForReward} sellos y te llevás: <strong>{program.reward}</strong>.
           Mostrá la tarjeta al pagar y el local te suma un sello.
         </p>
+        {doubleStamp && (
+          <p className="mt-3 rounded-2xl bg-[#FBE9E2] px-3 py-2 text-sm font-semibold text-[#B84420]">
+            {doubleStamp}
+          </p>
+        )}
       </header>
 
       {notice && (

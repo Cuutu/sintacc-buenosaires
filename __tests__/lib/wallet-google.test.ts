@@ -17,6 +17,7 @@ import {
   googleSaveLink,
   pushGoogleCardUpdate,
   pushGoogleProgramNotice,
+  refreshGoogleCard,
   type GoogleCardInput,
   type GoogleWalletConfig,
 } from "@/lib/wallet/google-wallet"
@@ -227,6 +228,27 @@ describe("google wallet loyalty card", () => {
     const calls = mockFetch({ "PATCH /loyaltyObject": 404 })
     await pushGoogleCardUpdate(input, config)
     expect(calls).toHaveLength(1)
+    expect(mockWarn).not.toHaveBeenCalled()
+  })
+  it("shows the double-stamp hours on the card", () => {
+    const object = buildLoyaltyObject(config, { ...input, doubleStamp: "Sello doble los martes de 15 a 18 h." }, null)
+    expect(object.textModulesData).toContainEqual({
+      id: "double",
+      header: "Sello doble",
+      body: "Sello doble los martes de 15 a 18 h.",
+    })
+    expect(buildLoyaltyObject(config, input, null).textModulesData.map((m) => m.id)).not.toContain("double")
+  })
+
+  it("refreshes a card without notifying the phone", async () => {
+    const calls = mockFetch({})
+    expect(await refreshGoogleCard({ ...input, doubleStamp: "Sello doble." }, config)).toBe(true)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].method).toBe("PATCH")
+    expect(calls[0].body).not.toHaveProperty("messages")
+
+    mockFetch({ "PATCH /loyaltyObject": 404 })
+    expect(await refreshGoogleCard(input, config)).toBe(false)
     expect(mockWarn).not.toHaveBeenCalled()
   })
 })

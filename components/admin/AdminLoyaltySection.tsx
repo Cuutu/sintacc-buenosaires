@@ -45,7 +45,7 @@ export function AdminLoyaltySection({ initialPrograms }: { initialPrograms: Admi
         <div>
           <h1 className={adminUi.title}>Tarjetas de sellos</h1>
           <p className={`mt-2 ${adminUi.subtitle}`}>
-            Un programa por local. El local suma sellos desde /local con su Google. Pausar frena las tarjetas nuevas; las que ya existen siguen sumando.
+            Un programa por local. El local suma sellos, manda avisos y arma sus promos desde /local con su Google. Pausar frena las tarjetas nuevas; las que ya existen siguen sumando.
           </p>
         </div>
         {!creating && (
@@ -308,6 +308,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           <span className={adminUi.text}>{program.notice.text}</span>
         </p>
       )}
+      {program.doubleStamp && <p className={`text-sm ${adminUi.muted}`}>{program.doubleStamp}</p>}
       {error && <p className="text-sm text-[#B84420]">{error}</p>}
 
       <div className="flex flex-wrap gap-2">

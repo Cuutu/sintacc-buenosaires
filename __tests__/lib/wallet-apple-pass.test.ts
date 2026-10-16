@@ -303,4 +303,25 @@ describe("apple wallet loyalty pass", () => {
     ).toString("latin1")
     expect(withHttp).not.toContain("webServiceURL")
   })
+  it("explains the shop's double-stamp hours on the back", async () => {
+    const text = (
+      await buildLoyaltyPass(
+        {
+          serialNumber: "s2",
+          barcodeValue: "s2",
+          stamps: 3,
+          stampsForReward: 5,
+          reward: "Un cafe",
+          placeName: "Local",
+          doubleStamp: "Sello doble de lunes a viernes de 15 a 18 h: cada visita suma 2 sellos.",
+          lastStampAdded: 2,
+          lastStampReason: "double",
+        },
+        config
+      )
+    ).toString("latin1")
+    expect(text).toContain('"key":"double"')
+    expect(text).toContain("Sello doble de lunes a viernes de 15 a 18 h")
+    expect(text).toContain("Sumaste 2 sellos en Local")
+  })
 })
