@@ -143,7 +143,8 @@ export async function getProgramWithPlace(programId: string): Promise<ProgramWit
 export async function createCard(
   programId: mongoose.Types.ObjectId,
   wallet: LoyaltyWallet = "apple",
-  referredBy: mongoose.Types.ObjectId | null = null
+  referredBy: mongoose.Types.ObjectId | null = null,
+  requestKey: string | null = null
 ): Promise<ILoyaltyCard> {
   await connectDB()
   return LoyaltyCard.create({
@@ -152,7 +153,15 @@ export async function createCard(
     authToken: newAuthToken(),
     wallet,
     ...(referredBy ? { referredBy } : {}),
+    ...(requestKey ? { requestKey } : {}),
   })
+}
+
+/** Código del botón "Agregar" (uno por botón y por visita a la página). */
+export const REQUEST_KEY_PATTERN = /^[A-Za-z0-9_-]{12,40}$/
+
+export function newRequestKey(): string {
+  return crypto.randomBytes(12).toString("base64url")
 }
 
 export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = new Date()): LoyaltyPassInput {
@@ -359,9 +368,10 @@ export async function countCardsInWallet(programId: mongoose.Types.ObjectId): Pr
     LoyaltyCard.find({ programId, wallet: { $ne: "google" } }).distinct("serialNumber"),
     LoyaltyCard.countDocuments({ programId, wallet: "google" }),
   ])
+  // iPhones distintos: si alguien guardó dos tarjetas del mismo local, cuenta una vez.
   const apple =
     appleSerials.length > 0
-      ? (await LoyaltyDevice.distinct("serialNumber", { serialNumber: { $in: appleSerials } })).length
+      ? (await LoyaltyDevice.distinct("deviceLibraryIdentifier", { serialNumber: { $in: appleSerials } })).length
       : 0
   return apple + google
 }

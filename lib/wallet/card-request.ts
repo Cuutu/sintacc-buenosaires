@@ -10,7 +10,13 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { checkRateLimitByIp } from "@/lib/rate-limit"
 import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
-import { createCard, findInviterCard, isValidSerial, type ProgramWithPlace } from "@/lib/wallet/loyalty"
+import {
+  createCard,
+  findInviterCard,
+  isValidSerial,
+  REQUEST_KEY_PATTERN,
+  type ProgramWithPlace,
+} from "@/lib/wallet/loyalty"
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
@@ -39,6 +45,14 @@ export async function findOrCreateCard(
     : null
   if (existing) return { ok: true, card: existing }
 
+  // Mismo botón tocado dos veces (o el celu que reintenta): la tarjeta que ya creó ese toque.
+  const rawKey = request.nextUrl.searchParams.get("k")
+  const requestKey = rawKey && REQUEST_KEY_PATTERN.test(rawKey) ? rawKey : null
+  const byKey = () =>
+    requestKey ? LoyaltyCard.findOne({ programId: data.program._id, requestKey, wallet }) : Promise.resolve(null)
+  const sameTap = await byKey()
+  if (sameTap) return { ok: true, card: sameTap }
+
   const limit = await checkRateLimitByIp(request, "loyalty_card_create", 10, 1440)
   if (!limit.allowed) {
     return {
@@ -50,7 +64,18 @@ export async function findOrCreateCard(
     }
   }
   const referredBy = await findInviterCard(data.program, request.nextUrl.searchParams.get("amigo"))
-  return { ok: true, card: await createCard(data.program._id, wallet, referredBy) }
+  try {
+    return { ok: true, card: await createCard(data.program._id, wallet, referredBy, requestKey) }
+  } catch (error) {
+    // Los dos toques llegaron juntos: el otro ganó la carrera y ya la creó.
+    const raced = isDuplicateKey(error) ? await byKey() : null
+    if (raced) return { ok: true, card: raced }
+    throw error
+  }
+}
+
+function isDuplicateKey(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: number }).code === 11000
 }
 
 export function rememberCard(response: NextResponse, card: ILoyaltyCard, wallet: LoyaltyWallet): NextResponse {

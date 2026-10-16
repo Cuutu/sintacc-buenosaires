@@ -307,7 +307,10 @@ describe("loyalty helpers", () => {
     mockCardCount.mockResolvedValue(2)
     mockDeviceDistinct.mockResolvedValue(["a2"])
     expect(await countCardsInWallet(program._id)).toBe(3)
-    expect(mockDeviceDistinct).toHaveBeenCalledWith("serialNumber", { serialNumber: { $in: ["a1", "a2", "a3"] } })
+    // iPhones distintos, no tarjetas: dos tarjetas en el mismo iPhone cuentan una vez.
+    expect(mockDeviceDistinct).toHaveBeenCalledWith("deviceLibraryIdentifier", {
+      serialNumber: { $in: ["a1", "a2", "a3"] },
+    })
     expect(mockCardCount).toHaveBeenCalledWith({ programId: program._id, wallet: "google" })
   })
 })

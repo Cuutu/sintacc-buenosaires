@@ -8,7 +8,7 @@ import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { BADGE_TRADEMARK, walletBadges } from "@/lib/wallet/badges"
 import { CARD_SAFETY_LABEL } from "@/lib/wallet/card-safety"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
-import { findInviterCard, getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { findInviterCard, getProgramWithPlace, newRequestKey } from "@/lib/wallet/loyalty"
 import { activeNotice } from "@/lib/wallet/notice"
 import { doubleStampText } from "@/lib/wallet/promos"
 
@@ -33,7 +33,12 @@ export default async function TarjetaPage({ params, searchParams }: Props) {
   // "Traé un amigo": el link del amigo pasa a los botones, y la tarjeta nueva lo recuerda.
   const amigo = typeof searchParams?.amigo === "string" ? searchParams.amigo : null
   const inviter = await findInviterCard(program, amigo)
-  const query = inviter ? `?amigo=${inviter.toString()}` : ""
+  // Un código por botón: si lo tocan dos veces, es la misma tarjeta (ver card-request.ts).
+  const hrefFor = (wallet: "apple" | "google") => {
+    const params = new URLSearchParams({ k: newRequestKey() })
+    if (inviter) params.set("amigo", inviter.toString())
+    return `/api/wallet/tarjeta/${programId}/${wallet}?${params.toString()}`
+  }
 
   // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
   const userAgent = headers().get("user-agent") ?? ""
@@ -86,10 +91,10 @@ export default async function TarjetaPage({ params, searchParams }: Props) {
 
       <section className="flex flex-col gap-3" aria-label="Guardar la tarjeta">
         {showApple && (
-          <AddToWalletButton wallet="apple" href={`/api/wallet/tarjeta/${programId}/apple${query}`} badge={badges.apple} />
+          <AddToWalletButton wallet="apple" href={hrefFor("apple")} badge={badges.apple} />
         )}
         {showGoogle && (
-          <AddToWalletButton wallet="google" href={`/api/wallet/tarjeta/${programId}/google${query}`} badge={badges.google} />
+          <AddToWalletButton wallet="google" href={hrefFor("google")} badge={badges.google} />
         )}
         <p className="text-center text-sm text-olive/70">
           {showApple || showGoogle

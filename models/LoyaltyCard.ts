@@ -24,6 +24,11 @@ export interface ILoyaltyCard extends Document {
   /** Cuántos sellos sumó la última vez y por qué (sello doble…). */
   lastStampAdded?: number
   lastStampReason?: StampReasonValue
+  /**
+   * Código del botón "Agregar" que la creó: si llegan dos pedidos con el mismo código (doble
+   * toque, o el celu que reintenta), es la misma tarjeta.
+   */
+  requestKey?: string
   /** Tarjeta del amigo que lo invitó ("Traé un amigo"). */
   referredBy?: mongoose.Types.ObjectId
   /** Cuándo se entregaron los sellos de regalo por venir invitado (una sola vez). */
@@ -47,11 +52,18 @@ const LoyaltyCardSchema = new Schema<ILoyaltyCard>(
     lastStampAt: Date,
     lastStampAdded: { type: Number, min: 0 },
     lastStampReason: { type: String, enum: STAMP_REASONS },
+    requestKey: { type: String },
     referredBy: { type: Schema.Types.ObjectId, ref: "LoyaltyCard" },
     referralRewardedAt: Date,
     referralsRewarded: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
+)
+
+// Una tarjeta por botón tocado: un doble toque no crea dos.
+LoyaltyCardSchema.index(
+  { programId: 1, requestKey: 1 },
+  { unique: true, partialFilterExpression: { requestKey: { $type: "string" } } }
 )
 
 export const LoyaltyCard: Model<ILoyaltyCard> =

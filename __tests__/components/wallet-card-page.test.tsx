@@ -16,6 +16,7 @@ const mockFindInviter = jest.fn()
 jest.mock("@/lib/wallet/loyalty", () => ({
   getProgramWithPlace: (...a: unknown[]) => mockGetProgram(...a),
   findInviterCard: (...a: unknown[]) => mockFindInviter(...a),
+  newRequestKey: () => "kkkkkkkkkkkkkkkk",
 }))
 jest.mock("@/lib/wallet/config", () => ({
   isApplePassConfigured: () => true,
@@ -59,7 +60,7 @@ describe("/tarjeta/[programaId]", () => {
   it("shows only the iPhone's Wallet, with the text button until the badge is uploaded", async () => {
     const html = await render()
     expect(mockBadges).toHaveBeenCalledWith({ apple: true, google: false })
-    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/apple"`)
+    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/apple?k=kkkkkkkkkkkkkkkk"`)
     expect(html).not.toContain("/google")
     expect(html).toContain("Agregar a Apple Wallet")
     expect(html).not.toContain("marcas de Apple")
@@ -80,8 +81,8 @@ describe("/tarjeta/[programaId]", () => {
     const html = await render({ amigo: amigo.toString() })
     expect(mockFindInviter).toHaveBeenCalledWith(expect.objectContaining({ _id: programId }), amigo.toString())
     expect(html).toContain("Te invitó un amigo")
-    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/apple?amigo=${amigo}"`)
-    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/google?amigo=${amigo}"`)
+    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/apple?k=kkkkkkkkkkkkkkkk&amp;amigo=${amigo}"`)
+    expect(html).toContain(`href="/api/wallet/tarjeta/${programId}/google?k=kkkkkkkkkkkkkkkk&amp;amigo=${amigo}"`)
   })
 
   it("ignores invite links that are not valid for this place", async () => {

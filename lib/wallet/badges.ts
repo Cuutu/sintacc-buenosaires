@@ -9,23 +9,15 @@
 import { readFileSync } from "fs"
 import path from "path"
 import type { LoyaltyWallet } from "@/models/LoyaltyCard"
+import { BADGE_ALT } from "@/lib/wallet/badge-text"
+
+export { BADGE_ALT, BADGE_TRADEMARK } from "@/lib/wallet/badge-text"
 
 export const BADGE_DIR = path.join("public", "wallet", "badges")
 
 export const BADGE_FILES: Record<LoyaltyWallet, string> = {
   apple: "agregar-a-apple-wallet.svg",
   google: "agregar-a-google-wallet.svg",
-}
-
-export const BADGE_ALT: Record<LoyaltyWallet, string> = {
-  apple: "Agregar a Apple Wallet",
-  google: "Agregar a Google Wallet",
-}
-
-/** Lo que piden las marcas cuando aparece la insignia (va en letra chica). */
-export const BADGE_TRADEMARK: Record<LoyaltyWallet, string> = {
-  apple: "Apple y Apple Wallet son marcas de Apple Inc., registradas en EE. UU. y otros países.",
-  google: "Google Wallet es una marca de Google LLC.",
 }
 
 export type WalletBadge = { src: string; width: number; height: number; alt: string }
