@@ -11,6 +11,7 @@ import { LoyaltyDevice } from "@/models/LoyaltyDevice"
 import { enrollPathFor, getProgramStats, type ProgramStats } from "@/lib/wallet/loyalty"
 import { formatNoticeTime } from "@/lib/wallet/notice"
 import { doubleStampText } from "@/lib/wallet/promos"
+import { getMonthlyStamps, type MonthStamps } from "@/lib/wallet/monthly"
 
 const staffEmails = z
   .array(z.string().trim().toLowerCase().email("Mail inválido"))
@@ -49,6 +50,8 @@ export type AdminProgramRow = {
   /** Promos que armó el local desde /local. */
   doubleStamp: string | null
   referralEnabled: boolean
+  /** Sellos por mes, últimos 6 (base del plan pago). */
+  monthly: MonthStamps[]
 }
 
 export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
@@ -58,7 +61,10 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
     .select("name slug")
     .lean<Array<{ _id: mongoose.Types.ObjectId; name: string; slug?: string }>>()
   const byId = new Map(places.map((p) => [p._id.toString(), p]))
-  const stats = await Promise.all(programs.map((p) => getProgramStats(p._id)))
+  const [stats, monthly] = await Promise.all([
+    Promise.all(programs.map((p) => getProgramStats(p._id))),
+    getMonthlyStamps(programs.map((p) => p._id)),
+  ])
   return programs.map((p, i) => {
     const place = byId.get(p.placeId.toString())
     return {
@@ -77,6 +83,7 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
         : null,
       doubleStamp: doubleStampText(p.doubleStamp),
       referralEnabled: Boolean(p.referralEnabled),
+      monthly: monthly.get(p._id.toString()) ?? [],
     }
   })
 }

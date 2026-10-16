@@ -40,6 +40,23 @@ jest.mock("@/lib/wallet/visits", () => ({
   }),
 }))
 
+jest.mock("@/lib/wallet/monthly", () => ({
+  getMonthlyStamps: async (ids: Array<{ toString(): string }>) =>
+    new Map(
+      ids.map((id) => [
+        id.toString(),
+        ["may", "jun", "jul", "ago", "sep", "oct"].map((label, i) => ({
+          month: `2026-0${i + 5}`,
+          label,
+          stamps: i === 5 ? 14 : i === 4 ? 10 : 0,
+          customers: i === 5 ? 6 : 0,
+          redeems: i === 5 ? 1 : 0,
+          current: i === 5,
+        })),
+      ])
+    ),
+}))
+
 import LocalPage from "@/app/local/page"
 
 describe("/local", () => {
@@ -69,6 +86,9 @@ describe("/local", () => {
     // Volvieron sobre los clientes que vinieron (4 de 5), no sobre las tarjetas creadas.
     expect(html).toContain("80%")
     expect(html).toContain("10 tarjetas creadas")
+    expect(html).toContain("Sellos por mes")
+    expect(html).toContain("14</strong> este mes")
+    expect(html).toContain("+40% vs. sep")
     expect(html).toContain("Clientes que sumaron sellos")
     expect(html).toContain("5</strong> clientes en 7 días")
     expect(html).toContain("Hoy")

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
 import type { AdminProgramRow } from "@/lib/wallet/loyalty-admin"
+import { MonthlyStamps } from "@/components/wallet/MonthlyStamps"
+import { monthChange } from "@/lib/wallet/month-stats"
 
 // Igual que DELETE_CONFIRMATION de loyalty-admin (ese archivo usa Mongo y no entra al navegador).
 const DELETE_WORD = "BORRAR"
@@ -68,6 +70,8 @@ export function AdminLoyaltySection({ initialPrograms }: { initialPrograms: Admi
         />
       )}
 
+      {programs.length > 0 && <MonthSummary programs={programs} />}
+
       {programs.length === 0 && !creating ? (
         <p className={`${adminUi.card} mt-6 p-5 ${adminUi.muted}`}>Todavía no hay ningún local con tarjeta.</p>
       ) : (
@@ -78,6 +82,55 @@ export function AdminLoyaltySection({ initialPrograms }: { initialPrograms: Admi
         </ul>
       )}
     </div>
+  )
+}
+
+/** Sellos de este mes de todos los locales, de mayor a menor (para pensar el tope gratis). */
+function MonthSummary({ programs }: { programs: AdminProgramRow[] }) {
+  const rows = programs
+    .map((p) => {
+      const current = p.monthly[p.monthly.length - 1]
+      const previous = p.monthly[p.monthly.length - 2]
+      return { id: p.id, name: p.placeName, stamps: current?.stamps ?? 0, previous: previous?.stamps ?? 0, customers: current?.customers ?? 0 }
+    })
+    .sort((a, b) => b.stamps - a.stamps)
+  const total = rows.reduce((sum, r) => sum + r.stamps, 0)
+  const previousTotal = rows.reduce((sum, r) => sum + r.previous, 0)
+  const change = monthChange(total, previousTotal)
+  const monthName = programs[0]?.monthly[programs[0].monthly.length - 1]?.label ?? ""
+  return (
+    <section className={`${adminUi.card} mt-6 p-5`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className={`text-lg font-bold ${adminUi.text}`}>Sellos de {monthName}</h2>
+        <p className={adminUi.muted}>
+          <strong className={`text-2xl ${adminUi.text}`}>{total}</strong> en total
+          {change && ` (${change} vs. el mes pasado)`}
+        </p>
+      </div>
+      <p className={`mt-1 text-sm ${adminUi.muted}`}>
+        Todavía no se cobra nada: es para ver cuánto usa cada local antes de definir el tope gratis.
+      </p>
+      <table className={`mt-4 w-full text-left text-sm ${adminUi.text}`}>
+        <thead>
+          <tr className={adminUi.label}>
+            <th className="py-2 font-semibold">Local</th>
+            <th className="py-2 text-right font-semibold">Este mes</th>
+            <th className="py-2 text-right font-semibold">Mes pasado</th>
+            <th className="hidden py-2 text-right font-semibold sm:table-cell">Clientes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className={`border-t ${adminUi.border}`}>
+              <td className="py-2">{r.name}</td>
+              <td className="py-2 text-right font-bold">{r.stamps}</td>
+              <td className={`py-2 text-right ${adminUi.muted}`}>{r.previous}</td>
+              <td className={`hidden py-2 text-right sm:table-cell ${adminUi.muted}`}>{r.customers}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   )
 }
 
@@ -312,6 +365,8 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           </div>
         ))}
       </dl>
+
+      <MonthlyStamps months={program.monthly} />
 
       {editing ? (
         <ProgramFields values={values} onChange={setValues} />

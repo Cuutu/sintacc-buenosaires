@@ -12,6 +12,8 @@ import { Place } from "@/models/Place"
 import { enrollPathFor, getProgramStats, normalizeEmail } from "@/lib/wallet/loyalty"
 import { formatNoticeTime, nextNoticeAt } from "@/lib/wallet/notice"
 import { getDailyVisits } from "@/lib/wallet/visits"
+import { getMonthlyStamps } from "@/lib/wallet/monthly"
+import { MonthlyStamps } from "@/components/wallet/MonthlyStamps"
 import { NoticeForm } from "@/components/wallet/NoticeForm"
 import { PromosForm } from "@/components/wallet/PromosForm"
 import { ShareCardLink } from "@/components/wallet/ShareCardLink"
@@ -34,9 +36,10 @@ export default async function LocalPage() {
     .lean<Array<{ _id: mongoose.Types.ObjectId; name: string; slug?: string }>>()
   const placeById = new Map(places.map((p) => [p._id.toString(), p]))
   const now = new Date()
-  const [stats, visits] = await Promise.all([
+  const [stats, visits, monthly] = await Promise.all([
     Promise.all(programs.map((p) => getProgramStats(p._id, now))),
     Promise.all(programs.map((p) => getDailyVisits(p._id, now))),
+    getMonthlyStamps(programs.map((p) => p._id), now),
   ])
 
   return (
@@ -124,6 +127,7 @@ export default async function LocalPage() {
                   <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-olive/60">Cómo viene</h3>
                   <div className="mt-2 grid gap-3">
                     <VisitsChart week={visits[i]} />
+                    <MonthlyStamps months={monthly.get(id) ?? []} />
                     <dl className="grid grid-cols-2 gap-3 text-olive sm:grid-cols-4">
                       <Stat
                         label="Clientes"
