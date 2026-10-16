@@ -99,6 +99,15 @@ export function StampActions({ serial, placeName, reward, initialStamps, total, 
           {message.text}
         </p>
       )}
+      {message?.ok && (
+        // Carga completa: /local/escanear necesita su propio permiso de cámara.
+        <a
+          href="/local/escanear"
+          className="text-center text-sm font-semibold text-terracotta-strong underline"
+        >
+          Escanear otra tarjeta
+        </a>
+      )}
     </div>
   )
 }

@@ -31,12 +31,16 @@
                 <data android:scheme="celimap" />
             </intent-filter>
 
+            <!-- App Links: sólo el panel del local (/local…). Así el QR de la tarjeta de sellos abre la
+                 app con la sesión del local; el resto de los links (y /tarjeta, que guarda la tarjeta
+                 en Google Wallet) siguen abriendo en el navegador. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.celimap.com.ar" />
                 <data android:scheme="https" android:host="celimap.com.ar" />
+                <data android:pathPrefix="/local" />
             </intent-filter>
         </activity>
 
@@ -50,6 +54,9 @@
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Escanear el QR de la tarjeta de sellos desde /local/escanear (WebView getUserMedia). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>

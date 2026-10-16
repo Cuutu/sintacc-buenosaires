@@ -1,4 +1,5 @@
-export const ANDROID_ASSETLINKS_PACKAGE = "com.celimap.app"
+// Tiene que ser el applicationId de Play (android/app/build.gradle), no el bundle de iOS.
+export const ANDROID_ASSETLINKS_PACKAGE = "com.celimap.mobile"
 
 /** Comma-separated SHA-256 fingerprints from env. Empty → do not publish assetlinks. */
 export function parseAndroidSha256Fingerprints(

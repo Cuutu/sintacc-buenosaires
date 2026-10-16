@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { ExternalLink, Printer, QrCode, ScanLine } from "lucide-react"
+// /local/escanear se abre con <a> (carga completa) para que el navegador habilite la cámara.
 import { redirect } from "next/navigation"
 import mongoose from "mongoose"
 import { authOptions } from "@/lib/auth"
@@ -62,7 +63,7 @@ export default async function LocalPage() {
             <ol className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
               {[
                 "El cliente abre su tarjeta en el Wallet.",
-                "Escaneás el QR con la cámara de este celular.",
+                "Tocás “Escanear tarjeta” y apuntás al QR.",
                 "Tocás “Sumar sello” y la tarjeta del cliente se actualiza sola.",
               ].map((step, i) => (
                 <li key={step} className="flex gap-2 sm:flex-col">
@@ -73,8 +74,16 @@ export default async function LocalPage() {
                 </li>
               ))}
             </ol>
+            <a
+              href="/local/escanear"
+              className="mt-4 flex h-12 items-center justify-center gap-2 rounded-full bg-[#B84420] px-5 font-semibold text-white"
+            >
+              <ScanLine className="h-5 w-5" aria-hidden />
+              Escanear tarjeta
+            </a>
             <p className="mt-3 text-xs text-cream/70">
-              Tip: guardá esta página en la pantalla de inicio del celu de la caja.
+              También podés escanear con la cámara del celu. Tip: si usás la app de CeliMap, lo tenés en tu
+              perfil; si no, guardá esta página en la pantalla de inicio del celu de la caja.
             </p>
           </section>
 
