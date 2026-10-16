@@ -338,6 +338,11 @@ export type ProgramStats = {
   redeems: number
   /** Tarjetas que llegaron con el link de un amigo. */
   invitedCards: number
+  /**
+   * Clientes = tarjetas que sumaron al menos un sello. "cards" cuenta todas las creadas: una
+   * persona puede crear varias (tocar Agregar y no guardarla, Apple y Google, otro navegador).
+   */
+  customers: number
 }
 
 export async function getProgramStats(
@@ -346,8 +351,9 @@ export async function getProgramStats(
 ): Promise<ProgramStats> {
   await connectDB()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const [cards, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards] = await Promise.all([
+  const [cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards] = await Promise.all([
     LoyaltyCard.countDocuments({ programId }),
+    LoyaltyCard.countDocuments({ programId, totalStamps: { $gte: 1 } }),
     // Volvieron = 2+ visitas (con sello doble una sola visita ya suma 2 sellos).
     // Las tarjetas de antes de contar visitas no tienen el campo: ahí, 2+ sellos.
     LoyaltyCard.countDocuments({
@@ -362,9 +368,10 @@ export async function getProgramStats(
       createdAt: { $gte: weekAgo },
     }),
     LoyaltyStamp.countDocuments({ programId, kind: "redeem" }),
-    LoyaltyCard.countDocuments({ programId, referredBy: { $exists: true } }),
+    // Invitados que ya vinieron (sumaron su primer sello), no los que sólo abrieron el link.
+    LoyaltyCard.countDocuments({ programId, referredBy: { $exists: true }, totalStamps: { $gte: 1 } }),
   ])
-  return { cards, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards }
+  return { cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards }
 }
 
 /** Comparación en tiempo constante del token que manda el Wallet. */

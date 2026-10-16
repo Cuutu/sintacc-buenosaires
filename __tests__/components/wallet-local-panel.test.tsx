@@ -26,7 +26,7 @@ jest.mock("@/models/Place", () => ({
 }))
 jest.mock("@/lib/wallet/loyalty", () => ({
   ...jest.requireActual("@/lib/wallet/loyalty"),
-  getProgramStats: async () => ({ cards: 10, cardsWithSecondStamp: 4, stampsLast7Days: 6, redeems: 1, invitedCards: 2 }),
+  getProgramStats: async () => ({ cards: 10, customers: 5, cardsWithSecondStamp: 4, stampsLast7Days: 6, redeems: 1, invitedCards: 2 }),
 }))
 jest.mock("@/lib/wallet/visits", () => ({
   getDailyVisits: async () => ({
@@ -66,7 +66,9 @@ describe("/local", () => {
     const html = renderToStaticMarkup(await LocalPage())
     expect(html).toContain("Polvorín")
     expect(html).toContain("Activa")
-    expect(html).toContain("40%")
+    // Volvieron sobre los clientes que vinieron (4 de 5), no sobre las tarjetas creadas.
+    expect(html).toContain("80%")
+    expect(html).toContain("10 tarjetas creadas")
     expect(html).toContain("Clientes que sumaron sellos")
     expect(html).toContain("5</strong> clientes en 7 días")
     expect(html).toContain("Hoy")

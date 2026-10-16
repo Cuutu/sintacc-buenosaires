@@ -93,7 +93,8 @@ export default async function LocalPage() {
             {programs.map((program, i) => {
               const s = stats[i]
               const id = program._id.toString()
-              const retention = s.cards > 0 ? Math.round((s.cardsWithSecondStamp / s.cards) * 100) : 0
+              // De los clientes que vinieron, cuántos volvieron otro día.
+              const retention = s.customers > 0 ? Math.round((s.cardsWithSecondStamp / s.customers) * 100) : 0
               const place = placeById.get(program.placeId.toString())
               const name = place?.name ?? "Local"
               const nextNotice = nextNoticeAt(program.notice, now)
@@ -124,7 +125,11 @@ export default async function LocalPage() {
                   <div className="mt-2 grid gap-3">
                     <VisitsChart week={visits[i]} />
                     <dl className="grid grid-cols-2 gap-3 text-olive sm:grid-cols-4">
-                      <Stat label="Tarjetas" value={s.cards} />
+                      <Stat
+                        label="Clientes"
+                        value={s.customers}
+                        hint={s.cards === 1 ? "1 tarjeta creada" : `${s.cards} tarjetas creadas`}
+                      />
                       <Stat label="Volvieron" value={`${retention}%`} hint="vinieron 2 días o más" />
                       <Stat label="Premios" value={s.redeems} hint="canjeados" />
                       <Stat

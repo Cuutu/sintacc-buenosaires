@@ -239,7 +239,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleteText, setDeleteText] = useState("")
   const { stats } = program
-  const retention = stats.cards > 0 ? Math.round((stats.cardsWithSecondStamp / stats.cards) * 100) : 0
+  const retention = stats.customers > 0 ? Math.round((stats.cardsWithSecondStamp / stats.customers) * 100) : 0
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true)
@@ -300,7 +300,8 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
           ["Visitas (7 días)", stats.stampsLast7Days],
-          ["Tarjetas", stats.cards],
+          ["Clientes", stats.customers],
+          ["Tarjetas creadas", stats.cards],
           ["Volvieron", `${retention}%`],
           ["Canjes", stats.redeems],
           ...(program.referralEnabled || stats.invitedCards > 0 ? [["Invitados", stats.invitedCards]] : []),
