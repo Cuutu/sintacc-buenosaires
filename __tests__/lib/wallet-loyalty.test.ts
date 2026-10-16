@@ -169,6 +169,19 @@ describe("loyalty helpers", () => {
     expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "stamp", count: 1 }))
   })
 
+  it("counts two stamps on the same day as one visit", async () => {
+    const now = new Date("2026-10-16T20:00:00Z")
+    const card = { ...cardWith(2), lastStampAt: new Date("2026-10-16T13:00:00Z") } as unknown as ILoyaltyCard
+    mockFindOneAndUpdate.mockResolvedValue({ ...card, stamps: 3 })
+    await addStamp(card, program, "caja@local.com", now)
+    expect(mockFindOneAndUpdate.mock.calls[0][1].$inc).toEqual({ stamps: 1, totalStamps: 1 })
+
+    // Ayer a las 23 h en Argentina (02:00 UTC de hoy) es otro día.
+    const yesterday = { ...cardWith(2), lastStampAt: new Date("2026-10-16T02:00:00Z") } as unknown as ILoyaltyCard
+    await addStamp(yesterday, program, "caja@local.com", now)
+    expect(mockFindOneAndUpdate.mock.calls[1][1].$inc).toEqual({ stamps: 1, totalStamps: 1, visits: 1 })
+  })
+
   it("adds 2 stamps during the shop's double-stamp hours", async () => {
     const card = cardWith(2)
     // Jueves 15/10 a las 15 h en Argentina.

@@ -122,10 +122,10 @@ export default async function LocalPage() {
 
                   <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-olive/60">Cómo viene</h3>
                   <div className="mt-2 grid gap-3">
-                    <VisitsChart days={visits[i]} />
+                    <VisitsChart week={visits[i]} />
                     <dl className="grid grid-cols-2 gap-3 text-olive sm:grid-cols-4">
                       <Stat label="Tarjetas" value={s.cards} />
-                      <Stat label="Volvieron" value={`${retention}%`} hint="2 visitas o más" />
+                      <Stat label="Volvieron" value={`${retention}%`} hint="vinieron 2 días o más" />
                       <Stat label="Premios" value={s.redeems} hint="canjeados" />
                       <Stat
                         label="Invitados"

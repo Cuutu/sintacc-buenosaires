@@ -29,13 +29,15 @@ jest.mock("@/lib/wallet/loyalty", () => ({
   getProgramStats: async () => ({ cards: 10, cardsWithSecondStamp: 4, stampsLast7Days: 6, redeems: 1, invitedCards: 2 }),
 }))
 jest.mock("@/lib/wallet/visits", () => ({
-  getDailyVisits: async () =>
-    ["Sáb", "Dom", "Lun", "Mar", "Mié", "Jue", "Vie"].map((label, i) => ({
+  getDailyVisits: async () => ({
+    total: 5,
+    days: ["Sáb", "Dom", "Lun", "Mar", "Mié", "Jue", "Vie"].map((label, i) => ({
       date: `2026-10-1${i}`,
       label,
       visits: i,
       today: i === 6,
     })),
+  }),
 }))
 
 import LocalPage from "@/app/local/page"
@@ -65,7 +67,8 @@ describe("/local", () => {
     expect(html).toContain("Polvorín")
     expect(html).toContain("Activa")
     expect(html).toContain("40%")
-    expect(html).toContain("Visitas por día")
+    expect(html).toContain("Clientes que sumaron sellos")
+    expect(html).toContain("5</strong> clientes en 7 días")
     expect(html).toContain("Hoy")
     expect(html).toContain("Mandá un aviso a tus clientes")
     expect(html).toContain("Sello doble")

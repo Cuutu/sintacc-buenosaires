@@ -1,4 +1,8 @@
-/** Visitas por día de los últimos 7 días (en hora de Argentina), para el panel del local. */
+/**
+ * Clientes por día de los últimos 7 días (en hora de Argentina), para el panel del local.
+ * Cuenta personas (tarjetas distintas), no sellos: si a alguien le sellan dos veces el mismo
+ * día, es un cliente.
+ */
 
 import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
@@ -9,6 +13,8 @@ const TIME_ZONE = "America/Argentina/Buenos_Aires"
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export type DayVisits = { date: string; label: string; visits: number; today: boolean }
+
+export type WeekVisits = { days: DayVisits[]; /** Clientes distintos en los 7 días. */ total: number }
 
 /** "2026-10-16" en Argentina. */
 export function argentinaDate(date: Date): string {
@@ -27,18 +33,26 @@ export function fillLastDays(rows: Array<{ _id: string; visits: number }>, now =
   })
 }
 
-export async function getDailyVisits(programId: mongoose.Types.ObjectId, now = new Date()): Promise<DayVisits[]> {
+export async function getDailyVisits(programId: mongoose.Types.ObjectId, now = new Date()): Promise<WeekVisits> {
   await connectDB()
-  const since = new Date(now.getTime() - 8 * DAY_MS)
-  const rows = await LoyaltyStamp.aggregate<{ _id: string; visits: number }>([
+  const days = fillLastDays([], now)
+  const [result] = await LoyaltyStamp.aggregate<{
+    perDay: Array<{ _id: string; visits: number }>
+    total: Array<{ total: number }>
+  }>([
     // El sello de regalo del que invitó no es una visita.
-    { $match: { programId, kind: "stamp", bonus: { $ne: "inviter" }, createdAt: { $gte: since } } },
+    { $match: { programId, kind: "stamp", bonus: { $ne: "inviter" }, createdAt: { $gte: new Date(now.getTime() - 8 * DAY_MS) } } },
+    { $set: { day: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: TIME_ZONE } } } },
+    { $match: { day: { $gte: days[0].date } } },
     {
-      $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: TIME_ZONE } },
-        visits: { $sum: 1 },
+      $facet: {
+        perDay: [
+          { $group: { _id: { day: "$day", card: "$cardId" } } },
+          { $group: { _id: "$_id.day", visits: { $sum: 1 } } },
+        ],
+        total: [{ $group: { _id: "$cardId" } }, { $count: "total" }],
       },
     },
   ])
-  return fillLastDays(rows, now)
+  return { days: fillLastDays(result?.perDay ?? [], now), total: result?.total[0]?.total ?? 0 }
 }

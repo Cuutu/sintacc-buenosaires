@@ -16,6 +16,7 @@ import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
+import { argentinaDate } from "@/lib/wallet/visits"
 import {
   doubleStampText,
   REFERRAL_MAX_PER_CARD,
@@ -240,6 +241,8 @@ export async function addStamp(
 ): Promise<StampResult> {
   if (card.stamps >= program.stampsForReward) return { ok: false, reason: "full" }
   const { added, reason, friend } = stampIncrement(card, program, now)
+  // "Volvieron" cuenta días distintos: dos sellos el mismo día son una sola visita.
+  const sameDay = card.lastStampAt ? argentinaDate(new Date(card.lastStampAt)) === argentinaDate(now) : false
   const updated = await LoyaltyCard.findOneAndUpdate(
     {
       _id: card._id,
@@ -252,7 +255,7 @@ export async function addStamp(
       ],
     },
     {
-      $inc: { stamps: added, totalStamps: added, visits: 1 },
+      $inc: { stamps: added, totalStamps: added, ...(sameDay ? {} : { visits: 1 }) },
       $set: {
         lastStampAt: now,
         lastStampAdded: added,
