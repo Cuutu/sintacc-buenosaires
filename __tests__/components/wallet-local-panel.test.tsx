@@ -16,6 +16,7 @@ jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 const programId = new mongoose.Types.ObjectId()
 const placeId = new mongoose.Types.ObjectId()
 const mockPrograms = jest.fn()
+const mockStats = jest.fn()
 jest.mock("@/models/LoyaltyProgram", () => ({
   LoyaltyProgram: { find: (...a: unknown[]) => ({ lean: () => mockPrograms(...a) }) },
 }))
@@ -26,7 +27,7 @@ jest.mock("@/models/Place", () => ({
 }))
 jest.mock("@/lib/wallet/loyalty", () => ({
   ...jest.requireActual("@/lib/wallet/loyalty"),
-  getProgramStats: async () => ({ cards: 10, customers: 5, cardsWithSecondStamp: 4, stampsLast7Days: 6, redeems: 1, invitedCards: 2 }),
+  getProgramStats: async () => mockStats(),
 }))
 jest.mock("@/lib/wallet/visits", () => ({
   getDailyVisits: async () => ({
@@ -62,6 +63,7 @@ import LocalPage from "@/app/local/page"
 describe("/local", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockStats.mockResolvedValue({ cards: 10, inWallet: 8, customers: 5, cardsWithSecondStamp: 4, stampsLast7Days: 6, redeems: 1, invitedCards: 2 })
     mockPrograms.mockResolvedValue([
       { _id: programId, placeId, stampsForReward: 10, reward: "Cookie", staffEmails: ["caja@polvorin.com"], active: true, referralEnabled: true },
     ])
@@ -85,7 +87,9 @@ describe("/local", () => {
     expect(html).toContain("Activa")
     // Volvieron sobre los clientes que vinieron (4 de 5), no sobre las tarjetas creadas.
     expect(html).toContain("80%")
-    expect(html).toContain("10 tarjetas creadas")
+    expect(html).toContain("Tienen tu tarjeta")
+    // El aviso le llega a los que la guardaron, no a todas las tarjetas creadas.
+    expect(html).toContain("Mandar a 8 clientes")
     expect(html).toContain("Sellos por mes")
     expect(html).toContain("14</strong> este mes")
     expect(html).toContain("+40% vs. sep")
@@ -97,5 +101,14 @@ describe("/local", () => {
     expect(html).toContain("Imprimir cartel con QR")
     expect(html).toContain(`/tarjeta/${programId}`)
     expect(html).toContain('href="/lugar/polvorin"')
+  })
+
+  it("explains what to do while nobody has stamped yet, instead of empty charts", async () => {
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    mockStats.mockResolvedValue({ cards: 2, inWallet: 1, customers: 0, cardsWithSecondStamp: 0, stampsLast7Days: 0, redeems: 0, invitedCards: 0 })
+    const html = renderToStaticMarkup(await LocalPage())
+    expect(html).toContain("Todavía nadie sumó un sello")
+    expect(html).not.toContain("Sellos por mes")
+    expect(html).toContain("Mandar a 1 cliente")
   })
 })

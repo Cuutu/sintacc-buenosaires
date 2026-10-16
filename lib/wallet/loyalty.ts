@@ -13,6 +13,7 @@ import { Place } from "@/models/Place"
 import { LoyaltyProgram, type ILoyaltyProgram } from "@/models/LoyaltyProgram"
 import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
 import { LoyaltyStamp } from "@/models/LoyaltyStamp"
+import { LoyaltyDevice } from "@/models/LoyaltyDevice"
 import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
@@ -343,6 +344,26 @@ export type ProgramStats = {
    * persona puede crear varias (tocar Agregar y no guardarla, Apple y Google, otro navegador).
    */
   customers: number
+  /**
+   * Tienen la tarjeta guardada en el Wallet: son los que reciben los avisos.
+   * Apple: el iPhone se registra al guardarla (y se borra el registro si la sacan).
+   * Google: no avisa cuándo la guardan; se cuentan las tarjetas de Google creadas.
+   */
+  inWallet: number
+}
+
+/** Tarjetas guardadas en un Wallet (ver ProgramStats.inWallet). */
+export async function countCardsInWallet(programId: mongoose.Types.ObjectId): Promise<number> {
+  await connectDB()
+  const [appleSerials, google] = await Promise.all([
+    LoyaltyCard.find({ programId, wallet: { $ne: "google" } }).distinct("serialNumber"),
+    LoyaltyCard.countDocuments({ programId, wallet: "google" }),
+  ])
+  const apple =
+    appleSerials.length > 0
+      ? (await LoyaltyDevice.distinct("serialNumber", { serialNumber: { $in: appleSerials } })).length
+      : 0
+  return apple + google
 }
 
 export async function getProgramStats(
@@ -351,7 +372,7 @@ export async function getProgramStats(
 ): Promise<ProgramStats> {
   await connectDB()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const [cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards] = await Promise.all([
+  const [cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards, inWallet] = await Promise.all([
     LoyaltyCard.countDocuments({ programId }),
     LoyaltyCard.countDocuments({ programId, totalStamps: { $gte: 1 } }),
     // Volvieron = 2+ visitas (con sello doble una sola visita ya suma 2 sellos).
@@ -370,8 +391,9 @@ export async function getProgramStats(
     LoyaltyStamp.countDocuments({ programId, kind: "redeem" }),
     // Invitados que ya vinieron (sumaron su primer sello), no los que sólo abrieron el link.
     LoyaltyCard.countDocuments({ programId, referredBy: { $exists: true }, totalStamps: { $gte: 1 } }),
+    countCardsInWallet(programId),
   ])
-  return { cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards }
+  return { cards, customers, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards, inWallet }
 }
 
 /** Comparación en tiempo constante del token que manda el Wallet. */

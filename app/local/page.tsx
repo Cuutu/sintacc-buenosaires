@@ -126,28 +126,33 @@ export default async function LocalPage() {
 
                   <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-olive/60">Cómo viene</h3>
                   <div className="mt-2 grid gap-3">
-                    <VisitsChart week={visits[i]} />
-                    <MonthlyStamps months={monthly.get(id) ?? []} />
                     <dl className="grid grid-cols-2 gap-3 text-olive sm:grid-cols-4">
-                      <Stat
-                        label="Clientes"
-                        value={s.customers}
-                        hint={s.cards === 1 ? "1 tarjeta creada" : `${s.cards} tarjetas creadas`}
-                      />
+                      <Stat label="Tienen tu tarjeta" value={s.inWallet} hint="la guardaron en el celu" />
+                      <Stat label="Vinieron" value={s.customers} hint="sumaron al menos un sello" />
                       <Stat label="Volvieron" value={`${retention}%`} hint="vinieron 2 días o más" />
                       <Stat label="Premios" value={s.redeems} hint="canjeados" />
-                      <Stat
-                        label="Invitados"
-                        value={s.invitedCards}
-                        hint={program.referralEnabled ? "Traé un amigo" : "promo apagada"}
-                      />
+                      {(program.referralEnabled || s.invitedCards > 0) && (
+                        <Stat label="Invitados" value={s.invitedCards} hint="vinieron con Traé un amigo" />
+                      )}
                     </dl>
+                    {s.customers > 0 ? (
+                      <>
+                        <VisitsChart week={visits[i]} />
+                        <MonthlyStamps months={monthly.get(id) ?? []} />
+                      </>
+                    ) : (
+                      <p className="rounded-xl bg-[#F8F5EF] p-4 text-sm text-olive/80">
+                        {s.inWallet > 0
+                          ? "Todavía nadie sumó un sello. Cuando escanees la tarjeta de un cliente, acá vas a ver cuántos vienen por día y por mes."
+                          : "Todavía nadie guardó tu tarjeta. Dejá el cartel con QR en la caja o pasá el link (más abajo) para que tus clientes la guarden."}
+                      </p>
+                    )}
                   </div>
 
                   <NoticeForm
                     programId={id}
                     placeName={name}
-                    cards={s.cards}
+                    cards={s.inWallet}
                     active={program.active}
                     lastNotice={
                       program.notice

@@ -7,11 +7,19 @@ const mockFindOneAndUpdate = jest.fn()
 const mockStampCreate = jest.fn()
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 const mockCardExists = jest.fn()
+const mockCardDistinct = jest.fn()
+const mockCardCount = jest.fn()
+const mockDeviceDistinct = jest.fn()
 jest.mock("@/models/LoyaltyCard", () => ({
   LoyaltyCard: {
     findOneAndUpdate: (...a: unknown[]) => mockFindOneAndUpdate(...a),
     exists: (...a: unknown[]) => mockCardExists(...a),
+    find: (...a: unknown[]) => ({ distinct: (field: string) => mockCardDistinct(field, ...a) }),
+    countDocuments: (...a: unknown[]) => mockCardCount(...a),
   },
+}))
+jest.mock("@/models/LoyaltyDevice", () => ({
+  LoyaltyDevice: { distinct: (...a: unknown[]) => mockDeviceDistinct(...a) },
 }))
 jest.mock("@/models/LoyaltyStamp", () => ({
   LoyaltyStamp: { create: (...a: unknown[]) => mockStampCreate(...a) },
@@ -30,6 +38,7 @@ import {
   STAMP_COOLDOWN_MS,
   addStamp,
   canManageProgram,
+  countCardsInWallet,
   findInviterCard,
   inviteUrlFor,
   isValidSerial,
@@ -291,5 +300,14 @@ describe("loyalty helpers", () => {
     expect(filter.stamps).toEqual({ $gte: 5 })
     expect(update.$set).toEqual({ stamps: 0 })
     expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "redeem" }))
+  })
+
+  it("counts as 'in the Wallet' only Apple cards an iPhone registered, plus Google cards", async () => {
+    mockCardDistinct.mockResolvedValue(["a1", "a2", "a3"])
+    mockCardCount.mockResolvedValue(2)
+    mockDeviceDistinct.mockResolvedValue(["a2"])
+    expect(await countCardsInWallet(program._id)).toBe(3)
+    expect(mockDeviceDistinct).toHaveBeenCalledWith("serialNumber", { serialNumber: { $in: ["a1", "a2", "a3"] } })
+    expect(mockCardCount).toHaveBeenCalledWith({ programId: program._id, wallet: "google" })
   })
 })

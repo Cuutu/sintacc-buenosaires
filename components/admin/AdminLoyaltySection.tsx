@@ -353,7 +353,8 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
           ["Visitas (7 días)", stats.stampsLast7Days],
-          ["Clientes", stats.customers],
+          ["Con la tarjeta", stats.inWallet],
+          ["Vinieron", stats.customers],
           ["Tarjetas creadas", stats.cards],
           ["Volvieron", `${retention}%`],
           ["Canjes", stats.redeems],

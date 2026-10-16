@@ -24,7 +24,7 @@ const row = (id: string, placeName: string, current: number, previous: number): 
   staffEmails: [],
   active: true,
   enrollPath: `/tarjeta/${id}`,
-  stats: { cards: 4, customers: 3, cardsWithSecondStamp: 1, stampsLast7Days: 2, redeems: 0, invitedCards: 0 },
+  stats: { cards: 4, inWallet: 3, customers: 3, cardsWithSecondStamp: 1, stampsLast7Days: 2, redeems: 0, invitedCards: 0 },
   notice: null,
   doubleStamp: null,
   referralEnabled: false,
