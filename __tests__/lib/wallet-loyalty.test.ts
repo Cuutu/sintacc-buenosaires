@@ -12,7 +12,14 @@ jest.mock("@/models/LoyaltyCard", () => ({
 jest.mock("@/models/LoyaltyStamp", () => ({
   LoyaltyStamp: { create: (...a: unknown[]) => mockStampCreate(...a) },
 }))
-jest.mock("@/models/LoyaltyProgram", () => ({ LoyaltyProgram: {} }))
+const mockProgramUpdate = jest.fn()
+const mockProgramFindById = jest.fn()
+jest.mock("@/models/LoyaltyProgram", () => ({
+  LoyaltyProgram: {
+    findOneAndUpdate: (...a: unknown[]) => mockProgramUpdate(...a),
+    findById: (...a: unknown[]) => ({ select: () => ({ lean: () => mockProgramFindById(...a) }) }),
+  },
+}))
 jest.mock("@/models/Place", () => ({ Place: {} }))
 
 import {
@@ -27,7 +34,9 @@ import {
   passLocationFor,
   redeemReward,
   safeTokenEquals,
+  saveProgramNotice,
 } from "@/lib/wallet/loyalty"
+import { NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
 import type { ILoyaltyCard } from "@/models/LoyaltyCard"
 import type { ILoyaltyProgram } from "@/models/LoyaltyProgram"
 
@@ -84,6 +93,7 @@ describe("loyalty helpers", () => {
       safety: "options",
       location: { latitude: -34.6, longitude: -58.4 },
     })
+    expect(input.notice).toBeNull()
     expect(input.barcodeValue).toMatch(new RegExp(`/local/sellar/${card.serialNumber}$`))
     expect(input.webService?.url).toMatch(/\/api\/wallet\/apple$/)
     expect(input.webService?.authenticationToken).toBe(card.authToken)
@@ -91,6 +101,41 @@ describe("loyalty helpers", () => {
     expect(input.rewardsRedeemed).toBe(1)
     expect(input.safety).toBe("options")
     expect(input.location).toEqual({ latitude: -34.6, longitude: -58.4 })
+  })
+
+  it("puts the shop's notice on the card for a week", () => {
+    const sentAt = new Date("2026-10-16T12:00:00Z")
+    const withNotice = {
+      ...program,
+      notice: { text: "Salieron las medialunas", sentAt, byEmail: "caja@local.com" },
+    } as unknown as ILoyaltyProgram
+    const data = { program: withNotice, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    expect(passInputFor(cardWith(1), data, new Date("2026-10-17T12:00:00Z")).notice).toBe("Salieron las medialunas")
+    expect(passInputFor(cardWith(1), data, new Date("2026-10-24T12:00:00Z")).notice).toBeNull()
+  })
+
+  it("saves one notice a day, atomically, only for active cards", async () => {
+    const now = new Date("2026-10-16T12:00:00Z")
+    mockProgramUpdate.mockResolvedValueOnce({ ...program, notice: { text: "Hola" } })
+    expect((await saveProgramNotice(program._id, "Hola", "caja@local.com", now)).ok).toBe(true)
+    const [filter, update] = mockProgramUpdate.mock.calls[0]
+    expect(filter.active).toBe(true)
+    expect(filter.$or[1]["notice.sentAt"].$lte.getTime()).toBe(now.getTime() - NOTICE_COOLDOWN_MS)
+    expect(update.$set.notice).toEqual({ text: "Hola", sentAt: now, byEmail: "caja@local.com" })
+
+    mockProgramUpdate.mockResolvedValue(null)
+    const sentAt = new Date(now.getTime() - 60 * 60 * 1000)
+    mockProgramFindById.mockResolvedValueOnce({ active: true, notice: { text: "x", sentAt, byEmail: "a" } })
+    expect(await saveProgramNotice(program._id, "Hola", "caja@local.com", now)).toEqual({
+      ok: false,
+      reason: "too_soon",
+      nextAt: new Date(sentAt.getTime() + NOTICE_COOLDOWN_MS),
+    })
+    mockProgramFindById.mockResolvedValueOnce({ active: false })
+    expect(await saveProgramNotice(program._id, "Hola", "caja@local.com", now)).toEqual({
+      ok: false,
+      reason: "paused",
+    })
   })
 
   it("only uses the place's location when it is exact", () => {

@@ -31,9 +31,18 @@ function sendOne(client: http2.ClientHttp2Session, pushToken: string, topic: str
   })
 }
 
+/** Avisos en paralelo, de a tandas, por la misma conexión. */
+const BATCH_SIZE = 100
+
 export async function notifyPassUpdated(serialNumber: string, config: ApplePassConfig): Promise<void> {
+  await notifyPassesUpdated([serialNumber], config)
+}
+
+/** Avisa a todos los iPhones que tienen alguna de estas tarjetas (por ejemplo, después de un aviso del local). */
+export async function notifyPassesUpdated(serialNumbers: string[], config: ApplePassConfig): Promise<void> {
+  if (serialNumbers.length === 0) return
   await connectDB()
-  const devices = await LoyaltyDevice.find({ serialNumber }).select("pushToken").lean()
+  const devices = await LoyaltyDevice.find({ serialNumber: { $in: serialNumbers } }).select("pushToken").lean()
   if (devices.length === 0) return
 
   let client: http2.ClientHttp2Session | null = null
@@ -45,9 +54,15 @@ export async function notifyPassUpdated(serialNumber: string, config: ApplePassC
     })
     client.on("error", () => undefined)
     const tokens = Array.from(new Set(devices.map((d) => d.pushToken)))
-    const statuses = await Promise.all(
-      tokens.map((token) => sendOne(client as http2.ClientHttp2Session, token, config.passTypeIdentifier))
-    )
+    const statuses: number[] = []
+    for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+      const batch = tokens.slice(i, i + BATCH_SIZE)
+      statuses.push(
+        ...(await Promise.all(
+          batch.map((token) => sendOne(client as http2.ClientHttp2Session, token, config.passTypeIdentifier))
+        ))
+      )
+    }
     // 410: el iPhone ya no tiene la tarjeta.
     const gone = tokens.filter((_, i) => statuses[i] === 410)
     if (gone.length > 0) await LoyaltyDevice.deleteMany({ pushToken: { $in: gone } })

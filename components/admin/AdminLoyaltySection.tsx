@@ -302,6 +302,12 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           Local: {program.staffEmails.length > 0 ? program.staffEmails.join(", ") : "sin mails cargados"}
         </p>
       )}
+      {program.notice && (
+        <p className={`text-sm ${adminUi.muted}`}>
+          Último aviso ({program.notice.sentAt}, {program.notice.byEmail}):{" "}
+          <span className={adminUi.text}>{program.notice.text}</span>
+        </p>
+      )}
       {error && <p className="text-sm text-[#B84420]">{error}</p>}
 
       <div className="flex flex-wrap gap-2">

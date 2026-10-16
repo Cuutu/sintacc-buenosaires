@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
 import { getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { activeNotice } from "@/lib/wallet/notice"
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +22,7 @@ export default async function TarjetaPage({ params }: Props) {
   if (!data || !data.program.active) notFound()
   const { program, placeName, placePath, safety } = data
   const programId = program._id.toString()
+  const notice = activeNotice(program.notice)
 
   // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
   const userAgent = headers().get("user-agent") ?? ""
@@ -39,6 +41,15 @@ export default async function TarjetaPage({ params }: Props) {
           Mostrá la tarjeta al pagar y el local te suma un sello.
         </p>
       </header>
+
+      {notice && (
+        <p className="rounded-2xl bg-cream-card p-4 text-olive">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-olive/60">
+            Aviso de {placeName}
+          </span>
+          {notice}
+        </p>
+      )}
 
       <LoyaltyCardPreview
         placeName={placeName}

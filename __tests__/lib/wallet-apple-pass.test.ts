@@ -254,6 +254,24 @@ describe("apple wallet loyalty pass", () => {
     expect((await buildLoyaltyPass(base, config)).toString("utf8")).not.toContain('"locations"')
   })
 
+  it("puts the shop's notice on the back so the iPhone shows it when it changes", async () => {
+    const base = {
+      serialNumber: "s7",
+      barcodeValue: "s7",
+      stamps: 2,
+      stampsForReward: 5,
+      reward: "Cookie",
+      placeName: "Polvorin 100%",
+    }
+    const text = (await buildLoyaltyPass({ ...base, notice: "Salieron las medialunas sin TACC" }, config)).toString(
+      "utf8"
+    )
+    expect(text).toContain(
+      '"key":"notice","label":"Aviso de Polvorin 100%","value":"Salieron las medialunas sin TACC","changeMessage":"Polvorin 100%%: %@"'
+    )
+    expect((await buildLoyaltyPass(base, config)).toString("utf8")).not.toContain('"key":"notice"')
+  })
+
   it("writes the nearby line for each card state", () => {
     const base = { total: 5, placeName: "Polvorín", reward: "Cookie" }
     expect(nearbyText({ ...base, stamps: 0 })).toBe("Estás cerca de Polvorín. Mostrá tu tarjeta al pagar y sumá un sello.")

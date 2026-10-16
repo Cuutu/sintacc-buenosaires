@@ -10,6 +10,7 @@ import { absoluteUrl } from "@/lib/base-url"
 import { logger } from "@/lib/logger"
 import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
 import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme } from "@/lib/wallet/card-safety"
+import { NOTICE_TTL_MS } from "@/lib/wallet/notice"
 import { googleHeroUrl, googleLogoUrl } from "@/lib/wallet/wallet-images"
 import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
 import type { GoogleWalletConfig } from "@/lib/wallet/config"
@@ -228,5 +229,47 @@ export async function pushGoogleCardUpdate(input: GoogleCardInput, config: Googl
       message: "no se pudo actualizar la tarjeta de Google Wallet",
       error: error instanceof Error ? error.message : String(error),
     })
+  }
+}
+
+/** Fecha como la pide Google (ISO 8601 sin milisegundos). */
+const googleDate = (date: Date) => ({ date: date.toISOString().replace(/\.\d{3}Z$/, "Z") })
+
+/**
+ * Aviso del local a todos sus clientes de Android: un mensaje en la clase llega a todas las
+ * tarjetas del local. Se borra el aviso anterior y el nuevo deja de verse a la semana.
+ * Devuelve false si falló o si nadie guardó todavía la tarjeta en Google.
+ */
+export async function pushGoogleProgramNotice(
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "location">,
+  text: string,
+  config: GoogleWalletConfig,
+  now = new Date()
+): Promise<boolean> {
+  try {
+    const loyaltyClass = buildLoyaltyClass(config, input, await googleLogoUrl())
+    const path = `/loyaltyClass/${encodeURIComponent(loyaltyClass.id)}`
+    const patched = await walletApi(config, "PATCH", path, { ...loyaltyClass, messages: [] })
+    if (patched.status === 404) return false
+    await expectOk(patched, "loyaltyClass patch")
+
+    const added = await walletApi(config, "POST", `${path}/addMessage`, {
+      message: {
+        id: `aviso_${now.getTime()}`,
+        header: `Aviso de ${input.placeName}`,
+        body: text,
+        messageType: "TEXT_AND_NOTIFY",
+        displayInterval: { start: googleDate(now), end: googleDate(new Date(now.getTime() + NOTICE_TTL_MS)) },
+      },
+    })
+    await expectOk(added, "class addMessage")
+    return true
+  } catch (error) {
+    logger.warn({
+      route: "wallet-google",
+      message: "no se pudo mandar el aviso a Google Wallet",
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return false
   }
 }

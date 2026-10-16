@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
 
+/** Último aviso que el local mandó a sus clientes (va al dorso de la tarjeta). */
+export type LoyaltyNotice = { text: string; sentAt: Date; byEmail: string }
+
 /** Programa de sellos de un local (una tarjeta de Wallet por cliente). */
 export interface ILoyaltyProgram extends Document {
   placeId: mongoose.Types.ObjectId
@@ -8,6 +11,7 @@ export interface ILoyaltyProgram extends Document {
   /** Mails (en minúscula) que pueden sumar sellos desde /local. */
   staffEmails: string[]
   active: boolean
+  notice?: LoyaltyNotice
   createdAt: Date
   updatedAt: Date
 }
@@ -19,6 +23,17 @@ const LoyaltyProgramSchema = new Schema<ILoyaltyProgram>(
     reward: { type: String, required: true, trim: true, maxlength: 80 },
     staffEmails: { type: [String], default: [], index: true },
     active: { type: Boolean, default: true },
+    notice: {
+      type: new Schema<LoyaltyNotice>(
+        {
+          text: { type: String, required: true, maxlength: 140 },
+          sentAt: { type: Date, required: true },
+          byEmail: { type: String, required: true },
+        },
+        { _id: false }
+      ),
+      required: false,
+    },
   },
   { timestamps: true }
 )

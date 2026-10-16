@@ -16,6 +16,7 @@ import {
   getGoogleWalletConfig,
   googleSaveLink,
   pushGoogleCardUpdate,
+  pushGoogleProgramNotice,
   type GoogleCardInput,
   type GoogleWalletConfig,
 } from "@/lib/wallet/google-wallet"
@@ -185,6 +186,35 @@ describe("google wallet loyalty card", () => {
       },
     })
     expect(mockWarn).not.toHaveBeenCalled()
+  })
+
+  it("sends the shop's notice to every card through the class", async () => {
+    const calls = mockFetch({})
+    const now = new Date("2026-10-16T12:00:00.123Z")
+    expect(await pushGoogleProgramNotice(input, "Salieron las medialunas", config, now)).toBe(true)
+    expect(calls).toHaveLength(2)
+    expect(calls[0].method).toBe("PATCH")
+    expect(calls[0].url).toMatch(/\/loyaltyClass\/3388000000023221580\.celimap_programa_6650a1b2c3d4e5f601234567$/)
+    expect(calls[0].body).toMatchObject({ messages: [], programName: "Polvorín" })
+    expect(calls[1].url).toMatch(/\/loyaltyClass\/.+\/addMessage$/)
+    expect(calls[1].body).toEqual({
+      message: {
+        id: `aviso_${now.getTime()}`,
+        header: "Aviso de Polvorín",
+        body: "Salieron las medialunas",
+        messageType: "TEXT_AND_NOTIFY",
+        displayInterval: { start: { date: "2026-10-16T12:00:00Z" }, end: { date: "2026-10-23T12:00:00Z" } },
+      },
+    })
+  })
+
+  it("skips the notice when nobody saved the card in Google, and never throws", async () => {
+    const calls = mockFetch({ "PATCH /loyaltyClass": 404 })
+    expect(await pushGoogleProgramNotice(input, "Hola", config)).toBe(false)
+    expect(calls).toHaveLength(1)
+    mockFetch({ "POST /loyaltyClass": 500 })
+    expect(await pushGoogleProgramNotice(input, "Hola", config)).toBe(false)
+    expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ route: "wallet-google" }))
   })
 
   it("never throws when Google fails (the stamp is already saved)", async () => {

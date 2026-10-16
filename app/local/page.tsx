@@ -9,6 +9,8 @@ import { absoluteUrl } from "@/lib/base-url"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { Place } from "@/models/Place"
 import { enrollPathFor, getProgramStats, normalizeEmail } from "@/lib/wallet/loyalty"
+import { formatNoticeTime, nextNoticeAt } from "@/lib/wallet/notice"
+import { NoticeForm } from "@/components/wallet/NoticeForm"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +29,7 @@ export default async function LocalPage() {
     .lean<Array<{ _id: mongoose.Types.ObjectId; name: string }>>()
   const placeName = new Map(places.map((p) => [p._id.toString(), p.name]))
   const stats = await Promise.all(programs.map((p) => getProgramStats(p._id)))
+  const now = new Date()
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
@@ -53,10 +56,12 @@ export default async function LocalPage() {
             {programs.map((program, i) => {
               const s = stats[i]
               const retention = s.cards > 0 ? Math.round((s.cardsWithSecondStamp / s.cards) * 100) : 0
+              const name = placeName.get(program.placeId.toString()) ?? "Local"
+              const nextNotice = nextNoticeAt(program.notice, now)
               return (
                 <li key={program._id.toString()} className="rounded-2xl border border-[#E8E1D6] bg-white p-5">
                   <h2 className="text-lg font-bold text-olive">
-                    {placeName.get(program.placeId.toString()) ?? "Local"}
+                    {name}
                   </h2>
                   <p className="text-sm text-olive/80">
                     {program.stampsForReward} sellos: {program.reward}
@@ -68,6 +73,18 @@ export default async function LocalPage() {
                     <Stat label="Volvieron (2+ sellos)" value={`${retention}%`} />
                     <Stat label="Premios canjeados" value={s.redeems} />
                   </dl>
+                  <NoticeForm
+                    programId={program._id.toString()}
+                    placeName={name}
+                    cards={s.cards}
+                    active={program.active}
+                    lastNotice={
+                      program.notice
+                        ? { text: program.notice.text, sentAt: formatNoticeTime(new Date(program.notice.sentAt)) }
+                        : null
+                    }
+                    nextAt={nextNotice ? formatNoticeTime(nextNotice) : null}
+                  />
                   <Link
                     href={`/local/cartel/${program._id.toString()}`}
                     className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-olive px-5 font-semibold text-cream"

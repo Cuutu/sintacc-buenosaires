@@ -6,6 +6,7 @@ import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { enrollPathFor, getProgramStats, type ProgramStats } from "@/lib/wallet/loyalty"
+import { formatNoticeTime } from "@/lib/wallet/notice"
 
 const staffEmails = z
   .array(z.string().trim().toLowerCase().email("Mail inválido"))
@@ -39,6 +40,8 @@ export type AdminProgramRow = {
   active: boolean
   enrollPath: string
   stats: ProgramStats
+  /** Último aviso del local, para que el admin vea qué le mandan a los clientes. */
+  notice: { text: string; sentAt: string; byEmail: string } | null
 }
 
 export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
@@ -62,6 +65,9 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
       active: p.active,
       enrollPath: enrollPathFor(p._id.toString()),
       stats: stats[i],
+      notice: p.notice
+        ? { text: p.notice.text, sentAt: formatNoticeTime(new Date(p.notice.sentAt)), byEmail: p.notice.byEmail }
+        : null,
     }
   })
 }

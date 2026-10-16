@@ -60,6 +60,8 @@ export type LoyaltyPassInput = {
   safety?: CardSafety | null
   /** Dónde está el local: cerca de ahí, el celu muestra la tarjeta en la pantalla bloqueada. */
   location?: PassLocation | null
+  /** Último aviso del local (de la última semana). */
+  notice?: string | null
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
   webService?: { url: string; authenticationToken: string }
 }
@@ -167,6 +169,15 @@ export async function buildLoyaltyPass(
       textAlignment: "PKTextAlignmentRight",
     }
   )
+  // Cuando el local manda un aviso, el texto cambia y el iPhone lo muestra en la pantalla bloqueada.
+  if (input.notice) {
+    pass.backFields.push({
+      key: "notice",
+      label: `Aviso de ${input.placeName}`,
+      value: input.notice,
+      changeMessage: `${input.placeName.replace(/%/g, "%%")}: %@`,
+    })
+  }
   pass.backFields.push(
     {
       key: "news",

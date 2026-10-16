@@ -15,6 +15,7 @@ import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/Loy
 import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
+import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
 
 /** Evita sellos dobles por tocar dos veces o escanear de nuevo. */
 export const STAMP_COOLDOWN_MS = 60_000
@@ -125,7 +126,7 @@ export async function createCard(
   })
 }
 
-export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace): LoyaltyPassInput {
+export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = new Date()): LoyaltyPassInput {
   return {
     serialNumber: card.serialNumber,
     barcodeValue: stampUrlFor(card.serialNumber),
@@ -136,6 +137,7 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace): Loyalt
     placePath: data.placePath,
     safety: data.safety,
     location: data.location,
+    notice: activeNotice(data.program.notice, now),
     rewardsRedeemed: card.rewardsRedeemed,
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),
@@ -187,6 +189,36 @@ export async function redeemReward(
   if (!updated) return { ok: false, reason: "not_ready" }
   await LoyaltyStamp.create({ programId: program._id, cardId: card._id, kind: "redeem", byEmail })
   return { ok: true, card: updated }
+}
+
+export type SaveNoticeResult =
+  | { ok: true; program: ILoyaltyProgram }
+  | { ok: false; reason: "paused" | "too_soon"; nextAt?: Date }
+
+/** Guarda el aviso si el programa está activo y pasó el tiempo desde el anterior (atómico). */
+export async function saveProgramNotice(
+  programId: mongoose.Types.ObjectId,
+  text: string,
+  byEmail: string,
+  now = new Date()
+): Promise<SaveNoticeResult> {
+  await connectDB()
+  const updated = await LoyaltyProgram.findOneAndUpdate(
+    {
+      _id: programId,
+      active: true,
+      $or: [
+        { "notice.sentAt": { $exists: false } },
+        { "notice.sentAt": { $lte: new Date(now.getTime() - NOTICE_COOLDOWN_MS) } },
+      ],
+    },
+    { $set: { notice: { text, sentAt: now, byEmail } } },
+    { new: true }
+  )
+  if (updated) return { ok: true, program: updated }
+  const current = await LoyaltyProgram.findById(programId).select("active notice").lean<ILoyaltyProgram>()
+  if (!current?.active) return { ok: false, reason: "paused" }
+  return { ok: false, reason: "too_soon", nextAt: nextNoticeAt(current.notice, now) ?? undefined }
 }
 
 export type ProgramStats = {
