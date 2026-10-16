@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/middleware"
 import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { notifyCardChanged } from "@/lib/wallet/notify"
+import { stampIncrement } from "@/lib/wallet/promos"
 import {
   addStamp,
   canManageProgram,
@@ -59,6 +60,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     await notifyCardChanged(result.card)
+    // El amigo que lo invitó ganó su sello de regalo: también se le actualiza la tarjeta.
+    if (result.inviter) await notifyCardChanged(result.inviter)
 
     return NextResponse.json(
       {
@@ -67,6 +70,9 @@ export async function POST(request: NextRequest, { params }: Params) {
         rewardsRedeemed: result.card.rewardsRedeemed,
         added: result.added,
         ...(result.bonus ? { bonus: result.bonus } : {}),
+        inviterRewarded: Boolean(result.inviter),
+        // Cuánto sumaría el próximo sello (para el botón).
+        next: stampIncrement(result.card, program),
       },
       { headers: { "Cache-Control": "private, no-store" } }
     )

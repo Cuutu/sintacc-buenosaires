@@ -69,10 +69,13 @@ export default async function LocalPage() {
                     {program.active ? "" : " · pausado"}
                   </p>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-olive">
-                    <Stat label="Sellos esta semana" value={s.stampsLast7Days} />
+                    <Stat label="Visitas esta semana" value={s.stampsLast7Days} />
                     <Stat label="Tarjetas" value={s.cards} />
                     <Stat label="Volvieron (2+ sellos)" value={`${retention}%`} />
                     <Stat label="Premios canjeados" value={s.redeems} />
+                    {(program.referralEnabled || s.invitedCards > 0) && (
+                      <Stat label="Llegaron invitados" value={s.invitedCards} />
+                    )}
                   </dl>
                   <NoticeForm
                     programId={program._id.toString()}
@@ -97,6 +100,7 @@ export default async function LocalPage() {
                           }
                         : null
                     }
+                    initialReferral={Boolean(program.referralEnabled)}
                   />
                   <Link
                     href={`/local/cartel/${program._id.toString()}`}

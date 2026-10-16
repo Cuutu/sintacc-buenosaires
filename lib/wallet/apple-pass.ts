@@ -13,7 +13,7 @@ import type { ApplePassConfig } from "@/lib/wallet/config"
 import { clampStamps, nearbyText, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
 import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme, type CardSafety } from "@/lib/wallet/card-safety"
 import { appleStripBox, renderStampStrip } from "@/lib/wallet/stamp-strip"
-import type { StampReason } from "@/lib/wallet/promos"
+import { REFERRAL_TEXT, type StampReason } from "@/lib/wallet/promos"
 
 const ASSETS_DIR = path.join(process.cwd(), "public", "wallet", "apple")
 const ASSET_FILES = [
@@ -65,6 +65,8 @@ export type LoyaltyPassInput = {
   notice?: string | null
   /** "Sello doble de lunes a viernes de 15 a 18 h…", si el local lo tiene. */
   doubleStamp?: string | null
+  /** Link de "Traé un amigo" de esta tarjeta, si el local tiene la promo. */
+  inviteUrl?: string | null
   /** Cuántos sellos sumó la última visita y por qué (para "Última novedad"). */
   lastStampAdded?: number
   lastStampReason?: StampReason
@@ -197,6 +199,16 @@ export async function buildLoyaltyPass(
       value: stampHowText(total, input.reward),
     },
     ...(input.doubleStamp ? [{ key: "double", label: "Sello doble", value: input.doubleStamp }] : []),
+    ...(input.inviteUrl
+      ? [
+          {
+            key: "invite",
+            label: "Traé un amigo",
+            value: `${REFERRAL_TEXT} ${input.inviteUrl}`,
+            attributedValue: `${REFERRAL_TEXT} <a href="${input.inviteUrl}">Link para tu amigo</a>`,
+          },
+        ]
+      : []),
     ...(safety ? [{ key: "taccNote", label: CARD_SAFETY_LABEL[safety], value: cardSafetyNote(safety) }] : []),
     {
       key: "place",

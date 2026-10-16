@@ -18,7 +18,7 @@ export function stampNewsMessage(input: {
   rewardsRedeemed?: number
   /** Sellos que sumó la última visita (2 con sello doble) y por qué. */
   lastStampAdded?: number
-  lastStampReason?: "double"
+  lastStampReason?: "double" | "friend" | "inviter"
 }): string {
   const { stamps, total, placeName, reward } = input
   if (stamps <= 0) {
@@ -27,6 +27,16 @@ export function stampNewsMessage(input: {
       : `Mostrá esta tarjeta al pagar en ${placeName} y sumá tu primer sello.`
   }
   const left = total - stamps
+  const rest =
+    stamps >= total
+      ? `¡Completaste la tarjeta! Tu premio te espera: ${reward}.`
+      : `Te ${left === 1 ? "falta" : "faltan"} ${left} para tu premio: ${reward}.`
+  if (input.lastStampReason === "friend") {
+    return `¡Sumaste ${input.lastStampAdded ?? 2} sellos en ${placeName}, uno de regalo por venir con un amigo! ${rest}`
+  }
+  if (input.lastStampReason === "inviter") {
+    return `¡Tu amigo sumó su primer sello en ${placeName} y te regalamos uno! ${rest}`
+  }
   if (input.lastStampReason === "double") {
     const added = input.lastStampAdded ?? 2
     return stamps >= total

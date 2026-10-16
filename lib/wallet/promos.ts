@@ -1,6 +1,8 @@
 /**
  * Promos de la tarjeta de sellos que arma el local desde /local.
  * Sello doble: en los días y horarios flojos que elige el local, cada visita suma 2 sellos.
+ * Traé un amigo: el cliente le pasa su link a un amigo; cuando el amigo suma su primer sello,
+ * los dos ganan uno de regalo.
  * Todo en hora de Argentina, igual en el servidor y en el celu.
  */
 
@@ -83,23 +85,51 @@ export function doubleStampText(window: DoubleStampWindow | null | undefined): s
 /** Por qué se sumaron más sellos de lo normal (para el mensaje de la tarjeta). */
 export type StampReason = StampReasonValue
 
-export type StampIncrement = { added: number; reason?: StampReason }
+/** Sellos de regalo que puede ganar una tarjeta por invitar amigos. */
+export const REFERRAL_MAX_PER_CARD = 5
 
-/** Cuántos sellos suma esta visita: 1, o 2 en horario de sello doble (sin pasar del total). */
+export const REFERRAL_TEXT =
+  "Pasale este link a un amigo. Cuando sume su primer sello, ganan un sello de regalo los dos."
+
+export type StampIncrement = {
+  added: number
+  reason?: StampReason
+  /** Es el primer sello de alguien que vino invitado: se le regala uno y se le da otro al amigo. */
+  friend?: boolean
+}
+
+/** El primer sello de una tarjeta que llegó con el link de un amigo. */
+export function isInvitedFirstStamp(card: {
+  referredBy?: unknown
+  referralRewardedAt?: Date | null
+  totalStamps?: number
+}): boolean {
+  return Boolean(card.referredBy) && !card.referralRewardedAt && (card.totalStamps ?? 0) === 0
+}
+
+/**
+ * Cuántos sellos suma esta visita: 1, o 2 en horario de sello doble, más 1 de regalo si es el
+ * primer sello de alguien que vino invitado. Nunca pasa del total.
+ */
 export function stampIncrement(
-  card: { stamps: number },
+  card: { stamps: number; referredBy?: unknown; referralRewardedAt?: Date | null; totalStamps?: number },
   program: { stampsForReward: number; doubleStamp?: DoubleStampWindow | null },
   now = new Date()
 ): StampIncrement {
   const room = Math.max(0, program.stampsForReward - card.stamps)
   const double = isDoubleStampNow(program.doubleStamp, now)
-  const added = Math.min(double ? 2 : 1, room)
-  return double && added >= 2 ? { added, reason: "double" } : { added }
+  const friend = isInvitedFirstStamp(card)
+  const base = double ? 2 : 1
+  const added = Math.min(base + (friend ? 1 : 0), room)
+  const reason: StampReason | undefined =
+    friend && added > 1 ? "friend" : double && added >= 2 ? "double" : undefined
+  return { added, ...(reason ? { reason } : {}), ...(friend ? { friend: true } : {}) }
 }
 
 /** Lo que guarda el local desde /local. selloDoble null = sin sello doble. */
 export const promosSchema = z.object({
   selloDoble: doubleStampSchema.nullable(),
+  traeUnAmigo: z.boolean(),
 })
 
 export type PromosInput = z.infer<typeof promosSchema>
@@ -107,8 +137,8 @@ export type PromosInput = z.infer<typeof promosSchema>
 /** El update de Mongo para guardar las promos. */
 export function promosUpdate(input: PromosInput) {
   return input.selloDoble
-    ? { $set: { doubleStamp: input.selloDoble } }
-    : { $unset: { doubleStamp: 1 } }
+    ? { $set: { doubleStamp: input.selloDoble, referralEnabled: input.traeUnAmigo } }
+    : { $set: { referralEnabled: input.traeUnAmigo }, $unset: { doubleStamp: 1 } }
 }
 
 export function sameDoubleStamp(a: DoubleStampWindow | null | undefined, b: DoubleStampWindow | null | undefined) {

@@ -6,8 +6,9 @@ import connectDB from "@/lib/mongodb"
 import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { StampActions } from "@/components/wallet/StampActions"
-import { canManageProgram, getProgramWithPlace, isValidSerial } from "@/lib/wallet/loyalty"
-import { doubleStampText, isDoubleStampNow } from "@/lib/wallet/promos"
+import { InviteShare } from "@/components/wallet/InviteShare"
+import { canManageProgram, getProgramWithPlace, inviteUrlFor, isValidSerial } from "@/lib/wallet/loyalty"
+import { doubleStampText, isDoubleStampNow, stampIncrement } from "@/lib/wallet/promos"
 
 export const dynamic = "force-dynamic"
 
@@ -44,7 +45,7 @@ export default async function SellarPage({ params }: Props) {
           initialStamps={card.stamps}
           total={total}
           safety={data.safety}
-          doubleNow={doubleNow}
+          initialNext={stampIncrement(card, data.program)}
         />
       ) : (
         <>
@@ -63,6 +64,12 @@ export default async function SellarPage({ params }: Props) {
               {doubleNow ? <strong>¡Ahora hay sello doble! </strong> : null}
               {doubleInfo}
             </p>
+          )}
+          {data.program.referralEnabled && (
+            <InviteShare
+              url={inviteUrlFor(data.program._id.toString(), card._id.toString())}
+              placeName={data.placeName}
+            />
           )}
           {!session?.user && (
             <Link

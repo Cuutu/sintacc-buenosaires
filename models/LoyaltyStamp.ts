@@ -7,7 +7,7 @@ export interface ILoyaltyStamp extends Document {
   kind: "stamp" | "redeem"
   /** Sellos que sumó esa visita (2 con sello doble). */
   count: number
-  bonus?: "double"
+  bonus?: "double" | "friend" | "inviter"
   byEmail: string
   createdAt: Date
 }
@@ -18,7 +18,7 @@ const LoyaltyStampSchema = new Schema<ILoyaltyStamp>(
     cardId: { type: Schema.Types.ObjectId, ref: "LoyaltyCard", required: true },
     kind: { type: String, enum: ["stamp", "redeem"], required: true },
     count: { type: Number, default: 1, min: 1 },
-    bonus: { type: String, enum: ["double"] },
+    bonus: { type: String, enum: ["double", "friend", "inviter"] },
     byEmail: { type: String, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

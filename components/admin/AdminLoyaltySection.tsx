@@ -283,10 +283,11 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
-          ["Sellos (7 días)", stats.stampsLast7Days],
+          ["Visitas (7 días)", stats.stampsLast7Days],
           ["Tarjetas", stats.cards],
           ["Volvieron", `${retention}%`],
           ["Canjes", stats.redeems],
+          ...(program.referralEnabled || stats.invitedCards > 0 ? [["Invitados", stats.invitedCards]] : []),
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl bg-[#F8F5EF] p-3">
             <dt className={adminUi.label}>{label}</dt>
@@ -309,6 +310,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
         </p>
       )}
       {program.doubleStamp && <p className={`text-sm ${adminUi.muted}`}>{program.doubleStamp}</p>}
+      {program.referralEnabled && <p className={`text-sm ${adminUi.muted}`}>Traé un amigo: activo.</p>}
       {error && <p className="text-sm text-[#B84420]">{error}</p>}
 
       <div className="flex flex-wrap gap-2">

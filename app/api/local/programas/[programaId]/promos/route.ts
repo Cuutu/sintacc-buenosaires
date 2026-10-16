@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 
 type Params = { params: { programaId: string } }
 
-/** El local (o un admin) arma sus promos: sello doble en días y horarios flojos. */
+/** El local (o un admin) arma sus promos: sello doble en días y horarios flojos y "Traé un amigo". */
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const session = await requireAuth(request)
@@ -30,7 +30,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Sólo el local puede cambiar sus promos." }, { status: 403 })
     }
 
-    const changed = !sameDoubleStamp(data.program.doubleStamp, parsed.data.selloDoble)
+    const changed =
+      !sameDoubleStamp(data.program.doubleStamp, parsed.data.selloDoble) ||
+      Boolean(data.program.referralEnabled) !== parsed.data.traeUnAmigo
     if (changed) {
       await connectDB()
       const program = await LoyaltyProgram.findByIdAndUpdate(data.program._id, promosUpdate(parsed.data), {
@@ -43,7 +45,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     return NextResponse.json(
-      { selloDoble: parsed.data.selloDoble, texto: doubleStampText(parsed.data.selloDoble) },
+      {
+        selloDoble: parsed.data.selloDoble,
+        traeUnAmigo: parsed.data.traeUnAmigo,
+        texto: doubleStampText(parsed.data.selloDoble),
+      },
       { headers: { "Cache-Control": "private, no-store" } }
     )
   } catch (error) {

@@ -45,6 +45,7 @@ export type AdminProgramRow = {
   notice: { text: string; sentAt: string; byEmail: string } | null
   /** Promos que armó el local desde /local. */
   doubleStamp: string | null
+  referralEnabled: boolean
 }
 
 export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
@@ -72,6 +73,7 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
         ? { text: p.notice.text, sentAt: formatNoticeTime(new Date(p.notice.sentAt)), byEmail: p.notice.byEmail }
         : null,
       doubleStamp: doubleStampText(p.doubleStamp),
+      referralEnabled: Boolean(p.referralEnabled),
     }
   })
 }

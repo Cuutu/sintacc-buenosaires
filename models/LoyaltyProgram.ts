@@ -16,6 +16,8 @@ export interface ILoyaltyProgram extends Document {
   active: boolean
   notice?: LoyaltyNotice
   doubleStamp?: DoubleStampWindow
+  /** "Traé un amigo": cuando el invitado suma su primer sello, ganan uno de regalo los dos. */
+  referralEnabled: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -49,6 +51,7 @@ const LoyaltyProgramSchema = new Schema<ILoyaltyProgram>(
       ),
       required: false,
     },
+    referralEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 )

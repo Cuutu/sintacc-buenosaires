@@ -57,9 +57,15 @@ describe("sello doble", () => {
     expect(doubleStampSchema.safeParse({ days: [], fromHour: 9, toHour: 12 }).success).toBe(false)
     expect(doubleStampSchema.safeParse({ days: [1], fromHour: 18, toHour: 15 }).success).toBe(false)
     expect(doubleStampSchema.safeParse({ days: [7], fromHour: 1, toHour: 2 }).success).toBe(false)
-    expect(promosSchema.parse({ selloDoble: null })).toEqual({ selloDoble: null })
-    expect(promosUpdate({ selloDoble: null })).toEqual({ $unset: { doubleStamp: 1 } })
-    expect(promosUpdate({ selloDoble: weekdays })).toEqual({ $set: { doubleStamp: weekdays } })
+    expect(promosSchema.parse({ selloDoble: null, traeUnAmigo: true })).toEqual({ selloDoble: null, traeUnAmigo: true })
+    expect(promosSchema.safeParse({ selloDoble: null }).success).toBe(false)
+    expect(promosUpdate({ selloDoble: null, traeUnAmigo: false })).toEqual({
+      $set: { referralEnabled: false },
+      $unset: { doubleStamp: 1 },
+    })
+    expect(promosUpdate({ selloDoble: weekdays, traeUnAmigo: true })).toEqual({
+      $set: { doubleStamp: weekdays, referralEnabled: true },
+    })
     expect(sameDoubleStamp(weekdays, { ...weekdays, days: [1, 2, 3, 4, 5] })).toBe(true)
     expect(sameDoubleStamp(weekdays, null)).toBe(false)
     expect(sameDoubleStamp(undefined, null)).toBe(true)
@@ -74,6 +80,22 @@ describe("sello doble", () => {
     expect(stampIncrement({ stamps: 1 }, program, saturday)).toEqual({ added: 1 })
   })
 
+  it("gives an invited friend one extra stamp on the first visit only", () => {
+    const program = { stampsForReward: 5 }
+    const invited = { stamps: 0, totalStamps: 0, referredBy: "c1" }
+    expect(stampIncrement(invited, program, WEDNESDAY_1630)).toEqual({ added: 2, reason: "friend", friend: true })
+    expect(stampIncrement(invited, { ...program, doubleStamp: weekdays }, WEDNESDAY_1630)).toEqual({
+      added: 3,
+      reason: "friend",
+      friend: true,
+    })
+    expect(stampIncrement({ ...invited, referralRewardedAt: new Date() }, program)).toEqual({ added: 1 })
+    expect(stampIncrement({ ...invited, stamps: 1, totalStamps: 1 }, program)).toEqual({ added: 1 })
+    expect(stampIncrement({ stamps: 0, totalStamps: 0 }, program)).toEqual({ added: 1 })
+    // Tarjeta de un solo sello: no hay lugar para el regalo, pero igual cuenta como primera visita.
+    expect(stampIncrement(invited, { stampsForReward: 1 })).toEqual({ added: 1, friend: true })
+  })
+
   it("tells the customer it was a double stamp", () => {
     const base = { total: 5, placeName: "Polvorín", reward: "Cookie" }
     expect(stampNewsMessage({ ...base, stamps: 3, lastStampAdded: 2, lastStampReason: "double" })).toBe(
@@ -84,6 +106,15 @@ describe("sello doble", () => {
     )
     expect(stampNewsMessage({ ...base, stamps: 3 })).toBe(
       "¡Sumaste un sello en Polvorín! Te faltan 2 para tu premio: Cookie."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 2, lastStampAdded: 2, lastStampReason: "friend" })).toBe(
+      "¡Sumaste 2 sellos en Polvorín, uno de regalo por venir con un amigo! Te faltan 3 para tu premio: Cookie."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 4, lastStampAdded: 1, lastStampReason: "inviter" })).toBe(
+      "¡Tu amigo sumó su primer sello en Polvorín y te regalamos uno! Te falta 1 para tu premio: Cookie."
+    )
+    expect(stampNewsMessage({ ...base, stamps: 5, lastStampAdded: 1, lastStampReason: "inviter" })).toBe(
+      "¡Tu amigo sumó su primer sello en Polvorín y te regalamos uno! ¡Completaste la tarjeta! Tu premio te espera: Cookie."
     )
     expect(stampNewsMessage({ ...base, stamps: 0, rewardsRedeemed: 1, lastStampReason: "double" })).toBe(
       "¡Canjeaste tu premio en Polvorín! Ya arrancás una tarjeta nueva."

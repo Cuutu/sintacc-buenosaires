@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger"
 import { clampStamps, stampHowText, stampNewsMessage } from "@/lib/wallet/card-text"
 import { CARD_SAFETY_LABEL, cardSafetyNote, cardTheme } from "@/lib/wallet/card-safety"
 import { NOTICE_TTL_MS } from "@/lib/wallet/notice"
+import { REFERRAL_TEXT } from "@/lib/wallet/promos"
 import { googleHeroUrl, googleLogoUrl } from "@/lib/wallet/wallet-images"
 import type { LoyaltyPassInput } from "@/lib/wallet/apple-pass"
 import type { GoogleWalletConfig } from "@/lib/wallet/config"
@@ -158,12 +159,18 @@ export function buildLoyaltyObject(
     textModulesData: [
       { id: "how", header: "Cómo funciona", body: stampHowText(total, input.reward) },
       ...(input.doubleStamp ? [{ id: "double", header: "Sello doble", body: input.doubleStamp }] : []),
+      ...(input.inviteUrl ? [{ id: "invite", header: "Traé un amigo", body: REFERRAL_TEXT }] : []),
       ...(input.safety
         ? [{ id: "tacc", header: CARD_SAFETY_LABEL[input.safety], body: cardSafetyNote(input.safety) }]
         : []),
     ],
     linksModuleData: {
-      uris: [{ id: "place", uri: placeUrl, description: "Ver el local en CeliMap" }],
+      uris: [
+        ...(input.inviteUrl
+          ? [{ id: "invite", uri: input.inviteUrl, description: "Traé un amigo: link para compartir" }]
+          : []),
+        { id: "place", uri: placeUrl, description: "Ver el local en CeliMap" },
+      ],
     },
   }
 }

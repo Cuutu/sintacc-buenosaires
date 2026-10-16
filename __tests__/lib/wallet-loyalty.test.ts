@@ -6,8 +6,12 @@ import mongoose from "mongoose"
 const mockFindOneAndUpdate = jest.fn()
 const mockStampCreate = jest.fn()
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
+const mockCardExists = jest.fn()
 jest.mock("@/models/LoyaltyCard", () => ({
-  LoyaltyCard: { findOneAndUpdate: (...a: unknown[]) => mockFindOneAndUpdate(...a) },
+  LoyaltyCard: {
+    findOneAndUpdate: (...a: unknown[]) => mockFindOneAndUpdate(...a),
+    exists: (...a: unknown[]) => mockCardExists(...a),
+  },
 }))
 jest.mock("@/models/LoyaltyStamp", () => ({
   LoyaltyStamp: { create: (...a: unknown[]) => mockStampCreate(...a) },
@@ -26,6 +30,8 @@ import {
   STAMP_COOLDOWN_MS,
   addStamp,
   canManageProgram,
+  findInviterCard,
+  inviteUrlFor,
   isValidSerial,
   newAuthToken,
   newSerialNumber,
@@ -157,7 +163,7 @@ describe("loyalty helpers", () => {
     // Si la tarjeta cambió en el medio (otro sello, un canje), no suma.
     expect(filter.stamps).toBe(2)
     expect(filter.$or[1].lastStampAt.$lt.getTime()).toBe(now.getTime() - STAMP_COOLDOWN_MS)
-    expect(update.$inc).toEqual({ stamps: 1, totalStamps: 1 })
+    expect(update.$inc).toEqual({ stamps: 1, totalStamps: 1, visits: 1 })
     expect(update.$set).toEqual({ lastStampAt: now, lastStampAdded: 1 })
     expect(update.$unset).toEqual({ lastStampReason: 1 })
     expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "stamp", count: 1 }))
@@ -172,7 +178,7 @@ describe("loyalty helpers", () => {
     const result = await addStamp(card, withDouble, "caja@local.com", now)
     expect(result).toMatchObject({ ok: true, added: 2, bonus: "double" })
     const [, update] = mockFindOneAndUpdate.mock.calls[0]
-    expect(update.$inc).toEqual({ stamps: 2, totalStamps: 2 })
+    expect(update.$inc).toEqual({ stamps: 2, totalStamps: 2, visits: 1 })
     expect(update.$set).toEqual({ lastStampAt: now, lastStampAdded: 2, lastStampReason: "double" })
     expect(update.$unset).toBeUndefined()
     expect(mockStampCreate).toHaveBeenCalledWith(
@@ -187,6 +193,66 @@ describe("loyalty helpers", () => {
     expect(input.doubleStamp).toBe("Sello doble de lunes a viernes de 15 a 18 h: cada visita suma 2 sellos.")
     expect(input.lastStampAdded).toBe(2)
     expect(input.lastStampReason).toBe("double")
+  })
+
+  it("gives the invited friend and the inviter a stamp on the friend's first visit", async () => {
+    const inviterId = new mongoose.Types.ObjectId()
+    const card = { ...cardWith(0), totalStamps: 0, referredBy: inviterId } as unknown as ILoyaltyCard
+    const now = new Date("2026-10-15T12:00:00Z")
+    mockFindOneAndUpdate
+      .mockResolvedValueOnce({ ...card, stamps: 2 })
+      .mockResolvedValueOnce({ _id: inviterId, serialNumber: "inv", stamps: 4 })
+    const result = await addStamp(card, program, "caja@local.com", now)
+    expect(result).toMatchObject({ ok: true, added: 2, bonus: "friend", inviter: { serialNumber: "inv" } })
+
+    const [filter, update] = mockFindOneAndUpdate.mock.calls[0]
+    expect(filter.referralRewardedAt).toEqual({ $exists: false })
+    expect(update.$inc).toEqual({ stamps: 2, totalStamps: 2, visits: 1 })
+    expect(update.$set).toMatchObject({ lastStampReason: "friend", referralRewardedAt: now })
+
+    const [inviterFilter, inviterUpdate] = mockFindOneAndUpdate.mock.calls[1]
+    expect(inviterFilter).toMatchObject({ _id: inviterId, programId: program._id, stamps: { $lt: 5 } })
+    expect(inviterFilter.$or[1]).toEqual({ referralsRewarded: { $lt: 5 } })
+    expect(inviterUpdate.$inc).toEqual({ stamps: 1, totalStamps: 1, referralsRewarded: 1 })
+    expect(inviterUpdate.$set).toEqual({ lastStampAdded: 1, lastStampReason: "inviter" })
+    expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ bonus: "friend", count: 2 }))
+    expect(mockStampCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ cardId: inviterId, bonus: "inviter", count: 1 })
+    )
+  })
+
+  it("still stamps the friend when the inviter's card is full or hit the cap", async () => {
+    const card = { ...cardWith(0), totalStamps: 0, referredBy: new mongoose.Types.ObjectId() } as unknown as ILoyaltyCard
+    mockFindOneAndUpdate.mockResolvedValueOnce({ ...card, stamps: 2 }).mockResolvedValueOnce(null)
+    const result = await addStamp(card, program, "caja@local.com")
+    expect(result).toMatchObject({ ok: true, added: 2 })
+    expect(result).not.toHaveProperty("inviter")
+    expect(mockStampCreate).toHaveBeenCalledTimes(1)
+  })
+
+  it("only accepts invite links of the same place, with the promo on", async () => {
+    const amigo = new mongoose.Types.ObjectId().toString()
+    const on = { _id: program._id, referralEnabled: true } as unknown as ILoyaltyProgram
+    mockCardExists.mockResolvedValueOnce({ _id: amigo })
+    expect((await findInviterCard(on, amigo))?.toString()).toBe(amigo)
+    expect(mockCardExists).toHaveBeenCalledWith({ _id: amigo, programId: program._id })
+
+    mockCardExists.mockResolvedValueOnce(null)
+    expect(await findInviterCard(on, amigo)).toBeNull()
+    expect(await findInviterCard(on, "no-es-un-id")).toBeNull()
+    expect(await findInviterCard(on, null)).toBeNull()
+    expect(await findInviterCard({ ...on, referralEnabled: false } as unknown as ILoyaltyProgram, amigo)).toBeNull()
+    expect(mockCardExists).toHaveBeenCalledTimes(2)
+  })
+
+  it("puts the invite link on the card only when the shop has the promo", () => {
+    const card = cardWith(1)
+    const data = { program, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    expect(passInputFor(card, data).inviteUrl).toBeNull()
+    const on = { ...data, program: { ...program, referralEnabled: true } as unknown as ILoyaltyProgram }
+    const url = passInputFor(card, on).inviteUrl
+    expect(url).toBe(inviteUrlFor(program._id.toString(), card._id.toString()))
+    expect(url).toMatch(new RegExp(`/tarjeta/${program._id}\\?amigo=${card._id}$`))
   })
 
   it("refuses to stamp a full card or twice in a row", async () => {

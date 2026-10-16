@@ -2,13 +2,15 @@
  * El cliente escaneó el cartel del local y toca "Agregar a … Wallet".
  * Sin cuenta: una cookie por programa y Wallet hace que, si vuelve a tocar,
  * reciba la misma tarjeta y no una nueva.
+ * Si llegó con el link de un amigo (?amigo=<tarjeta>), la tarjeta nueva lo recuerda
+ * para darles el sello de regalo a los dos en su primera visita.
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { checkRateLimitByIp } from "@/lib/rate-limit"
 import { LoyaltyCard, type ILoyaltyCard, type LoyaltyWallet } from "@/models/LoyaltyCard"
-import { createCard, isValidSerial, type ProgramWithPlace } from "@/lib/wallet/loyalty"
+import { createCard, findInviterCard, isValidSerial, type ProgramWithPlace } from "@/lib/wallet/loyalty"
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
@@ -47,7 +49,8 @@ export async function findOrCreateCard(
       ),
     }
   }
-  return { ok: true, card: await createCard(data.program._id, wallet) }
+  const referredBy = await findInviterCard(data.program, request.nextUrl.searchParams.get("amigo"))
+  return { ok: true, card: await createCard(data.program._id, wallet, referredBy) }
 }
 
 export function rememberCard(response: NextResponse, card: ILoyaltyCard, wallet: LoyaltyWallet): NextResponse {

@@ -6,7 +6,7 @@ import { AddToWalletButton } from "@/components/wallet/AddToWalletButton"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { BADGE_TRADEMARK, walletBadges } from "@/lib/wallet/badges"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
-import { getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { findInviterCard, getProgramWithPlace } from "@/lib/wallet/loyalty"
 import { activeNotice } from "@/lib/wallet/notice"
 import { doubleStampText } from "@/lib/wallet/promos"
 
@@ -17,16 +17,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 }
 
-type Props = { params: { programaId: string } }
+type Props = { params: { programaId: string }; searchParams?: { amigo?: string | string[] } }
 
 /** A esta página llega el cliente escaneando el cartel con QR de la caja del local. */
-export default async function TarjetaPage({ params }: Props) {
+export default async function TarjetaPage({ params, searchParams }: Props) {
   const data = await getProgramWithPlace(params.programaId)
   if (!data || !data.program.active) notFound()
   const { program, placeName, placePath, safety } = data
   const programId = program._id.toString()
   const notice = activeNotice(program.notice)
   const doubleStamp = doubleStampText(program.doubleStamp)
+
+  // "Traé un amigo": el link del amigo pasa a los botones, y la tarjeta nueva lo recuerda.
+  const amigo = typeof searchParams?.amigo === "string" ? searchParams.amigo : null
+  const inviter = await findInviterCard(program, amigo)
+  const query = inviter ? `?amigo=${inviter.toString()}` : ""
 
   // En el celu mostramos sólo el Wallet que tiene; en la compu, los dos.
   const userAgent = headers().get("user-agent") ?? ""
@@ -52,6 +57,13 @@ export default async function TarjetaPage({ params }: Props) {
         )}
       </header>
 
+      {inviter && (
+        <p className="rounded-2xl border border-dashed border-[#D4633A] bg-[#FBE9E2] p-4 text-olive">
+          <strong className="block text-[#B84420]">Te invitó un amigo</strong>
+          Guardá la tarjeta y, cuando sumes tu primer sello, te regalamos uno más. Tu amigo también gana uno.
+        </p>
+      )}
+
       {notice && (
         <p className="rounded-2xl bg-cream-card p-4 text-olive">
           <span className="block text-xs font-semibold uppercase tracking-wide text-olive/60">
@@ -71,10 +83,10 @@ export default async function TarjetaPage({ params }: Props) {
 
       <div className="flex flex-col gap-3">
         {showApple && (
-          <AddToWalletButton wallet="apple" href={`/api/wallet/tarjeta/${programId}/apple`} badge={badges.apple} />
+          <AddToWalletButton wallet="apple" href={`/api/wallet/tarjeta/${programId}/apple${query}`} badge={badges.apple} />
         )}
         {showGoogle && (
-          <AddToWalletButton wallet="google" href={`/api/wallet/tarjeta/${programId}/google`} badge={badges.google} />
+          <AddToWalletButton wallet="google" href={`/api/wallet/tarjeta/${programId}/google${query}`} badge={badges.google} />
         )}
       </div>
       <p className="text-center text-sm text-olive/70">

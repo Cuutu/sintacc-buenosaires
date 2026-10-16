@@ -19,7 +19,13 @@ jest.mock("@/lib/wallet/loyalty", () => ({
   createCard: (...a: unknown[]) => mockCreateCard(...a),
 }))
 const mockFindOne = jest.fn()
-jest.mock("@/models/LoyaltyCard", () => ({ LoyaltyCard: { findOne: (...a: unknown[]) => mockFindOne(...a) } }))
+const mockExists = jest.fn()
+jest.mock("@/models/LoyaltyCard", () => ({
+  LoyaltyCard: {
+    findOne: (...a: unknown[]) => mockFindOne(...a),
+    exists: (...a: unknown[]) => mockExists(...a),
+  },
+}))
 jest.mock("@/models/LoyaltyProgram", () => ({ LoyaltyProgram: {} }))
 jest.mock("@/models/LoyaltyStamp", () => ({ LoyaltyStamp: {} }))
 jest.mock("@/models/Place", () => ({ Place: {} }))
@@ -35,8 +41,8 @@ import { GET } from "@/app/api/wallet/tarjeta/[programaId]/google/route"
 
 const SERIAL = "b".repeat(32)
 const params = { params: { programaId: programId.toString() } }
-const req = (cookie?: string) =>
-  new NextRequest(`http://localhost:3000/api/wallet/tarjeta/${programId}/google`, {
+const req = (cookie?: string, query = "") =>
+  new NextRequest(`http://localhost:3000/api/wallet/tarjeta/${programId}/google${query}`, {
     headers: cookie ? { cookie } : {},
   })
 
@@ -49,7 +55,13 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
     })
-    mockCreateCard.mockResolvedValue({ programId, serialNumber: SERIAL, authToken: "t", stamps: 0 })
+    mockCreateCard.mockResolvedValue({
+      _id: new mongoose.Types.ObjectId(),
+      programId,
+      serialNumber: SERIAL,
+      authToken: "t",
+      stamps: 0,
+    })
     mockSaveLink.mockResolvedValue("https://pay.google.com/gp/v/save/jwt")
   })
 
@@ -62,7 +74,7 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
     const res = await GET(req(), params)
     expect(res.status).toBe(303)
     expect(res.headers.get("location")).toBe("https://pay.google.com/gp/v/save/jwt")
-    expect(mockCreateCard).toHaveBeenCalledWith(programId, "google")
+    expect(mockCreateCard).toHaveBeenCalledWith(programId, "google", null)
     expect(mockSaveLink).toHaveBeenCalledWith(
       expect.objectContaining({ programId: programId.toString(), serialNumber: SERIAL, reward: "Cookie" }),
       expect.anything()
@@ -76,6 +88,24 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
     expect(res.status).toBe(303)
     expect(mockFindOne).toHaveBeenCalledWith(expect.objectContaining({ serialNumber: SERIAL, wallet: "google" }))
     expect(mockCreateCard).not.toHaveBeenCalled()
+  })
+
+  it("remembers the friend who invited them, only with the promo on", async () => {
+    const amigo = new mongoose.Types.ObjectId().toString()
+    mockExists.mockResolvedValue({ _id: amigo })
+    await GET(req(undefined, `?amigo=${amigo}`), params)
+    expect(mockExists).not.toHaveBeenCalled()
+    expect(mockCreateCard).toHaveBeenLastCalledWith(programId, "google", null)
+
+    mockGetProgram.mockResolvedValue({
+      program: { _id: programId, active: true, stampsForReward: 10, reward: "Cookie", referralEnabled: true },
+      placeName: "Polvorín",
+      placePath: "/lugar/polvorin",
+    })
+    await GET(req(undefined, `?amigo=${amigo}`), params)
+    expect(mockExists).toHaveBeenCalledWith({ _id: amigo, programId })
+    const referredBy = mockCreateCard.mock.calls[1][2]
+    expect(referredBy?.toString()).toBe(amigo)
   })
 
   it("does not hand out cards for paused programs", async () => {

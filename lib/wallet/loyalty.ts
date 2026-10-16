@@ -16,7 +16,12 @@ import { LoyaltyStamp } from "@/models/LoyaltyStamp"
 import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
-import { doubleStampText, stampIncrement, type StampReason } from "@/lib/wallet/promos"
+import {
+  doubleStampText,
+  REFERRAL_MAX_PER_CARD,
+  stampIncrement,
+  type StampReason,
+} from "@/lib/wallet/promos"
 
 /** Evita sellos dobles por tocar dos veces o escanear de nuevo. */
 export const STAMP_COOLDOWN_MS = 60_000
@@ -49,6 +54,25 @@ export function stampUrlFor(serialNumber: string): string {
 
 export function enrollPathFor(programId: string): string {
   return `/tarjeta/${programId}`
+}
+
+/** Link de "Traé un amigo": la página de la tarjeta con la tarjeta de quien invita. */
+export function inviteUrlFor(programId: string, cardId: string): string {
+  return absoluteUrl(`${enrollPathFor(programId)}?amigo=${encodeURIComponent(cardId)}`)
+}
+
+/**
+ * La tarjeta de quien invita, si el link es de este local y la promo está activa.
+ * Devuelve su _id o null (link viejo, de otro local o inventado).
+ */
+export async function findInviterCard(
+  program: Pick<ILoyaltyProgram, "_id" | "referralEnabled">,
+  amigo: string | null | undefined
+): Promise<mongoose.Types.ObjectId | null> {
+  if (!program.referralEnabled || !amigo || !mongoose.Types.ObjectId.isValid(amigo)) return null
+  await connectDB()
+  const inviter = await LoyaltyCard.exists({ _id: amigo, programId: program._id })
+  return inviter ? new mongoose.Types.ObjectId(amigo) : null
 }
 
 export type StaffSession = { user?: { email?: string | null; role?: string } } | null
@@ -116,7 +140,8 @@ export async function getProgramWithPlace(programId: string): Promise<ProgramWit
 
 export async function createCard(
   programId: mongoose.Types.ObjectId,
-  wallet: LoyaltyWallet = "apple"
+  wallet: LoyaltyWallet = "apple",
+  referredBy: mongoose.Types.ObjectId | null = null
 ): Promise<ILoyaltyCard> {
   await connectDB()
   return LoyaltyCard.create({
@@ -124,6 +149,7 @@ export async function createCard(
     serialNumber: newSerialNumber(),
     authToken: newAuthToken(),
     wallet,
+    ...(referredBy ? { referredBy } : {}),
   })
 }
 
@@ -140,6 +166,9 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
     location: data.location,
     notice: activeNotice(data.program.notice, now),
     doubleStamp: doubleStampText(data.program.doubleStamp),
+    inviteUrl: data.program.referralEnabled
+      ? inviteUrlFor(data.program._id.toString(), card._id.toString())
+      : null,
     rewardsRedeemed: card.rewardsRedeemed,
     lastStampAdded: card.lastStampAdded,
     lastStampReason: card.lastStampReason,
@@ -151,12 +180,57 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
 }
 
 export type StampResult =
-  | { ok: true; card: ILoyaltyCard; added: number; bonus?: StampReason }
+  | {
+      ok: true
+      card: ILoyaltyCard
+      added: number
+      bonus?: StampReason
+      /** La tarjeta del amigo que lo invitó, si ganó su sello de regalo. */
+      inviter?: ILoyaltyCard
+    }
   | { ok: false; reason: "not_found" | "full" | "too_soon" | "not_ready" }
 
 /**
- * Suma los sellos de una visita de forma atómica: 1, o 2 en horario de sello doble,
- * sin pasar del máximo ni duplicar en el cooldown. Si la tarjeta cambió en el medio, no suma.
+ * Le da al que invitó su sello de regalo (atómico, con tope y sin pasar del premio).
+ * Si tiene la tarjeta completa o llegó al tope, no suma.
+ */
+async function rewardInviter(
+  inviterId: mongoose.Types.ObjectId,
+  program: ILoyaltyProgram,
+  byEmail: string
+): Promise<ILoyaltyCard | null> {
+  const inviter = await LoyaltyCard.findOneAndUpdate(
+    {
+      _id: inviterId,
+      programId: program._id,
+      stamps: { $lt: program.stampsForReward },
+      $or: [
+        { referralsRewarded: { $exists: false } },
+        { referralsRewarded: { $lt: REFERRAL_MAX_PER_CARD } },
+      ],
+    },
+    {
+      $inc: { stamps: 1, totalStamps: 1, referralsRewarded: 1 },
+      $set: { lastStampAdded: 1, lastStampReason: "inviter" },
+    },
+    { new: true }
+  )
+  if (!inviter) return null
+  await LoyaltyStamp.create({
+    programId: program._id,
+    cardId: inviter._id,
+    kind: "stamp",
+    count: 1,
+    bonus: "inviter",
+    byEmail,
+  })
+  return inviter
+}
+
+/**
+ * Suma los sellos de una visita de forma atómica: 1, o 2 en horario de sello doble, más uno de
+ * regalo en el primer sello de alguien que vino invitado (y otro para su amigo). Sin pasar del
+ * máximo ni duplicar en el cooldown. Si la tarjeta cambió en el medio, no suma.
  */
 export async function addStamp(
   card: ILoyaltyCard,
@@ -165,19 +239,26 @@ export async function addStamp(
   now = new Date()
 ): Promise<StampResult> {
   if (card.stamps >= program.stampsForReward) return { ok: false, reason: "full" }
-  const { added, reason } = stampIncrement(card, program, now)
+  const { added, reason, friend } = stampIncrement(card, program, now)
   const updated = await LoyaltyCard.findOneAndUpdate(
     {
       _id: card._id,
       stamps: card.stamps,
+      // El regalo por venir invitado se da una sola vez.
+      ...(friend ? { referralRewardedAt: { $exists: false } } : {}),
       $or: [
         { lastStampAt: { $exists: false } },
         { lastStampAt: { $lt: new Date(now.getTime() - STAMP_COOLDOWN_MS) } },
       ],
     },
     {
-      $inc: { stamps: added, totalStamps: added },
-      $set: { lastStampAt: now, lastStampAdded: added, ...(reason ? { lastStampReason: reason } : {}) },
+      $inc: { stamps: added, totalStamps: added, visits: 1 },
+      $set: {
+        lastStampAt: now,
+        lastStampAdded: added,
+        ...(reason ? { lastStampReason: reason } : {}),
+        ...(friend ? { referralRewardedAt: now } : {}),
+      },
       ...(reason ? {} : { $unset: { lastStampReason: 1 } }),
     },
     { new: true }
@@ -191,7 +272,14 @@ export async function addStamp(
     ...(reason ? { bonus: reason } : {}),
     byEmail,
   })
-  return { ok: true, card: updated, added, ...(reason ? { bonus: reason } : {}) }
+  const inviter = friend && card.referredBy ? await rewardInviter(card.referredBy, program, byEmail) : null
+  return {
+    ok: true,
+    card: updated,
+    added,
+    ...(reason ? { bonus: reason } : {}),
+    ...(inviter ? { inviter } : {}),
+  }
 }
 
 /** Canjea el premio: vuelve los sellos a 0. */
@@ -245,6 +333,8 @@ export type ProgramStats = {
   cardsWithSecondStamp: number
   stampsLast7Days: number
   redeems: number
+  /** Tarjetas que llegaron con el link de un amigo. */
+  invitedCards: number
 }
 
 export async function getProgramStats(
@@ -253,13 +343,25 @@ export async function getProgramStats(
 ): Promise<ProgramStats> {
   await connectDB()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const [cards, cardsWithSecondStamp, stampsLast7Days, redeems] = await Promise.all([
+  const [cards, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards] = await Promise.all([
     LoyaltyCard.countDocuments({ programId }),
-    LoyaltyCard.countDocuments({ programId, totalStamps: { $gte: 2 } }),
-    LoyaltyStamp.countDocuments({ programId, kind: "stamp", createdAt: { $gte: weekAgo } }),
+    // Volvieron = 2+ visitas (con sello doble una sola visita ya suma 2 sellos).
+    // Las tarjetas de antes de contar visitas no tienen el campo: ahí, 2+ sellos.
+    LoyaltyCard.countDocuments({
+      programId,
+      $or: [{ visits: { $gte: 2 } }, { visits: { $exists: false }, totalStamps: { $gte: 2 } }],
+    }),
+    // Visitas: el sello de regalo del que invitó no cuenta como visita.
+    LoyaltyStamp.countDocuments({
+      programId,
+      kind: "stamp",
+      bonus: { $ne: "inviter" },
+      createdAt: { $gte: weekAgo },
+    }),
     LoyaltyStamp.countDocuments({ programId, kind: "redeem" }),
+    LoyaltyCard.countDocuments({ programId, referredBy: { $exists: true } }),
   ])
-  return { cards, cardsWithSecondStamp, stampsLast7Days, redeems }
+  return { cards, cardsWithSecondStamp, stampsLast7Days, redeems, invitedCards }
 }
 
 /** Comparación en tiempo constante del token que manda el Wallet. */

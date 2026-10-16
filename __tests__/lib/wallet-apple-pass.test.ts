@@ -324,4 +324,23 @@ describe("apple wallet loyalty pass", () => {
     expect(text).toContain("Sello doble de lunes a viernes de 15 a 18 h")
     expect(text).toContain("Sumaste 2 sellos en Local")
   })
+
+  it("puts the customer's invite link on the back", async () => {
+    const text = (
+      await buildLoyaltyPass(
+        {
+          serialNumber: "s3",
+          barcodeValue: "s3",
+          stamps: 1,
+          stampsForReward: 5,
+          reward: "Un cafe",
+          placeName: "Local",
+          inviteUrl: "https://www.celimap.com.ar/tarjeta/p1?amigo=c1",
+        },
+        config
+      )
+    ).toString("latin1")
+    expect(text).toContain('"key":"invite"')
+    expect(text).toContain('<a href=\\"https://www.celimap.com.ar/tarjeta/p1?amigo=c1\\">Link para tu amigo</a>')
+  })
 })

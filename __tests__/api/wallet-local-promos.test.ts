@@ -46,33 +46,34 @@ describe("PUT /api/local/programas/[programaId]/promos", () => {
 
   it("requires a session", async () => {
     mockRequireAuth.mockResolvedValue(NextResponse.json({}, { status: 401 }))
-    expect((await PUT(req({ selloDoble: window }), params)).status).toBe(401)
+    expect((await PUT(req({ selloDoble: window, traeUnAmigo: false }), params)).status).toBe(401)
   })
 
   it("is only for the place's staff or an admin", async () => {
     mockRequireAuth.mockResolvedValue({ user: { id: "u2", email: "cliente@gmail.com", role: "user" } })
-    expect((await PUT(req({ selloDoble: window }), params)).status).toBe(403)
+    expect((await PUT(req({ selloDoble: window, traeUnAmigo: false }), params)).status).toBe(403)
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   it("rejects impossible hours", async () => {
     mockRequireAuth.mockResolvedValue(staff)
-    const res = await PUT(req({ selloDoble: { days: [1], fromHour: 18, toHour: 9 } }), params)
+    const res = await PUT(req({ selloDoble: { days: [1], fromHour: 18, toHour: 9 }, traeUnAmigo: false }), params)
     expect(res.status).toBe(400)
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   it("saves the double stamp and refreshes the cards", async () => {
     mockRequireAuth.mockResolvedValue(staff)
-    const res = await PUT(req({ selloDoble: window }), params)
+    const res = await PUT(req({ selloDoble: window, traeUnAmigo: false }), params)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       selloDoble: { days: [1, 2], fromHour: 15, toHour: 18 },
+      traeUnAmigo: false,
       texto: "Sello doble los lunes y martes de 15 a 18 h: cada visita suma 2 sellos.",
     })
     expect(mockUpdate).toHaveBeenCalledWith(
       programId,
-      { $set: { doubleStamp: { days: [1, 2], fromHour: 15, toHour: 18 } } },
+      { $set: { doubleStamp: { days: [1, 2], fromHour: 15, toHour: 18 }, referralEnabled: false } },
       expect.objectContaining({ runValidators: true })
     )
     expect(mockRefresh).toHaveBeenCalledTimes(1)
@@ -80,16 +81,28 @@ describe("PUT /api/local/programas/[programaId]/promos", () => {
 
   it("removes it, and does nothing when nothing changed", async () => {
     mockRequireAuth.mockResolvedValue({ user: { id: "a", email: "admin@celimap.com.ar", role: "admin" } })
-    expect((await PUT(req({ selloDoble: null }), params)).status).toBe(200)
+    expect((await PUT(req({ selloDoble: null, traeUnAmigo: false }), params)).status).toBe(200)
     expect(mockUpdate).not.toHaveBeenCalled()
     expect(mockRefresh).not.toHaveBeenCalled()
+
+    expect((await PUT(req({ selloDoble: null, traeUnAmigo: true }), params)).status).toBe(200)
+    expect(mockUpdate).toHaveBeenLastCalledWith(
+      programId,
+      { $set: { referralEnabled: true }, $unset: { doubleStamp: 1 } },
+      expect.anything()
+    )
+    expect(mockRefresh).toHaveBeenCalledTimes(1)
 
     mockGetProgram.mockResolvedValue({
       program: { ...program, doubleStamp: { days: [1, 2], fromHour: 15, toHour: 18 } },
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
     })
-    expect((await PUT(req({ selloDoble: null }), params)).status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(programId, { $unset: { doubleStamp: 1 } }, expect.anything())
+    expect((await PUT(req({ selloDoble: null, traeUnAmigo: false }), params)).status).toBe(200)
+    expect(mockUpdate).toHaveBeenLastCalledWith(
+      programId,
+      { $set: { referralEnabled: false }, $unset: { doubleStamp: 1 } },
+      expect.anything()
+    )
   })
 })

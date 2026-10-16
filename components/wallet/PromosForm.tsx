@@ -1,31 +1,38 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles } from "lucide-react"
+import { Gift, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { WEEK_ORDER, WEEKDAY_SHORT, doubleStampText } from "@/lib/wallet/promos"
+import { REFERRAL_MAX_PER_CARD, WEEK_ORDER, WEEKDAY_SHORT, doubleStampText } from "@/lib/wallet/promos"
 import type { DoubleStampWindow } from "@/models/LoyaltyProgram"
 
 type Props = {
   programId: string
   initialDoubleStamp: DoubleStampWindow | null
+  initialReferral: boolean
 }
+
+type Saved = { selloDoble: DoubleStampWindow | null; traeUnAmigo: boolean }
 
 const DEFAULT_WINDOW: DoubleStampWindow = { days: [1, 2, 3], fromHour: 15, toHour: 18 }
 const HOURS = Array.from({ length: 25 }, (_, h) => h)
 
-/** El local elige sus días y horarios flojos: ahí cada visita suma 2 sellos. */
-export function PromosForm({ programId, initialDoubleStamp }: Props) {
+/**
+ * Promos del local: sello doble en sus días y horarios flojos, y "Traé un amigo"
+ * (el invitado y quien lo invitó ganan un sello de regalo en la primera visita).
+ */
+export function PromosForm({ programId, initialDoubleStamp, initialReferral }: Props) {
   const [enabled, setEnabled] = useState(Boolean(initialDoubleStamp))
   const [slot, setSlot] = useState<DoubleStampWindow>(initialDoubleStamp ?? DEFAULT_WINDOW)
-  const [saved, setSaved] = useState<DoubleStampWindow | null>(initialDoubleStamp)
+  const [referral, setReferral] = useState(initialReferral)
+  const [saved, setSaved] = useState<Saved>({ selloDoble: initialDoubleStamp, traeUnAmigo: initialReferral })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
   const valid = slot.days.length > 0 && slot.fromHour < slot.toHour
   const preview = enabled && valid ? doubleStampText(slot) : null
-  const draft = enabled ? slot : null
+  const draft: Saved = { selloDoble: enabled ? slot : null, traeUnAmigo: referral }
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved)
 
   function toggleDay(day: number) {
@@ -43,19 +50,20 @@ export function PromosForm({ programId, initialDoubleStamp }: Props) {
       const res = await fetch(`/api/local/programas/${programId}/promos`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selloDoble: draft }),
+        body: JSON.stringify(draft),
       })
-      const data = (await res.json().catch(() => ({}))) as { selloDoble?: DoubleStampWindow | null; error?: string }
-      if (!res.ok || data.selloDoble === undefined) {
+      const data = (await res.json().catch(() => ({}))) as Partial<Saved> & { error?: string }
+      if (!res.ok || data.selloDoble === undefined || typeof data.traeUnAmigo !== "boolean") {
         setMessage({ ok: false, text: data.error ?? "No se pudo guardar." })
         return
       }
-      setSaved(data.selloDoble)
+      setSaved({ selloDoble: data.selloDoble, traeUnAmigo: data.traeUnAmigo })
       setMessage({
         ok: true,
-        text: data.selloDoble
-          ? "¡Listo! Ya aparece en la tarjeta de tus clientes."
-          : "Listo, sacamos el sello doble.",
+        text:
+          data.selloDoble || data.traeUnAmigo
+            ? "¡Listo! Ya aparece en la tarjeta de tus clientes."
+            : "Listo, sacamos las promos.",
       })
     } catch {
       setMessage({ ok: false, text: "Sin conexión. Probá de nuevo." })
@@ -166,6 +174,28 @@ export function PromosForm({ programId, initialDoubleStamp }: Props) {
           )}
         </div>
       )}
+
+      <h3 className="mt-5 flex items-center gap-2 font-bold">
+        <Gift className="h-4 w-4 text-terracotta-strong" aria-hidden />
+        Traé un amigo
+      </h3>
+      <p className="mt-1 text-sm text-olive/80">
+        Cada cliente tiene un link para invitar amigos. Cuando el amigo suma su primer sello, ganan un
+        sello de regalo los dos (hasta {REFERRAL_MAX_PER_CARD} regalos por cliente). Si la apagás, los
+        links dejan de servir; quien ya guardó la tarjeta con un link igual recibe su regalo.
+      </p>
+      <label className="mt-3 flex items-center gap-2 text-sm font-semibold">
+        <input
+          type="checkbox"
+          className="h-5 w-5 accent-[#2D4A34]"
+          checked={referral}
+          onChange={(e) => {
+            setReferral(e.target.checked)
+            setMessage(null)
+          }}
+        />
+        Activar Traé un amigo
+      </label>
 
       {message && (
         <p role="status" className={cn("mt-3 text-sm", message.ok ? "font-semibold" : "text-[#B84420]")}>

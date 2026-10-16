@@ -11,11 +11,12 @@ jest.mock("@/lib/middleware", () => ({
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 
 const mockCardFindOne = jest.fn()
+const mockCardUpdate = jest.fn()
 const mockProgramFindById = jest.fn()
 jest.mock("@/models/LoyaltyCard", () => ({
   LoyaltyCard: {
     findOne: (...a: unknown[]) => mockCardFindOne(...a),
-    findOneAndUpdate: jest.fn().mockResolvedValue({ serialNumber: "s", stamps: 3, rewardsRedeemed: 0 }),
+    findOneAndUpdate: (...a: unknown[]) => mockCardUpdate(...a),
   },
 }))
 jest.mock("@/models/LoyaltyProgram", () => ({
@@ -41,6 +42,7 @@ const params = { params: { serial: SERIAL } }
 describe("POST /api/local/tarjetas/[serial]", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCardUpdate.mockResolvedValue({ serialNumber: "s", stamps: 3, rewardsRedeemed: 0 })
     mockCardFindOne.mockResolvedValue({ _id: new mongoose.Types.ObjectId(), programId: "p1", stamps: 2 })
     mockProgramFindById.mockResolvedValue({
       _id: new mongoose.Types.ObjectId(),
@@ -71,5 +73,23 @@ describe("POST /api/local/tarjetas/[serial]", () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ stamps: 3, stampsForReward: 5 })
     expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({ serialNumber: "s", stamps: 3 }))
+  })
+
+  it("also updates the card of the friend who invited them", async () => {
+    mockRequireAuth.mockResolvedValue({ user: { id: "u", email: "caja@local.com", role: "user" } })
+    mockCardFindOne.mockResolvedValue({
+      _id: new mongoose.Types.ObjectId(),
+      programId: "p1",
+      stamps: 0,
+      totalStamps: 0,
+      referredBy: new mongoose.Types.ObjectId(),
+    })
+    mockCardUpdate
+      .mockResolvedValueOnce({ serialNumber: "amigo", stamps: 2, totalStamps: 2, referralRewardedAt: new Date() })
+      .mockResolvedValueOnce({ serialNumber: "invito", stamps: 4 })
+    const res = await POST(req({ accion: "sello" }), params)
+    expect(await res.json()).toMatchObject({ stamps: 2, added: 2, bonus: "friend", inviterRewarded: true, next: { added: 1 } })
+    expect(mockNotify).toHaveBeenCalledTimes(2)
+    expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({ serialNumber: "invito" }))
   })
 })

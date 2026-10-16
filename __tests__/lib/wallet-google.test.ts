@@ -251,4 +251,15 @@ describe("google wallet loyalty card", () => {
     expect(await refreshGoogleCard(input, config)).toBe(false)
     expect(mockWarn).not.toHaveBeenCalled()
   })
+  it("adds the customer's invite link to the card", () => {
+    const inviteUrl = "https://www.celimap.com.ar/tarjeta/p1?amigo=c1"
+    const object = buildLoyaltyObject(config, { ...input, inviteUrl }, null)
+    expect(object.linksModuleData.uris[0]).toEqual({
+      id: "invite",
+      uri: inviteUrl,
+      description: "Traé un amigo: link para compartir",
+    })
+    expect(object.textModulesData.map((m) => m.id)).toContain("invite")
+    expect(buildLoyaltyObject(config, input, null).linksModuleData.uris.map((u) => u.id)).toEqual(["place"])
+  })
 })
