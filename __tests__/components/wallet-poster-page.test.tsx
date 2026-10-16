@@ -24,6 +24,11 @@ jest.mock("@/lib/wallet/config", () => ({
   isApplePassConfigured: () => true,
   isGoogleWalletConfigured: () => true,
 }))
+const mockBadges = jest.fn()
+jest.mock("@/lib/wallet/badges", () => ({
+  ...jest.requireActual("@/lib/wallet/badges"),
+  walletBadges: (...a: unknown[]) => mockBadges(...a),
+}))
 const mockPosterQr = jest.fn()
 jest.mock("@/lib/wallet/poster-qr", () => {
   const actual = jest.requireActual("@/lib/wallet/poster-qr")
@@ -65,6 +70,7 @@ describe("/local/cartel/[programaId]", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockGetProgram.mockResolvedValue(program())
+    mockBadges.mockReturnValue({ apple: null, google: null })
   })
 
   it("sends people without a session to log in and come back", async () => {
@@ -94,6 +100,21 @@ describe("/local/cartel/[programaId]", () => {
     expect(html).toContain("100% sin TACC")
 
     expect(await render({ tamano: "a4" })).toContain("size: A4 portrait")
+  })
+
+  it("uses the official Wallet badges once the files are uploaded", async () => {
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    mockBadges.mockReturnValue({
+      apple: { src: "/wallet/badges/agregar-a-apple-wallet.svg", width: 160, height: 48, alt: "Agregar a Apple Wallet" },
+      google: { src: "/wallet/badges/agregar-a-google-wallet.svg", width: 199, height: 48, alt: "Agregar a Google Wallet" },
+    })
+    const html = await render()
+    expect(mockBadges).toHaveBeenCalledWith({ apple: true, google: true })
+    expect(html).toContain("/wallet/badges/agregar-a-apple-wallet.svg")
+    expect(html).toContain("/wallet/badges/agregar-a-google-wallet.svg")
+    expect(html).not.toContain("Funciona con Apple Wallet y Google Wallet.")
+    expect(html).toContain("Apple y Apple Wallet son marcas de Apple Inc.")
+    expect(html).toContain("Google Wallet es una marca de Google LLC.")
   })
 
   it("warns when the card is paused", async () => {

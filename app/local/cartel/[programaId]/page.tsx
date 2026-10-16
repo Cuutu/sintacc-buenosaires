@@ -7,6 +7,7 @@ import { absoluteUrl } from "@/lib/base-url"
 import { cn } from "@/lib/utils"
 import { LoyaltyPoster } from "@/components/wallet/LoyaltyPoster"
 import { PrintButton } from "@/components/wallet/PrintButton"
+import { walletBadges } from "@/lib/wallet/badges"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
 import { canManageProgram, enrollPathFor, getProgramWithPlace } from "@/lib/wallet/loyalty"
 import { POSTER_SIZES, parsePosterSize, posterCss, type PosterSize } from "@/lib/wallet/poster-print"
@@ -28,6 +29,7 @@ export default async function CartelPage({ params, searchParams }: Props) {
 
   const { program, placeName } = data
   const size = parsePosterSize(searchParams.tamano)
+  const wallets = { apple: isApplePassConfigured(), google: isGoogleWalletConfigured() }
 
   return (
     <>
@@ -81,7 +83,8 @@ export default async function CartelPage({ params, searchParams }: Props) {
           stampsForReward={program.stampsForReward}
           safety={data.safety}
           enrollUrl={absoluteUrl(enrollPathFor(program._id.toString()))}
-          wallets={{ apple: isApplePassConfigured(), google: isGoogleWalletConfigured() }}
+          wallets={wallets}
+          badges={walletBadges(wallets)}
         />
       </div>
     </>

@@ -2,7 +2,9 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { AddToWalletButton } from "@/components/wallet/AddToWalletButton"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
+import { BADGE_TRADEMARK, walletBadges } from "@/lib/wallet/badges"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
 import { getProgramWithPlace } from "@/lib/wallet/loyalty"
 import { activeNotice } from "@/lib/wallet/notice"
@@ -30,6 +32,7 @@ export default async function TarjetaPage({ params }: Props) {
   const isIos = /iphone|ipad|ipod/i.test(userAgent)
   const showApple = isApplePassConfigured() && !isAndroid
   const showGoogle = isGoogleWalletConfigured() && !isIos
+  const badges = walletBadges({ apple: showApple, google: showGoogle })
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col gap-6 px-4 py-10">
@@ -59,23 +62,12 @@ export default async function TarjetaPage({ params }: Props) {
         safety={safety}
       />
 
-      {/* <a> y no <Link>: el prefetch crearía tarjetas. */}
       <div className="flex flex-col gap-3">
         {showApple && (
-          <a
-            href={`/api/wallet/tarjeta/${programId}/apple`}
-            className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-semibold text-white"
-          >
-            Agregar a Apple Wallet
-          </a>
+          <AddToWalletButton wallet="apple" href={`/api/wallet/tarjeta/${programId}/apple`} badge={badges.apple} />
         )}
         {showGoogle && (
-          <a
-            href={`/api/wallet/tarjeta/${programId}/google`}
-            className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-semibold text-white"
-          >
-            Agregar a Google Wallet
-          </a>
+          <AddToWalletButton wallet="google" href={`/api/wallet/tarjeta/${programId}/google`} badge={badges.google} />
         )}
       </div>
       <p className="text-center text-sm text-olive/70">
@@ -87,6 +79,12 @@ export default async function TarjetaPage({ params }: Props) {
       <Link href={placePath} className="text-center text-sm font-semibold text-terracotta-strong underline">
         Ver {placeName} en CeliMap
       </Link>
+
+      {(badges.apple || badges.google) && (
+        <p className="text-center text-[11px] leading-snug text-olive/50">
+          {[badges.apple && BADGE_TRADEMARK.apple, badges.google && BADGE_TRADEMARK.google].filter(Boolean).join(" ")}
+        </p>
+      )}
     </main>
   )
 }

@@ -3,6 +3,7 @@ import { Gift } from "lucide-react"
 import { posterQr, QR_QUIET_ZONE } from "@/lib/wallet/poster-qr"
 import { stampTilt } from "@/lib/wallet/stamp-style"
 import { CARD_SAFETY_LABEL, type CardSafety } from "@/lib/wallet/card-safety"
+import { BADGE_TRADEMARK, type WalletBadge } from "@/lib/wallet/badges"
 
 /**
  * Cartel para la caja del local: el QR lleva a la página de la tarjeta (/tarjeta/<programa>).
@@ -22,6 +23,8 @@ type Props = {
   wallets: { apple: boolean; google: boolean }
   /** Como en el mapa: verde si es 100% sin TACC, terracota si tiene opciones. */
   safety: CardSafety | null
+  /** Insignias oficiales de los Wallets (null si falta el archivo: queda la línea de texto). */
+  badges?: { apple: WalletBadge | null; google: WalletBadge | null }
 }
 
 function titleSize(name: string): number {
@@ -116,7 +119,34 @@ function StampRow({ total }: { total: number }) {
   )
 }
 
-export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets, safety }: Props) {
+/** Las insignias tal cual las dan Apple y Google, del mismo alto y sin tocarlas. */
+function BadgeRow({ badges }: { badges: WalletBadge[] }) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center justify-center" style={{ gap: u(4), marginTop: u(5) }}>
+      {badges.map((badge) => (
+        <Image
+          key={badge.src}
+          src={badge.src}
+          alt={badge.alt}
+          width={badge.width}
+          height={badge.height}
+          unoptimized
+          priority
+          style={{ height: u(9), width: "auto" }}
+        />
+      ))}
+    </div>
+  )
+}
+
+export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets, safety, badges }: Props) {
+  const shownBadges = [wallets.apple ? badges?.apple : null, wallets.google ? badges?.google : null].filter(
+    (b): b is WalletBadge => Boolean(b)
+  )
+  const trademarks = [
+    wallets.apple && badges?.apple ? BADGE_TRADEMARK.apple : null,
+    wallets.google && badges?.google ? BADGE_TRADEMARK.google : null,
+  ].filter(Boolean)
   const steps = ["Escaneá el QR con la cámara", "Guardá la tarjeta en tu Wallet", "Mostrala al pagar y sumá sellos"]
   const offer = `Juntá ${stampsForReward} sellos y te llevás ${reward}.`
   return (
@@ -202,6 +232,8 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
             </li>
           ))}
         </ol>
+
+        {shownBadges.length > 0 && <BadgeRow badges={shownBadges} />}
       </div>
 
       <div
@@ -209,13 +241,23 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
         style={{ marginTop: u(5), padding: `${u(6)} ${u(12)} ${u(8)}` }}
       >
         <StampRow total={stampsForReward} />
-        <p className="font-semibold" style={{ fontSize: u(3.6), marginTop: u(4) }}>
-          {walletsLine(wallets)}
-        </p>
-        <p className="text-[#F7F3EB]/75" style={{ fontSize: u(3.3), marginTop: u(0.6) }}>
+        {shownBadges.length === 0 && (
+          <p className="font-semibold" style={{ fontSize: u(3.6), marginTop: u(4) }}>
+            {walletsLine(wallets)}
+          </p>
+        )}
+        <p
+          className="text-[#F7F3EB]/75"
+          style={{ fontSize: u(3.3), marginTop: shownBadges.length === 0 ? u(0.6) : u(4) }}
+        >
           Sin descargar nada y sin crear cuenta ·{" "}
           <span className="font-serif italic text-[#D6CDBA]">celimap.com.ar</span>
         </p>
+        {trademarks.length > 0 && (
+          <p className="text-[#F7F3EB]/50" style={{ fontSize: u(2.2), marginTop: u(2), lineHeight: 1.3 }}>
+            {trademarks.join(" ")}
+          </p>
+        )}
       </div>
     </div>
   )
