@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import type { CardSafety } from "@/lib/wallet/card-safety"
@@ -15,10 +15,46 @@ type Props = {
   safety: CardSafety | null
   /** Cuánto suma el próximo sello (2 en sello doble, +1 si viene invitado). Lo calcula el servidor. */
   initialNext: StampIncrement
+  programId?: string
+  /** Sucursales donde puede sumar; con más de una, se elige (y se recuerda en este celu). */
+  branches?: Array<{ id: string; name: string }>
 }
 
+const branchKey = (programId: string) => `cm_sucursal_${programId}`
+
 /** Botones del local: sumar sello o, con la tarjeta completa, canjear el premio. */
-export function StampActions({ serial, placeName, reward, initialStamps, total, safety, initialNext }: Props) {
+export function StampActions({
+  serial,
+  placeName,
+  reward,
+  initialStamps,
+  total,
+  safety,
+  initialNext,
+  programId,
+  branches = [],
+}: Props) {
+  const [branch, setBranch] = useState(branches[0]?.id ?? "")
+  // La sucursal que eligió la última vez este celu (el de la caja).
+  useEffect(() => {
+    if (!programId || branches.length < 2) return
+    try {
+      const saved = window.localStorage.getItem(branchKey(programId))
+      if (saved && branches.some((b) => b.id === saved)) setBranch(saved)
+    } catch {
+      // sin localStorage
+    }
+  }, [programId, branches])
+
+  function chooseBranch(id: string) {
+    setBranch(id)
+    if (!programId) return
+    try {
+      window.localStorage.setItem(branchKey(programId), id)
+    } catch {
+      // sin localStorage
+    }
+  }
   const [stamps, setStamps] = useState(initialStamps)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
@@ -33,7 +69,7 @@ export function StampActions({ serial, placeName, reward, initialStamps, total, 
       const res = await fetch(`/api/local/tarjetas/${serial}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accion }),
+        body: JSON.stringify({ accion, ...(branch ? { sucursal: branch } : {}) }),
       })
       const data = (await res.json().catch(() => ({}))) as {
         stamps?: number
@@ -69,6 +105,22 @@ export function StampActions({ serial, placeName, reward, initialStamps, total, 
 
   return (
     <div className="flex flex-col gap-4">
+      {branches.length > 1 && (
+        <label className="grid gap-1 text-sm font-semibold text-olive">
+          Sucursal
+          <select
+            value={branch}
+            onChange={(e) => chooseBranch(e.target.value)}
+            className="h-11 rounded-xl border border-[#E8E1D6] bg-white px-3 text-base font-normal"
+          >
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <LoyaltyCardPreview placeName={placeName} reward={reward} stamps={stamps} total={total} safety={safety} />
       {complete ? (
         <Button size="lg" disabled={busy} onClick={() => send("canje")}>

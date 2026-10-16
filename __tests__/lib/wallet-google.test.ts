@@ -128,7 +128,7 @@ describe("google wallet loyalty card", () => {
   it("gives Google the place's location so Android can show the card nearby", () => {
     const near = buildLoyaltyClass(
       config,
-      { ...input, location: { latitude: -38.7183, longitude: -62.2663 } },
+      { ...input, locations: [{ latitude: -38.7183, longitude: -62.2663, name: "Polvorín Bahía" }] },
       "https://img/logo.png"
     )
     expect(near.merchantLocations).toEqual([{ latitude: -38.7183, longitude: -62.2663 }])

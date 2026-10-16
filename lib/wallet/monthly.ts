@@ -101,3 +101,25 @@ export async function getMonthlyStamps(
   ])
   return fillMonths(rows, ids, now)
 }
+
+/**
+ * Sellos de este mes por sucursal. Los sellos sin sucursal (de antes de las sucursales, o de un
+ * local sin sucursales) cuentan para el local principal.
+ */
+export async function getBranchStampsThisMonth(
+  programId: mongoose.Types.ObjectId,
+  mainPlaceId: string,
+  now = new Date()
+): Promise<Map<string, number>> {
+  await connectDB()
+  const rows = await LoyaltyStamp.aggregate<{ _id: mongoose.Types.ObjectId | null; stamps: number }>([
+    { $match: { programId, kind: "stamp", createdAt: { $gte: monthStart(argentinaMonth(now)) } } },
+    { $group: { _id: "$placeId", stamps: { $sum: { $ifNull: ["$count", 1] } } } },
+  ])
+  const result = new Map<string, number>()
+  for (const row of rows) {
+    const key = row._id ? row._id.toString() : mainPlaceId
+    result.set(key, (result.get(key) ?? 0) + row.stamps)
+  }
+  return result
+}

@@ -9,7 +9,12 @@ import { logger } from "@/lib/logger"
 import { LoyaltyCard, type ILoyaltyCard } from "@/models/LoyaltyCard"
 import { notifyPassesUpdated, notifyPassUpdated } from "@/lib/wallet/apple-push"
 import { getApplePassConfig, getGoogleWalletConfig, type ApplePassConfig } from "@/lib/wallet/config"
-import { pushGoogleCardUpdate, pushGoogleProgramNotice, refreshGoogleCard } from "@/lib/wallet/google-wallet"
+import {
+  pushGoogleCardUpdate,
+  pushGoogleProgramNotice,
+  refreshGoogleCard,
+  refreshGoogleClass,
+} from "@/lib/wallet/google-wallet"
 import { getProgramWithPlace, passInputFor, type ProgramWithPlace } from "@/lib/wallet/loyalty"
 
 export async function notifyCardChanged(card: ILoyaltyCard): Promise<void> {
@@ -57,7 +62,7 @@ export async function notifyProgramNotice(data: ProgramWithPlace, text: string, 
   const google = getGoogleWalletConfig()
   if (google) {
     await pushGoogleProgramNotice(
-      { programId: programId.toString(), placeName: data.placeName, safety: data.safety, location: data.location },
+      { programId: programId.toString(), placeName: data.placeName, safety: data.safety, locations: data.locations },
       text,
       google,
       now
@@ -78,6 +83,11 @@ export async function refreshProgramCards(data: ProgramWithPlace, now = new Date
   if (apple) await refreshApplePasses(programId, apple, now, "la promo")
   const google = getGoogleWalletConfig()
   if (!google) return
+  // La clase lleva el nombre y las ubicaciones (sucursales); las tarjetas, el resto.
+  await refreshGoogleClass(
+    { programId: programId.toString(), placeName: data.placeName, safety: data.safety, locations: data.locations },
+    google
+  )
   try {
     await connectDB()
     const cards = await LoyaltyCard.find({ programId, wallet: "google" })

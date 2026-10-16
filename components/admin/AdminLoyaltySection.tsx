@@ -12,7 +12,26 @@ const DELETE_WORD = "BORRAR"
 
 type PlaceOption = { id: string; name: string; neighborhood?: string; status?: string }
 
-type FormValues = { stampsForReward: number; reward: string; staffEmails: string }
+type BranchDraft = { placeId: string; name: string; staffEmails: string }
+
+type FormValues = {
+  stampsForReward: number
+  reward: string
+  staffEmails: string
+  brandName: string
+  branches: BranchDraft[]
+}
+
+const EMPTY_VALUES: FormValues = { stampsForReward: 5, reward: "", staffEmails: "", brandName: "", branches: [] }
+
+/** Lo que se manda a la API (mails separados, sucursales sin el nombre). */
+const programBody = (values: FormValues) => ({
+  stampsForReward: values.stampsForReward,
+  reward: values.reward,
+  staffEmails: parseEmails(values.staffEmails),
+  brandName: values.brandName.trim(),
+  branches: values.branches.map((b) => ({ placeId: b.placeId, staffEmails: parseEmails(b.staffEmails) })),
+})
 
 const parseEmails = (raw: string) =>
   raw
@@ -91,7 +110,7 @@ function MonthSummary({ programs }: { programs: AdminProgramRow[] }) {
     .map((p) => {
       const current = p.monthly[p.monthly.length - 1]
       const previous = p.monthly[p.monthly.length - 2]
-      return { id: p.id, name: p.placeName, stamps: current?.stamps ?? 0, previous: previous?.stamps ?? 0, customers: current?.customers ?? 0 }
+      return { id: p.id, name: p.brandName || p.placeName, stamps: current?.stamps ?? 0, previous: previous?.stamps ?? 0, customers: current?.customers ?? 0 }
     })
     .sort((a, b) => b.stamps - a.stamps)
   const total = rows.reduce((sum, r) => sum + r.stamps, 0)
@@ -134,14 +153,93 @@ function MonthSummary({ programs }: { programs: AdminProgramRow[] }) {
   )
 }
 
+/** Buscador de lugares de CeliMap (para el local principal y las sucursales). */
+function PlaceSearch({
+  label,
+  placeholder,
+  exclude = [],
+  onPick,
+}: {
+  label: string
+  placeholder: string
+  exclude?: string[]
+  onPick: (place: PlaceOption) => void
+}) {
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<PlaceOption[]>([])
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([])
+      return
+    }
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/wallet/places?q=${encodeURIComponent(query.trim())}`, {
+          signal: controller.signal,
+        })
+        if (res.ok) setResults(((await res.json()) as { places: PlaceOption[] }).places)
+      } catch {
+        // búsqueda cancelada
+      }
+    }, 250)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [query])
+
+  const shown = results.filter((r) => !exclude.includes(r.id))
+  return (
+    <label className="grid gap-1">
+      <span className={adminUi.label}>{label}</span>
+      <input
+        className={`h-11 w-full rounded-xl border ${adminUi.border} bg-white px-3 ${adminUi.text}`}
+        placeholder={placeholder}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {shown.length > 0 && (
+        <ul className={`mt-1 overflow-hidden rounded-xl border ${adminUi.border} bg-white`}>
+          {shown.map((r) => (
+            <li key={r.id}>
+              <button
+                type="button"
+                className={`w-full px-3 py-2 text-left hover:bg-[#F8F5EF] ${adminUi.text}`}
+                onClick={() => {
+                  onPick(r)
+                  setQuery("")
+                  setResults([])
+                }}
+              >
+                {r.name}
+                <span className={adminUi.muted}>
+                  {r.neighborhood ? ` · ${r.neighborhood}` : ""}
+                  {r.status === "pending" ? " · sin publicar" : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </label>
+  )
+}
+
 function ProgramFields({
   values,
   onChange,
+  mainPlaceId,
 }: {
   values: FormValues
   onChange: (v: FormValues) => void
+  /** Para no ofrecer el local principal como sucursal. */
+  mainPlaceId?: string
 }) {
   const input = `h-11 w-full rounded-xl border ${adminUi.border} bg-white px-3 ${adminUi.text}`
+  const setBranch = (i: number, patch: Partial<BranchDraft>) =>
+    onChange({ ...values, branches: values.branches.map((b, j) => (j === i ? { ...b, ...patch } : b)) })
   return (
     <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
       <label className="grid gap-1">
@@ -166,7 +264,10 @@ function ProgramFields({
         />
       </label>
       <label className="grid gap-1 sm:col-span-2">
-        <span className={adminUi.label}>Mails del local (Google), separados por coma</span>
+        <span className={adminUi.label}>
+          {values.branches.length > 0 ? "Encargados (todas las sucursales)" : "Mails del local (Google)"}, separados
+          por coma
+        </span>
         <input
           className={input}
           placeholder="caja@local.com, duenio@gmail.com"
@@ -174,49 +275,72 @@ function ProgramFields({
           onChange={(e) => onChange({ ...values, staffEmails: e.target.value })}
         />
       </label>
+
+      <fieldset className={`grid gap-3 rounded-xl border ${adminUi.border} p-3 sm:col-span-2`}>
+        <legend className={`px-1 ${adminUi.label}`}>Sucursales</legend>
+        <p className={`text-sm ${adminUi.muted}`}>
+          Una sola tarjeta que vale en todas. Cada sucursal puede tener sus mails: esos sólo suman sellos ahí; los
+          encargados de arriba manejan todo.
+        </p>
+        {values.branches.length > 0 && (
+          <label className="grid gap-1">
+            <span className={adminUi.label}>Nombre en la tarjeta (la marca)</span>
+            <input
+              className={input}
+              maxLength={60}
+              placeholder="Ej.: Polvorín"
+              value={values.brandName}
+              onChange={(e) => onChange({ ...values, brandName: e.target.value })}
+            />
+          </label>
+        )}
+        {values.branches.map((b, i) => (
+          <div key={b.placeId} className="grid gap-2 rounded-xl bg-[#F8F5EF] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <strong className={adminUi.text}>{b.name}</strong>
+              <button
+                type="button"
+                className={cn(adminUi.chip, "text-[#B84420]")}
+                onClick={() => onChange({ ...values, branches: values.branches.filter((_, j) => j !== i) })}
+              >
+                Quitar
+              </button>
+            </div>
+            <input
+              className={input}
+              aria-label={`Mails de ${b.name}`}
+              placeholder="Mails de esta sucursal (opcional)"
+              value={b.staffEmails}
+              onChange={(e) => setBranch(i, { staffEmails: e.target.value })}
+            />
+          </div>
+        ))}
+        <PlaceSearch
+          label="Agregar sucursal"
+          placeholder="Buscá la sucursal en CeliMap"
+          exclude={[...(mainPlaceId ? [mainPlaceId] : []), ...values.branches.map((b) => b.placeId)]}
+          onPick={(place) =>
+            onChange({
+              ...values,
+              branches: [...values.branches, { placeId: place.id, name: place.name, staffEmails: "" }],
+            })
+          }
+        />
+      </fieldset>
     </div>
   )
 }
 
 function NewProgramForm({ onCancel, onCreated }: { onCancel: () => void; onCreated: () => void }) {
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<PlaceOption[]>([])
   const [place, setPlace] = useState<PlaceOption | null>(null)
-  const [values, setValues] = useState<FormValues>({ stampsForReward: 5, reward: "", staffEmails: "" })
+  const [values, setValues] = useState<FormValues>(EMPTY_VALUES)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    if (place || query.trim().length < 2) {
-      setResults([])
-      return
-    }
-    const controller = new AbortController()
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/admin/wallet/places?q=${encodeURIComponent(query.trim())}`, {
-          signal: controller.signal,
-        })
-        if (res.ok) setResults(((await res.json()) as { places: PlaceOption[] }).places)
-      } catch {
-        // búsqueda cancelada
-      }
-    }, 250)
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [query, place])
 
   async function save() {
     if (!place) return setError("Elegí el local")
     setBusy(true)
-    const err = await sendJson("/api/admin/wallet/programs", "POST", {
-      placeId: place.id,
-      stampsForReward: values.stampsForReward,
-      reward: values.reward,
-      staffEmails: parseEmails(values.staffEmails),
-    })
+    const err = await sendJson("/api/admin/wallet/programs", "POST", { placeId: place.id, ...programBody(values) })
     setBusy(false)
     if (err) setError(err)
     else onCreated()
@@ -236,36 +360,14 @@ function NewProgramForm({ onCancel, onCreated }: { onCancel: () => void; onCreat
           </button>
         </div>
       ) : (
-        <label className="grid gap-1">
-          <span className={adminUi.label}>Local</span>
-          <input
-            className={`h-11 w-full rounded-xl border ${adminUi.border} bg-white px-3 ${adminUi.text}`}
-            placeholder="Buscá por nombre o barrio"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {results.length > 0 && (
-            <ul className={`mt-1 overflow-hidden rounded-xl border ${adminUi.border} bg-white`}>
-              {results.map((r) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    className={`w-full px-3 py-2 text-left hover:bg-[#F8F5EF] ${adminUi.text}`}
-                    onClick={() => setPlace(r)}
-                  >
-                    {r.name}
-                    <span className={adminUi.muted}>
-                      {r.neighborhood ? ` · ${r.neighborhood}` : ""}
-                      {r.status === "pending" ? " · sin publicar" : ""}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </label>
+        <PlaceSearch
+          label={values.branches.length > 0 ? "Local principal" : "Local"}
+          placeholder="Buscá por nombre o barrio"
+          exclude={values.branches.map((b) => b.placeId)}
+          onPick={setPlace}
+        />
       )}
-      <ProgramFields values={values} onChange={setValues} />
+      <ProgramFields values={values} onChange={setValues} mainPlaceId={place?.id} />
       {error && <p className="text-sm text-[#B84420]">{error}</p>}
       <div className="flex gap-2">
         <button type="button" className={adminUi.btnPrimary} disabled={busy} onClick={save}>
@@ -285,7 +387,10 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
     stampsForReward: program.stampsForReward,
     reward: program.reward,
     staffEmails: program.staffEmails.join(", "),
+    brandName: program.brandName,
+    branches: program.branches.map((b) => ({ placeId: b.placeId, name: b.name, staffEmails: b.staffEmails.join(", ") })),
   })
+  const title = program.brandName || program.placeName
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -335,10 +440,10 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           <h2 className={`text-lg font-bold ${adminUi.text}`}>
             {program.placeSlug ? (
               <a href={`/lugar/${program.placeSlug}`} className="hover:underline">
-                {program.placeName}
+                {title}
               </a>
             ) : (
-              program.placeName
+              title
             )}
           </h2>
           <p className={`text-sm ${adminUi.muted}`}>
@@ -370,11 +475,20 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       <MonthlyStamps months={program.monthly} />
 
       {editing ? (
-        <ProgramFields values={values} onChange={setValues} />
+        <ProgramFields values={values} onChange={setValues} mainPlaceId={program.placeId} />
       ) : (
-        <p className={`text-sm ${adminUi.muted}`}>
-          Local: {program.staffEmails.length > 0 ? program.staffEmails.join(", ") : "sin mails cargados"}
-        </p>
+        <>
+          <p className={`text-sm ${adminUi.muted}`}>
+            {program.branches.length > 0 ? "Encargados" : "Local"}:{" "}
+            {program.staffEmails.length > 0 ? program.staffEmails.join(", ") : "sin mails cargados"}
+          </p>
+          {program.branches.length > 0 && (
+            <p className={`text-sm ${adminUi.muted}`}>
+              Sucursales: {program.placeName} (principal)
+              {program.branches.map((b) => `, ${b.name}${b.staffEmails.length ? ` (${b.staffEmails.join(", ")})` : ""}`)}
+            </p>
+          )}
+        </>
       )}
       {program.notice && (
         <p className={`text-sm ${adminUi.muted}`}>
@@ -394,11 +508,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
               className={adminUi.btnPrimary}
               disabled={busy}
               onClick={() =>
-                patch({
-                  stampsForReward: values.stampsForReward,
-                  reward: values.reward,
-                  staffEmails: parseEmails(values.staffEmails),
-                })
+                patch(programBody(values))
               }
             >
               Guardar
@@ -470,7 +580,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
               className={cn(adminUi.btnPrimary, "bg-[#B84420] hover:bg-[#B84420]/90")}
               onClick={remove}
             >
-              Borrar {program.placeName}
+              Borrar {title}
             </button>
             <button type="button" className={adminUi.btnGhost} onClick={() => setConfirmingDelete(false)}>
               Cancelar

@@ -4,7 +4,15 @@ import connectDB from "@/lib/mongodb"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
-import { deleteProgram, deleteProgramSchema, updateProgramSchema } from "@/lib/wallet/loyalty-admin"
+import {
+  countExistingPlaces,
+  deleteProgram,
+  deleteProgramSchema,
+  placesTakenByOtherProgram,
+  updateProgramSchema,
+} from "@/lib/wallet/loyalty-admin"
+import { getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { refreshProgramCards } from "@/lib/wallet/notify"
 import { getGoogleWalletConfig } from "@/lib/wallet/config"
 import { expireGoogleCards } from "@/lib/wallet/google-wallet"
 
@@ -30,12 +38,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     await connectDB()
+    const { branches, brandName } = parsed.data
+    if (branches) {
+      const current = await LoyaltyProgram.findById(params.id).select("placeId").lean<{ placeId: mongoose.Types.ObjectId }>()
+      if (!current) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
+      const ids = branches.map((b) => b.placeId)
+      if (ids.includes(current.placeId.toString())) {
+        return NextResponse.json({ error: "El local principal no va como sucursal" }, { status: 400 })
+      }
+      if (ids.length > 0 && (await countExistingPlaces(ids)) !== ids.length) {
+        return NextResponse.json({ error: "Alguna sucursal no existe" }, { status: 404 })
+      }
+      if (ids.length > 0 && (await placesTakenByOtherProgram(ids, params.id))) {
+        return NextResponse.json({ error: "Alguna sucursal ya tiene otra tarjeta" }, { status: 409 })
+      }
+    }
+
     const program = await LoyaltyProgram.findByIdAndUpdate(
       params.id,
       { $set: parsed.data },
       { new: true, runValidators: true }
     )
     if (!program) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
+
+    // Sucursales o nombre nuevos: cambian las ubicaciones y el nombre de las tarjetas (sin aviso).
+    if (branches || brandName !== undefined) {
+      const data = await getProgramWithPlace(params.id)
+      if (data) void refreshProgramCards(data)
+    }
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {
     logApiError("/api/admin/wallet/programs/[id]", error, { request })

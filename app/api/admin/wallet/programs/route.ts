@@ -4,7 +4,12 @@ import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import { Place } from "@/models/Place"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
-import { createProgramSchema, listProgramsForAdmin } from "@/lib/wallet/loyalty-admin"
+import {
+  countExistingPlaces,
+  createProgramSchema,
+  listProgramsForAdmin,
+  placesTakenByOtherProgram,
+} from "@/lib/wallet/loyalty-admin"
 
 export const dynamic = "force-dynamic"
 
@@ -37,8 +42,12 @@ export async function POST(request: NextRequest) {
     await connectDB()
     const place = await Place.exists({ _id: parsed.data.placeId })
     if (!place) return NextResponse.json({ error: "No existe ese lugar" }, { status: 404 })
-    if (await LoyaltyProgram.exists({ placeId: parsed.data.placeId })) {
-      return NextResponse.json({ error: "Ese lugar ya tiene una tarjeta" }, { status: 409 })
+    const branchIds = parsed.data.branches.map((b) => b.placeId)
+    if (branchIds.length > 0 && (await countExistingPlaces(branchIds)) !== branchIds.length) {
+      return NextResponse.json({ error: "Alguna sucursal no existe" }, { status: 404 })
+    }
+    if (await placesTakenByOtherProgram([parsed.data.placeId, ...branchIds])) {
+      return NextResponse.json({ error: "Ese lugar (o una sucursal) ya tiene una tarjeta" }, { status: 409 })
     }
 
     const program = await LoyaltyProgram.create({ ...parsed.data, active: true })

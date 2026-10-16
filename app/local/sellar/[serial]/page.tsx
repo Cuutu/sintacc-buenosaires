@@ -7,7 +7,8 @@ import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyCardPreview } from "@/components/wallet/StampDots"
 import { StampActions } from "@/components/wallet/StampActions"
 import { InviteShare } from "@/components/wallet/InviteShare"
-import { canManageProgram, getProgramWithPlace, inviteUrlFor, isValidSerial } from "@/lib/wallet/loyalty"
+import { getProgramWithPlace, inviteUrlFor, isValidSerial } from "@/lib/wallet/loyalty"
+import { canStampProgram, stampPlaceIdsFor } from "@/lib/wallet/branches"
 import { doubleStampText, isDoubleStampNow, stampIncrement } from "@/lib/wallet/promos"
 
 export const dynamic = "force-dynamic"
@@ -27,7 +28,12 @@ export default async function SellarPage({ params }: Props) {
   if (!data) notFound()
 
   const session = await getServerSession(authOptions)
-  const isStaff = canManageProgram(data.program, session)
+  const isStaff = canStampProgram(data.program, session)
+  // Sucursales donde esta persona puede sumar (con una sola, no se pregunta).
+  const allowed = new Set(stampPlaceIdsFor(data.program, session))
+  const stampBranches = data.branches
+    .filter((b) => allowed.has(b.placeId))
+    .map((b) => ({ id: b.placeId, name: b.name }))
   const total = data.program.stampsForReward
   // Página dinámica (no ISR): la hora del servidor es la de este momento.
   const doubleNow = isDoubleStampNow(data.program.doubleStamp)
@@ -46,6 +52,8 @@ export default async function SellarPage({ params }: Props) {
           total={total}
           safety={data.safety}
           initialNext={stampIncrement(card, data.program)}
+          programId={data.program._id.toString()}
+          branches={stampBranches}
         />
       ) : (
         <>

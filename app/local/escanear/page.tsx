@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import connectDB from "@/lib/mongodb"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { normalizeEmail } from "@/lib/wallet/loyalty"
+import { staffProgramFilter } from "@/lib/wallet/branches"
 import { CardScanner } from "@/components/wallet/CardScanner"
 
 export const dynamic = "force-dynamic"
@@ -23,7 +24,7 @@ export default async function EscanearPage() {
   const isAdmin = session.user.role === "admin"
   const email = normalizeEmail(session.user.email)
   await connectDB()
-  const isStaff = isAdmin || (email ? Boolean(await LoyaltyProgram.exists({ staffEmails: email })) : false)
+  const isStaff = isAdmin || (email ? Boolean(await LoyaltyProgram.exists(staffProgramFilter(email))) : false)
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-8">

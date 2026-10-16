@@ -49,6 +49,7 @@ function program(overrides: Record<string, unknown> = {}) {
   return {
     program: {
       _id: new mongoose.Types.ObjectId(programId),
+      placeId: new mongoose.Types.ObjectId(),
       stampsForReward: 10,
       reward: "Cookie",
       staffEmails: ["caja@polvorin.com"],
@@ -58,7 +59,8 @@ function program(overrides: Record<string, unknown> = {}) {
     placeName: "Polvorín",
     placePath: "/lugar/polvorin",
     safety: "dedicated",
-    location: null,
+    locations: [],
+    branches: [],
   }
 }
 

@@ -246,7 +246,7 @@ describe("apple wallet loyalty pass", () => {
       placeName: "Polvorin",
     }
     const near = (
-      await buildLoyaltyPass({ ...base, location: { latitude: -38.7183, longitude: -62.2663 } }, config)
+      await buildLoyaltyPass({ ...base, locations: [{ latitude: -38.7183, longitude: -62.2663 }] }, config)
     ).toString("utf8")
     expect(near).toContain(
       '"locations":[{"latitude":-38.7183,"longitude":-62.2663,"relevantText":"Estás cerca de Polvorin. Te faltan 3 sellos para tu premio."}]'
@@ -342,5 +342,29 @@ describe("apple wallet loyalty pass", () => {
     ).toString("latin1")
     expect(text).toContain('"key":"invite"')
     expect(text).toContain('<a href=\\"https://www.celimap.com.ar/tarjeta/p1?amigo=c1\\">Link para tu amigo</a>')
+  })
+
+  it("alerts near every branch with the branch name, and lists the branches on the back", async () => {
+    const text = (
+      await buildLoyaltyPass(
+        {
+          serialNumber: "s9",
+          barcodeValue: "s9",
+          stamps: 2,
+          stampsForReward: 5,
+          reward: "Cookie",
+          placeName: "Polvorin",
+          locations: [
+            { latitude: -34.6, longitude: -58.38, name: "Polvorin Centro" },
+            { latitude: -34.56, longitude: -58.45, name: "Polvorin Belgrano" },
+          ],
+          branchNames: ["Polvorin Centro", "Polvorin Belgrano"],
+        },
+        config
+      )
+    ).toString("utf8")
+    expect(text).toContain("Estás cerca de Polvorin Centro. Te faltan 3 sellos para tu premio.")
+    expect(text).toContain("Estás cerca de Polvorin Belgrano. Te faltan 3 sellos para tu premio.")
+    expect(text).toContain('"key":"branches","label":"Vale en todas las sucursales","value":"Polvorin Centro · Polvorin Belgrano"')
   })
 })

@@ -18,6 +18,7 @@ import type { LoyaltyPassInput, PassLocation } from "@/lib/wallet/apple-pass"
 import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
 import { argentinaDate } from "@/lib/wallet/visits"
+import { commonSafety, MAX_PASS_LOCATIONS, programPlaceIds } from "@/lib/wallet/branches"
 import {
   doubleStampText,
   REFERRAL_MAX_PER_CARD,
@@ -79,6 +80,10 @@ export async function findInviterCard(
 
 export type StaffSession = { user?: { email?: string | null; role?: string } } | null
 
+/**
+ * Encargado del programa (o admin): avisos, promos y sellos en todas las sucursales.
+ * El personal de una sucursal sólo suma sellos: ver canStampProgram en branches.ts.
+ */
 export function canManageProgram(
   program: Pick<ILoyaltyProgram, "staffEmails">,
   session: StaffSession
@@ -89,14 +94,28 @@ export function canManageProgram(
   return Boolean(email) && program.staffEmails.includes(email)
 }
 
+/** Una sucursal (o el local, si no hay sucursales). */
+export type BranchInfo = {
+  placeId: string
+  name: string
+  path: string
+  safety: CardSafety | null
+  location: PassLocation | null
+  main: boolean
+}
+
 export type ProgramWithPlace = {
   program: ILoyaltyProgram
+  /** Lo que dice la tarjeta: la marca si hay sucursales, si no el nombre del local. */
   placeName: string
+  /** Ficha del local principal. */
   placePath: string
-  /** 100% sin TACC o con opciones, como en el mapa; null si el lugar no tiene esa info. */
+  /** 100% sin TACC o con opciones, como en el mapa; null si no hay info o las sucursales difieren. */
   safety: CardSafety | null
-  /** Dónde está el local, para que el celu muestre la tarjeta al pasar cerca. */
-  location: PassLocation | null
+  /** Dónde avisar al pasar cerca: una por sucursal con ubicación exacta (hasta 10). */
+  locations: PassLocation[]
+  /** Todas las sucursales, la principal primero. */
+  branches: BranchInfo[]
 }
 
 /**
@@ -116,27 +135,49 @@ export function passLocationFor(place: {
   return { latitude: lat, longitude: lng }
 }
 
+type PlaceForCard = {
+  _id: mongoose.Types.ObjectId
+  name: string
+  slug?: string
+  safetyLevel?: Parameters<typeof cardSafetyFor>[0]["safetyLevel"]
+  tags?: string[]
+  location?: { lat?: number; lng?: number }
+  locationPrecision?: string
+}
+
 export async function getProgramWithPlace(programId: string): Promise<ProgramWithPlace | null> {
   if (!mongoose.Types.ObjectId.isValid(programId)) return null
   await connectDB()
   const program = await LoyaltyProgram.findById(programId)
   if (!program) return null
-  const place = await Place.findById(program.placeId).select("name slug safetyLevel tags location locationPrecision").lean<{
-    _id: mongoose.Types.ObjectId
-    name: string
-    slug?: string
-    safetyLevel?: Parameters<typeof cardSafetyFor>[0]["safetyLevel"]
-    tags?: string[]
-    location?: { lat?: number; lng?: number }
-    locationPrecision?: string
-  }>()
-  if (!place) return null
+  const ids = programPlaceIds(program)
+  const places = await Place.find({ _id: { $in: ids } })
+    .select("name slug safetyLevel tags location locationPrecision")
+    .lean<PlaceForCard[]>()
+  const byId = new Map(places.map((p) => [p._id.toString(), p]))
+  const main = byId.get(program.placeId.toString())
+  if (!main) return null
+  const branches: BranchInfo[] = ids
+    .map((id) => byId.get(id))
+    .filter((p): p is PlaceForCard => Boolean(p))
+    .map((p) => ({
+      placeId: p._id.toString(),
+      name: p.name,
+      path: getPlacePath(p),
+      safety: cardSafetyFor(p),
+      location: passLocationFor(p),
+      main: p._id.toString() === program.placeId.toString(),
+    }))
   return {
     program,
-    placeName: place.name,
-    placePath: getPlacePath(place),
-    safety: cardSafetyFor(place),
-    location: passLocationFor(place),
+    placeName: program.brandName?.trim() || main.name,
+    placePath: getPlacePath(main),
+    safety: commonSafety(branches.map((b) => b.safety)),
+    locations: branches
+      .filter((b) => b.location)
+      .slice(0, MAX_PASS_LOCATIONS)
+      .map((b) => ({ ...(b.location as PassLocation), ...(branches.length > 1 ? { name: b.name } : {}) })),
+    branches,
   }
 }
 
@@ -174,7 +215,8 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
     placeName: data.placeName,
     placePath: data.placePath,
     safety: data.safety,
-    location: data.location,
+    locations: data.locations,
+    branchNames: data.branches.length > 1 ? data.branches.map((b) => b.name) : [],
     notice: activeNotice(data.program.notice, now),
     doubleStamp: doubleStampText(data.program.doubleStamp),
     inviteUrl: data.program.referralEnabled
@@ -247,8 +289,11 @@ export async function addStamp(
   card: ILoyaltyCard,
   program: ILoyaltyProgram,
   byEmail: string,
-  now = new Date()
+  now = new Date(),
+  /** Sucursal donde se suma (si no, la principal). */
+  placeId?: string | null
 ): Promise<StampResult> {
+  const stampPlace = placeId && mongoose.Types.ObjectId.isValid(placeId) ? { placeId } : {}
   if (card.stamps >= program.stampsForReward) return { ok: false, reason: "full" }
   const { added, reason, friend } = stampIncrement(card, program, now)
   // "Volvieron" cuenta días distintos: dos sellos el mismo día son una sola visita.
@@ -283,6 +328,7 @@ export async function addStamp(
     kind: "stamp",
     count: added,
     ...(reason ? { bonus: reason } : {}),
+    ...stampPlace,
     byEmail,
   })
   const inviter = friend && card.referredBy ? await rewardInviter(card.referredBy, program, byEmail) : null
@@ -299,7 +345,9 @@ export async function addStamp(
 export async function redeemReward(
   card: ILoyaltyCard,
   program: ILoyaltyProgram,
-  byEmail: string
+  byEmail: string,
+  /** Sucursal donde se canjea (si no, la principal). */
+  placeId?: string | null
 ): Promise<StampResult> {
   const updated = await LoyaltyCard.findOneAndUpdate(
     { _id: card._id, stamps: { $gte: program.stampsForReward } },
@@ -307,7 +355,13 @@ export async function redeemReward(
     { new: true }
   )
   if (!updated) return { ok: false, reason: "not_ready" }
-  await LoyaltyStamp.create({ programId: program._id, cardId: card._id, kind: "redeem", byEmail })
+  await LoyaltyStamp.create({
+    programId: program._id,
+    cardId: card._id,
+    kind: "redeem",
+    ...(placeId && mongoose.Types.ObjectId.isValid(placeId) ? { placeId } : {}),
+    byEmail,
+  })
   return { ok: true, card: updated, added: 0 }
 }
 

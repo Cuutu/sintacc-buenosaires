@@ -7,18 +7,17 @@ import { LoyaltyCard } from "@/models/LoyaltyCard"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { notifyCardChanged } from "@/lib/wallet/notify"
 import { stampIncrement } from "@/lib/wallet/promos"
-import {
-  addStamp,
-  canManageProgram,
-  isValidSerial,
-  normalizeEmail,
-  redeemReward,
-} from "@/lib/wallet/loyalty"
+import { addStamp, isValidSerial, normalizeEmail, redeemReward } from "@/lib/wallet/loyalty"
+import { canStampProgram, resolveStampPlace, stampPlaceIdsFor } from "@/lib/wallet/branches"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const bodySchema = z.object({ accion: z.enum(["sello", "canje"]) })
+const bodySchema = z.object({
+  accion: z.enum(["sello", "canje"]),
+  /** Sucursal donde se suma (id del lugar). Sin sucursales, no hace falta. */
+  sucursal: z.string().max(40).optional(),
+})
 
 const ERRORS = {
   full: { status: 409, error: "La tarjeta ya está completa: primero canjeá el premio." },
@@ -44,15 +43,19 @@ export async function POST(request: NextRequest, { params }: Params) {
     const card = await LoyaltyCard.findOne({ serialNumber: params.serial })
     const program = card ? await LoyaltyProgram.findById(card.programId) : null
     if (!card || !program) return NextResponse.json(ERRORS.not_found, { status: 404 })
-    if (!canManageProgram(program, session)) {
+    if (!canStampProgram(program, session)) {
       return NextResponse.json({ error: "Sólo el local puede sumar sellos." }, { status: 403 })
+    }
+    const placeId = resolveStampPlace(stampPlaceIdsFor(program, session), parsed.data.sucursal)
+    if (!placeId) {
+      return NextResponse.json({ error: "No podés sumar sellos en esa sucursal." }, { status: 403 })
     }
 
     const byEmail = normalizeEmail(session.user.email) || session.user.id
     const result =
       parsed.data.accion === "sello"
-        ? await addStamp(card, program, byEmail)
-        : await redeemReward(card, program, byEmail)
+        ? await addStamp(card, program, byEmail, new Date(), placeId)
+        : await redeemReward(card, program, byEmail, placeId)
 
     if (!result.ok) {
       const { status, error } = ERRORS[result.reason]

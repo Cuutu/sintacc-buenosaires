@@ -24,6 +24,7 @@
 | ProductEvent | `{ name: 1, ts: -1 }` | Insights por evento |
 | ProductEvent | `{ distinctId: 1, ts: -1 }` | Usuarios anónimos y retención |
 | LoyaltyProgram | `{ placeId: 1 }`, `{ staffEmails: 1 }` | Programa del local / panel /local |
+| LoyaltyProgram | `{ "branches.placeId": 1 }`, `{ "branches.staffEmails": 1 }` | Sucursales: un lugar en un solo programa / panel del personal de cada sucursal |
 | LoyaltyCard | `{ serialNumber: 1 }` (unique), `{ programId: 1 }` | QR de la tarjeta / métricas |
 | LoyaltyCard | `{ programId: 1, requestKey: 1 }` (unique, parcial: sólo con requestKey) | Un doble toque en "Agregar" no crea dos tarjetas |
 | LoyaltyStamp | `{ programId: 1, createdAt: -1 }` | Sellos por semana |

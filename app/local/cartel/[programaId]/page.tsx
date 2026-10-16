@@ -9,14 +9,15 @@ import { LoyaltyPoster } from "@/components/wallet/LoyaltyPoster"
 import { PrintButton } from "@/components/wallet/PrintButton"
 import { walletBadges } from "@/lib/wallet/badges"
 import { isApplePassConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config"
-import { canManageProgram, enrollPathFor, getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { enrollPathFor, getProgramWithPlace } from "@/lib/wallet/loyalty"
+import { canStampProgram, stampPlaceIdsFor } from "@/lib/wallet/branches"
 import { POSTER_SIZES, parsePosterSize, posterCss, type PosterSize } from "@/lib/wallet/poster-print"
 
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = { title: "Cartel con QR" }
 
-type Props = { params: { programaId: string }; searchParams: { tamano?: string } }
+type Props = { params: { programaId: string }; searchParams: { tamano?: string; sucursal?: string } }
 
 /** Cartel con el QR de la tarjeta para imprimir y dejar en la caja. Lo ve el local o un admin. */
 export default async function CartelPage({ params, searchParams }: Props) {
@@ -25,9 +26,24 @@ export default async function CartelPage({ params, searchParams }: Props) {
   if (!session?.user) redirect(`/login?callbackUrl=${encodeURIComponent(path)}`)
 
   const data = await getProgramWithPlace(params.programaId)
-  if (!data || !canManageProgram(data.program, session)) notFound()
+  if (!data || !canStampProgram(data.program, session)) notFound()
 
-  const { program, placeName } = data
+  // Con sucursales: un cartel por sucursal (el QR es el mismo, la tarjeta vale en todas).
+  const allowed = stampPlaceIdsFor(data.program, session)
+  const myBranches = data.branches.filter((b) => allowed.includes(b.placeId))
+  const branch =
+    data.branches.length > 1
+      ? myBranches.find((b) => b.placeId === searchParams.sucursal) ?? myBranches[0] ?? null
+      : null
+  const { program } = data
+  const placeName = branch ? branch.name : data.placeName
+  const safety = branch ? branch.safety : data.safety
+  const query = (params: Record<string, string | undefined>) => {
+    const q = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) if (v) q.set(k, v)
+    const s = q.toString()
+    return s ? `${path}?${s}` : path
+  }
   const size = parsePosterSize(searchParams.tamano)
   const wallets = { apple: isApplePassConfigured(), google: isGoogleWalletConfigured() }
 
@@ -49,6 +65,27 @@ export default async function CartelPage({ params, searchParams }: Props) {
           El cliente escanea el QR y guarda la tarjeta en su celu. Imprimilo, o en la ventana de impresión
           elegí &quot;Guardar como PDF&quot; para mandarlo por WhatsApp.
         </p>
+        {branch && myBranches.length > 1 && (
+          <div className="mt-4 flex flex-wrap gap-2" aria-label="Sucursal del cartel">
+            {myBranches.map((b) => (
+              <Link
+                key={b.placeId}
+                href={query({ tamano: size === "a5" ? undefined : size, sucursal: b.placeId })}
+                replace
+                scroll={false}
+                aria-current={b.placeId === branch.placeId ? "page" : undefined}
+                className={cn(
+                  "inline-flex h-11 items-center rounded-full border px-4 text-sm font-semibold",
+                  b.placeId === branch.placeId
+                    ? "border-olive bg-olive text-cream"
+                    : "border-[#E8E1D6] bg-white text-olive"
+                )}
+              >
+                {b.name}
+              </Link>
+            ))}
+          </div>
+        )}
         {!program.active && (
           <p className="mt-3 rounded-xl bg-[#FBE9E2] p-3 text-sm text-[#B84420]">
             Esta tarjeta está pausada: hasta que la reactives, el QR no abre nada.
@@ -58,7 +95,7 @@ export default async function CartelPage({ params, searchParams }: Props) {
           {(Object.keys(POSTER_SIZES) as PosterSize[]).map((key) => (
             <Link
               key={key}
-              href={key === "a5" ? path : `${path}?tamano=${key}`}
+              href={query({ tamano: key === "a5" ? undefined : key, sucursal: branch?.placeId })}
               replace
               scroll={false}
               aria-current={key === size ? "page" : undefined}
@@ -81,7 +118,7 @@ export default async function CartelPage({ params, searchParams }: Props) {
           placeName={placeName}
           reward={program.reward}
           stampsForReward={program.stampsForReward}
-          safety={data.safety}
+          safety={safety}
           enrollUrl={absoluteUrl(enrollPathFor(program._id.toString()))}
           wallets={wallets}
           badges={walletBadges(wallets)}

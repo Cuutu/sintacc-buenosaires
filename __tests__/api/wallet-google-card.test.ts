@@ -54,6 +54,8 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
       program: { _id: programId, active: true, stampsForReward: 10, reward: "Cookie" },
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
+      locations: [],
+      branches: [],
     })
     mockCreateCard.mockResolvedValue({
       _id: new mongoose.Types.ObjectId(),
@@ -101,6 +103,8 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
       program: { _id: programId, active: true, stampsForReward: 10, reward: "Cookie", referralEnabled: true },
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
+      locations: [],
+      branches: [],
     })
     await GET(req(undefined, `?amigo=${amigo}`), params)
     expect(mockExists).toHaveBeenCalledWith({ _id: amigo, programId })
@@ -113,6 +117,8 @@ describe("GET /api/wallet/tarjeta/[programaId]/google", () => {
       program: { _id: programId, active: false },
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
+      locations: [],
+      branches: [],
     })
     expect((await GET(req(), params)).status).toBe(404)
   })

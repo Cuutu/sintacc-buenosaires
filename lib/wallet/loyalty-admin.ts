@@ -12,22 +12,56 @@ import { enrollPathFor, getProgramStats, type ProgramStats } from "@/lib/wallet/
 import { formatNoticeTime } from "@/lib/wallet/notice"
 import { doubleStampText } from "@/lib/wallet/promos"
 import { getMonthlyStamps, type MonthStamps } from "@/lib/wallet/monthly"
+import { MAX_BRANCHES } from "@/lib/wallet/branches"
 
 const staffEmails = z
   .array(z.string().trim().toLowerCase().email("Mail inválido"))
   .max(10, "Máximo 10 mails")
   .transform((list) => Array.from(new Set(list)))
 
+const objectId = z.string().refine((v) => mongoose.Types.ObjectId.isValid(v), "Lugar inválido")
+
+const branches = z
+  .array(z.object({ placeId: objectId, staffEmails }))
+  .max(MAX_BRANCHES, `Máximo ${MAX_BRANCHES} sucursales`)
+  .refine((list) => new Set(list.map((b) => b.placeId)).size === list.length, "Hay una sucursal repetida")
+
 const fields = {
   stampsForReward: z.number().int().min(1).max(20),
   reward: z.string().trim().min(2, "Escribí el premio").max(80),
   staffEmails,
+  /** Nombre en la tarjeta si hay sucursales. Vacío = el nombre del local. */
+  brandName: z.string().trim().max(60).optional(),
+  branches,
 }
 
-export const createProgramSchema = z.object({
-  placeId: z.string().refine((v) => mongoose.Types.ObjectId.isValid(v), "Lugar inválido"),
-  ...fields,
-})
+export const createProgramSchema = z
+  .object({ placeId: objectId, ...fields, branches: branches.default([]) })
+  .refine((v) => !v.branches.some((b) => b.placeId === v.placeId), "El local principal no va como sucursal")
+
+/**
+ * ¿Alguno de estos lugares ya está en otro programa (como principal o como sucursal)?
+ * Un lugar, una tarjeta.
+ */
+export async function placesTakenByOtherProgram(
+  placeIds: string[],
+  exceptProgramId?: string
+): Promise<boolean> {
+  await connectDB()
+  const ids = placeIds.map((id) => new mongoose.Types.ObjectId(id))
+  return Boolean(
+    await LoyaltyProgram.exists({
+      ...(exceptProgramId ? { _id: { $ne: exceptProgramId } } : {}),
+      $or: [{ placeId: { $in: ids } }, { "branches.placeId": { $in: ids } }],
+    })
+  )
+}
+
+/** Cuántos de estos lugares existen (para no guardar sucursales inventadas). */
+export async function countExistingPlaces(placeIds: string[]): Promise<number> {
+  await connectDB()
+  return Place.countDocuments({ _id: { $in: placeIds } })
+}
 
 export const updateProgramSchema = z
   .object({ ...fields, active: z.boolean() })
@@ -42,6 +76,9 @@ export type AdminProgramRow = {
   stampsForReward: number
   reward: string
   staffEmails: string[]
+  brandName: string
+  /** Otras sucursales (el principal es placeId). */
+  branches: Array<{ placeId: string; name: string; staffEmails: string[] }>
   active: boolean
   enrollPath: string
   stats: ProgramStats
@@ -57,7 +94,9 @@ export type AdminProgramRow = {
 export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
   await connectDB()
   const programs = await LoyaltyProgram.find().sort({ createdAt: -1 }).limit(200).lean()
-  const places = await Place.find({ _id: { $in: programs.map((p) => p.placeId) } })
+  const places = await Place.find({
+    _id: { $in: programs.flatMap((p) => [p.placeId, ...(p.branches ?? []).map((b) => b.placeId)]) },
+  })
     .select("name slug")
     .lean<Array<{ _id: mongoose.Types.ObjectId; name: string; slug?: string }>>()
   const byId = new Map(places.map((p) => [p._id.toString(), p]))
@@ -75,6 +114,12 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
       stampsForReward: p.stampsForReward,
       reward: p.reward,
       staffEmails: p.staffEmails,
+      brandName: p.brandName ?? "",
+      branches: (p.branches ?? []).map((b) => ({
+        placeId: b.placeId.toString(),
+        name: byId.get(b.placeId.toString())?.name ?? "Lugar no encontrado",
+        staffEmails: b.staffEmails,
+      })),
       active: p.active,
       enrollPath: enrollPathFor(p._id.toString()),
       stats: stats[i],

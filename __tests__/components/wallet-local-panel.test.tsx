@@ -77,7 +77,10 @@ describe("/local", () => {
   it("shows only the shop's own programs", async () => {
     mockSession.mockResolvedValue({ user: { email: "Caja@Polvorin.com", role: "user" } })
     await LocalPage()
-    expect(mockPrograms).toHaveBeenCalledWith({ staffEmails: "caja@polvorin.com" })
+    // Encargados o personal de alguna sucursal.
+    expect(mockPrograms).toHaveBeenCalledWith({
+      $or: [{ staffEmails: "caja@polvorin.com" }, { "branches.staffEmails": "caja@polvorin.com" }],
+    })
   })
 
   it("shows stats, the week chart, the tools and the share link", async () => {

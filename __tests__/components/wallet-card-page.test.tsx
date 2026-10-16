@@ -53,6 +53,8 @@ describe("/tarjeta/[programaId]", () => {
       },
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
+      locations: [],
+      branches: [],
       safety: "dedicated",
     })
   })

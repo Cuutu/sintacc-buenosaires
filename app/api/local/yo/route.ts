@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/middleware"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
 import { Place } from "@/models/Place"
 import { normalizeEmail } from "@/lib/wallet/loyalty"
+import { staffProgramFilter } from "@/lib/wallet/branches"
 
 export const dynamic = "force-dynamic"
 
@@ -19,17 +20,19 @@ export async function GET(request: NextRequest) {
     if (!email && !isAdmin) return NextResponse.json({ local: false, lugares: [] })
 
     await connectDB()
-    const programs = await LoyaltyProgram.find(isAdmin ? {} : { staffEmails: email })
-      .select("placeId")
+    const programs = await LoyaltyProgram.find(isAdmin ? {} : staffProgramFilter(email))
+      .select("placeId brandName")
       .limit(20)
-      .lean<Array<{ placeId: mongoose.Types.ObjectId }>>()
+      .lean<Array<{ placeId: mongoose.Types.ObjectId; brandName?: string }>>()
     const places = programs.length
       ? await Place.find({ _id: { $in: programs.map((p) => p.placeId) } })
           .select("name")
-          .lean<Array<{ name: string }>>()
+          .lean<Array<{ _id: mongoose.Types.ObjectId; name: string }>>()
       : []
+    const nameById = new Map(places.map((p) => [p._id.toString(), p.name]))
+    const lugares = programs.map((p) => p.brandName || nameById.get(p.placeId.toString()) || "Local")
     return NextResponse.json(
-      { local: programs.length > 0, admin: isAdmin, lugares: places.map((p) => p.name) },
+      { local: programs.length > 0, admin: isAdmin, lugares },
       { headers: { "Cache-Control": "private, no-store" } }
     )
   } catch (error) {

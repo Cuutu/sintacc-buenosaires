@@ -4,6 +4,8 @@ import mongoose, { Schema, Document, Model } from "mongoose"
 export interface ILoyaltyStamp extends Document {
   programId: mongoose.Types.ObjectId
   cardId: mongoose.Types.ObjectId
+  /** Sucursal donde se sumó (los de antes de las sucursales no lo tienen: el local principal). */
+  placeId?: mongoose.Types.ObjectId
   kind: "stamp" | "redeem"
   /** Sellos que sumó esa visita (2 con sello doble). */
   count: number
@@ -16,6 +18,7 @@ const LoyaltyStampSchema = new Schema<ILoyaltyStamp>(
   {
     programId: { type: Schema.Types.ObjectId, ref: "LoyaltyProgram", required: true },
     cardId: { type: Schema.Types.ObjectId, ref: "LoyaltyCard", required: true },
+    placeId: { type: Schema.Types.ObjectId, ref: "Place" },
     kind: { type: String, enum: ["stamp", "redeem"], required: true },
     count: { type: Number, default: 1, min: 1 },
     bonus: { type: String, enum: ["double", "friend", "inviter"] },

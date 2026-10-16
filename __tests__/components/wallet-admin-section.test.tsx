@@ -22,6 +22,8 @@ const row = (id: string, placeName: string, current: number, previous: number): 
   stampsForReward: 10,
   reward: "Cookie",
   staffEmails: [],
+  brandName: "",
+  branches: [],
   active: true,
   enrollPath: `/tarjeta/${id}`,
   stats: { cards: 4, inWallet: 3, customers: 3, cardsWithSecondStamp: 1, stampsLast7Days: 2, redeems: 0, invitedCards: 0 },

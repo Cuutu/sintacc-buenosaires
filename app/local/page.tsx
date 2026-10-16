@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { ExternalLink, Printer, QrCode, ScanLine } from "lucide-react"
-// /local/escanear se abre con <a> (carga completa) para que el navegador habilite la cámara.
 import { redirect } from "next/navigation"
 import mongoose from "mongoose"
 import { authOptions } from "@/lib/auth"
@@ -13,7 +12,8 @@ import { Place } from "@/models/Place"
 import { enrollPathFor, getProgramStats, normalizeEmail } from "@/lib/wallet/loyalty"
 import { formatNoticeTime, nextNoticeAt } from "@/lib/wallet/notice"
 import { getDailyVisits } from "@/lib/wallet/visits"
-import { getMonthlyStamps } from "@/lib/wallet/monthly"
+import { getBranchStampsThisMonth, getMonthlyStamps } from "@/lib/wallet/monthly"
+import { hasBranches, programPlaceIds, stampPlaceIdsFor, staffProgramFilter, staffRole } from "@/lib/wallet/branches"
 import { MonthlyStamps } from "@/components/wallet/MonthlyStamps"
 import { NoticeForm } from "@/components/wallet/NoticeForm"
 import { PromosForm } from "@/components/wallet/PromosForm"
@@ -22,25 +22,32 @@ import { VisitsChart } from "@/components/wallet/VisitsChart"
 
 export const dynamic = "force-dynamic"
 
-/** Panel del local: sus tarjetas, cómo sumar sellos, avisos y promos. Se puede guardar en la pantalla de inicio. */
+/**
+ * Panel del local: sus tarjetas, cómo sumar sellos, avisos y promos. Se puede guardar en la pantalla de inicio.
+ * El personal de una sucursal ve los números y escanea; avisos y promos los maneja el encargado.
+ * /local/escanear se abre con <a> (carga completa) para que el navegador habilite la cámara.
+ */
 export default async function LocalPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect("/login?callbackUrl=/local")
 
   await connectDB()
   const email = normalizeEmail(session.user.email)
-  const filter = session.user.role === "admin" ? {} : { staffEmails: email }
+  const filter = session.user.role === "admin" ? {} : staffProgramFilter(email)
   const programs = email || session.user.role === "admin" ? await LoyaltyProgram.find(filter).lean() : []
 
-  const places = await Place.find({ _id: { $in: programs.map((p) => p.placeId) } })
+  const places = await Place.find({ _id: { $in: programs.flatMap((p) => programPlaceIds(p)) } })
     .select("name slug")
     .lean<Array<{ _id: mongoose.Types.ObjectId; name: string; slug?: string }>>()
   const placeById = new Map(places.map((p) => [p._id.toString(), p]))
   const now = new Date()
-  const [stats, visits, monthly] = await Promise.all([
+  const [stats, visits, monthly, byBranch] = await Promise.all([
     Promise.all(programs.map((p) => getProgramStats(p._id, now))),
     Promise.all(programs.map((p) => getDailyVisits(p._id, now))),
     getMonthlyStamps(programs.map((p) => p._id), now),
+    Promise.all(
+      programs.map((p) => (hasBranches(p) ? getBranchStampsThisMonth(p._id, p.placeId.toString(), now) : null))
+    ),
   ])
 
   return (
@@ -95,7 +102,7 @@ export default async function LocalPage() {
                   href={`#programa-${program._id.toString()}`}
                   className="inline-flex h-11 items-center rounded-full border border-[#E8E1D6] bg-white px-4 text-sm font-semibold text-olive"
                 >
-                  {placeById.get(program.placeId.toString())?.name ?? "Local"}
+                  {program.brandName || placeById.get(program.placeId.toString())?.name || "Local"}
                 </a>
               ))}
             </nav>
@@ -108,8 +115,12 @@ export default async function LocalPage() {
               // De los clientes que vinieron, cuántos volvieron otro día.
               const retention = s.customers > 0 ? Math.round((s.cardsWithSecondStamp / s.customers) * 100) : 0
               const place = placeById.get(program.placeId.toString())
-              const name = place?.name ?? "Local"
+              const name = program.brandName || place?.name || "Local"
               const nextNotice = nextNoticeAt(program.notice, now)
+              const isManager = staffRole(program, session) !== "branch"
+              const branchIds = hasBranches(program) ? programPlaceIds(program) : []
+              const myBranchIds = stampPlaceIdsFor(program, session)
+              const branchStamps = byBranch[i]
               return (
                 <li
                   key={id}
@@ -158,31 +169,53 @@ export default async function LocalPage() {
                     )}
                   </div>
 
-                  <NoticeForm
-                    programId={id}
-                    placeName={name}
-                    cards={s.inWallet}
-                    active={program.active}
-                    lastNotice={
-                      program.notice
-                        ? { text: program.notice.text, sentAt: formatNoticeTime(new Date(program.notice.sentAt)) }
-                        : null
-                    }
-                    nextAt={nextNotice ? formatNoticeTime(nextNotice) : null}
-                  />
-                  <PromosForm
-                    programId={id}
-                    initialDoubleStamp={
-                      program.doubleStamp
-                        ? {
-                            days: [...program.doubleStamp.days],
-                            fromHour: program.doubleStamp.fromHour,
-                            toHour: program.doubleStamp.toHour,
-                          }
-                        : null
-                    }
-                    initialReferral={Boolean(program.referralEnabled)}
-                  />
+                  {branchStamps && (
+                    <section className="mt-3 rounded-xl bg-[#F8F5EF] p-3 text-olive">
+                      <h3 className="text-xs text-olive/70">Sellos de este mes por sucursal</h3>
+                      <ul className="mt-2 divide-y divide-[#E8E1D6] text-sm">
+                        {branchIds.map((pid) => (
+                          <li key={pid} className="flex justify-between py-1.5">
+                            <span>{placeById.get(pid)?.name ?? "Sucursal"}</span>
+                            <strong>{branchStamps.get(pid) ?? 0}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {isManager ? (
+                    <>
+                    <NoticeForm
+                      programId={id}
+                      placeName={name}
+                      cards={s.inWallet}
+                      active={program.active}
+                      lastNotice={
+                        program.notice
+                          ? { text: program.notice.text, sentAt: formatNoticeTime(new Date(program.notice.sentAt)) }
+                          : null
+                      }
+                      nextAt={nextNotice ? formatNoticeTime(nextNotice) : null}
+                    />
+                    <PromosForm
+                      programId={id}
+                      initialDoubleStamp={
+                        program.doubleStamp
+                          ? {
+                              days: [...program.doubleStamp.days],
+                              fromHour: program.doubleStamp.fromHour,
+                              toHour: program.doubleStamp.toHour,
+                            }
+                          : null
+                      }
+                      initialReferral={Boolean(program.referralEnabled)}
+                    />
+                    </>
+                  ) : (
+                    <p className="mt-5 rounded-2xl bg-[#F8F5EF] p-4 text-sm text-olive/80">
+                      Los avisos a los clientes y las promos los maneja el encargado de {name}.
+                    </p>
+                  )}
 
                   <section className="mt-5 rounded-2xl bg-[#F8F5EF] p-4 text-olive">
                     <h3 className="flex items-center gap-2 font-bold">
@@ -192,13 +225,28 @@ export default async function LocalPage() {
                     <p className="mt-1 text-sm text-olive/80">
                       Dejá el cartel con QR en la caja, o pasá el link por WhatsApp o en la bio de Instagram.
                     </p>
-                    <Link
-                      href={`/local/cartel/${id}`}
-                      className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-olive px-5 font-semibold text-cream"
-                    >
-                      <Printer className="h-4 w-4" aria-hidden />
-                      Imprimir cartel con QR
-                    </Link>
+                    {branchIds.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {myBranchIds.map((pid) => (
+                          <Link
+                            key={pid}
+                            href={`/local/cartel/${id}?sucursal=${pid}`}
+                            className="inline-flex h-11 items-center gap-2 rounded-full bg-olive px-5 font-semibold text-cream"
+                          >
+                            <Printer className="h-4 w-4" aria-hidden />
+                            Cartel {placeById.get(pid)?.name ?? ""}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/local/cartel/${id}`}
+                        className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-olive px-5 font-semibold text-cream"
+                      >
+                        <Printer className="h-4 w-4" aria-hidden />
+                        Imprimir cartel con QR
+                      </Link>
+                    )}
                     <div className="mt-3">
                       <ShareCardLink url={absoluteUrl(enrollPathFor(id))} placeName={name} />
                     </div>

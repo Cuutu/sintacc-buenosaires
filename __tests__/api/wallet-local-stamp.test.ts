@@ -46,6 +46,7 @@ describe("POST /api/local/tarjetas/[serial]", () => {
     mockCardFindOne.mockResolvedValue({ _id: new mongoose.Types.ObjectId(), programId: "p1", stamps: 2 })
     mockProgramFindById.mockResolvedValue({
       _id: new mongoose.Types.ObjectId(),
+      placeId: new mongoose.Types.ObjectId(),
       stampsForReward: 5,
       staffEmails: ["caja@local.com"],
     })
@@ -91,5 +92,27 @@ describe("POST /api/local/tarjetas/[serial]", () => {
     expect(await res.json()).toMatchObject({ stamps: 2, added: 2, bonus: "friend", inviterRewarded: true, next: { added: 1 } })
     expect(mockNotify).toHaveBeenCalledTimes(2)
     expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({ serialNumber: "invito" }))
+  })
+
+  it("lets branch staff stamp only at their branch, and records where", async () => {
+    const palermo = new mongoose.Types.ObjectId()
+    const belgrano = new mongoose.Types.ObjectId()
+    mockProgramFindById.mockResolvedValue({
+      _id: new mongoose.Types.ObjectId(),
+      placeId: new mongoose.Types.ObjectId(),
+      stampsForReward: 5,
+      staffEmails: ["duenio@local.com"],
+      branches: [
+        { placeId: palermo, staffEmails: ["caja.palermo@local.com"] },
+        { placeId: belgrano, staffEmails: [] },
+      ],
+    })
+    mockRequireAuth.mockResolvedValue({ user: { id: "u", email: "caja.palermo@local.com", role: "user" } })
+    expect((await POST(req({ accion: "sello", sucursal: belgrano.toString() }), params)).status).toBe(403)
+
+    const res = await POST(req({ accion: "sello" }), params)
+    expect(res.status).toBe(200)
+    const { LoyaltyStamp } = jest.requireMock("@/models/LoyaltyStamp") as { LoyaltyStamp: { create: jest.Mock } }
+    expect(LoyaltyStamp.create).toHaveBeenLastCalledWith(expect.objectContaining({ placeId: palermo.toString() }))
   })
 })

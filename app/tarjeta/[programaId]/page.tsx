@@ -124,6 +124,22 @@ export default async function TarjetaPage({ params, searchParams }: Props) {
         </section>
       )}
 
+      {data.branches.length > 1 && (
+        <section className="rounded-2xl border border-[#E8E1D6] bg-white p-5 text-olive">
+          <h2 className="font-bold">Vale en todas sus sucursales</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {data.branches.map((b) => (
+              <li key={b.placeId}>
+                <Link href={b.path} className="underline decoration-olive/30 underline-offset-2">
+                  {b.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-olive/70">Sumás sellos en cualquiera y te avisamos al pasar cerca.</p>
+        </section>
+      )}
+
       <section className="rounded-2xl bg-cream-card p-5 text-olive">
         <h2 className="font-bold">Cómo funciona</h2>
         <ol className="mt-3 space-y-3">

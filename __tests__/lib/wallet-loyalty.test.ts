@@ -106,7 +106,8 @@ describe("loyalty helpers", () => {
       placeName: "Local",
       placePath: "/lugar/local",
       safety: "options",
-      location: { latitude: -34.6, longitude: -58.4 },
+      locations: [{ latitude: -34.6, longitude: -58.4 }],
+      branches: [],
     })
     expect(input.notice).toBeNull()
     expect(input.barcodeValue).toMatch(new RegExp(`/local/sellar/${card.serialNumber}$`))
@@ -115,7 +116,8 @@ describe("loyalty helpers", () => {
     expect(input.stamps).toBe(2)
     expect(input.rewardsRedeemed).toBe(1)
     expect(input.safety).toBe("options")
-    expect(input.location).toEqual({ latitude: -34.6, longitude: -58.4 })
+    expect(input.locations).toEqual([{ latitude: -34.6, longitude: -58.4 }])
+    expect(input.branchNames).toEqual([])
   })
 
   it("puts the shop's notice on the card for a week", () => {
@@ -124,7 +126,7 @@ describe("loyalty helpers", () => {
       ...program,
       notice: { text: "Salieron las medialunas", sentAt, byEmail: "caja@local.com" },
     } as unknown as ILoyaltyProgram
-    const data = { program: withNotice, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    const data = { program: withNotice, placeName: "Local", placePath: "/lugar/local", safety: null, locations: [], branches: [] }
     expect(passInputFor(cardWith(1), data, new Date("2026-10-17T12:00:00Z")).notice).toBe("Salieron las medialunas")
     expect(passInputFor(cardWith(1), data, new Date("2026-10-24T12:00:00Z")).notice).toBeNull()
   })
@@ -211,7 +213,7 @@ describe("loyalty helpers", () => {
   it("puts the double-stamp hours and the last stamp on the card", () => {
     const withDouble = { ...program, doubleStamp: { days: [1, 2, 3, 4, 5], fromHour: 15, toHour: 18 } } as unknown as ILoyaltyProgram
     const card = { ...cardWith(3), lastStampAdded: 2, lastStampReason: "double" } as unknown as ILoyaltyCard
-    const input = passInputFor(card, { program: withDouble, placeName: "Local", placePath: "/lugar/local", safety: null, location: null })
+    const input = passInputFor(card, { program: withDouble, placeName: "Local", placePath: "/lugar/local", safety: null, locations: [], branches: [] })
     expect(input.doubleStamp).toBe("Sello doble de lunes a viernes de 15 a 18 h: cada visita suma 2 sellos.")
     expect(input.lastStampAdded).toBe(2)
     expect(input.lastStampReason).toBe("double")
@@ -269,7 +271,7 @@ describe("loyalty helpers", () => {
 
   it("puts the invite link on the card only when the shop has the promo", () => {
     const card = cardWith(1)
-    const data = { program, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    const data = { program, placeName: "Local", placePath: "/lugar/local", safety: null, locations: [], branches: [] }
     expect(passInputFor(card, data).inviteUrl).toBeNull()
     const on = { ...data, program: { ...program, referralEnabled: true } as unknown as ILoyaltyProgram }
     const url = passInputFor(card, on).inviteUrl

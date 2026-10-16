@@ -122,7 +122,7 @@ const image = (uri: string, description: string) => ({
 
 export function buildLoyaltyClass(
   config: GoogleWalletConfig,
-  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "location">,
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "locations">,
   logoUrl: string
 ) {
   return {
@@ -137,7 +137,14 @@ export function buildLoyaltyClass(
     reviewStatus: "UNDER_REVIEW",
     multipleDevicesAndHoldersAllowedStatus: "ONE_USER_ALL_DEVICES",
     // Cerca del local, Android avisa en la pantalla bloqueada (el radio y el texto los pone Google).
-    ...(input.location ? { merchantLocations: [input.location] } : {}),
+    // Hasta 10 (una por sucursal).
+    ...(input.locations?.length
+      ? {
+          merchantLocations: input.locations
+            .slice(0, 10)
+            .map(({ latitude, longitude }) => ({ latitude, longitude })),
+        }
+      : {}),
   }
 }
 
@@ -158,6 +165,9 @@ export function buildLoyaltyObject(
     ...(heroUrl ? { heroImage: image(heroUrl, `${stamps} de ${total} sellos`) } : {}),
     textModulesData: [
       { id: "how", header: "Cómo funciona", body: stampHowText(total, input.reward) },
+      ...(input.branchNames && input.branchNames.length > 1
+        ? [{ id: "branches", header: "Vale en todas las sucursales", body: input.branchNames.join(" · ") }]
+        : []),
       ...(input.doubleStamp ? [{ id: "double", header: "Sello doble", body: input.doubleStamp }] : []),
       ...(input.inviteUrl ? [{ id: "invite", header: "Traé un amigo", body: REFERRAL_TEXT }] : []),
       ...(input.safety
@@ -300,6 +310,30 @@ export async function expireGoogleCards(serials: string[], config: GoogleWalletC
   return expired
 }
 
+/**
+ * Actualiza la clase (nombre, color, ubicaciones de las sucursales) sin mandar mensajes.
+ * Best-effort; false si falló o si nadie guardó todavía la tarjeta en Google.
+ */
+export async function refreshGoogleClass(
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "locations">,
+  config: GoogleWalletConfig
+): Promise<boolean> {
+  try {
+    const loyaltyClass = buildLoyaltyClass(config, input, await googleLogoUrl())
+    const res = await walletApi(config, "PATCH", `/loyaltyClass/${encodeURIComponent(loyaltyClass.id)}`, loyaltyClass)
+    if (res.status === 404) return false
+    await expectOk(res, "loyaltyClass patch")
+    return true
+  } catch (error) {
+    logger.warn({
+      route: "wallet-google",
+      message: "no se pudo actualizar la clase de Google Wallet",
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return false
+  }
+}
+
 /** Fecha como la pide Google (ISO 8601 sin milisegundos). */
 const googleDate = (date: Date) => ({ date: date.toISOString().replace(/\.\d{3}Z$/, "Z") })
 
@@ -309,7 +343,7 @@ const googleDate = (date: Date) => ({ date: date.toISOString().replace(/\.\d{3}Z
  * Devuelve false si falló o si nadie guardó todavía la tarjeta en Google.
  */
 export async function pushGoogleProgramNotice(
-  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "location">,
+  input: Pick<GoogleCardInput, "programId" | "placeName" | "safety" | "locations">,
   text: string,
   config: GoogleWalletConfig,
   now = new Date()

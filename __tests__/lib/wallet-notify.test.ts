@@ -11,6 +11,7 @@ const mockGetProgram = jest.fn()
 const mockUpdateMany = jest.fn()
 const mockCardFind = jest.fn()
 const mockGoogleRefresh = jest.fn()
+const mockGoogleClass = jest.fn()
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 jest.mock("@/lib/logger", () => ({ logger: { warn: jest.fn() } }))
 jest.mock("@/models/LoyaltyCard", () => ({
@@ -30,6 +31,7 @@ jest.mock("@/lib/wallet/google-wallet", () => ({
   pushGoogleCardUpdate: (...a: unknown[]) => mockGooglePush(...a),
   pushGoogleProgramNotice: (...a: unknown[]) => mockGoogleNotice(...a),
   refreshGoogleCard: (...a: unknown[]) => mockGoogleRefresh(...a),
+  refreshGoogleClass: (...a: unknown[]) => mockGoogleClass(...a),
 }))
 jest.mock("@/lib/wallet/config", () => ({
   getApplePassConfig: () => ({ passTypeIdentifier: "p" }),
@@ -83,7 +85,7 @@ describe("notifyProgramNotice", () => {
       placeName: "Polvorín",
       placePath: "/lugar/polvorin",
       safety: "dedicated",
-      location: null,
+      locations: [],
     } as unknown as ProgramWithPlace
     await notifyProgramNotice(data, "Salieron las medialunas", now)
 
@@ -93,7 +95,7 @@ describe("notifyProgramNotice", () => {
     expect(options).toEqual({ timestamps: false })
     expect(mockApplePushMany).toHaveBeenCalledWith(["s1", "s2"], expect.anything())
     expect(mockGoogleNotice).toHaveBeenCalledWith(
-      { programId: programId.toString(), placeName: "Polvorín", safety: "dedicated", location: null },
+      { programId: programId.toString(), placeName: "Polvorín", safety: "dedicated", locations: [] },
       "Salieron las medialunas",
       expect.anything(),
       now
@@ -112,7 +114,7 @@ describe("refreshProgramCards", () => {
   beforeEach(() => jest.clearAllMocks())
 
   it("refreshes every card of the place without a lock-screen notice", async () => {
-    const data = { program: { _id: programId }, placeName: "Local", placePath: "/lugar/local", safety: null, location: null }
+    const data = { program: { _id: programId }, placeName: "Local", placePath: "/lugar/local", safety: null, locations: [] }
     mockCardFind
       .mockResolvedValueOnce([{ serialNumber: "a1" }, { serialNumber: "a2" }])
       .mockResolvedValueOnce([{ serialNumber: "g1" }])
@@ -125,6 +127,11 @@ describe("refreshProgramCards", () => {
     expect(mockApplePushMany).toHaveBeenCalledWith(["a1", "a2"], expect.anything())
     expect(mockGoogleRefresh).toHaveBeenCalledWith(
       expect.objectContaining({ serialNumber: "g1", programId: programId.toString() }),
+      expect.anything()
+    )
+    // La clase lleva el nombre y las ubicaciones de las sucursales.
+    expect(mockGoogleClass).toHaveBeenCalledWith(
+      expect.objectContaining({ programId: programId.toString(), placeName: "Local", locations: [] }),
       expect.anything()
     )
     expect(mockGooglePush).not.toHaveBeenCalled()

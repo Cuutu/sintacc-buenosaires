@@ -43,7 +43,8 @@ function passColors(safety: CardSafety | null) {
   }
 }
 
-export type PassLocation = { latitude: number; longitude: number }
+/** Coordenadas de un local; con sucursales, `name` es la sucursal (para el aviso al pasar cerca). */
+export type PassLocation = { latitude: number; longitude: number; name?: string }
 
 export type LoyaltyPassInput = {
   serialNumber: string
@@ -59,8 +60,10 @@ export type LoyaltyPassInput = {
   placePath?: string
   /** 100% sin TACC o con opciones; sin dato, la tarjeta no lleva etiqueta. */
   safety?: CardSafety | null
-  /** Dónde está el local: cerca de ahí, el celu muestra la tarjeta en la pantalla bloqueada. */
-  location?: PassLocation | null
+  /** Dónde están el local o sus sucursales (hasta 10): cerca, el celu muestra la tarjeta. */
+  locations?: PassLocation[] | null
+  /** Con sucursales: dónde vale la tarjeta (va al dorso). */
+  branchNames?: string[]
   /** Último aviso del local (de la última semana). */
   notice?: string | null
   /** "Sello doble de lunes a viernes de 15 a 18 h…", si el local lo tiene. */
@@ -210,6 +213,9 @@ export async function buildLoyaltyPass(
         ]
       : []),
     ...(safety ? [{ key: "taccNote", label: CARD_SAFETY_LABEL[safety], value: cardSafetyNote(safety) }] : []),
+    ...(input.branchNames && input.branchNames.length > 1
+      ? [{ key: "branches", label: "Vale en todas las sucursales", value: input.branchNames.join(" · ") }]
+      : []),
     {
       key: "place",
       label: "Ver el local en CeliMap",
@@ -219,8 +225,16 @@ export async function buildLoyaltyPass(
   )
 
   // Cerca del local, el iPhone la sugiere en la pantalla bloqueada (sin sonido; el radio lo decide iOS).
-  if (input.location) {
-    pass.setLocations({ ...input.location, relevantText: nearbyText({ ...input, stamps, total }) })
+  // Con sucursales, cada una con su nombre ("Estás cerca de Polvorín Palermo…").
+  const locations = (input.locations ?? []).slice(0, 10)
+  if (locations.length > 0) {
+    pass.setLocations(
+      ...locations.map(({ latitude, longitude, name }) => ({
+        latitude,
+        longitude,
+        relevantText: nearbyText({ ...input, placeName: name ?? input.placeName, stamps, total }),
+      }))
+    )
   }
 
   pass.setBarcodes({
