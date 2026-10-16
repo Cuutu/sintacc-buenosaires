@@ -5,6 +5,9 @@ import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
 import type { AdminProgramRow } from "@/lib/wallet/loyalty-admin"
 
+// Igual que DELETE_CONFIRMATION de loyalty-admin (ese archivo usa Mongo y no entra al navegador).
+const DELETE_WORD = "BORRAR"
+
 type PlaceOption = { id: string; name: string; neighborhood?: string; status?: string }
 
 type FormValues = { stampsForReward: number; reward: string; staffEmails: string }
@@ -45,7 +48,7 @@ export function AdminLoyaltySection({ initialPrograms }: { initialPrograms: Admi
         <div>
           <h1 className={adminUi.title}>Tarjetas de sellos</h1>
           <p className={`mt-2 ${adminUi.subtitle}`}>
-            Un programa por local. El local suma sellos, manda avisos y arma sus promos desde /local con su Google. Pausar frena las tarjetas nuevas; las que ya existen siguen sumando.
+            Un programa por local. El local suma sellos, manda avisos y arma sus promos desde /local con su Google. Pausar frena las tarjetas nuevas; las que ya existen siguen sumando. Borrar elimina el programa con sus tarjetas y sellos.
           </p>
         </div>
         {!creating && (
@@ -233,6 +236,8 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteText, setDeleteText] = useState("")
   const { stats } = program
   const retention = stats.cards > 0 ? Math.round((stats.cardsWithSecondStamp / stats.cards) * 100) : 0
 
@@ -246,6 +251,17 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
     }
     setError(null)
     setEditing(false)
+    await onChanged()
+  }
+
+  async function remove() {
+    setBusy(true)
+    const err = await sendJson(`/api/admin/wallet/programs/${program.id}`, "DELETE", { confirmar: deleteText.trim() })
+    setBusy(false)
+    if (err) {
+      setError(err)
+      return
+    }
     await onChanged()
   }
 
@@ -356,9 +372,55 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
             >
               {program.active ? "Pausar" : "Reactivar"}
             </button>
+            {!confirmingDelete && (
+              <button
+                type="button"
+                disabled={busy}
+                className={cn(adminUi.btnGhost, "text-[#B84420]")}
+                onClick={() => {
+                  setConfirmingDelete(true)
+                  setDeleteText("")
+                  setError(null)
+                }}
+              >
+                Borrar
+              </button>
+            )}
           </>
         )}
       </div>
+
+      {confirmingDelete && !editing && (
+        <div className="grid gap-3 rounded-xl border border-[#B84420]/40 bg-[#FBE9E2] p-4">
+          <p className={`text-sm ${adminUi.text}`}>
+            Se borran el programa, sus {stats.cards === 1 ? "1 tarjeta" : `${stats.cards} tarjetas`} y todos los
+            sellos. No se puede deshacer. Las tarjetas que ya están en los celulares quedan ahí pero no suman más
+            (las de Google pasan a vencidas). Si sólo querés frenar tarjetas nuevas, usá Pausar.
+          </p>
+          <label className="grid gap-1">
+            <span className={adminUi.label}>Escribí {DELETE_WORD} para confirmar</span>
+            <input
+              className={`h-11 w-full rounded-xl border ${adminUi.border} bg-white px-3 ${adminUi.text}`}
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy || deleteText.trim() !== DELETE_WORD}
+              className={cn(adminUi.btnPrimary, "bg-[#B84420] hover:bg-[#B84420]/90")}
+              onClick={remove}
+            >
+              Borrar {program.placeName}
+            </button>
+            <button type="button" className={adminUi.btnGhost} onClick={() => setConfirmingDelete(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </li>
   )
 }

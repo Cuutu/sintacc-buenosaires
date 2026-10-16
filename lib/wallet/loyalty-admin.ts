@@ -5,6 +5,9 @@ import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { LoyaltyProgram } from "@/models/LoyaltyProgram"
+import { LoyaltyCard } from "@/models/LoyaltyCard"
+import { LoyaltyStamp } from "@/models/LoyaltyStamp"
+import { LoyaltyDevice } from "@/models/LoyaltyDevice"
 import { enrollPathFor, getProgramStats, type ProgramStats } from "@/lib/wallet/loyalty"
 import { formatNoticeTime } from "@/lib/wallet/notice"
 import { doubleStampText } from "@/lib/wallet/promos"
@@ -76,4 +79,44 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
       referralEnabled: Boolean(p.referralEnabled),
     }
   })
+}
+
+/** Lo que hay que escribir para confirmar el borrado (no se puede deshacer). */
+export const DELETE_CONFIRMATION = "BORRAR"
+
+export const deleteProgramSchema = z.object({
+  confirmar: z.literal(DELETE_CONFIRMATION, {
+    errorMap: () => ({ message: `Escribí ${DELETE_CONFIRMATION} para confirmar.` }),
+  }),
+})
+
+export type DeletedProgram = { cards: number; stamps: number; googleSerials: string[] }
+
+/**
+ * Borra el programa de un local con sus tarjetas, sellos y registros de iPhones.
+ * Para locales de prueba o que dejaron de participar. Las tarjetas que los clientes ya
+ * guardaron quedan en su Wallet pero no se actualizan más (las de Google se vencen aparte).
+ * Devuelve null si no existe.
+ */
+export async function deleteProgram(programId: string): Promise<DeletedProgram | null> {
+  if (!mongoose.Types.ObjectId.isValid(programId)) return null
+  await connectDB()
+  const program = await LoyaltyProgram.findById(programId).select("_id").lean()
+  if (!program) return null
+  const cards = await LoyaltyCard.find({ programId: program._id })
+    .select("serialNumber wallet")
+    .lean<Array<{ serialNumber: string; wallet?: string }>>()
+  const serials = cards.map((c) => c.serialNumber)
+  // El programa primero: desde acá nadie puede sacar ni sellar tarjetas nuevas.
+  await LoyaltyProgram.deleteOne({ _id: program._id })
+  const [, stamps] = await Promise.all([
+    serials.length > 0 ? LoyaltyDevice.deleteMany({ serialNumber: { $in: serials } }) : null,
+    LoyaltyStamp.deleteMany({ programId: program._id }),
+  ])
+  await LoyaltyCard.deleteMany({ programId: program._id })
+  return {
+    cards: cards.length,
+    stamps: stamps?.deletedCount ?? 0,
+    googleSerials: cards.filter((c) => c.wallet === "google").map((c) => c.serialNumber),
+  }
 }

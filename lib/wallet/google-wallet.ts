@@ -266,6 +266,40 @@ export async function refreshGoogleCard(input: GoogleCardInput, config: GoogleWa
   }
 }
 
+/**
+ * El local dejó de tener tarjeta: las de Google pasan a "vencidas" (el celu las mueve a
+ * tarjetas anteriores) para que nadie siga mostrando una tarjeta que ya no suma.
+ * Best-effort, de a 5. Devuelve cuántas se marcaron.
+ */
+export async function expireGoogleCards(serials: string[], config: GoogleWalletConfig): Promise<number> {
+  let expired = 0
+  for (let i = 0; i < serials.length; i += 5) {
+    const results = await Promise.all(
+      serials.slice(i, i + 5).map(async (serial) => {
+        try {
+          const res = await walletApi(
+            config,
+            "PATCH",
+            `/loyaltyObject/${encodeURIComponent(googleObjectId(config, serial))}`,
+            { state: "EXPIRED" }
+          )
+          return res.ok
+        } catch {
+          return false
+        }
+      })
+    )
+    expired += results.filter(Boolean).length
+  }
+  if (expired < serials.length) {
+    logger.warn({
+      route: "wallet-google",
+      message: `no se pudieron vencer ${serials.length - expired} tarjetas de Google Wallet`,
+    })
+  }
+  return expired
+}
+
 /** Fecha como la pide Google (ISO 8601 sin milisegundos). */
 const googleDate = (date: Date) => ({ date: date.toISOString().replace(/\.\d{3}Z$/, "Z") })
 

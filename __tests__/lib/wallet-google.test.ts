@@ -18,6 +18,7 @@ import {
   pushGoogleCardUpdate,
   pushGoogleProgramNotice,
   refreshGoogleCard,
+  expireGoogleCards,
   type GoogleCardInput,
   type GoogleWalletConfig,
 } from "@/lib/wallet/google-wallet"
@@ -261,5 +262,11 @@ describe("google wallet loyalty card", () => {
     })
     expect(object.textModulesData.map((m) => m.id)).toContain("invite")
     expect(buildLoyaltyObject(config, input, null).linksModuleData.uris.map((u) => u.id)).toEqual(["place"])
+  })
+  it("expires the Google cards of a deleted program", async () => {
+    const calls = mockFetch({ "PATCH /loyaltyObject/3388000000023221580.celimap_tarjeta_b": 500 })
+    const serials = ["a".repeat(32), "b".repeat(32)]
+    expect(await expireGoogleCards(serials, config)).toBe(1)
+    expect(calls.map((c) => c.body)).toEqual([{ state: "EXPIRED" }, { state: "EXPIRED" }])
   })
 })
