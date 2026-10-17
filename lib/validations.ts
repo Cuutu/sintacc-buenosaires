@@ -14,10 +14,15 @@ export const placeSchema = z.object({
   province: z.string().min(1).max(100).trim().optional(),
   locality: z.string().min(1).max(100).trim().optional(),
   slug: z.string().min(1).max(120).trim().optional(),
-  location: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  }),
+  location: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    // (0, 0) = campo vacío convertido a número; el pin termina frente a África.
+    .refine((loc) => !(Math.abs(loc.lat) < 1e-6 && Math.abs(loc.lng) < 1e-6), {
+      message: "Ubicación inválida (0, 0): falta marcar el lugar en el mapa",
+    }),
   addressText: z.string().max(500).optional(),
   locationPrecision: z.enum(["exact", "approx"]).optional(),
   userProvidedNeighborhood: z.string().max(100).optional(),

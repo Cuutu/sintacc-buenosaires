@@ -36,6 +36,7 @@ function toDuplicateDraft(place: Record<string, unknown>): DuplicateDraft {
     neighborhood: place.neighborhood as string | undefined,
     location: place.location as DuplicateDraft["location"],
     contact: place.contact as DuplicateDraft["contact"],
+    googlePlaceId: place.googlePlaceId as string | undefined,
     status: place.status as string | undefined,
   }
 }
@@ -56,7 +57,7 @@ export async function scanPublishedPlaceDuplicates(limit = 2500): Promise<{
 }> {
   await connectDB()
   const places = await Place.find({ status: "approved" })
-    .select("name type types address addressText neighborhood location contact status")
+    .select("name type types address addressText neighborhood location contact googlePlaceId status")
     .limit(limit)
     .lean()
 

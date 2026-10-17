@@ -6,7 +6,9 @@ import {
   fetchGooglePlaceEnriched,
   findGooglePlaceFromMapsUrl,
   mapGooglePrimaryType,
+  mapsMatchMaxKm,
   searchGooglePlaceByText,
+  searchGooglePlaceNear,
 } from "@/lib/google-places-enriched"
 import { getGoogleMapsApiKey } from "@/lib/google-places"
 import {
@@ -274,6 +276,7 @@ export async function runPlaceResearch(
     let matchConfidence = 0
     let mapsLinkResolved = false
     let mapsCoords: { lat: number; lng: number } | null = null
+    let mapsMaxKm = mapsMatchMaxKm(null)
 
     if (getGoogleMapsApiKey()) {
       if (userUrl && isGoogleMapsUrl(userUrl)) {
@@ -284,8 +287,9 @@ export async function runPlaceResearch(
           Number.isFinite(resolvedMaps.lng)
         ) {
           mapsCoords = { lat: resolvedMaps.lat as number, lng: resolvedMaps.lng as number }
+          mapsMaxKm = mapsMatchMaxKm(resolvedMaps)
         }
-        googlePlace = await findGooglePlaceFromMapsUrl(userUrl)
+        googlePlace = await findGooglePlaceFromMapsUrl(userUrl, resolvedMaps ?? undefined)
         if (googlePlace) {
           mapsLinkResolved = true
           matchConfidence = 92
@@ -300,10 +304,12 @@ export async function runPlaceResearch(
           Number.isFinite(coords?.lng) &&
           !shouldReplaceDraftLocation(coords)
             ? { lat: coords!.lat as number, lng: coords!.lng as number, radius: 400 }
-            : mapsCoords
-              ? { ...mapsCoords, radius: 1500 }
-              : undefined
-        const hit = await searchGooglePlaceByText(query, usableCoords)
+            : undefined
+        // Con link de Maps, sólo vale un resultado que esté donde marca el link
+        // (las coords guardadas pueden ser justamente las equivocadas).
+        const hit = mapsCoords
+          ? await searchGooglePlaceNear(query, mapsCoords, mapsMaxKm)
+          : await searchGooglePlaceByText(query, usableCoords)
         if (hit?.placeId) {
           googlePlace = await fetchGooglePlaceEnriched(hit.placeId)
           if (googlePlace) matchConfidence = 80

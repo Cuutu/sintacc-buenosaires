@@ -1,6 +1,8 @@
 import {
   isCountryOnlyAddress,
+  isNullIslandCoords,
   isPlaceholderCabaLocation,
+  parseFormCoords,
   shouldReplaceDraftLocation,
 } from "@/lib/place-research/maps-location"
 
@@ -29,5 +31,16 @@ describe("maps-location helpers", () => {
     expect(
       shouldReplaceDraftLocation({ lat: -22.7581446, lng: -41.8903548 })
     ).toBe(false)
+  })
+
+  it("treats (0, 0) as missing coordinates", () => {
+    expect(isNullIslandCoords(0, 0)).toBe(true)
+    expect(isNullIslandCoords(-34.6, -58.4)).toBe(false)
+    expect(parseFormCoords("0", "0")).toBeNull()
+    expect(parseFormCoords(0, 0)).toBeNull()
+    expect(parseFormCoords("-34.6091", "-58.3843")).toEqual({
+      lat: -34.6091,
+      lng: -58.3843,
+    })
   })
 })

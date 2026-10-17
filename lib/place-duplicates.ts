@@ -16,6 +16,7 @@ export interface DuplicateDraft {
     instagram?: string
     url?: string
   }
+  googlePlaceId?: string | null
   status?: string
 }
 
@@ -73,6 +74,7 @@ export function getDuplicateMatchLevel(
   const hasType = reasons.includes("mismo tipo")
   const sameLocation = reasons.includes("misma ubicacion")
   const sameNeighborhood = reasons.includes("mismo barrio/localidad")
+  const sameGooglePlace = reasons.includes("mismo lugar en Google")
   const strongName =
     reasons.includes("nombre igual") ||
     reasons.includes("nombre muy parecido") ||
@@ -80,6 +82,9 @@ export function getDuplicateMatchLevel(
 
   // Exacto clásico
   if (hasName && hasExactAddress && hasType) return "exact"
+  // Mismo ID de Google Places y nombre parecido: es el mismo local cargado dos
+  // veces aunque los pines o la dirección difieran (Vanyla, El Topo).
+  if (sameGooglePlace && hasName) return "exact"
   // Mismo local con nombre variante (Campo Bravo vs CAMPOBRAVO Caballito)
   if (strongName && sameLocation && (hasType || sameNeighborhood)) return "exact"
   if (score >= 50) return "likely"
@@ -157,6 +162,12 @@ export function scoreDuplicateCandidate(
   if (isUsefulText(sourceType) && sourceType === candidateType) {
     score += 12
     reasons.push("mismo tipo")
+  }
+
+  const sourceGoogleId = source.googlePlaceId?.trim()
+  if (sourceGoogleId && sourceGoogleId === candidate.googlePlaceId?.trim()) {
+    score += 60
+    reasons.push("mismo lugar en Google")
   }
 
   const sharedContactReason = getSharedContactReason(source, candidate)

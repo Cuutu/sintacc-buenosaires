@@ -251,11 +251,102 @@ export async function fetchGooglePlaceEnriched(
   return normalizeGooglePlaceEnriched(data)
 }
 
-function approxKm(
+/** Distancia en km (haversine). */
+export function distanceKm(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number }
 ): number {
-  return Math.hypot(a.lat - b.lat, a.lng - b.lng) * 111
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2
+  return 12742 * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+/**
+ * Hasta dónde puede estar un resultado de Google (buscado por nombre) del pin
+ * del link de Maps para considerarlo el mismo lugar.
+ * - Pin exacto (`!3d…!4d…`): 500 m.
+ * - Sólo centro de la vista (`@lat,lng`): 2 km.
+ */
+export const MAPS_MATCH_MAX_KM_PRECISE = 0.5
+export const MAPS_MATCH_MAX_KM_VIEWPORT = 2
+
+export function mapsMatchMaxKm(resolved: { coordsPrecise?: boolean } | null | undefined): number {
+  return resolved?.coordsPrecise ? MAPS_MATCH_MAX_KM_PRECISE : MAPS_MATCH_MAX_KM_VIEWPORT
+}
+
+/**
+ * Busca por texto y devuelve el resultado MÁS CERCANO a `anchor`, sólo si está
+ * a `maxKm` o menos. `locationBias` de Google es una preferencia, no un filtro:
+ * "Bonnevill" con bias en Villa Devoto devolvía "Sanitarios Bonneville" a 13 km.
+ */
+export async function searchGooglePlaceNear(
+  textQuery: string,
+  anchor: { lat: number; lng: number },
+  maxKm: number
+): Promise<{ placeId: string; name?: string; address?: string; distanceKm: number } | null> {
+  const apiKey = getGoogleMapsApiKey()
+  if (!apiKey || !textQuery.trim()) return null
+  if (!Number.isFinite(anchor.lat) || !Number.isFinite(anchor.lng)) return null
+
+  const inferredRegion = googleTextSearchRegionCode(textQuery)
+  const body: Record<string, unknown> = {
+    textQuery: textQuery.trim(),
+    languageCode: "es-419",
+    locationBias: {
+      circle: {
+        center: { latitude: anchor.lat, longitude: anchor.lng },
+        radius: Math.max(1500, Math.round(maxKm * 1000)),
+      },
+    },
+    maxResultCount: 5,
+  }
+  if (inferredRegion) body.regionCode = inferredRegion
+  else if (isLikelyArgentinaCoords(anchor.lat, anchor.lng)) body.regionCode = "AR"
+
+  const res = await fetch(`${GOOGLE_PLACES_BASE_URL}:searchText`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.location",
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) return null
+
+  const data = (await res.json()) as {
+    places?: Array<{
+      id?: string
+      displayName?: { text?: string }
+      formattedAddress?: string
+      location?: { latitude?: number; longitude?: number }
+    }>
+  }
+
+  let best: { placeId: string; name?: string; address?: string; distanceKm: number } | null =
+    null
+  for (const place of data.places ?? []) {
+    const lat = place.location?.latitude
+    const lng = place.location?.longitude
+    if (!place.id || !Number.isFinite(lat) || !Number.isFinite(lng)) continue
+    const km = distanceKm(anchor, { lat: lat as number, lng: lng as number })
+    if (km > maxKm) continue
+    if (!best || km < best.distanceKm) {
+      best = {
+        placeId: place.id,
+        name: place.displayName?.text,
+        address: place.formattedAddress,
+        distanceKm: km,
+      }
+    }
+  }
+  return best
 }
 
 export async function findGooglePlaceFromMapsUrl(
@@ -271,22 +362,26 @@ export async function findGooglePlaceFromMapsUrl(
     enriched = await fetchGooglePlaceEnriched(resolved.placeId)
   } else {
     const query = resolved.placeName?.trim()
-    if (isUsableMapsPlaceName(query)) {
-      const hit = await searchGooglePlaceByText(
+    if (!isUsableMapsPlaceName(query)) return null
+    if (Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)) {
+      // El link trae dónde está el lugar: un resultado por nombre que no esté
+      // ahí es otro negocio (mismo nombre o parecido) y no sirve.
+      const hit = await searchGooglePlaceNear(
         query,
-        Number.isFinite(resolved.lat) && Number.isFinite(resolved.lng)
-          ? { lat: resolved.lat, lng: resolved.lng, radius: 1500 }
-          : undefined
+        { lat: resolved.lat as number, lng: resolved.lng as number },
+        mapsMatchMaxKm(resolved)
       )
-      if (hit?.placeId) enriched = await fetchGooglePlaceEnriched(hit.placeId)
+      return hit ? fetchGooglePlaceEnriched(hit.placeId) : null
     }
+    const hit = await searchGooglePlaceByText(query)
+    if (hit?.placeId) enriched = await fetchGooglePlaceEnriched(hit.placeId)
   }
 
   if (
     enriched &&
     Number.isFinite(resolved.lat) &&
     Number.isFinite(resolved.lng) &&
-    approxKm(enriched, { lat: resolved.lat as number, lng: resolved.lng as number }) > 25
+    distanceKm(enriched, { lat: resolved.lat as number, lng: resolved.lng as number }) > 25
   ) {
     return {
       ...enriched,

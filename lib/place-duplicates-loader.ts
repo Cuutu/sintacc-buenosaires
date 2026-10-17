@@ -30,6 +30,7 @@ export async function loadDuplicateCandidates(
         neighborhood: 1,
         location: 1,
         contact: 1,
+        googlePlaceId: 1,
         status: 1,
       }
     )

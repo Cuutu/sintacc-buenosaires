@@ -5,7 +5,9 @@ import {
   fetchGooglePlaceEnriched,
   findGooglePlaceFromMapsUrl,
   mapGooglePrimaryType,
+  mapsMatchMaxKm,
   searchGooglePlaceByText,
+  searchGooglePlaceNear,
 } from "@/lib/google-places-enriched"
 import { getGoogleMapsApiKey } from "@/lib/google-places"
 import {
@@ -248,6 +250,7 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
     let matchConfidence = 0
     let mapsLinkResolved = false
     let mapsCoords: { lat: number; lng: number } | null = null
+    let mapsMaxKm = mapsMatchMaxKm(null)
 
     if (getGoogleMapsApiKey()) {
       if (userUrl && isGoogleMapsUrl(userUrl)) {
@@ -258,8 +261,9 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
           Number.isFinite(resolvedMaps.lng)
         ) {
           mapsCoords = { lat: resolvedMaps.lat as number, lng: resolvedMaps.lng as number }
+          mapsMaxKm = mapsMatchMaxKm(resolvedMaps)
         }
-        googlePlace = await findGooglePlaceFromMapsUrl(userUrl)
+        googlePlace = await findGooglePlaceFromMapsUrl(userUrl, resolvedMaps ?? undefined)
         if (googlePlace) {
           mapsLinkResolved = true
           matchConfidence = 92
@@ -269,7 +273,10 @@ export async function runSuggestionResearch(suggestionId: string): Promise<AiRes
       if (!googlePlace) {
         const query = buildSearchQuery(draft)
         if (query.length >= 3) {
-          const hit = await searchGooglePlaceByText(query)
+          // Con link de Maps, sólo vale un resultado que esté donde marca el link.
+          const hit = mapsCoords
+            ? await searchGooglePlaceNear(query, mapsCoords, mapsMaxKm)
+            : await searchGooglePlaceByText(query)
           if (hit?.placeId) {
             googlePlace = await fetchGooglePlaceEnriched(hit.placeId)
             if (googlePlace) {

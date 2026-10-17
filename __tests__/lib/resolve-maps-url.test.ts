@@ -45,6 +45,21 @@ describe("resolve Google Maps URLs", () => {
     expect(parsed.kgId).toBe("11tf3mfrvd")
   })
 
+  it("marks exact pin vs viewport-only coordinates", () => {
+    expect(
+      parseGoogleMapsUrl(
+        "https://www.google.com/maps/place/Bonnevill/@-34.6057344,-58.5046558,17z/data=!4m6!3m5!1s0x95bcb700433472e5:0x90be87c92c83663!8m2!3d-34.6057344!4d-58.5046558"
+      ).coordsPrecise
+    ).toBe(true)
+    expect(
+      parseGoogleMapsUrl("https://www.google.com/maps?q=-34.6,-58.4").coordsPrecise
+    ).toBe(true)
+    expect(
+      parseGoogleMapsUrl("https://www.google.com/maps/place/Algo/@-34.6,-58.4,15z")
+        .coordsPrecise
+    ).toBe(false)
+  })
+
   it("parses Búzios pin from expanded maps URL (not CABA)", () => {
     const parsed = parseGoogleMapsUrl(
       "https://www.google.com/maps/place/Alelhi+Restaurante+Sem+Gluten/@-22.7581446,-41.8951184,17z/data=!4m7!3m6!1s0x9655f50ebc8393:0x2eeb74cd1a36319a!8m2!3d-22.7581446!4d-41.8903548"

@@ -34,6 +34,30 @@ describe("place duplicate detection", () => {
     expect(getDuplicateMatchLevel(scored!.reasons, scored!.score)).toBe("exact")
   })
 
+  it("marks exact match when both share the Google place id (pins apart)", () => {
+    const scored = scoreDuplicateCandidate(
+      {
+        name: "Vanyla Cakes Pasteleria Sin tacc Vte Lopez",
+        address: "Av. Maipú 4153, B1636 La Lucila",
+        neighborhood: "Vicente López",
+        location: { lat: -34.4982167, lng: -58.4970043 },
+        googlePlaceId: "ChIJh7BWDLuxvJURgsJOfbmw-po",
+      },
+      {
+        _id: "place-vanyla",
+        kind: "place",
+        name: "Vanyla Cakes",
+        address: "Avenida Maipú 4153, La Lucila, B1637",
+        neighborhood: "La Lucila",
+        location: { lat: -34.501089, lng: -58.495784 },
+        googlePlaceId: "ChIJh7BWDLuxvJURgsJOfbmw-po",
+        status: "approved",
+      }
+    )
+    expect(scored?.reasons).toContain("mismo lugar en Google")
+    expect(getDuplicateMatchLevel(scored!.reasons, scored!.score)).toBe("exact")
+  })
+
   it("returns duplicate candidates for matching published places", () => {
     const matches = findDuplicateCandidates(source, [publishedPlace])
     expect(matches).toHaveLength(1)

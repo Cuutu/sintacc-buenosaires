@@ -21,6 +21,14 @@ export function isPlaceholderCabaLocation(loc?: {
   )
 }
 
+/**
+ * (0, 0) en el Golfo de Guinea: nunca es un lugar real. Aparece cuando un
+ * campo vacío se convierte con `Number("")` o similar.
+ */
+export function isNullIslandCoords(lat: number, lng: number): boolean {
+  return Math.abs(lat) < 1e-6 && Math.abs(lng) < 1e-6
+}
+
 /** Caja aproximada de Argentina (sin Islas Malvinas). */
 export function isLikelyArgentinaCoords(lat: number, lng: number): boolean {
   return lat <= -21 && lat >= -55.2 && lng <= -53.2 && lng >= -73.6
@@ -56,6 +64,7 @@ export function parseFormCoords(
   const parsedLng = typeof lng === "number" ? lng : Number(String(lng).trim())
   if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) return null
   if (isPlaceholderCabaLocation({ lat: parsedLat, lng: parsedLng })) return null
+  if (isNullIslandCoords(parsedLat, parsedLng)) return null
   return { lat: parsedLat, lng: parsedLng }
 }
 
