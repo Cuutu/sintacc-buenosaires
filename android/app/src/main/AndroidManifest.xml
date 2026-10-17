@@ -40,7 +40,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.celimap.com.ar" />
                 <data android:scheme="https" android:host="celimap.com.ar" />
-                <data android:pathPrefix="/local" />
+                <data android:path="/local" />
+                <data android:pathPrefix="/local/" />
             </intent-filter>
         </activity>
 

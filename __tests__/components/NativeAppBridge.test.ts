@@ -18,6 +18,12 @@ describe("NativeAppBridge wiring", () => {
     expect(src.match(/handleLaunchUrl\(/g)?.length).toBeGreaterThanOrEqual(2)
   })
 
+  it("los links https que abren la app (/local…) llevan el WebView a esa página", () => {
+    expect(src).toContain("createAppLinkHandler")
+    expect(src).toContain('handleAppLink(url, "open")')
+    expect(src).toContain('handleAppLink(url, "launch")')
+  })
+
   it("backButton usa executeAndroidBack (un evento, una acción)", () => {
     expect(src).toContain('backButton')
     expect(src).toContain("executeAndroidBack")
