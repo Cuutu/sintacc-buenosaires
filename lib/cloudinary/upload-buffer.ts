@@ -15,7 +15,9 @@ function ensureCloudinaryConfig(): void {
 export async function uploadImageBuffer(
   buffer: Buffer,
   folder: string = SOCIAL_UPLOAD_FOLDER,
-  mime: "image/png" | "image/jpeg" | "image/webp" = "image/png"
+  mime: "image/png" | "image/jpeg" | "image/webp" = "image/png",
+  /** Con publicId fijo y overwrite false, subir dos veces devuelve la misma imagen. */
+  options: { publicId?: string; overwrite?: boolean } = {}
 ): Promise<string> {
   ensureCloudinaryConfig()
   const dataUri = `data:${mime};base64,${buffer.toString("base64")}`
@@ -23,7 +25,12 @@ export async function uploadImageBuffer(
   const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
     cloudinary.uploader.upload(
       dataUri,
-      { folder, resource_type: "image" },
+      {
+        folder,
+        resource_type: "image",
+        ...(options.publicId ? { public_id: options.publicId } : {}),
+        ...(options.overwrite === undefined ? {} : { overwrite: options.overwrite }),
+      },
       (err, res) => {
         if (err) reject(err)
         else if (res?.secure_url) resolve({ secure_url: res.secure_url })
