@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { checkRateLimitByIp } from "@/lib/rate-limit"
+import { hitMemoryRateLimit } from "@/lib/memory-rate-limit"
+import { getClientIp } from "@/lib/rate-limit"
 
 export type PublicReadKind = "list" | "detail"
 
@@ -44,8 +45,9 @@ export function publicReadRateLimitedResponse(retryAfterSeconds: number): NextRe
 }
 
 /**
- * Rate limit IP para lecturas públicas. Fail-open si Mongo/rate-limit falla
- * (el mapa no debe caerse por la tabla de límites).
+ * Rate limit por IP para lecturas públicas. En memoria: antes cada lectura
+ * hacía un upsert en Mongo antes de llegar al caché. Fail-open si algo falla
+ * (el mapa no debe caerse por el limitador).
  */
 export async function enforcePublicReadRateLimit(
   request: NextRequest,
@@ -53,11 +55,10 @@ export async function enforcePublicReadRateLimit(
 ): Promise<NextResponse | null> {
   try {
     const cfg = getPublicReadRateLimitConfig(kind)
-    const result = await checkRateLimitByIp(
-      request,
-      cfg.type,
+    const result = hitMemoryRateLimit(
+      `${cfg.type}:${getClientIp(request)}`,
       cfg.maxCount,
-      cfg.windowMinutes
+      cfg.windowMinutes * 60_000
     )
     if (!result.allowed) {
       return publicReadRateLimitedResponse(result.retryAfterSeconds)

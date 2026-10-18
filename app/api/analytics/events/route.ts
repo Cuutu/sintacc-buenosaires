@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { ProductEvent } from "@/models/ProductEvent"
-import { checkRateLimitByIp } from "@/lib/rate-limit"
+import { getClientIp } from "@/lib/rate-limit"
+import { hitMemoryRateLimit } from "@/lib/memory-rate-limit"
 import { logApiError } from "@/lib/logger"
 import {
   ANALYTICS_INGEST_MAX_BYTES,
@@ -30,6 +31,15 @@ function originAllowed(request: NextRequest): boolean {
   })
 }
 
+async function saveEvents(docs: Record<string, unknown>[], request: NextRequest): Promise<void> {
+  try {
+    await connectDB()
+    await ProductEvent.insertMany(docs, { ordered: false })
+  } catch (error) {
+    logApiError("/api/analytics/events", error, { request })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!originAllowed(request)) {
@@ -46,17 +56,9 @@ export async function POST(request: NextRequest) {
       return new NextResponse(null, { status: 204 })
     }
 
-    try {
-      const rl = await Promise.race([
-        checkRateLimitByIp(request, "analytics_event", 120, 15),
-        new Promise<{ allowed: boolean }>((resolve) =>
-          setTimeout(() => resolve({ allowed: true }), 600)
-        ),
-      ])
-      if (!rl.allowed) return new NextResponse(null, { status: 204 })
-    } catch {
-      /* seguir: mejor un evento de más que tumbar ingest */
-    }
+    // En memoria: el límite es alto y no vale un upsert en Mongo por cada lote.
+    const rl = hitMemoryRateLimit(`analytics_event:${getClientIp(request)}`, 120, 15 * 60_000)
+    if (!rl.allowed) return new NextResponse(null, { status: 204 })
 
     const text = await request.text()
     if (text.length > ANALYTICS_INGEST_MAX_BYTES) {
@@ -85,12 +87,9 @@ export async function POST(request: NextRequest) {
       device,
     }))
 
-    try {
-      await connectDB()
-      await ProductEvent.insertMany(docs, { ordered: false })
-    } catch (error) {
-      logApiError("/api/analytics/events", error, { request })
-    }
+    // Se guarda después de responder: el navegador no espera a Mongo (el servidor
+    // propio es un proceso largo, así que la promesa termina aunque ya respondimos).
+    void saveEvents(docs, request)
     return new NextResponse(null, { status: 204 })
   } catch (error) {
     logApiError("/api/analytics/events", error, { request })
