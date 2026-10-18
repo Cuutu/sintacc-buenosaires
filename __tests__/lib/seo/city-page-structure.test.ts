@@ -36,7 +36,8 @@ describe("city/category page structure — sin FAQs duplicadas", () => {
   })
 
   it("página ciudad: un bloque FAQ + SEOTextBlock sin FAQ", () => {
-    const src = read("app/sin-gluten/[ciudadSlug]/page.tsx")
+    // La página es un envoltorio estático; el cuerpo vive en city-landing.tsx.
+    const src = read("app/sin-gluten/[ciudadSlug]/page.tsx") + read("app/sin-gluten/[ciudadSlug]/city-landing.tsx")
     const faqSections = src.match(/Preguntas frecuentes/g) || []
     expect(faqSections.length).toBe(1)
     expect(src).toContain("CityPageExtras")
@@ -62,7 +63,9 @@ describe("city/category page structure — sin FAQs duplicadas", () => {
   })
 
   it("página categoría: un bloque FAQ visible", () => {
-    const src = read("app/sin-gluten/[ciudadSlug]/[categoriaSlug]/page.tsx")
+    const src =
+      read("app/sin-gluten/[ciudadSlug]/[categoriaSlug]/page.tsx") +
+      read("app/sin-gluten/[ciudadSlug]/[categoriaSlug]/category-landing.tsx")
     const faqSections = src.match(/Preguntas frecuentes/g) || []
     expect(faqSections.length).toBe(1)
     expect(src).toContain("getCategoryH1")

@@ -7,6 +7,10 @@ const TAG_BY_PREFIX: Record<string, string> = {
   "admin:counts": "admin:counts",
   "admin:insights:": "admin:insights",
   "seo:province:": "seo:province",
+  // Sin estas dos, invalidateApiCache(["public:ventures:"]) no tocaba nada: cada
+  // entrada quedaba con su clave entera como tag y seguía vieja hasta el TTL.
+  "public:ventures:": "public:ventures",
+  "admin:ventures:": "admin:ventures",
 }
 
 function resolveTag(cacheKey: string): string {
@@ -36,6 +40,34 @@ export function invalidateApiCache(prefixes: string[]) {
   for (const tag of tags) {
     revalidateTag(tag)
   }
+  // "seo:province:" lo manda toda escritura de lugares públicos: es la señal de
+  // que las landings (ISR de 1 h) quedaron viejas.
+  if (prefixes.includes("seo:province:")) revalidateSeoLandingPages()
+  if (prefixes.includes("public:ventures:")) revalidateVenturePages()
+}
+
+/** Fichas y landings de emprendimientos (ISR de 1 h). */
+export function revalidateVenturePages() {
+  revalidatePath("/emprendimientos/[slug]", "page")
+  revalidatePath("/emprendimientos")
+}
+
+/** Landings SEO con ISR que muestran lugares. Las variantes /filtrado son dinámicas. */
+export const SEO_LANDING_ROUTES = [
+  "/sin-gluten/[ciudadSlug]",
+  "/sin-gluten/[ciudadSlug]/[categoriaSlug]",
+  "/sin-gluten/provincia/[provinceSlug]",
+  "/sin-gluten/provincia/[provinceSlug]/[categorySlug]",
+  "/categoria/[category]",
+] as const
+
+/**
+ * Marca como viejas todas las landings de ciudad, provincia y categoría. No las
+ * regenera ahora: cada una se rehace en su próxima visita.
+ */
+export function revalidateSeoLandingPages() {
+  for (const route of SEO_LANDING_ROUTES) revalidatePath(route, "page")
+  revalidatePath("/sin-gluten-argentina")
 }
 
 /** ISR de /lugar/[id] es 1h. Sin esto, admin guarda y la ficha pública sigue vieja. */

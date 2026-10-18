@@ -6,6 +6,7 @@ import {
   isApexCelimapHost,
   resolveTopSinGlutenRedirect,
 } from "@/lib/seo/canonical-redirects"
+import { LANDING_VARIANT_SEGMENT } from "@/lib/seo/landing-variants"
 const CATEGORY_CITY_PATTERN = /^\/([a-z0-9-]+)-sin-gluten\/([a-z0-9-]+)$/i
 const CATEGORY_PATTERN = /^\/([a-z0-9-]+)-sin-gluten$/i
 
@@ -48,6 +49,8 @@ export async function middleware(request: NextRequest) {
     const [, category] = categoryMatch
     const url = request.nextUrl.clone()
     url.pathname = `/categoria/${category}`
+    // ?page= va a la variante dinámica; la página 1 queda estática (ISR).
+    if (url.searchParams.has("page")) url.pathname += `/${LANDING_VARIANT_SEGMENT}`
     return NextResponse.rewrite(url)
   }
 

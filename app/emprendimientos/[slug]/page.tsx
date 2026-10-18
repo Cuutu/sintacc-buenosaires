@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { notFound, permanentRedirect } from "next/navigation"
 import mongoose from "mongoose"
 import type { Metadata } from "next"
@@ -15,14 +16,26 @@ import {
 } from "@/lib/venture-seo"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
 import {
-  getVentureBySlug,
-  getVentureById,
+  getVentureBySlug as getVentureBySlugUncached,
+  getVentureById as getVentureByIdUncached,
   getApprovedVentures,
   countApprovedVentures,
   getRelatedVentures,
 } from "@/lib/ventures-server"
 
-export const dynamic = "force-dynamic"
+// ISR: se arma en la primera visita y queda 1 h (o hasta que el admin edite un
+// emprendimiento: invalidateApiCache(["public:ventures:"]) la revalida).
+// Las reseñas se piden desde el cliente.
+export const dynamicParams = true
+export const revalidate = 3600
+
+export function generateStaticParams() {
+  return []
+}
+
+// generateMetadata y la página piden lo mismo: una sola query por render.
+const getVentureBySlug = cache(getVentureBySlugUncached)
+const getVentureById = cache(getVentureByIdUncached)
 
 type Props = {
   params: Promise<{ slug: string }>

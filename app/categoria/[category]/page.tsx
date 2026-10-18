@@ -1,107 +1,25 @@
-import { notFound } from "next/navigation"
-import { Metadata } from "next"
-import { getPlacesByCategory } from "@/lib/seo/places"
-import { getCategoryTitle, getCategoryDescription, getCategoryH1, getCategoryIntro } from "@/lib/seo/templates"
-import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
-import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
-import { Pagination } from "@/components/seo/Pagination"
-import { CATEGORIES, isValidCategorySlug } from "@/lib/seo/cities"
+import type { Metadata } from "next"
+import { CATEGORIES } from "@/lib/seo/cities"
+import { NationalCategoryLanding, nationalCategoryMetadata } from "./national-category-landing"
 
-import { getBaseUrl } from "@/lib/base-url"
-import { OG_IMAGE } from "@/lib/seo/og"
-
-const BASE_URL = getBaseUrl()
-
+// Se llega por /{categoria}-sin-gluten (rewrite del middleware). Estática con
+// ISR: página 1. ?page= va a ./filtrado (también desde el middleware).
+export const dynamicParams = true
 export const revalidate = 3600
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ category: string }>
-  searchParams: Promise<{ page?: string }>
-}): Promise<Metadata> {
-  const { category } = await params
-  if (!isValidCategorySlug(category)) return { title: "No encontrado" }
-
-  const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { total, pages } = await getPlacesByCategory(category, page)
-
-  const canonical = page === 1 ? `${BASE_URL}/${category}-sin-gluten` : `${BASE_URL}/${category}-sin-gluten?page=${page}`
-
-  return {
-    title: getCategoryTitle(null, category),
-    description: getCategoryDescription(null, category, total),
-    ...(total === 0 || (pages > 0 && page > pages)
-      ? { robots: { index: false, follow: true } }
-      : {}),
-    alternates: {
-      canonical,
-    },
-    openGraph: {
-      title: getCategoryTitle(null, category),
-      description: getCategoryDescription(null, category, total),
-      url: page === 1 ? `${BASE_URL}/${category}-sin-gluten` : canonical,
-      type: "website",
-      images: [OG_IMAGE],
-    },
-  }
+// Sin generateStaticParams, Next la renderiza en cada request aunque tenga revalidate.
+export function generateStaticParams() {
+  return CATEGORIES.map((c) => ({ category: c.slug }))
 }
 
-export default async function CategoryGlobalPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ category: string }>
-  searchParams: Promise<{ page?: string }>
-}) {
+type Props = { params: Promise<{ category: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params
-  if (!isValidCategorySlug(category)) notFound()
+  return nationalCategoryMetadata(category, 1)
+}
 
-  const page = Math.max(1, parseInt((await searchParams).page || "1", 10))
-  const { places, total, pages } = await getPlacesByCategory(category, page)
-
-  const catName = CATEGORIES.find((c) => c.slug === category)?.name ?? category
-  const intro = getCategoryIntro(null, category, total)
-
-  if (total === 0) {
-    return (
-      <div className="container py-12">
-        <p className="text-muted-foreground">
-          No hay {catName.toLowerCase()} registradas aun.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="container py-8">
-      <Breadcrumbs
-        items={[
-          { label: "Sin gluten Argentina", href: "/sin-gluten-argentina" },
-          { label: `${catName} sin gluten` },
-        ]}
-      />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
-        {getCategoryH1(null, category)}
-      </h1>
-      {intro ? (
-        <p className="mb-6 max-w-3xl text-muted-foreground">{intro}</p>
-      ) : null}
-      <PlaceListWithFilters
-        places={places}
-        citySlug=""
-        cityName="Argentina"
-        currentCategory={category}
-        basePath={`/${category}-sin-gluten`}
-      />
-      {pages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={pages}
-          basePath={`/${category}-sin-gluten`}
-        />
-      )}
-    </div>
-  )
+export default async function CategoryGlobalPage({ params }: Props) {
+  const { category } = await params
+  return <NationalCategoryLanding category={category} page={1} />
 }

@@ -77,6 +77,26 @@ const nextConfig = {
       { source: "/categoria/:category/:ciudadSlug", destination: "/sin-gluten/:ciudadSlug/:category", permanent: true },
     ];
   },
+  // Landings SEO con ISR: la versión limpia (página 1, sin filtros) es estática y
+  // las variantes con query van a la ruta hermana /filtrado, dinámica. La URL
+  // pública no cambia. /{categoria}-sin-gluten?page= lo resuelve el middleware.
+  // Ver lib/seo/landing-variants.ts.
+  async rewrites() {
+    const variant = (source, destination, keys) =>
+      keys.map((key) => ({ source, has: [{ type: "query", key }], destination }))
+    // "provincia" es una carpeta propia (/sin-gluten/provincia/...), no una ciudad.
+    const ciudad = ":ciudadSlug((?!provincia(?:/|$))[^/]+)"
+    return {
+      beforeFiles: [
+        ...variant(`/sin-gluten/${ciudad}`, "/sin-gluten/:ciudadSlug/filtrado", ["page", "barrio"]),
+        ...variant(
+          `/sin-gluten/${ciudad}/:categoriaSlug((?!filtrado$)[^/]+)`,
+          "/sin-gluten/:ciudadSlug/:categoriaSlug/filtrado",
+          ["page"]
+        ),
+      ],
+    }
+  },
   images: {
     remotePatterns: [
       {
