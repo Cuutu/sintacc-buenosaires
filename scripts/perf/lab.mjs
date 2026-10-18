@@ -24,6 +24,10 @@ const pages = typeof flags.only === "string" ? flags.only.split(",") : DEFAULT_P
 const chromeFlags = ["--headless=new", ...(typeof flags.chrome === "string" ? flags.chrome.split(/\s+/) : [])]
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "celimap-lh-"))
 
+function quoteForCmd(arg) {
+  return /[\s"&|<>^]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg
+}
+
 function runLighthouse(url, outFile) {
   return new Promise((resolve, reject) => {
     const args = [
@@ -36,8 +40,14 @@ function runLighthouse(url, outFile) {
       "--quiet",
       `--chrome-flags=${chromeFlags.join(" ")}`,
     ]
-    // shell: true para que `npx` funcione igual en Windows (npx.cmd) y en Linux/Mac.
-    const child = spawn("npx", args, { stdio: ["ignore", "ignore", "pipe"], shell: process.platform === "win32" })
+    const options = { stdio: ["ignore", "ignore", "pipe"] }
+    // En Windows `npx` es npx.cmd y necesita shell. Se arma la línea entera ya
+    // citada: pasar la lista de args con shell: true da el aviso DEP0190 y corta
+    // en dos los flags que tienen espacios.
+    const child =
+      process.platform === "win32"
+        ? spawn(["npx", ...args].map(quoteForCmd).join(" "), { ...options, shell: true })
+        : spawn("npx", args, options)
     let stderr = ""
     child.stderr.on("data", (chunk) => (stderr += chunk))
     child.on("error", reject)
@@ -68,16 +78,19 @@ const results = []
 for (const page of pages) {
   const url = `${base}${page}`
   const samples = []
+  process.stdout.write(`${page} `)
   for (let i = 0; i < runs; i++) {
-    process.stdout.write(`\r${page}: corrida ${i + 1} de ${runs}…        `)
+    process.stdout.write(".")
     const out = path.join(tmp, `run-${results.length}-${i}.json`)
     try {
       await runLighthouse(url, out)
       samples.push(readMetrics(out))
     } catch (error) {
+      process.stdout.write("x")
       console.error(`\n  falló ${url}: ${error.message}`)
     }
   }
+  process.stdout.write("\n")
   const pick = (key) => median(samples.map((s) => s[key]))
   results.push({
     page,
@@ -92,9 +105,7 @@ for (const page of pages) {
     samples,
   })
 }
-process.stdout.write("\r" + " ".repeat(60) + "\r")
-
-console.log(`Lighthouse ${LIGHTHOUSE.split("@")[1]} mobile · ${base} · mediana de ${runs}\n`)
+console.log(`\nLighthouse ${LIGHTHOUSE.split("@")[1]} mobile · ${base} · mediana de ${runs}\n`)
 printTable(
   ["Página", "Puntaje", "FCP", "LCP", "TBT", "CLS", "Speed Index", "Peso"],
   results.map((r) => [
