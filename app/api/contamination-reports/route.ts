@@ -7,6 +7,7 @@ import { contaminationReportSchema } from "@/lib/validations"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
+import { revalidatePlacePages } from "@/lib/api-cache"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = contaminationReportSchema.parse(body)
 
-    const place = await Place.findById(validated.placeId)
+    const place = await Place.findById(validated.placeId).select("_id slug").lean<{ _id: mongoose.Types.ObjectId; slug?: string }>()
     if (!place) {
       return NextResponse.json(
         { error: "Lugar no encontrado" },
@@ -83,6 +84,8 @@ export async function POST(request: NextRequest) {
     })
 
     await report.save()
+    // La ficha muestra el contador de reportes: que no espere a la regeneración de 1 h.
+    revalidatePlacePages(place)
 
     return NextResponse.json(report, { status: 201 })
   } catch (error: any) {

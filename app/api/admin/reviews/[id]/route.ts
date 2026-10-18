@@ -8,6 +8,7 @@ import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { isAdminEstado } from "@/lib/admin-estado"
 import { invalidateApiCache } from "@/lib/api-cache"
+import { revalidatePlacePagesById } from "@/lib/place-revalidate"
 
 export async function PATCH(
   request: NextRequest,
@@ -89,6 +90,8 @@ export async function PATCH(
     }
     
     invalidateApiCache(["admin:counts"])
+    // Ocultar, mostrar, fijar o responder cambia lo que se ve en la ficha.
+    await revalidatePlacePagesById(review.placeId)
     return NextResponse.json({
       message,
       review,

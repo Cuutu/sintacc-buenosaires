@@ -4,7 +4,7 @@ import { Place } from "@/models/Place"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
-import { invalidateApiCache } from "@/lib/api-cache"
+import { invalidateApiCache, revalidateAllPlacePages } from "@/lib/api-cache"
 
 /** Aprobar o eliminar lugares en masa */
 export async function PATCH(request: NextRequest) {
@@ -57,6 +57,7 @@ export async function PATCH(request: NextRequest) {
         { $set: { status: "approved", updatedAt: new Date() } }
       )
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      revalidateAllPlacePages()
       return NextResponse.json({
         message: `${result.modifiedCount} lugares aprobados`,
         modifiedCount: result.modifiedCount,
@@ -69,6 +70,7 @@ export async function PATCH(request: NextRequest) {
         { $set: { status: "pending", updatedAt: new Date() } }
       )
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      revalidateAllPlacePages()
       return NextResponse.json({
         message: `${result.modifiedCount} lugares despublicados`,
         modifiedCount: result.modifiedCount,
@@ -78,6 +80,7 @@ export async function PATCH(request: NextRequest) {
     if (action === "delete") {
       const result = await Place.deleteMany({ _id: { $in: objectIds } })
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      revalidateAllPlacePages()
       return NextResponse.json({
         message: `${result.deletedCount} lugares eliminados`,
         deletedCount: result.deletedCount,
@@ -115,6 +118,7 @@ export async function PATCH(request: NextRequest) {
       )
 
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      revalidateAllPlacePages()
       return NextResponse.json({
         message: `${result.modifiedCount} lugares actualizados`,
         modifiedCount: result.modifiedCount,
@@ -131,6 +135,7 @@ export async function PATCH(request: NextRequest) {
         }
       )
       invalidateApiCache(["public:places:", "admin:places:", "admin:counts", "seo:province:"])
+      revalidateAllPlacePages()
       return NextResponse.json({
         message: `${result.modifiedCount} lugares sin badge`,
         modifiedCount: result.modifiedCount,

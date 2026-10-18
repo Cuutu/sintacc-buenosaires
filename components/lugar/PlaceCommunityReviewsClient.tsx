@@ -63,7 +63,10 @@ export function PlaceCommunityReviewsClient({
   }
 
   useEffect(() => {
-    void fetchReviews()
+    // La mayoría de los lugares no tiene reseñas: si la ficha dice 0, no se pide
+    // nada. La ficha se revalida al publicar o moderar una reseña, así que el 0
+    // está al día.
+    if (totalReviews > 0) void fetchReviews()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- carga inicial por placeId
   }, [placeId])
 

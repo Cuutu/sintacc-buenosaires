@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import { getClientIp } from "@/lib/rate-limit"
+import { revalidatePlacePages } from "@/lib/api-cache"
 import mongoose from "mongoose"
 
 const REVIEWS_DEFAULT_LIMIT = 20
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     const validated = reviewSchema.parse(body)
     
     // Verify place exists
-    const place = await Place.findById(validated.placeId)
+    const place = await Place.findById(validated.placeId).select("_id slug").lean<{ _id: mongoose.Types.ObjectId; slug?: string }>()
     if (!place) {
       return NextResponse.json(
         { error: "Lugar no encontrado" },
@@ -124,6 +125,10 @@ export async function POST(request: NextRequest) {
       })
     }
     
+    // La ficha es ISR de 1 h: sin esto, la reseña nueva no aparecía en el
+    // promedio ni en el contador hasta la próxima regeneración.
+    revalidatePlacePages(place)
+
     return NextResponse.json(review, { status: 201 })
   } catch (error: any) {
     if (error.name === "ZodError") {

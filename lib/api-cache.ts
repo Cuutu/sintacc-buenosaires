@@ -70,6 +70,14 @@ export function revalidateSeoLandingPages() {
   revalidatePath("/sin-gluten-argentina")
 }
 
+/**
+ * Todas las fichas a la vez (acciones en lote del admin). No las regenera ahora:
+ * cada una se rehace en su próxima visita.
+ */
+export function revalidateAllPlacePages() {
+  revalidatePath("/lugar/[id]", "page")
+}
+
 /** ISR de /lugar/[id] es 1h. Sin esto, admin guarda y la ficha pública sigue vieja. */
 export function revalidatePlacePages(place: {
   _id: { toString(): string }

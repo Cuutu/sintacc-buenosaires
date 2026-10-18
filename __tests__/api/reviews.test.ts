@@ -19,6 +19,10 @@ jest.mock("@/lib/rate-limit")
 jest.mock("@/models/Review")
 jest.mock("@/models/Place")
 jest.mock("@/models/User")
+const mockRevalidatePlacePages = jest.fn()
+jest.mock("@/lib/api-cache", () => ({
+  revalidatePlacePages: (...args: unknown[]) => mockRevalidatePlacePages(...args),
+}))
 
 describe("POST /api/reviews", () => {
   beforeEach(() => {
@@ -39,10 +43,10 @@ describe("POST /api/reviews", () => {
       allowed: true,
       remaining: 2,
     })
-    require("@/models/Place").Place.findById = jest.fn().mockResolvedValue({
-      _id: PLACE_ID,
-      name: "Test Place",
+    require("@/models/Place").Place.findById = jest.fn().mockReturnValue({
+      select: () => ({ lean: () => Promise.resolve({ _id: PLACE_ID, slug: "test-place" }) }),
     })
+    require("@/models/Place").Place.findByIdAndUpdate = jest.fn().mockResolvedValue({})
 
     const mockReview = {
       save: jest.fn().mockResolvedValue(true),
@@ -66,6 +70,8 @@ describe("POST /api/reviews", () => {
 
     expect(response.status).toBe(201)
     expect(data).toHaveProperty("_id")
+    // La ficha (ISR 1 h) se revalida para que la reseña cuente enseguida.
+    expect(mockRevalidatePlacePages).toHaveBeenCalledWith({ _id: PLACE_ID, slug: "test-place" })
   })
 
   it("should return 429 when rate limit exceeded", async () => {
