@@ -127,11 +127,12 @@ export async function enqueueGoogleSyncPlaces(opts?: {
     .limit(2000)
     .lean()
 
-  for (const place of needIdBackfill) {
+  // Un solo bulkWrite en vez de un updateOne por lugar (eran hasta 2.000 idas a Atlas).
+  const backfillOps = needIdBackfill.flatMap((place) => {
     const id = place.aiEnrichment?.googlePlaceId?.trim()
-    if (!id) continue
-    await Place.updateOne({ _id: place._id }, { $set: { googlePlaceId: id } })
-  }
+    return id ? [{ updateOne: { filter: { _id: place._id }, update: { $set: { googlePlaceId: id } } } }] : []
+  })
+  if (backfillOps.length > 0) await Place.bulkWrite(backfillOps, { ordered: false })
 
   const places = await Place.find({ status: "approved" })
     .select("googleSync googleSnapshot name googlePlaceId")
@@ -141,6 +142,7 @@ export async function enqueueGoogleSyncPlaces(opts?: {
 
   let queued = 0
   let skipped = 0
+  const toQueue: (typeof places)[number]["_id"][] = []
 
   for (const place of places) {
     const status = place.googleSync?.status
@@ -165,8 +167,15 @@ export async function enqueueGoogleSyncPlaces(opts?: {
       continue
     }
 
-    await Place.updateOne(
-      { _id: place._id },
+    toQueue.push(place._id)
+    queued++
+    if (queued >= ENQUEUE_LIMIT) break
+  }
+
+  // Todos reciben el mismo estado: un updateMany en vez de uno por lugar.
+  if (toQueue.length > 0) {
+    await Place.updateMany(
+      { _id: { $in: toQueue } },
       {
         $set: {
           googleSync: {
@@ -176,8 +185,6 @@ export async function enqueueGoogleSyncPlaces(opts?: {
         },
       }
     )
-    queued++
-    if (queued >= ENQUEUE_LIMIT) break
   }
 
   return { queued, skipped }
