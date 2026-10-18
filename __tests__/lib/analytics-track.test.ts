@@ -7,15 +7,14 @@ import { trackEvent } from "@/lib/analytics"
 import { getStoreBannerBrowser } from "@/lib/device-platform"
 import { sanitizeAnalyticsProps } from "@/lib/analytics-sanitize"
 
-jest.mock("@vercel/analytics", () => ({
-  track: jest.fn(),
+const mockEnqueue = jest.fn()
+jest.mock("@/lib/analytics-client", () => ({
+  enqueueFirstPartyEvent: (...args: unknown[]) => mockEnqueue(...args),
 }))
 
-const { track } = jest.requireMock("@vercel/analytics") as { track: jest.Mock }
-
-describe("trackEvent + Vercel custom props", () => {
+describe("trackEvent (first-party)", () => {
   beforeEach(() => {
-    track.mockClear()
+    mockEnqueue.mockClear()
     jest.spyOn(console, "log").mockImplementation(() => undefined)
   })
 
@@ -45,7 +44,7 @@ describe("trackEvent + Vercel custom props", () => {
       store: "ios",
       browser: "chrome",
     })
-    expect(track).toHaveBeenCalledWith("store_banner_shown", {
+    expect(mockEnqueue).toHaveBeenCalledWith("store_banner_shown", {
       store: "ios",
       browser: "chrome",
     })
@@ -53,16 +52,14 @@ describe("trackEvent + Vercel custom props", () => {
 })
 
 describe("layout Analytics + itunes", () => {
-  it("monta Analytics + Speed Insights; Smart App Banner no está en home (fold)", () => {
+  it("sin Vercel Analytics ni Speed Insights (no andan en el VPS); Smart App Banner no está en home (fold)", () => {
     const src = fs.readFileSync(path.join(__dirname, "../../app/layout.tsx"), "utf8")
     const home = fs.readFileSync(path.join(__dirname, "../../app/page.tsx"), "utf8")
     const mapa = fs.readFileSync(path.join(__dirname, "../../app/mapa/layout.tsx"), "utf8")
     const itunes = fs.readFileSync(path.join(__dirname, "../../lib/seo/itunes.ts"), "utf8")
-    expect(src).toContain('from "@vercel/analytics/next"')
-    expect(src).toContain("<Analytics />")
-    expect(src).toContain('from "@vercel/speed-insights/next"')
-    expect(src).toContain("<SpeedInsights />")
-    expect(src).not.toContain("@vercel/analytics/react")
+    expect(src).not.toContain("@vercel/analytics")
+    expect(src).not.toContain("@vercel/speed-insights")
+    expect(src).toContain("<WebVitalsReporter />")
     expect(src).toContain("metadataBase")
     expect(src).not.toContain("itunes:")
     expect(home).not.toContain("itunes:")

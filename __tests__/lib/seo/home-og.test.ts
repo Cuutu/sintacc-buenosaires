@@ -50,7 +50,9 @@ describe("security headers", () => {
     expect(src).toContain("Permissions-Policy")
     expect(src).toContain("Content-Security-Policy")
     expect(src).toContain("api.mapbox.com")
-    expect(src).toContain("va.vercel-scripts.com")
+    // El sitio ya no está en Vercel: sin scripts ni beacons de Vercel en la CSP.
+    expect(src).not.toContain("va.vercel-scripts.com")
+    expect(src).not.toContain("vitals.vercel-insights.com")
     expect(src).toContain("res.cloudinary.com")
   })
 })

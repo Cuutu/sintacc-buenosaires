@@ -4,10 +4,6 @@
 import React, { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 
-jest.mock("@vercel/analytics", () => ({
-  track: jest.fn(),
-}))
-
 const mockGetLocationAutoEnabled = jest.fn(() => false)
 const mockSetLocationAutoEnabled = jest.fn()
 const mockClearLocationAutoEnabled = jest.fn()

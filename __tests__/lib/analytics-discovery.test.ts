@@ -8,10 +8,6 @@ import {
 } from "@/lib/analytics-discovery"
 import { trackEvent } from "@/lib/analytics"
 
-jest.mock("@vercel/analytics", () => ({
-  track: jest.fn(),
-}))
-
 jest.mock("@/lib/analytics")
 
 describe("analytics-discovery singleton", () => {

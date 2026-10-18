@@ -1,4 +1,3 @@
-import { track } from "@vercel/analytics"
 import { sanitizeAnalyticsProps } from "@/lib/analytics-sanitize"
 import { enqueueFirstPartyEvent } from "@/lib/analytics-client"
 import {
@@ -10,8 +9,8 @@ export type { AnalyticsEvent }
 
 /**
  * Eventos de analítica.
- * - Vercel Analytics: todos los eventos (como hasta ahora).
  * - First-party Mongo: subset para el Admin Insights. Ver analytics-catalog.ts.
+ *   (Vercel Analytics se sacó al mudar el sitio al VPS: su script daba 404.)
  * Sanitize: nunca tokens/emails/URLs privadas.
  */
 export { sanitizeAnalyticsProps }
@@ -24,11 +23,6 @@ export function trackEvent(
   const props = sanitizeAnalyticsProps(properties)
   if (process.env.NODE_ENV !== "production") {
     console.log("[analytics]", name, props ?? {})
-  }
-  try {
-    track(name, props)
-  } catch {
-    // Analytics no debe romper UX
   }
   try {
     enqueueFirstPartyEvent(name, props)

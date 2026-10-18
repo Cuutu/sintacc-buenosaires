@@ -118,15 +118,15 @@ const nextConfig = {
     },
   },
   async headers() {
-    // CSP conservador: Next (inline), Vercel Analytics, Mapbox, OAuth, Cloudinary, avatares Google.
+    // CSP conservador: Next (inline), Mapbox, OAuth, Cloudinary, avatares Google.
     // Si algo de mapa/login se rompe en prod, bajar a report-only y dejar nosniff/frame/referrer.
     const contentSecurityPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://api.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://accounts.google.com https://appleid.apple.com https://places.googleapis.com https://res.cloudinary.com",
+      "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com https://accounts.google.com https://appleid.apple.com https://places.googleapis.com https://res.cloudinary.com",
       "worker-src 'self' blob:",
       "frame-src 'self' https://accounts.google.com https://appleid.apple.com",
       "object-src 'none'",

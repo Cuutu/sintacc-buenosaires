@@ -51,7 +51,7 @@ Builds de stores: Codemagic (`codemagic.yaml`: iOS TestFlight, iOS Preview, Andr
 - **IA:** OpenRouter vía AI SDK. Chat público `/api/chat` (+ `lib/chat/*`), investigación de lugares/sugerencias para admin (`lib/place-research/*`, siempre con aprobación humana), redes sociales admin (`lib/social/*`).
 - **PWA:** `next-pwa` con SW en estado *waiting* hasta que el usuario acepta (`components/pwa/PwaRegister.tsx`). Leé el comentario de `next.config.js` antes de tocar caching.
 - **Apps nativas:** Capacitor 8. iOS `com.celimap.app`, Android `com.celimap.mobile`. Lógica nativa en `lib/native-*.ts` y `components/native/*`.
-- **Analytics:** Vercel Analytics + eventos first-party en Mongo (`ProductEvent`, `lib/analytics-*.ts`). Sin PostHog ni Sentry a propósito. Ver `docs/ANALYTICS.md` antes de agregar/renombrar eventos.
+- **Analytics:** eventos first-party en Mongo (`ProductEvent`, `lib/analytics-*.ts`), incluidas las web vitals (`web_vital`, pestaña Velocidad del admin). Sin Vercel Analytics, PostHog ni Sentry a propósito. Ver `docs/ANALYTICS.md` antes de agregar/renombrar eventos.
 - **Hosting:** Vercel, región `gru1`.
 - `src/` = Remotion (videos de marketing), **no** es código de la app. `reels/`, `newbranding/`, `docs/baselines/`, `www/`, `out/` tampoco son app.
 

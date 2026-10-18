@@ -18,7 +18,7 @@ Si más adelante hace falta funnels visuales tipo PostHog, el lugar es un sink o
 
 | Capa | Para qué | Dónde se ve |
 |------|----------|-------------|
-| Vercel Analytics | Pageviews, web vitals, eventos custom históricos | Dashboard de Vercel |
+| ~~Vercel Analytics~~ | Se sacó en oct. 2026: fuera de Vercel su script daba 404. Las web vitals ahora son first-party (`web_vital`) | — |
 | First-party `productevents` | Insights de producto + actividad reciente (plataforma/versión) | `/admin/analytics` |
 | Mongo operativo | Cuentas, reseñas, favoritos, sugerencias | `/admin/analytics` (mismas tarjetas) |
 | `/api/client-errors` | Crashes / errores de UI sanitizados | Logs de Vercel. No Sentry. |
@@ -29,7 +29,7 @@ No se duplica Sentry. Los eventos `login_error` / `map_load_error` / `place_load
 
 Se **mantienen** los nombres viejos (`place_view`, no `place_viewed`) para no romper Vercel.
 
-First-party (Mongo), además de Vercel:
+First-party (Mongo), además de `web_vital` (ver Velocidad). Desde oct. 2026 no se manda nada a Vercel:
 
 - `first_open`, `session_start`
 - `place_view`, `place_dwell_qualified`, `place_share`, `directions_clicked`
