@@ -16,8 +16,17 @@ import {
   formatRelativeActivity,
   platformActivityLabel,
 } from "@/lib/format-relative-activity"
+import { WebVitalsPanel } from "@/components/admin/insights/WebVitalsPanel"
 
-type TabId = "resumen" | "actividad" | "adquisicion" | "comportamiento" | "retencion" | "errores" | "catalogo"
+type TabId =
+  | "resumen"
+  | "actividad"
+  | "adquisicion"
+  | "comportamiento"
+  | "retencion"
+  | "errores"
+  | "velocidad"
+  | "catalogo"
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: "resumen", label: "Resumen" },
@@ -26,6 +35,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: "comportamiento", label: "Comportamiento" },
   { id: "retencion", label: "Retención" },
   { id: "errores", label: "Errores" },
+  { id: "velocidad", label: "Velocidad" },
   { id: "catalogo", label: "Catálogo" },
 ]
 
@@ -371,7 +381,9 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
       <div className="mt-8">
         {error ? <ErrorBanner message={error} onRetry={() => void load(range)} /> : null}
 
-        {tab === "catalogo" ? (
+        {tab === "velocidad" ? (
+          <WebVitalsPanel range={range} />
+        ) : tab === "catalogo" ? (
           <section>
             <h2 className={adminUi.label}>Inventario actual</h2>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">

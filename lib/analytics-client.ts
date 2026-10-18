@@ -117,18 +117,34 @@ export function enqueueFirstPartyEvent(
     appVersion: getAnalyticsAppVersion(),
   })
 
-  if (queue.length >= MAX_BATCH) {
-    flushFirstPartyQueue(false)
+  bindFlushListeners()
+  // Las web vitals finales (LCP, CLS, INP) se reportan justo cuando la página
+  // se oculta: si esperamos al timer, ya no hay página para mandarlas.
+  if (queue.length >= MAX_BATCH || isPageHidden()) {
+    flushFirstPartyQueue(isPageHidden())
     return
   }
-  bindFlushListeners()
   scheduleFlush()
+}
+
+function isPageHidden(): boolean {
+  try {
+    return typeof document !== "undefined" && document.visibilityState === "hidden"
+  } catch {
+    return false
+  }
 }
 
 export function flushFirstPartyQueue(_keepalive: boolean): void {
   if (typeof window === "undefined") return
-  if (queue.length === 0) return
-  const batch = queue.splice(0, MAX_BATCH)
+  // Todo lo encolado, en lotes de MAX_BATCH (el server descarta lotes más grandes).
+  // Antes salía un solo lote y, al cerrar la página, el resto se perdía.
+  while (queue.length > 0) {
+    sendBatch(queue.splice(0, MAX_BATCH))
+  }
+}
+
+function sendBatch(batch: FirstPartyEventPayload[]): void {
   const body = JSON.stringify({ events: batch })
 
   try {

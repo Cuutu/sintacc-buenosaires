@@ -92,6 +92,16 @@ No trackeamos:
 - `page_viewed` en Mongo (Vercel ya cuenta pageviews; duplicar infla costos)
 - `signup_started` / `signup_completed` — no hay signup clásico, es OAuth. Alta real = `User.createdAt`. Login = `login_*`
 
+### Velocidad (web vitals)
+
+Desde que el sitio corre en el VPS, Speed Insights no funciona. Lo reemplaza `web_vital`:
+
+- `components/analytics/WebVitalsReporter.tsx` usa `useReportWebVitals` de Next y manda un evento por métrica (LCP, INP, CLS, FCP, TTFB) y por carga de página. Solo first-party, no va a Vercel.
+- **Props:** `metric`, `value` (ms; CLS con 3 decimales), `rating` (el de web-vitals), `route` (grupo de la ruta de **entrada**, nunca el slug: `home`, `mapa`, `lugar`, `ciudad`…) y `navType`.
+- Al ocultarse la página se manda toda la cola de una (las últimas métricas llegan justo ahí).
+- **Dónde se ve:** `/admin/analytics` → **Velocidad**. Muestra el p75 por grupo de página y por público (web en celular, app, web en compu) con los umbrales de web.dev. Lógica en `lib/web-vitals.ts` y `lib/web-vitals-server.ts`.
+- Volumen: unas 5 mediciones por visita, con el mismo TTL de 180 días.
+
 ## Privacidad
 
 Se manda:

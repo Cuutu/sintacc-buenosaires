@@ -17,6 +17,7 @@ import { StoreAppBanner } from "@/components/store-banner/StoreAppBanner";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { AnalyticsSessionInit } from "@/components/analytics/AnalyticsSessionInit";
+import { WebVitalsReporter } from "@/components/analytics/WebVitalsReporter";
 import { PreviewBadge } from "@/components/native/PreviewBadge";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
 import { ChatWidgetHost } from "@/components/chat/ChatWidgetHost";
@@ -132,6 +133,7 @@ export default function RootLayout({
         <JsonLdScript />
         <Providers>
           <AnalyticsSessionInit />
+          <WebVitalsReporter />
           <ClientErrorListeners />
           <PwaRegister />
           <PreviewBadge />

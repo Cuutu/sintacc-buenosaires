@@ -40,6 +40,8 @@ export const ANALYTICS_EVENTS = [
   "login_error",
   "map_load_error",
   "place_load_error",
+  // Rendimiento real (LCP/INP/CLS/FCP/TTFB). Solo first-party; ver lib/web-vitals.ts.
+  "web_vital",
 ] as const
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number]
@@ -80,6 +82,7 @@ export const FIRST_PARTY_EVENTS = new Set<AnalyticsEvent>([
   "login_error",
   "map_load_error",
   "place_load_error",
+  "web_vital",
 ])
 
 export const ALLOWED_EVENT_PROP_KEYS = new Set([
@@ -113,6 +116,12 @@ export const ALLOWED_EVENT_PROP_KEYS = new Set([
   "dwellThresholdMs",
   "commitmentType",
   "intentType",
+  // web_vital
+  "metric",
+  "value",
+  "rating",
+  "route",
+  "navType",
 ])
 
 export const PRODUCT_EVENT_TTL_SECONDS = 60 * 60 * 24 * 180
