@@ -278,7 +278,7 @@ const PlaceSchema = new Schema<IPlace>(
 )
 
 // Indexes
-PlaceSchema.index({ location: "2dsphere" })
+// Sin 2dsphere: location es { lat, lng } y $geoNear lo leía al revés. Cercanía = lib/places-near.ts.
 PlaceSchema.index({ status: 1, "location.lat": 1, "location.lng": 1 })
 PlaceSchema.index({ name: "text", address: "text", neighborhood: "text" })
 PlaceSchema.index({ status: 1, createdAt: -1 })

@@ -9,6 +9,7 @@ import {
   getNeighborhoodSearchValues,
 } from "@/lib/map-search"
 import connectDB from "@/lib/mongodb"
+import { findPlacesNear } from "@/lib/places-near"
 import { Place, type IPlace } from "@/models/Place"
 import { getPlacePath } from "@/lib/place-url"
 import { slugifyPlacePart } from "@/lib/place-slugs"
@@ -302,20 +303,15 @@ async function findNear(
   const radius = input.radioMetros ?? DEFAULT_RADIUS_METERS
 
   try {
-    const geo = await Place.aggregate([
-      {
-        $geoNear: {
-          near: { type: "Point", coordinates: [input.lng, input.lat] },
-          distanceField: "distance",
-          maxDistance: radius,
-          spherical: true,
-          query,
-        },
-      },
-      { $limit: QUERY_LIMIT },
-      { $project: { ...PLACE_PROJECT, distance: 1 } },
-    ])
-    return geo as PlaceDoc[]
+    // $geoNear no sirve con location { lat, lng }: ver lib/places-near.ts.
+    return await findPlacesNear<PlaceDoc & { location?: { lat?: number; lng?: number } }>({
+      lat: input.lat,
+      lng: input.lng,
+      radiusMeters: radius,
+      filter: query,
+      projection: PLACE_PROJECT,
+      limit: QUERY_LIMIT,
+    })
   } catch {
     return null
   }

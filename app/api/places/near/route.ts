@@ -1,16 +1,46 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
-import { Place } from "@/models/Place"
 import { logApiError } from "@/lib/logger"
 import { features } from "@/lib/features"
 import { toPublicPlaceListItem } from "@/lib/places-public-select"
 import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
+import { findPlacesNear } from "@/lib/places-near"
 
 const NEAR_MAX_RESULTS = 50
+const NEAR_PROJECTION = {
+  name: 1,
+  type: 1,
+  types: 1,
+  address: 1,
+  neighborhood: 1,
+  province: 1,
+  locality: 1,
+  slug: 1,
+  location: 1,
+  addressText: 1,
+  tags: 1,
+  photos: 1,
+  photoSource: 1,
+  status: 1,
+  safetyLevel: 1,
+  featured: 1,
+  googlePlaceId: 1,
+  openingHours: 1,
+  "googleSnapshot.rating": 1,
+  "googleSnapshot.userRatingCount": 1,
+  createdAt: 1,
+}
+
 const emptyStats = {
   avgRating: 0,
   totalReviews: 0,
   contaminationReportsCount: 0,
+}
+
+type NearCandidate = Record<string, unknown> & {
+  _id: unknown
+  location?: { lat?: number; lng?: number }
+  photos?: string[]
 }
 
 export async function GET(request: NextRequest) {
@@ -40,46 +70,15 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    const rawPlaces = await Place.aggregate([
-      {
-        $geoNear: {
-          near: { type: "Point", coordinates: [lng, lat] },
-          distanceField: "distance",
-          maxDistance: radius,
-          spherical: true,
-          query: { status: "approved" },
-        },
-      },
-      {
-        $limit: NEAR_MAX_RESULTS,
-      },
-      {
-        $project: {
-          name: 1,
-          type: 1,
-          types: 1,
-          address: 1,
-          neighborhood: 1,
-          province: 1,
-          locality: 1,
-          slug: 1,
-          location: 1,
-          addressText: 1,
-          tags: 1,
-          photos: { $slice: ["$photos", 1] },
-          photoSource: 1,
-          status: 1,
-          safetyLevel: 1,
-          featured: 1,
-          googlePlaceId: 1,
-          openingHours: 1,
-          "googleSnapshot.rating": 1,
-          "googleSnapshot.userRatingCount": 1,
-          createdAt: 1,
-          distance: 1,
-        },
-      },
-    ])
+    const near = await findPlacesNear<NearCandidate>({
+      lat,
+      lng,
+      radiusMeters: radius,
+      filter: { status: "approved" },
+      projection: NEAR_PROJECTION,
+      limit: NEAR_MAX_RESULTS,
+    })
+    const rawPlaces = near.map((p) => ({ ...p, photos: p.photos?.slice(0, 1) }))
 
     const places = rawPlaces.map((p) => ({
       ...toPublicPlaceListItem(p, emptyStats),

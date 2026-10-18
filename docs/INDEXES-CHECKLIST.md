@@ -2,9 +2,13 @@
 
 ## Índices principales
 
+> `{ location: "2dsphere" }` ya no se usa (oct. 2026): `location` es `{ lat, lng }`, no GeoJSON, y
+> `$geoNear` lo leía al revés. Si sigue en Atlas, se puede borrar con
+> `db.places.dropIndex("location_2dsphere")`.
+
 | Colección | Índice | Propósito |
 |-----------|--------|-----------|
-| Place | `{ location: "2dsphere" }` | GeoNear, lugares cercanos |
+| Place | `{ status: 1, "location.lat": 1, "location.lng": 1 }` | Lugares cercanos (rectángulo + distancia en JS, `lib/places-near.ts`) |
 | Place | `{ name: "text", address: "text", neighborhood: "text" }` | Búsqueda full-text |
 | Place | `{ status: 1, type: 1 }` | Filtros lista |
 | Place | `{ neighborhood: 1, type: 1 }` | Filtro por barrio |
