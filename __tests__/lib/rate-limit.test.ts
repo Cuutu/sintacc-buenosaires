@@ -9,52 +9,69 @@ jest.mock("@/models/RateLimitIp")
 
 describe("rate-limit", () => {
   describe("getClientIp", () => {
-    it("usa x-vercel-forwarded-for primero (header de plataforma)", () => {
-      const request = new NextRequest("http://localhost:3000", {
-        headers: {
-          "x-vercel-forwarded-for": "203.0.113.42",
-          "x-forwarded-for": "1.2.3.4",
-          "x-real-ip": "10.0.0.1",
-          "cf-connecting-ip": "198.51.100.1",
-        },
-      })
-      expect(getClientIp(request)).toBe("203.0.113.42")
+    const originalVercel = process.env.VERCEL
+
+    afterEach(() => {
+      if (originalVercel === undefined) delete process.env.VERCEL
+      else process.env.VERCEL = originalVercel
     })
 
-    it("no deja que x-forwarded-for pise el header de Vercel", () => {
-      const request = new NextRequest("http://localhost:3000", {
-        headers: {
-          "x-forwarded-for": "8.8.8.8, 203.0.113.42",
-          "x-vercel-forwarded-for": "203.0.113.9",
-        },
+    describe("en el servidor propio (Caddy delante)", () => {
+      beforeEach(() => {
+        delete process.env.VERCEL
       })
-      expect(getClientIp(request)).toBe("203.0.113.9")
+
+      it("usa el primer valor de x-forwarded-for, que pone Caddy", () => {
+        const request = new NextRequest("http://localhost:3000", {
+          headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+        })
+        expect(getClientIp(request)).toBe("1.2.3.4")
+      })
+
+      it("ignora x-vercel-forwarded-for (el cliente lo puede mandar)", () => {
+        const request = new NextRequest("http://localhost:3000", {
+          headers: {
+            "x-vercel-forwarded-for": "203.0.113.42",
+            "x-forwarded-for": "1.2.3.4",
+          },
+        })
+        expect(getClientIp(request)).toBe("1.2.3.4")
+      })
+
+      it("ignora x-real-ip y cf-connecting-ip (Caddy no los pisa)", () => {
+        const request = new NextRequest("http://localhost:3000", {
+          headers: { "x-real-ip": "10.0.0.1", "cf-connecting-ip": "198.51.100.1" },
+        })
+        expect(getClientIp(request)).toBe("unknown")
+      })
+
+      it("devuelve unknown sin headers", () => {
+        const request = new NextRequest("http://localhost:3000")
+        expect(getClientIp(request)).toBe("unknown")
+      })
     })
 
-    it("cae a x-real-ip si no hay header de Vercel", () => {
-      const request = new NextRequest("http://localhost:3000", {
-        headers: { "x-real-ip": "10.0.0.1" },
+    describe("en Vercel", () => {
+      beforeEach(() => {
+        process.env.VERCEL = "1"
       })
-      expect(getClientIp(request)).toBe("10.0.0.1")
-    })
 
-    it("cae a x-forwarded-for al final", () => {
-      const request = new NextRequest("http://localhost:3000", {
-        headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+      it("usa x-vercel-forwarded-for primero (header de plataforma)", () => {
+        const request = new NextRequest("http://localhost:3000", {
+          headers: {
+            "x-vercel-forwarded-for": "203.0.113.42",
+            "x-forwarded-for": "1.2.3.4",
+          },
+        })
+        expect(getClientIp(request)).toBe("203.0.113.42")
       })
-      expect(getClientIp(request)).toBe("1.2.3.4")
-    })
 
-    it("no usa cf-connecting-ip (el cliente lo puede mandar)", () => {
-      const request = new NextRequest("http://localhost:3000", {
-        headers: { "cf-connecting-ip": "198.51.100.1" },
+      it("cae a x-forwarded-for si no está el header de Vercel", () => {
+        const request = new NextRequest("http://localhost:3000", {
+          headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+        })
+        expect(getClientIp(request)).toBe("1.2.3.4")
       })
-      expect(getClientIp(request)).toBe("unknown")
-    })
-
-    it("returns unknown when no headers", () => {
-      const request = new NextRequest("http://localhost:3000")
-      expect(getClientIp(request)).toBe("unknown")
     })
   })
 
@@ -70,7 +87,7 @@ describe("rate-limit", () => {
     it("returns allowed when under limit", async () => {
       mockFindOneAndUpdate.mockResolvedValue({ count: 5 })
       const request = new NextRequest("http://localhost:3000", {
-        headers: { "x-vercel-forwarded-for": "1.2.3.4" },
+        headers: { "x-forwarded-for": "1.2.3.4" },
       })
       const result = await checkRateLimitByIp(request, "stats", 120, 15)
       expect(result.allowed).toBe(true)
@@ -80,7 +97,7 @@ describe("rate-limit", () => {
     it("returns not allowed when over limit", async () => {
       mockFindOneAndUpdate.mockResolvedValue({ count: 121 })
       const request = new NextRequest("http://localhost:3000", {
-        headers: { "x-vercel-forwarded-for": "1.2.3.4" },
+        headers: { "x-forwarded-for": "1.2.3.4" },
       })
       const result = await checkRateLimitByIp(request, "stats", 120, 15)
       expect(result.allowed).toBe(false)
@@ -91,7 +108,7 @@ describe("rate-limit", () => {
     it("handles burst rate limit with different type string", async () => {
       mockFindOneAndUpdate.mockResolvedValue({ count: 5 })
       const request = new NextRequest("http://localhost:3000", {
-        headers: { "x-vercel-forwarded-for": "1.2.3.4" },
+        headers: { "x-forwarded-for": "1.2.3.4" },
       })
       const result = await checkRateLimitByIp(request, "chat-burst", 5, 1)
       expect(result.allowed).toBe(true)

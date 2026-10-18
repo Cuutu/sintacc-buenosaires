@@ -74,11 +74,17 @@ export function detectDeviceFromUa(ua: string): "mobile" | "tablet" | "desktop" 
   return "desktop"
 }
 
+/**
+ * País, provincia y ciudad de los headers de geolocalización de Vercel. Fuera de
+ * Vercel nadie los pone ni los pisa (Caddy los deja pasar), así que cualquiera
+ * podría inventarlos: ahí se dejan vacíos.
+ */
 export function geoFromRequest(request: NextRequest): {
   country: string
   region: string
   city: string
 } {
+  if (process.env.VERCEL !== "1") return { country: "", region: "", city: "" }
   const decode = (header: string) => {
     const raw = request.headers.get(header) || ""
     try {

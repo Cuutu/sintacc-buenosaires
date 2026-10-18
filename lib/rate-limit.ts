@@ -10,18 +10,20 @@ function firstIp(value: string | null): string | null {
 }
 
 /**
- * IP para rate limit. En Vercel el header de plataforma es `x-vercel-forwarded-for`
- * (el cliente no lo puede pisar). `x-forwarded-for` queda último: en Vercel lo
- * sobreescriben ellos, pero un caller directo podría mandarlo.
+ * IP para rate limit. Tiene que salir de un header que el cliente no pueda inventar.
+ *
+ * - Servidor propio (Caddy delante): Caddy reemplaza `x-forwarded-for` con la IP
+ *   real cuando el request llega de un cliente, así que el primer valor es
+ *   confiable. `x-vercel-forwarded-for` y `x-real-ip` pasan tal cual: cualquiera
+ *   los puede mandar y saltarse todos los límites (probado en prueba, oct. 2026).
+ * - Vercel (`VERCEL=1`): el header de plataforma es `x-vercel-forwarded-for`.
  */
 export function getClientIp(request: NextRequest): string {
-  const vercelFwd = firstIp(request.headers.get("x-vercel-forwarded-for"))
-  if (vercelFwd) return vercelFwd
-  const realIp = request.headers.get("x-real-ip")?.trim()
-  if (realIp) return realIp
-  const forwarded = firstIp(request.headers.get("x-forwarded-for"))
-  if (forwarded) return forwarded
-  return "unknown"
+  if (process.env.VERCEL === "1") {
+    const vercelFwd = firstIp(request.headers.get("x-vercel-forwarded-for"))
+    if (vercelFwd) return vercelFwd
+  }
+  return firstIp(request.headers.get("x-forwarded-for")) ?? "unknown"
 }
 
 /** Límite por usuario (requiere auth) */
