@@ -135,6 +135,18 @@ export const RELEASE_INDEXES: IndexSpec[] = [
     reason: "Admin insights by event name + time",
   },
   {
+    collection: "places",
+    keys: { status: 1, province: 1, locality: 1, createdAt: -1 },
+    name: "status_1_province_1_locality_1_createdAt_-1",
+    reason: "Landing de ciudad: filtro + orden por fecha (perf-11)",
+  },
+  {
+    collection: "places",
+    keys: { status: 1, province: 1, createdAt: -1 },
+    name: "status_1_province_1_createdAt_-1",
+    reason: "Landing de provincia: filtro + orden por fecha (perf-11)",
+  },
+  {
     collection: "productevents",
     keys: { distinctId: 1, ts: -1 },
     name: "distinctId_1_ts_-1",

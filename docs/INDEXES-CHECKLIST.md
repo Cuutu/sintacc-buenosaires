@@ -11,6 +11,8 @@
 | Place | `{ status: 1, "location.lat": 1, "location.lng": 1 }` | Lugares cercanos (rectángulo + distancia en JS, `lib/places-near.ts`) |
 | Place | `{ name: "text", address: "text", neighborhood: "text" }` | Búsqueda full-text |
 | Place | `{ status: 1, type: 1 }` | Filtros lista |
+| Place | `{ status: 1, province: 1, locality: 1, createdAt: -1 }` | Landing de ciudad (filtro + orden) |
+| Place | `{ status: 1, province: 1, createdAt: -1 }` | Landing de provincia (filtro + orden) |
 | Place | `{ neighborhood: 1, type: 1 }` | Filtro por barrio |
 | Review | `{ placeId: 1, status: 1 }` | Reviews por lugar |
 | Review | `{ placeId: 1, createdAt: -1 }` | Paginación + sort |
