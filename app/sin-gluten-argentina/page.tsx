@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { getArgentinaLandingTitle, getArgentinaLandingDescription } from "@/lib/seo/templates"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
 import { PROVINCES } from "@/lib/seo/provinces"
-import { getPlacesByProvinceSlug, getProvinceLocalities } from "@/lib/seo/places"
+import { getProvinceSummaries } from "@/lib/seo/places"
 import { isProvincePageIndexable } from "@/lib/seo/indexing-rules"
 import { ArgentinaLandingJsonLd } from "@/components/seo/ArgentinaLandingJsonLd"
 import { getBaseUrl } from "@/lib/base-url"
@@ -35,15 +35,13 @@ export const metadata: Metadata = {
 
 export default async function SinGlutenArgentinaPage() {
   // Provincias indexables (≥5 lugares y ≥2 localidades)
-  const provinceRows = await Promise.all(
-    PROVINCES.map(async (province) => {
-      const [{ total }, localities] = await Promise.all([
-        getPlacesByProvinceSlug(province.slug, { limit: 1 }),
-        getProvinceLocalities(province.slug),
-      ])
-      return { slug: province.slug, name: province.name, total, localityCount: localities.length }
-    })
-  )
+  const summaries = await getProvinceSummaries(PROVINCES.map((p) => p.slug))
+  const provinceRows = PROVINCES.map((province, i) => ({
+    slug: province.slug,
+    name: province.name,
+    total: summaries[i].total,
+    localityCount: summaries[i].localityCount,
+  }))
   const indexableProvinces = provinceRows
     .filter((row) => isProvincePageIndexable(row.total, row.localityCount))
     .map(({ slug, name, total }) => ({ slug, name, total }))

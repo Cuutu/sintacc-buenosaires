@@ -5,8 +5,8 @@ import Link from "next/link"
 import { getCityBySlug, getCityCenter, getTop10CitySlugs, CITIES, getCategoryBySlug } from "@/lib/seo/cities"
 import {
   getPlacesByCity,
-  getTopNeighborhoods,
   getCityPageStats,
+  getCityPlaceIndex,
   getRecentReviewsForCity,
 } from "@/lib/seo/places"
 import {
@@ -35,11 +35,9 @@ import { getGuidesRelatedToCity } from "@/lib/seo/guides"
 import { TrackPageView } from "@/components/analytics/TrackPageView"
 import { getBaseUrl } from "@/lib/base-url"
 import connectDB from "@/lib/mongodb"
-import { Place } from "@/models/Place"
 import { List } from "@/models/List"
 import { publicListsQuery } from "@/lib/lists/access"
 import { INDEXING_THRESHOLDS } from "@/lib/seo/indexing-config"
-import { canonicalCityPlaceFilter } from "@/lib/seo/city-place-match"
 import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
@@ -120,13 +118,11 @@ export async function generateStaticParams() {
 }
 
 async function getRelatedPublicLists(citySlug: string) {
-  const city = getCityBySlug(citySlug)
-  if (!city) return []
   try {
+    const cityPlaces = await getCityPlaceIndex(citySlug)
+    if (cityPlaces.length === 0) return []
+    const ids = cityPlaces.map((p) => p._id)
     await connectDB()
-    const placeIds = await Place.find(canonicalCityPlaceFilter(city), { _id: 1 }).lean()
-    if (placeIds.length === 0) return []
-    const ids = placeIds.map((p: { _id: unknown }) => p._id)
     const lists = await List.find({
       ...publicListsQuery(),
       placeIds: { $in: ids },
@@ -210,14 +206,13 @@ export default async function SinGlutenCiudadPage({
   const search = await searchParams
   const page = Math.max(1, parseInt(search.page || "1", 10))
   const barrio = search.barrio || undefined
-  const [{ places, total, pages }, stats, topNeighborhoods, recentReviews, relatedLists] =
-    await Promise.all([
-      getPlacesByCity(ciudadSlug, page, barrio),
-      getCityPageStatsCached(ciudadSlug),
-      getTopNeighborhoods(ciudadSlug),
-      getRecentReviewsForCity(ciudadSlug, 5),
-      getRelatedPublicLists(ciudadSlug),
-    ])
+  const [{ places, total, pages }, stats, recentReviews, relatedLists] = await Promise.all([
+    getPlacesByCity(ciudadSlug, page, barrio),
+    getCityPageStatsCached(ciudadSlug),
+    getRecentReviewsForCity(ciudadSlug, 5),
+    getRelatedPublicLists(ciudadSlug),
+  ])
+  const topNeighborhoods = stats.neighborhoods
 
   const relatedGuides = getGuidesRelatedToCity(ciudadSlug).slice(0, 4)
 

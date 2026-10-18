@@ -17,6 +17,50 @@ import { canonicalCityPlaceFilter } from "./city-place-match"
 
 const PER_PAGE = 24
 
+/**
+ * Campos que usan normalizePlace e inferSafetyLevel. Antes las landings traían el
+ * documento entero (aiEnrichment, editLog, googleSync…) para tirar casi todo.
+ */
+export const PLACE_SEO_PROJECTION = {
+  slug: 1,
+  name: 1,
+  type: 1,
+  types: 1,
+  neighborhood: 1,
+  province: 1,
+  locality: 1,
+  address: 1,
+  photos: 1,
+  tags: 1,
+  safetyLevel: 1,
+  updatedAt: 1,
+  "contact.instagram": 1,
+  "contact.url": 1,
+} as const
+
+/**
+ * Cómo se muestra el estado de un lugar, en Mongo: lo mismo que inferSafetyLevel
+ * (tags primero y `opciones_sin_tacc` gana sobre `100_gf`; `safetyLevel` solo si
+ * los tags no dicen nada). Así los conteos de las landings coinciden con los badges.
+ */
+export const DISPLAY_DEDICATED_MATCH = {
+  $or: [
+    { $and: [{ tags: "100_gf" }, { tags: { $ne: "opciones_sin_tacc" } }] },
+    { tags: { $nin: ["100_gf", "opciones_sin_tacc"] }, safetyLevel: "dedicated_gf" },
+  ],
+}
+
+export const DISPLAY_OPTIONS_MATCH = {
+  $or: [
+    { tags: "opciones_sin_tacc" },
+    { tags: { $nin: ["100_gf", "opciones_sin_tacc"] }, safetyLevel: "gf_options" },
+  ],
+}
+
+function facetCount(rows: { n: number }[] | undefined): number {
+  return rows?.[0]?.n ?? 0
+}
+
 /** ISR/build: si Atlas no responde, página vacía — no tumbar `next build`. */
 async function connectSeoDb(): Promise<boolean> {
   try {
@@ -103,7 +147,7 @@ async function loadPlacesByCity(
   const skip = (page - 1) * PER_PAGE
 
   const [places, total] = await Promise.all([
-    Place.find(query).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
     Place.countDocuments(query),
   ])
 
@@ -134,7 +178,7 @@ async function loadPlacesByCityAndCategory(
   }
 
   const [places, total] = await Promise.all([
-    Place.find(query).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
     Place.countDocuments(query),
   ])
 
@@ -159,7 +203,7 @@ export async function getPlacesByCategory(
   const query = buildNationalCategoryMongoQuery(type)
 
   const [places, total] = await Promise.all([
-    Place.find(query).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
     Place.countDocuments(query),
   ])
 
@@ -197,7 +241,7 @@ export async function getTopPlaces(citySlug: string, limit = 10): Promise<PlaceS
   if (!city) return []
   if (!(await connectSeoDb())) return []
 
-  const places = await Place.find(canonicalCityPlaceFilter(city))
+  const places = await Place.find(canonicalCityPlaceFilter(city), PLACE_SEO_PROJECTION)
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean()
@@ -229,7 +273,7 @@ export async function getPlacesByProvinceSlug(
 
   const limit = options?.limit ?? 200
   const [places, total] = await Promise.all([
-    Place.find(query).sort({ createdAt: -1 }).limit(limit).lean(),
+    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).limit(limit).lean(),
     Place.countDocuments(query),
   ])
 
@@ -329,65 +373,134 @@ export async function getCityPageStats(citySlug: string): Promise<CityPageStats>
   if (!city) return empty
   if (!(await connectSeoDb())) return empty
 
-  const match = canonicalCityPlaceFilter(city)
-
-  const [total, dedicatedGf, gfOptions, typeAgg, neighborhoods, last] = await Promise.all([
-    Place.countDocuments(match),
-    Place.countDocuments({
-      ...match,
-      $or: [
-        { tags: "100_gf" },
-        { safetyLevel: "dedicated_gf" },
-      ],
-    }),
-    Place.countDocuments({
-      ...match,
-      $and: [
-        {
-          $or: [{ tags: "opciones_sin_tacc" }, { safetyLevel: "gf_options" }],
-        },
-        {
-          tags: { $nin: ["100_gf"] },
-        },
-        { safetyLevel: { $ne: "dedicated_gf" } },
-      ],
-    }),
-    Place.aggregate([
-      { $match: match },
-      {
-        $project: {
-          type: {
-            $cond: [
-              { $and: [{ $isArray: "$types" }, { $gt: [{ $size: "$types" }, 0] }] },
-              { $arrayElemAt: ["$types", 0] },
-              "$type",
-            ],
+  // Una sola ida a Atlas (antes eran 6 queries).
+  const [row] = await Place.aggregate([
+    { $match: canonicalCityPlaceFilter(city) },
+    {
+      $facet: {
+        total: [{ $count: "n" }],
+        dedicated: [{ $match: DISPLAY_DEDICATED_MATCH }, { $count: "n" }],
+        options: [{ $match: DISPLAY_OPTIONS_MATCH }, { $count: "n" }],
+        types: [
+          {
+            $project: {
+              type: {
+                $cond: [
+                  { $and: [{ $isArray: "$types" }, { $gt: [{ $size: "$types" }, 0] }] },
+                  { $arrayElemAt: ["$types", 0] },
+                  "$type",
+                ],
+              },
+            },
           },
-        },
+          { $group: { _id: "$type", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+        neighborhoods: [
+          { $group: { _id: "$neighborhood", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 10 },
+        ],
+        last: [{ $sort: { updatedAt: -1 } }, { $limit: 1 }, { $project: { _id: 0, updatedAt: 1 } }],
       },
-      { $group: { _id: "$type", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]),
-    getTopNeighborhoods(citySlug),
-    Place.findOne(match).sort({ updatedAt: -1 }).select("updatedAt").lean(),
+    },
   ])
+  if (!row) return empty
 
-  const categories = typeAgg
-    .map((row: { _id: string; count: number }) => {
-      const slug = TYPE_TO_CATEGORY_SLUG[row._id]
+  const categories = (row.types as { _id: string; count: number }[])
+    .map((r) => {
+      const slug = TYPE_TO_CATEGORY_SLUG[r._id]
       const cat = CATEGORIES.find((c) => c.slug === slug)
       if (!cat) return null
-      return { slug: cat.slug, name: cat.name, count: row.count }
+      return { slug: cat.slug, name: cat.name, count: r.count }
     })
     .filter(Boolean) as { slug: string; name: string; count: number }[]
 
+  const lastUpdated = (row.last as { updatedAt?: Date }[])[0]?.updatedAt
+
   return {
-    total,
-    dedicatedGf,
-    gfOptions,
+    total: facetCount(row.total),
+    dedicatedGf: facetCount(row.dedicated),
+    gfOptions: facetCount(row.options),
     categories,
-    neighborhoods,
-    lastUpdated: last?.updatedAt ? new Date(last.updatedAt) : null,
+    neighborhoods: (row.neighborhoods as { _id: string; count: number }[]).map((r) => ({
+      name: r._id,
+      count: r.count,
+    })),
+    lastUpdated: lastUpdated ? new Date(lastUpdated) : null,
+  }
+}
+
+export type CityPlaceIndexEntry = { _id: { toString(): string }; name: string; slug?: string }
+
+/**
+ * Ids, nombre y slug de todos los lugares de la ciudad. Lo usan las reseñas
+ * recientes y las listas relacionadas; con cache() es una sola query por render.
+ */
+async function loadCityPlaceIndex(citySlug: string): Promise<CityPlaceIndexEntry[]> {
+  const city = getCityBySlug(citySlug)
+  if (!city) return []
+  if (!(await connectSeoDb())) return []
+  return (await Place.find(canonicalCityPlaceFilter(city), { _id: 1, name: 1, slug: 1 }).lean()) as CityPlaceIndexEntry[]
+}
+
+export const getCityPlaceIndex = cache(loadCityPlaceIndex)
+
+export type ProvinceSummary = { slug: string; total: number; localityCount: number }
+
+/**
+ * Total de lugares y cantidad de localidades por provincia, en una sola query
+ * (el hub /sin-gluten-argentina hacía 5 queries por cada una de las 24).
+ */
+export async function getProvinceSummaries(provinceSlugs: string[]): Promise<ProvinceSummary[]> {
+  if (provinceSlugs.length === 0) return []
+  if (!(await connectSeoDb())) return provinceSlugs.map((slug) => ({ slug, total: 0, localityCount: 0 }))
+  const rows: { _id: string; total: number; localities: (string | null)[] }[] = await Place.aggregate([
+    { $match: { status: "approved", province: { $in: provinceSlugs } } },
+    { $group: { _id: "$province", total: { $sum: 1 }, localities: { $addToSet: "$locality" } } },
+  ])
+  const bySlug = new Map(rows.map((r) => [r._id, r]))
+  return provinceSlugs.map((slug) => {
+    const r = bySlug.get(slug)
+    return {
+      slug,
+      total: r?.total ?? 0,
+      localityCount: r ? r.localities.filter(Boolean).length : 0,
+    }
+  })
+}
+
+export type ProvinceCounts = {
+  dedicatedGf: number
+  gfOptions: number
+  /** Lugares por tipo (cuenta `type` y cada uno de `types`, sin repetir). */
+  byType: Record<string, number>
+}
+
+/** Conteos de una provincia sobre todos sus lugares (antes salían de una muestra de 200). */
+export async function getProvinceCounts(provinceSlug: string): Promise<ProvinceCounts> {
+  const empty: ProvinceCounts = { dedicatedGf: 0, gfOptions: 0, byType: {} }
+  if (!(await connectSeoDb())) return empty
+  const [row] = await Place.aggregate([
+    { $match: { status: "approved", province: provinceSlug } },
+    {
+      $facet: {
+        dedicated: [{ $match: DISPLAY_DEDICATED_MATCH }, { $count: "n" }],
+        options: [{ $match: DISPLAY_OPTIONS_MATCH }, { $count: "n" }],
+        types: [
+          { $project: { t: { $setUnion: [{ $ifNull: ["$types", []] }, [{ $ifNull: ["$type", null] }]] } } },
+          { $unwind: "$t" },
+          { $match: { t: { $ne: null } } },
+          { $group: { _id: "$t", count: { $sum: 1 } } },
+        ],
+      },
+    },
+  ])
+  if (!row) return empty
+  return {
+    dedicatedGf: facetCount(row.dedicated),
+    gfOptions: facetCount(row.options),
+    byType: Object.fromEntries((row.types as { _id: string; count: number }[]).map((r) => [r._id, r.count])),
   }
 }
 
@@ -407,11 +520,7 @@ export async function getRecentReviewsForCity(
   if (!city) return []
   if (!(await connectSeoDb())) return []
 
-  const places = await Place.find(canonicalCityPlaceFilter(city), {
-    _id: 1,
-    name: 1,
-    slug: 1,
-  }).lean()
+  const places = await getCityPlaceIndex(citySlug)
   if (places.length === 0) return []
 
   const placeMap = new Map(

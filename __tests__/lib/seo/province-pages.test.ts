@@ -44,10 +44,30 @@ jest.mock("@/models/Place", () => ({
       sort: () => ({ select: () => ({ lean: () => Promise.resolve({ updatedAt: new Date("2024-05-01") }) }) }),
     })),
     countDocuments: jest.fn((query: any) => Promise.resolve(filterPlaces(query).length)),
-    aggregate: jest.fn(() => Promise.resolve([
-      { _id: "cordoba", count: 3 },
-      { _id: "rio-cuarto", count: 2 },
-    ])),
+    aggregate: jest.fn((pipeline: any[]) => {
+      // Conteos de la provincia ($facet): se calculan sobre todos los lugares del mock
+      // con la misma regla que los badges (inferSafetyLevel).
+      if (pipeline.some((stage) => stage.$facet)) {
+        const { inferSafetyLevel } = jest.requireActual("@/components/featured/featured-utils")
+        const rows = mockPlaces.filter((p) => p.province === pipeline[0].$match.province)
+        const count = (n: number) => (n > 0 ? [{ n }] : [])
+        const types: Record<string, number> = {}
+        for (const p of rows) {
+          for (const t of new Set([...(p.types ?? []), p.type])) types[t] = (types[t] ?? 0) + 1
+        }
+        return Promise.resolve([
+          {
+            dedicated: count(rows.filter((p) => inferSafetyLevel(p) === "dedicated_gf").length),
+            options: count(rows.filter((p) => inferSafetyLevel(p) === "gf_options").length),
+            types: Object.entries(types).map(([_id, c]) => ({ _id, count: c })),
+          },
+        ])
+      }
+      return Promise.resolve([
+        { _id: "cordoba", count: 3 },
+        { _id: "rio-cuarto", count: 2 },
+      ])
+    }),
   },
 }))
 
@@ -94,6 +114,14 @@ describe("lib/seo/province-pages", () => {
     expect(data.gfOptionsCount).toBeGreaterThanOrEqual(0)
     expect(data.localities.length).toBeGreaterThan(0)
     expect(data.categories.length).toBeGreaterThan(0)
+  })
+
+  it("los conteos de la provincia salen de todos los lugares, no de la lista mostrada", async () => {
+    const data = await getProvincePageData("cordoba")
+    expect(data.gfOptionsCount).toBe(1)
+    expect(data.dedicatedGfCount).toBe(0)
+    const byCat = Object.fromEntries(data.categories.map((c) => [c.slug, c.count]))
+    expect(byCat).toMatchObject({ restaurantes: 2, cafes: 1, tiendas: 1 })
   })
 
   it("getProvinceCategoryPageData compone datos de categoría", async () => {

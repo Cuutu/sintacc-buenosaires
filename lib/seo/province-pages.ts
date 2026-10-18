@@ -2,6 +2,7 @@ import { cache } from "react"
 import { getProvinceBySlug, type ProvinceConfig } from "./provinces"
 import {
   getPlacesByProvinceSlug,
+  getProvinceCounts,
   getProvinceLocalities,
   getProvinceLastUpdated,
   type PlaceSEO,
@@ -59,25 +60,21 @@ async function loadProvincePageData(provinceSlug: string): Promise<ProvincePageD
     }
   }
 
-  const [{ places, total }, localities, lastUpdated] = await Promise.all([
+  // La lista muestra hasta 200 lugares, pero los conteos salen de todos.
+  const [{ places, total }, localities, lastUpdated, counts] = await Promise.all([
     getPlacesByProvinceSlug(provinceSlug, { limit: 200 }),
     getProvinceLocalities(provinceSlug),
     getProvinceLastUpdated(provinceSlug),
+    getProvinceCounts(provinceSlug),
   ])
 
-  const dedicatedGfCount = places.filter(
-    (p) => p.safetyLevel === "dedicated_gf" || p.tags?.includes("100_gf")
-  ).length
-  const gfOptionsCount = places.filter(
-    (p) => p.safetyLevel === "gf_options" || p.tags?.includes("opciones_sin_tacc")
-  ).length
+  const dedicatedGfCount = counts.dedicatedGf
+  const gfOptionsCount = counts.gfOptions
 
   const categories: ProvinceCategorySummary[] = []
   for (const cat of CATEGORIES) {
     const type = CATEGORY_SLUG_TO_TYPE[cat.slug]
-    const count = places.filter(
-      (p) => p.type === type || p.types?.includes(type)
-    ).length
+    const count = counts.byType[type] ?? 0
     if (count > 0) {
       categories.push({
         slug: cat.slug,
