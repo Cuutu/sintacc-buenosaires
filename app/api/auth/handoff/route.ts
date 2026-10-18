@@ -6,12 +6,22 @@ import connectDB from "@/lib/mongodb"
 import { User } from "@/models/User"
 import { MobileAuthHandoff } from "@/models/MobileAuthHandoff"
 
+/**
+ * Redirect con Location relativa ("/perfil"), que el navegador resuelve contra el dominio real.
+ * No usar new URL(path, request.url): en el servidor propio (next start detrás de Caddy) Next arma
+ * request.url con su puerto local (https://localhost:3000/…), y la app de Android abría Chrome
+ * en localhost:3000/perfil después de iniciar sesión.
+ */
+function redirectTo(path: string): NextResponse {
+  return new NextResponse(null, { status: 307, headers: { Location: path } })
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code")
   const nextParam = request.nextUrl.searchParams.get("next")
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    return redirectTo("/login")
   }
 
   await connectDB()
@@ -23,7 +33,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (!handoff) {
-    return NextResponse.redirect(new URL("/login?error=handoff", request.url))
+    return redirectTo("/login?error=handoff")
   }
 
   handoff.used = true
@@ -31,7 +41,7 @@ export async function GET(request: NextRequest) {
 
   const user = await User.findById(handoff.userId)
   if (!user) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    return redirectTo("/login")
   }
 
   const token = await encode({
@@ -53,7 +63,7 @@ export async function GET(request: NextRequest) {
     : "next-auth.session-token"
 
   const redirectPath = sanitizeReturnTo(nextParam ?? handoff.nextPath)
-  const response = NextResponse.redirect(new URL(redirectPath, request.url))
+  const response = redirectTo(redirectPath)
 
   response.cookies.set(cookieName, token, {
     httpOnly: true,

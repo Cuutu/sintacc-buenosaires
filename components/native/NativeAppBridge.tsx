@@ -4,13 +4,15 @@ import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { isNativeApp } from "@/lib/native-app"
 import { createLaunchUrlHandler } from "@/lib/native-handoff-once"
+import { createAppLinkHandler } from "@/lib/native-app-links"
 import { reportNativeOAuth } from "@/lib/native-oauth-report"
 import { warmNativeGoogleSignIn } from "@/lib/native-sign-in"
 import { executeAndroidBack } from "@/lib/native-android-back"
 import { attachReviewDebugToWindow } from "@/lib/native-review"
 
 /**
- * Native shell bridge: OAuth deep links (cold + warm) + Android back.
+ * Native shell bridge: OAuth deep links (cold + warm), links https que abren la app
+ * (/local…, el QR de la tarjeta de sellos) + Android back.
  * Login nativo Google no usa Browser; este path cubre binarios viejos y fallback.
  */
 export function NativeAppBridge() {
@@ -52,6 +54,14 @@ export function NativeAppBridge() {
       },
     })
 
+    // Universal Links / App Links: la app se abre pero el WebView no se mueve solo.
+    const handleAppLink = createAppLinkHandler({
+      assign: (href) => {
+        window.location.assign(href)
+      },
+      currentHref: () => window.location.href,
+    })
+
     const runAndroidBack = (canGoBack: boolean) => {
       executeAndroidBack({
         canGoBack,
@@ -78,7 +88,8 @@ export function NativeAppBridge() {
 
       pending.push(
         App.addListener("appUrlOpen", async ({ url }) => {
-          await handleLaunchUrl(url)
+          if (await handleLaunchUrl(url)) return
+          if (!cancelled) handleAppLink(url, "open")
         })
       )
 
@@ -92,7 +103,10 @@ export function NativeAppBridge() {
         .then((launch) => {
           if (cancelled) return
           if (!launch?.url) return
-          return handleLaunchUrl(launch.url)
+          const url = launch.url
+          return handleLaunchUrl(url).then((handled) => {
+            if (!handled && !cancelled) handleAppLink(url, "launch")
+          })
         })
         .catch(() => undefined)
 

@@ -152,6 +152,17 @@ const nextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      // El local escanea el QR de la tarjeta con la cámara: sólo esta página la habilita
+      // (va después para pisar el Permissions-Policy de arriba).
+      {
+        source: "/local/escanear",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), microphone=(), geolocation=(self), payment=(), usb=()",
+          },
+        ],
+      },
     ]
   },
 }

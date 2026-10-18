@@ -22,6 +22,11 @@ describe("android assetlinks", () => {
     expect(parsed[0]?.split(":").length).toBe(32)
   })
 
+  it("usa el applicationId de Android, no el bundle de iOS", () => {
+    const gradle = require("fs").readFileSync(require("path").join(process.cwd(), "android/app/build.gradle"), "utf8")
+    expect(gradle).toContain(`applicationId "${ANDROID_ASSETLINKS_PACKAGE}"`)
+  })
+
   it("arma body con package real", () => {
     const body = buildAssetLinksBody(["AA:BB"])
     expect(body[0]?.target.package_name).toBe(ANDROID_ASSETLINKS_PACKAGE)

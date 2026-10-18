@@ -9,6 +9,12 @@ export type GoogleMapsUrlResolution = {
   placeName?: string
   lat?: number
   lng?: number
+  /**
+   * true si lat/lng son la ubicación del lugar (`!3d…!4d…` o `?q=lat,lng`).
+   * false si sólo tenemos el centro de la vista (`@lat,lng,zoom`), que puede
+   * estar corrido del pin.
+   */
+  coordsPrecise?: boolean
   placeId?: string
   cid?: string
   featureId?: string
@@ -126,6 +132,7 @@ export function parseGoogleMapsUrl(finalUrl: string): GoogleMapsUrlResolution {
     if (atMatch) {
       resolution.lat = Number(atMatch[1])
       resolution.lng = Number(atMatch[2])
+      resolution.coordsPrecise = false
     }
 
     const q = url.searchParams.get("q") ?? url.searchParams.get("query")
@@ -133,6 +140,7 @@ export function parseGoogleMapsUrl(finalUrl: string): GoogleMapsUrlResolution {
     if (qCoords) {
       resolution.lat = qCoords.lat
       resolution.lng = qCoords.lng
+      resolution.coordsPrecise = true
     } else if (q && !resolution.placeName && isUsableMapsPlaceName(q)) {
       resolution.placeName = q
     }
@@ -143,12 +151,14 @@ export function parseGoogleMapsUrl(finalUrl: string): GoogleMapsUrlResolution {
     if (ll && resolution.lat == null) {
       resolution.lat = ll.lat
       resolution.lng = ll.lng
+      resolution.coordsPrecise = false
     }
 
     const precise = finalUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
     if (precise) {
       resolution.lat = Number(precise[1])
       resolution.lng = Number(precise[2])
+      resolution.coordsPrecise = true
     }
 
     const feature = finalUrl.match(/!1s(0x[a-f0-9]+:0x[a-f0-9]+|ChIJ[a-zA-Z0-9_-]+)/i)

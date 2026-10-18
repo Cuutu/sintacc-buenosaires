@@ -14,6 +14,7 @@ import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
 import { isAllowedAvatarUrl } from "@/lib/avatar-url"
 import { DeleteAccountSection } from "@/components/delete-account-section"
+import { LocalPanelEntry } from "@/components/wallet/LocalPanelEntry"
 
 function normalizeFavoritePlace(raw: unknown): IPlace | null {
   if (!raw || typeof raw !== "object") return null
@@ -133,6 +134,8 @@ export default function PerfilPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <LocalPanelEntry />
 
       <Card className="border-olive/10 bg-olive/5 backdrop-blur-md mt-6">
         <CardHeader>
