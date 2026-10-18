@@ -167,7 +167,8 @@ workflows:
   android-aab:
     name: Celimap Android AAB
     max_build_duration: 45
-    instance_type: linux_x2
+    # El plan gratis de Codemagic sólo tiene Mac (linux_x2 es de los planes pagos). Android compila igual en Mac.
+    instance_type: mac_mini_m2
     environment:
       # Keystore de subida a Play, cargado en Codemagic (Code signing identities → Android keystores)
       # con este nombre. Codemagic completa CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS y CM_KEY_PASSWORD.
