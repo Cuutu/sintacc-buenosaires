@@ -20,8 +20,10 @@ jest.mock("@/models/Review")
 jest.mock("@/models/Place")
 jest.mock("@/models/User")
 const mockRevalidatePlacePages = jest.fn()
+const mockInvalidateApiCache = jest.fn()
 jest.mock("@/lib/api-cache", () => ({
   revalidatePlacePages: (...args: unknown[]) => mockRevalidatePlacePages(...args),
+  invalidateApiCache: (...args: unknown[]) => mockInvalidateApiCache(...args),
 }))
 
 describe("POST /api/reviews", () => {
@@ -72,6 +74,7 @@ describe("POST /api/reviews", () => {
     expect(data).toHaveProperty("_id")
     // La ficha (ISR 1 h) se revalida para que la reseña cuente enseguida.
     expect(mockRevalidatePlacePages).toHaveBeenCalledWith({ _id: PLACE_ID, slug: "test-place" })
+    expect(mockInvalidateApiCache).toHaveBeenCalledWith(["public:review-stats"])
   })
 
   it("should return 429 when rate limit exceeded", async () => {

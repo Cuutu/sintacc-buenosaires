@@ -2,7 +2,7 @@ import { cache } from "react"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
 import { Review } from "@/models/Review"
-import { ContaminationReport } from "@/models/ContaminationReport"
+import { getReviewStatsFor } from "@/lib/review-stats-index"
 import {
   getCityBySlug,
   CATEGORY_SLUG_TO_TYPE,
@@ -93,33 +93,10 @@ export type PlaceSEO = {
 const EMPTY_PLACE_PAGE = { places: [] as PlaceSEO[], total: 0, pages: 0 }
 
 async function enrichPlacesWithStats(places: any[]): Promise<PlaceSEO[]> {
-  const placeIds = places.map((p: any) => p._id)
-  const [reviewStats, contaminationCounts] = await Promise.all([
-    Review.aggregate([
-      { $match: { placeId: { $in: placeIds }, status: "visible" } },
-      { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
-    ]),
-    ContaminationReport.aggregate([
-      { $match: { placeId: { $in: placeIds }, status: "visible" } },
-      { $group: { _id: "$placeId", count: { $sum: 1 } } },
-    ]),
-  ])
-  const statsMap = new Map<string, { avgRating: number; totalReviews: number; contaminationReportsCount: number }>()
-  placeIds.forEach((id: any) => {
-    statsMap.set(id.toString(), { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 })
-  })
-  reviewStats.forEach((s: any) => {
-    const entry = statsMap.get(s._id.toString())!
-    entry.avgRating = Math.round(s.avgRating * 10) / 10
-    entry.totalReviews = s.count
-  })
-  contaminationCounts.forEach((c: any) => {
-    const entry = statsMap.get(c._id.toString())
-    if (entry) entry.contaminationReportsCount = c.count
-  })
+  const statsMap = await getReviewStatsFor(places.map((p: any) => p._id))
   return places.map((p: any) => ({
     ...normalizePlace(p),
-    stats: statsMap.get(p._id.toString()) ?? { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 },
+    stats: statsMap.get(p._id.toString()),
   }))
 }
 

@@ -11,6 +11,7 @@ const TAG_BY_PREFIX: Record<string, string> = {
   // entrada quedaba con su clave entera como tag y seguía vieja hasta el TTL.
   "public:ventures:": "public:ventures",
   "admin:ventures:": "admin:ventures",
+  "public:review-stats": "public:review-stats",
 }
 
 function resolveTag(cacheKey: string): string {

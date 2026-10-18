@@ -8,7 +8,8 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import { getClientIp } from "@/lib/rate-limit"
-import { revalidatePlacePages } from "@/lib/api-cache"
+import { invalidateApiCache, revalidatePlacePages } from "@/lib/api-cache"
+import { REVIEW_STATS_CACHE_KEY } from "@/lib/review-stats-index"
 import mongoose from "mongoose"
 
 const REVIEWS_DEFAULT_LIMIT = 20
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
     // La ficha es ISR de 1 h: sin esto, la reseña nueva no aparecía en el
     // promedio ni en el contador hasta la próxima regeneración.
     revalidatePlacePages(place)
+    invalidateApiCache([REVIEW_STATS_CACHE_KEY])
 
     return NextResponse.json(review, { status: 201 })
   } catch (error: any) {

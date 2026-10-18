@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { Place } from "@/models/Place"
-import { Review } from "@/models/Review"
-import { ContaminationReport } from "@/models/ContaminationReport"
 import { requireAdmin } from "@/lib/middleware"
 import { placeSchema, parsePublicPlacesSearchParams } from "@/lib/validations"
 import { buildPublicPlacesMongoQuery, expandViewportBbox, filterPlacesByBbox } from "@/lib/places-public-query"
@@ -14,6 +12,7 @@ import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 import { logApiError, logSlowServerOp } from "@/lib/logger"
 import mongoose from "mongoose"
 import { getOrSetApiCache, invalidateApiCache } from "@/lib/api-cache"
+import { EMPTY_PLACE_REVIEW_STATS, getReviewStatsFor } from "@/lib/review-stats-index"
 import { generateUniquePlaceSlug } from "@/lib/place-slugs"
 
 // Lugares casi estáticos: TTL largo. Escrituras invalidan tag `public:places`.
@@ -47,45 +46,8 @@ async function loadPublicPlaces(parsed: ReturnType<typeof parsePublicPlacesSearc
       ? places.length
       : await Place.countDocuments(query)
 
-  const placeIds = places.map((p: { _id: mongoose.Types.ObjectId }) => p._id)
-  let reviewStats: { _id: mongoose.Types.ObjectId; avgRating: number; count: number }[] = []
-  let contaminationCounts: { _id: mongoose.Types.ObjectId; count: number }[] = []
-  if (placeIds.length > 0) {
-    ;[reviewStats, contaminationCounts] = await Promise.all([
-      Review.aggregate([
-        { $match: { placeId: { $in: placeIds }, status: "visible" } },
-        { $group: { _id: "$placeId", avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
-      ]),
-      ContaminationReport.aggregate([
-        { $match: { placeId: { $in: placeIds }, status: "visible" } },
-        { $group: { _id: "$placeId", count: { $sum: 1 } } },
-      ]),
-    ])
-  }
-
-  const statsMap = new Map<
-    string,
-    { avgRating: number; totalReviews: number; contaminationReportsCount: number }
-  >()
-  placeIds.forEach((id) => {
-    statsMap.set(id.toString(), { avgRating: 0, totalReviews: 0, contaminationReportsCount: 0 })
-  })
-  reviewStats.forEach((s) => {
-    const entry = statsMap.get(s._id.toString())
-    if (!entry) return
-    entry.avgRating = Math.round(s.avgRating * 10) / 10
-    entry.totalReviews = s.count
-  })
-  contaminationCounts.forEach((c) => {
-    const entry = statsMap.get(c._id.toString())
-    if (entry) entry.contaminationReportsCount = c.count
-  })
-
-  const emptyStats = {
-    avgRating: 0,
-    totalReviews: 0,
-    contaminationReportsCount: 0,
-  }
+  const statsMap = await getReviewStatsFor(places.map((p: { _id: mongoose.Types.ObjectId }) => p._id))
+  const emptyStats = EMPTY_PLACE_REVIEW_STATS
 
   return {
     places: places.map((p) =>

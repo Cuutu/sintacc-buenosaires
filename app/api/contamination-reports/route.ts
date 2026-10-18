@@ -7,7 +7,8 @@ import { contaminationReportSchema } from "@/lib/validations"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { sanitizeHtml } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
-import { revalidatePlacePages } from "@/lib/api-cache"
+import { invalidateApiCache, revalidatePlacePages } from "@/lib/api-cache"
+import { REVIEW_STATS_CACHE_KEY } from "@/lib/review-stats-index"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
     await report.save()
     // La ficha muestra el contador de reportes: que no espere a la regeneración de 1 h.
     revalidatePlacePages(place)
+    invalidateApiCache([REVIEW_STATS_CACHE_KEY])
 
     return NextResponse.json(report, { status: 201 })
   } catch (error: any) {
