@@ -12,6 +12,7 @@
     "perf:lab": "node scripts/perf/lab.mjs",
     "perf:bundle": "node scripts/perf/bundle.mjs",
     "perf:server": "node scripts/perf/server.mjs",
+    "perf:load": "node scripts/perf/load.mjs",
     "seed": "tsx scripts/seed.ts",
     "check-env": "tsx scripts/check-env.ts",
     "check:ios-camera": "tsx scripts/check-ios-camera-usage.ts",

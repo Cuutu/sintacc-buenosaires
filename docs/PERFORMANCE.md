@@ -29,6 +29,7 @@ Los tres comandos guardan sus resultados en `perf-results/` (ignorado por git) p
 | `npm run perf:lab [url-base]` | Lighthouse mobile (lo mismo que PageSpeed), 3 corridas por página y la mediana. Necesita Chrome instalado. |
 | `npm run perf:bundle` | JS gzip de primera carga por ruta, del último `npm run build`, contra el presupuesto de `scripts/perf/budgets.json`. `--check` sale con error si alguna ruta se pasa; `--baseline <json>` muestra la diferencia con una corrida anterior. |
 | `npm run perf:server [url-base]` | Tiempo de respuesta del HTML y de la API (uno solo y ráfagas de 6 en paralelo). |
+| `npm run perf:load <url-de-prueba>` | Carga: 20 conexiones a la vez durante 20 s sobre home, ciudad y ficha (`--connections`, `--seconds`). Solo contra prueba. |
 
 Sin URL, `perf:lab` y `perf:server` miden producción. Para prueba: `npm run perf:lab -- https://prueba.celimap.com.ar`
 (solo desde una IP habilitada). Compará siempre desde la misma compu y la misma red.
