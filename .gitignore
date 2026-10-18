@@ -16,6 +16,9 @@
 /.next/
 /out/
 
+# resultados de npm run perf:*
+/perf-results/
+
 # production
 /build
 

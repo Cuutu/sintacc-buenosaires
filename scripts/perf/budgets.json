@@ -1,0 +1,8 @@
+{
+  "_comment": "Presupuesto de JS de primera carga por ruta, en KB gzip (layout + página). Ver docs/PERFORMANCE.md.",
+  "defaultKb": 200,
+  "routes": {
+    "/mapa/page": 220
+  },
+  "ignore": ["^/admin", "^/api", "^/chat-test", "^/_not-found", "^/local"]
+}
