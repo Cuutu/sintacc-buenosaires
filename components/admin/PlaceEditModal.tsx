@@ -245,7 +245,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   name: place.name,
                   address: place.address,
                   neighborhood: place.neighborhood,
-                  location: place.location,
+                  location:
+                    place.location && "lat" in place.location ? place.location : undefined,
                   contact: place.contact,
                   type: place.type,
                 },

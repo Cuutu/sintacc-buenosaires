@@ -4,12 +4,14 @@ import { Contact } from "@/models/Contact"
 import { Review } from "@/models/Review"
 import { VentureReview } from "@/models/VentureReview"
 import { Venture } from "@/models/Venture"
+import type { Schema } from "mongoose"
 
 it.each([Contact, Review, VentureReview])("default pendiente y enum independiente de status", model => {
   const doc = new model()
   expect(doc.estado).toBe("pendiente")
-  expect(model.schema.path("status")).toBeDefined()
-  expect(model.schema.path("estado").options.enum).toEqual(["pendiente", "respondido", "archivado"])
+  const schema = model.schema as unknown as Schema
+  expect(schema.path("status")).toBeDefined()
+  expect((schema.path("estado").options as { enum?: unknown }).enum).toEqual(["pendiente", "respondido", "archivado"])
 })
 
 it("reconoce documentos legacy como pendientes durante el despliegue", () => {

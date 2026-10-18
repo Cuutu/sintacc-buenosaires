@@ -69,10 +69,10 @@ export function safetyFromTags(tags: string[] = []): PrimarySafetyLevel | undefi
  * Evita “VERIFICADO / 100%” cuando el tag dice opciones (y viceversa).
  */
 export function inferSafetyLevel(place: {
-  safetyLevel?: PlaceWithStats["safetyLevel"]
+  safetyLevel?: PlaceWithStats["safetyLevel"] | null
   tags?: string[]
 }): PlaceWithStats["safetyLevel"] {
-  return safetyFromTags(place.tags) ?? place.safetyLevel
+  return safetyFromTags(place.tags) ?? place.safetyLevel ?? undefined
 }
 
 /**

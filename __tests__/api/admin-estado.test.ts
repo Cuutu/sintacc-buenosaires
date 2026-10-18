@@ -42,7 +42,7 @@ describe.each([
     expect(model.findByIdAndUpdate).not.toHaveBeenCalled()
   })
   it("exige permisos de administrador", async () => {
-    jest.mocked(requireAdmin).mockResolvedValue(NextResponse.json({}, { status: 403 }))
+    jest.mocked(requireAdmin).mockResolvedValue(NextResponse.json({ error: "Forbidden" }, { status: 403 }))
     expect((await patch(request({ estado: "archivado" }), { params: { id } })).status).toBe(403)
     expect(model.findByIdAndUpdate).not.toHaveBeenCalled()
   })

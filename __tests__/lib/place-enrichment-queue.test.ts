@@ -8,6 +8,7 @@ describe("shouldEnqueuePlaceForResearch", () => {
     type: "other" as const,
     status: "pending" as const,
     photos: [] as string[],
+    tags: [] as string[],
   }
 
   it("skips queued and running", () => {

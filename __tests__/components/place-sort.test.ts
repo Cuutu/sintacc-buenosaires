@@ -143,7 +143,7 @@ describe("place sort + distancia", () => {
     expect(desktop).toContain("LOCATION_SORT_CTA")
     expect(mobile).toContain("LOCATION_SORT_CTA")
     expect(hook).toContain("shouldAskLocationForNearest")
-    expect(hook).toContain("requestLocation()")
+    expect(hook).toMatch(/requestLocation\(\{ silent: true \}\)/)
     expect(hook).not.toContain("askedForNearestRef")
     const loc = fs.readFileSync(
       path.join(process.cwd(), "components/map-view/useUserLocation.ts"),

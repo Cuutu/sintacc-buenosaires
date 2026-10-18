@@ -53,13 +53,16 @@ export function useMapPlaceSort(location: LocationApi) {
   }, [status])
 
   const setSort = React.useCallback(
-    (next: PlaceSortOption) => {
+    (next: PlaceSortOption, options?: { hasCoords?: boolean }) => {
       userPickedRef.current = true
       writeStoredSort(next)
       setSortState(next)
       // Pedir geolocation acá (gesto del select/CTA). Desde useEffect el browser
       // traga el prompt y el sort se revierte a Recomendados.
-      if (shouldAskLocationForNearest({ sort: next, hasCoords: Boolean(coords) })) {
+      // `hasCoords`: quien llama ya tiene la posición (p. ej. el FAB acaba de
+      // ubicar al usuario) y `coords` todavía no se actualizó en este render.
+      const hasCoords = options?.hasCoords ?? Boolean(coords)
+      if (shouldAskLocationForNearest({ sort: next, hasCoords })) {
         requestLocation({ silent: true })
       }
     },

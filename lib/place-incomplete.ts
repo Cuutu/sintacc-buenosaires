@@ -93,7 +93,12 @@ export function isPlaceMissingTaccClassification(place: {
 }
 
 /** Solo clasificación TACC para panel Sin información. */
-export function countMissingConcreteFields(place: PlaceLike): string[] {
+export function countMissingConcreteFields(place: {
+  safetyLevel?: IPlace["safetyLevel"]
+  tags?: string[]
+  /** El resto de la ficha no cuenta acá; se acepta para no forzar a los callers a recortar. */
+  [field: string]: unknown
+}): string[] {
   if (!hasTaccClassification(place)) return ["clasificación TACC"]
   return []
 }

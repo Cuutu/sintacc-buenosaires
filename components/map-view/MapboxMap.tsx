@@ -1196,7 +1196,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const durationPadding = reduceMotion ? 0 : CAMERA_PADDING_MS
       const durationFocus = reduceMotion ? 0 : CAMERA_FOCUS_MS
 
-      const runEaseTo = (options: mapboxgl.EaseToOptions) => {
+      const runEaseTo = (options: mapboxgl.EasingOptions) => {
         if (disposedRef.current || !map.current) return
         try {
           map.current.stop()

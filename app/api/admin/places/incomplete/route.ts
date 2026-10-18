@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
-import { Place } from "@/models/Place"
+import { Place, type IPlace } from "@/models/Place"
 import { requireAdmin } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import {
@@ -33,7 +33,7 @@ function missingLabels(place: {
   openingHours?: string
   location?: { lat?: number; lng?: number } | null
   contact?: { instagram?: string; url?: string; phone?: string; whatsapp?: string }
-  safetyLevel?: string
+  safetyLevel?: IPlace["safetyLevel"]
   tags?: string[]
   description?: string
   catalog: EnrichmentCatalog

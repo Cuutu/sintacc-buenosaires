@@ -23,7 +23,7 @@ describe("copy de seguridad emprendimientos", () => {
     expect(isCatalogDedicatedVenture("to_confirm")).toBe(true)
     expect(isCatalogDedicatedVenture("gf_options")).toBe(false)
     expect(dedicatedVentureMongoFilter()).toEqual({ safetyLevel: { $ne: "gf_options" } })
-    expect(VENTURE_SUGGEST_SAFETY_LEVELS.some((s) => s.id === "gf_options")).toBe(false)
+    expect(VENTURE_SUGGEST_SAFETY_LEVELS.some((s) => (s.id as string) === "gf_options")).toBe(false)
     expect(VENTURE_CATALOG_INTRO.toLowerCase()).toContain("100% sin gluten")
     expect(VENTURE_SAFETY_DISCLAIMER.toLowerCase()).toContain("no certifica")
     expect(VENTURE_SAFETY_LEVELS.every((s) => !s.label.startsWith("100%"))).toBe(true)

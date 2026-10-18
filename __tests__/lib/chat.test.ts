@@ -430,6 +430,7 @@ describe("chat tool parts", () => {
       parts: [
         {
           type: "tool-buscarLugares",
+          toolCallId: "call-1",
           state: "output-available",
           input: { zona: "Palermo" },
           output: { encontrados: 1, lugares: [] },

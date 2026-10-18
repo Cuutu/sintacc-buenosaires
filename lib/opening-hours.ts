@@ -409,7 +409,7 @@ export type WeekHours = Record<(typeof WEEK_DAYS)[number]["key"], DayHours>
 
 export function emptyWeekHours(): WeekHours {
   return Object.fromEntries(
-    WEEK_DAYS.map((d) => [d.key, { ranges: [], closed: true, explicit: false }])
+    WEEK_DAYS.map((d): [string, DayHours] => [d.key, { ranges: [], closed: true, explicit: false }])
   ) as WeekHours
 }
 

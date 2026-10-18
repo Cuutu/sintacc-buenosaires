@@ -3,7 +3,7 @@
  * Clustering = Supercluster embebido en Mapbox GL (`cluster: true` en el GeoJSON source).
  * Pins = SymbolLayer con isotipo CeliMap. Clusters = CircleLayer.
  */
-import type { AnyLayer, AnySourceData, GeoJSONSource, Map as MapboxMapType, PointLike } from "mapbox-gl"
+import type { AnyLayer, AnySourceData, FilterSpecification, GeoJSONSource, Map as MapboxMapType, PointLike } from "mapbox-gl"
 import type { IPlace } from "@/models/Place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import {
@@ -154,13 +154,13 @@ function transitionMs(reduceMotion: boolean): number {
   return reduceMotion ? 0 : MARKER_TRANSITION_MS
 }
 
-function unselectedPinFilter(selectedId: string | null) {
-  if (!selectedId) return ["!", ["has", "point_count"]] as const
+function unselectedPinFilter(selectedId: string | null): FilterSpecification {
+  if (!selectedId) return ["!", ["has", "point_count"]]
   return [
     "all",
     ["!", ["has", "point_count"]],
     ["!=", ["get", "id"], selectedId],
-  ] as const
+  ]
 }
 
 function applySelectionPresentation(map: MapboxMapType, reduceMotion: boolean): void {
@@ -605,7 +605,9 @@ export function revealRenderedPins(map: MapboxMapType): void {
   }
 }
 
-function featureIdOf(feature: { id?: unknown; properties?: Record<string, unknown> | null }): string | number | null {
+type RenderedFeatureLike = { id?: unknown; properties?: Record<string, unknown> | null }
+
+function featureIdOf(feature: RenderedFeatureLike): string | number | null {
   if (feature.id != null) return feature.id as string | number
   const props = feature.properties
   if (props?.id != null) return props.id as string | number
@@ -624,9 +626,9 @@ export function playVisiblePinEntrance(
   const layers = [LAYER_PINS].filter((id) => Boolean(map.getLayer(id)))
   if (layers.length === 0) return
 
-  let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+  let features: RenderedFeatureLike[] = []
   try {
-    features = map.queryRenderedFeatures(undefined, { layers })
+    features = map.queryRenderedFeatures({ layers })
   } catch {
     return
   }
@@ -685,9 +687,9 @@ export function playVisiblePinEntrance(
 
   const flushMs = MOTION_MS.base + PIN_STAGGER_MAX * STAGGER_PIN_MS + 80
   window.setTimeout(() => {
-    let later: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+    let later: RenderedFeatureLike[] = []
     try {
-      later = map.queryRenderedFeatures(undefined, { layers })
+      later = map.queryRenderedFeatures({ layers })
     } catch {
       return
     }
@@ -728,9 +730,9 @@ export function fadeRenderedPinsOut(map: MapboxMapType, reduceMotion: boolean): 
   if (reduceMotion) return
   const layers = [LAYER_PINS].filter((id) => Boolean(map.getLayer(id)))
   if (layers.length === 0) return
-  let features: ReturnType<MapboxMapType["queryRenderedFeatures"]> = []
+  let features: RenderedFeatureLike[] = []
   try {
-    features = map.queryRenderedFeatures(undefined, { layers })
+    features = map.queryRenderedFeatures({ layers })
   } catch {
     return
   }

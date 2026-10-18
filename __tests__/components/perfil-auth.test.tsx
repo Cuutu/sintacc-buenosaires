@@ -44,6 +44,15 @@ jest.mock("@/lib/fetchApi", () => ({
   fetchApi: (...args: unknown[]) => mockFetchApi(...args),
 }))
 
+// virtual + ruta relativa: en main el componente existe (tarjeta de fidelidad) y en rediseno-edicion todavía no.
+jest.mock(
+  "../../components/wallet/LocalPanelEntry",
+  () => ({
+    LocalPanelEntry: () => null,
+  }),
+  { virtual: true }
+)
+
 jest.mock("@/components/delete-account-section", () => ({
   DeleteAccountSection: () =>
     React.createElement("div", { "data-testid": "delete-account-stub" }),

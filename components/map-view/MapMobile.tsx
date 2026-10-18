@@ -243,7 +243,8 @@ export function MapMobile({
       (position) => {
         const { latitude, longitude } = position.coords
         location.setFromCoords({ lat: latitude, lng: longitude })
-        setSort("nearest")
+        // Ya tenemos la posición: no volver a pedir GPS desde setSort.
+        setSort("nearest", { hasCoords: true })
         mapRef.current?.showUserLocation(longitude, latitude)
         mapRef.current?.flyTo(longitude, latitude, 16)
         if (!silent) {
