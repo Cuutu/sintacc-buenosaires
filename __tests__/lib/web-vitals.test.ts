@@ -8,6 +8,7 @@ import {
   roundWebVitalValue,
   webVitalAudience,
   webVitalRouteGroup,
+  webVitalRowSamples,
 } from "@/lib/web-vitals"
 import { summarizeWebVitals } from "@/lib/web-vitals-server"
 import { parseAnalyticsIngestBody } from "@/lib/analytics-ingest"
@@ -138,5 +139,13 @@ describe("ingesta de web_vital", () => {
       route: "lugar",
       navType: "navigate",
     })
+  })
+})
+
+describe("webVitalRowSamples", () => {
+  it("cuenta las visitas por la métrica con más mediciones (TTFB sale aunque falte LCP)", () => {
+    expect(webVitalRowSamples({ TTFB: { samples: 3 } })).toBe(3)
+    expect(webVitalRowSamples({ LCP: { samples: 1 }, TTFB: { samples: 4 }, CLS: { samples: 2 } })).toBe(4)
+    expect(webVitalRowSamples({})).toBe(0)
   })
 })

@@ -7,6 +7,7 @@ import type { InsightsRangeKey } from "@/lib/admin-insights-types"
 import {
   WEB_VITAL_AUDIENCE_LABELS,
   WEB_VITAL_THRESHOLDS,
+  webVitalRowSamples,
   type WebVitalAudience,
   type WebVitalMetric,
   type WebVitalRating,
@@ -179,7 +180,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
                     </td>
                   ))}
                   <td className="px-5 py-3 text-right tabular-nums text-[#6B746C]">
-                    {(row.metrics.LCP?.samples ?? row.metrics.FCP?.samples ?? 0).toLocaleString("es-AR")}
+                    {webVitalRowSamples(row.metrics).toLocaleString("es-AR")}
                   </td>
                 </tr>
               ))}

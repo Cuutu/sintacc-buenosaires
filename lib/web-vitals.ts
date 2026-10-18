@@ -119,3 +119,14 @@ export const WEB_VITAL_AUDIENCE_LABELS: Record<WebVitalAudience, string> = {
   web_mobile: "Web en celular",
   web_desktop: "Web en compu",
 }
+
+/**
+ * Cuántas visitas hay detrás de una fila: el máximo de mediciones entre las
+ * métricas. TTFB sale en casi todas las cargas; LCP o FCP no salen si la página
+ * se abrió en segundo plano o se cerró antes de pintar.
+ */
+export function webVitalRowSamples(
+  metrics: Partial<Record<WebVitalMetric, { samples: number }>>
+): number {
+  return Math.max(0, ...Object.values(metrics).map((cell) => cell?.samples ?? 0))
+}
