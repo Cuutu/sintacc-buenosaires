@@ -1,14 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
 import { features } from "@/lib/features"
 import { persistFavoriteToggle } from "@/lib/favorites-persist"
 import { useFavorites } from "@/components/favorites-provider"
 import { cn } from "@/lib/utils"
-import { usePrefersReducedMotion } from "@/components/map-view/usePrefersReducedMotion"
+
+function prefersReducedMotion(): boolean {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  } catch {
+    return false
+  }
+}
 
 interface FavoriteButtonProps {
   placeId: string
@@ -17,21 +23,23 @@ interface FavoriteButtonProps {
   className?: string
 }
 
+/**
+ * Está en cada tarjeta de la lista del mapa (cientos): sesión y favoritos salen del
+ * contexto de favoritos, y "reducir movimiento" se lee al tocar, sin un listener por botón.
+ */
 export function FavoriteButton({ placeId, showLabel, className }: FavoriteButtonProps) {
-  const { data: session } = useSession()
-  const { isFavorite, ids, add, remove } = useFavorites()
+  const { signedIn, isFavorite, ids, add, remove } = useFavorites()
   const [loading, setLoading] = useState(false)
   const [pop, setPop] = useState(false)
-  const reduceMotion = usePrefersReducedMotion()
   const favorited = isFavorite(placeId)
 
   const toggleFavorite = async () => {
-    if (!session) {
+    if (!signedIn) {
       // TODO: trigger login modal/redirect when implemented
       return
     }
 
-    if (!favorited && !reduceMotion) {
+    if (!favorited && !prefersReducedMotion()) {
       setPop(true)
     }
 

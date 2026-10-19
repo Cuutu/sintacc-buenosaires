@@ -22,6 +22,13 @@ interface BottomSheetProps {
   reduceMotion?: boolean
 }
 
+/**
+ * Hoja de la lista del mapa. Se mueve con `transform` (no con `height`): cambiar la
+ * altura en cada cuadro obligaba a recalcular el layout de toda la lista mientras se
+ * arrastraba. La hoja mide siempre lo de "full" y se corre hacia abajo; el contenedor
+ * de afuera recorta lo que queda debajo de la barra. Durante el arrastre y el resorte
+ * se escribe el transform directo en el DOM, sin renders de React.
+ */
 export function MapBottomSheet({
   children,
   initialSnap = "half",
@@ -38,14 +45,18 @@ export function MapBottomSheet({
     }
   }
   const [snapHeights, setSnapHeights] = React.useState(getHeights)
-  const [heightPx, setHeightPx] = React.useState(() => getHeights()[initialSnap])
+  // Altura en la que quedó quieta: define el relleno de abajo de la lista (para poder
+  // llegar a las últimas tarjetas). Cambia una vez por snap, no en cada cuadro.
+  const [settledHeight, setSettledHeight] = React.useState(() => getHeights()[initialSnap])
   const [currentSnap, setCurrentSnap] = React.useState<SheetSnap>(initialSnap)
   const [isDragging, setIsDragging] = React.useState(false)
   const [scrollLock, setScrollLock] = React.useState(false)
   const startY = React.useRef(0)
   const startHeight = React.useRef(0)
-  const currentHeightRef = React.useRef(heightPx)
-  currentHeightRef.current = heightPx
+  const currentHeightRef = React.useRef(settledHeight)
+  const sheetRef = React.useRef<HTMLDivElement>(null)
+  const fullHeightRef = React.useRef(snapHeights.full)
+  fullHeightRef.current = snapHeights.full
   const listRef = React.useRef<HTMLDivElement>(null)
   const velocityRef = React.useRef(0)
   const lastMoveRef = React.useRef({ t: 0, h: 0 })
@@ -58,6 +69,14 @@ export function MapBottomSheet({
   const stopSpring = React.useCallback(() => {
     stopSpringRef.current?.()
     stopSpringRef.current = null
+  }, [])
+
+  /** Altura visible de la hoja, directo en el DOM (sin render). */
+  const setVisualHeight = React.useCallback((height: number) => {
+    currentHeightRef.current = height
+    const el = sheetRef.current
+    if (!el) return
+    el.style.transform = `translate3d(0, ${Math.max(0, fullHeightRef.current - height)}px, 0)`
   }, [])
 
   React.useEffect(() => {
@@ -76,8 +95,8 @@ export function MapBottomSheet({
       onSnapChangeRef.current?.(snap)
       stopSpring()
       if (reduceMotionRef.current || Math.abs(currentHeightRef.current - target) < 0.5) {
-        currentHeightRef.current = target
-        setHeightPx(target)
+        setVisualHeight(target)
+        setSettledHeight(target)
         return
       }
       stopSpringRef.current = animateSpring({
@@ -85,16 +104,14 @@ export function MapBottomSheet({
         to: target,
         velocity,
         reduceMotion: false,
-        onUpdate: (value) => {
-          currentHeightRef.current = value
-          setHeightPx(value)
-        },
+        onUpdate: setVisualHeight,
         onComplete: () => {
           stopSpringRef.current = null
+          setSettledHeight(target)
         },
       })
     },
-    [stopSpring]
+    [stopSpring, setVisualHeight]
   )
 
   React.useEffect(() => {
@@ -141,8 +158,7 @@ export function MapBottomSheet({
       velocityRef.current = (newH - lastMoveRef.current.h) / dt
     }
     lastMoveRef.current = { t: now, h: newH }
-    currentHeightRef.current = newH
-    setHeightPx(newH)
+    setVisualHeight(newH)
   }
 
   const handlePointerUp = () => {
@@ -161,11 +177,19 @@ export function MapBottomSheet({
 
   return (
     <div
+      className="pointer-events-none fixed inset-x-0 top-0 bottom-[var(--bottom-nav-clearance)] z-20 overflow-hidden"
+      data-map-list-sheet=""
+    >
+    <div
+      ref={sheetRef}
       className={cn(
-        "map-paper fixed inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0",
+        "map-paper pointer-events-auto absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[24px] border border-[var(--map-paper-border)] border-b-0 will-change-transform",
         className
       )}
-      style={{ height: heightPx }}
+      style={{
+        height: snapHeights.full,
+        transform: `translate3d(0, ${Math.max(0, snapHeights.full - settledHeight)}px, 0)`,
+      }}
     >
       <div
         onPointerDown={handlePointerDown}
@@ -193,7 +217,10 @@ export function MapBottomSheet({
         className="h-[calc(100%-3.5rem)] overflow-y-auto overscroll-contain touch-pan-y pb-4"
       >
         {children}
+        {/* Lo que la hoja tiene escondido abajo: sin esto las últimas tarjetas no se ven. */}
+        <div aria-hidden style={{ height: Math.max(0, snapHeights.full - settledHeight) }} />
       </div>
+    </div>
     </div>
   )
 }

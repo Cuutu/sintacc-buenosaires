@@ -24,6 +24,14 @@ interface PlacesListProps {
   locationMessage?: string | null
 }
 
+/** Tarjetas que se dibujan de entrada; el resto se suma de a tanto al acercarse al final. */
+const LIST_PAGE_SIZE = 30
+/**
+ * Se observan las últimas tarjetas dibujadas (no un sentinela de 1 px, que un scroll
+ * rápido puede saltear): si se ve alguna, se suman las siguientes.
+ */
+const LIST_TAIL = 8
+
 function PlaceCardSkeleton() {
   return (
       <div className="flex min-h-[72px] gap-3 rounded-[20px] border border-[#E8E1D6] bg-[#F8F5EF] p-3">
@@ -57,15 +65,40 @@ export function PlacesList({
   const listRef = React.useRef<HTMLDivElement>(null)
   const selectedRef = React.useRef<HTMLDivElement>(null)
   const reduceMotion = usePrefersReducedMotion()
-  const listSignature = places.map((place) => String(place._id)).join(",")
+  const validPlaces = React.useMemo(() => places.filter((place) => place?._id != null), [places])
+  const listSignature = validPlaces.map((place) => String(place._id)).join(",")
   const prevSignatureRef = React.useRef(listSignature)
   const [enterNonce, setEnterNonce] = React.useState(0)
   const [leaving, setLeaving] = React.useState(false)
+  const [renderLimit, setRenderLimit] = React.useState(LIST_PAGE_SIZE)
   if (prevSignatureRef.current !== listSignature) {
     prevSignatureRef.current = listSignature
     setEnterNonce((n) => n + 1)
+    setRenderLimit(LIST_PAGE_SIZE)
     if (!reduceMotion) setLeaving(true)
   }
+  // La tarjeta seleccionada siempre se dibuja (para poder llevarla a la vista).
+  const selectedIndex = selectedPlaceId
+    ? validPlaces.findIndex((place) => String(place._id) === selectedPlaceId)
+    : -1
+  const renderCount = Math.min(validPlaces.length, Math.max(renderLimit, selectedIndex + 1))
+  React.useEffect(() => {
+    if (renderCount >= validPlaces.length) return
+    if (typeof IntersectionObserver === "undefined") {
+      setRenderLimit(validPlaces.length)
+      return
+    }
+    const tail = listRef.current?.querySelectorAll("[data-list-tail]")
+    if (!tail?.length) return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect()
+        setRenderLimit((limit) => Math.max(limit, renderCount) + LIST_PAGE_SIZE)
+      }
+    })
+    tail.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [renderCount, validPlaces.length])
 
   React.useEffect(() => {
     if (!leaving) return
@@ -73,13 +106,13 @@ export function PlacesList({
     return () => window.clearTimeout(timer)
   }, [leaving, enterNonce, reduceMotion])
 
-  const handlePlaceClick = React.useCallback(
-    (place: IPlace) => {
-      // Un click selecciona + centra mapa; no navega al detalle
-      onPlaceSelect?.(place)
-    },
-    [onPlaceSelect]
-  )
+  // Callback estable: así las tarjetas (memo) no se vuelven a dibujar en cada render.
+  const onPlaceSelectRef = React.useRef(onPlaceSelect)
+  onPlaceSelectRef.current = onPlaceSelect
+  const handlePlaceClick = React.useCallback((place: IPlace) => {
+    // Un click selecciona + centra mapa; no navega al detalle
+    onPlaceSelectRef.current?.(place)
+  }, [])
 
   React.useEffect(() => {
     if (!selectedPlaceId || !selectedRef.current || !listRef.current) return
@@ -159,28 +192,29 @@ export function PlacesList({
       {locationMessage ? (
         <p className="px-1 text-[12px] text-muted-foreground">{locationMessage}</p>
       ) : null}
-      {places
-        .filter((place) => place?._id != null)
-        .map((place, index) => {
-          const id = String(place._id)
-          const stagger = !reduceMotion && index < 8
-          return (
-            <div
-              key={`${enterNonce}-${id}`}
-              ref={selectedPlaceId === id ? selectedRef : null}
-              onMouseEnter={() => onPlaceHover?.(id)}
-              className={cn(stagger && "map-card-enter")}
-              style={stagger ? { animationDelay: `${index * 30}ms` } : undefined}
-            >
-              <PlaceMiniCard
-                place={place}
-                selected={selectedPlaceId === id}
-                onSelect={() => handlePlaceClick(place)}
-                userLocation={userLocation}
-              />
-            </div>
-          )
-        })}
+      {validPlaces.slice(0, renderCount).map((place, index) => {
+        const id = String(place._id)
+        // Con key estable la entrada se ve al montar: las tarjetas que ya estaban no se
+        // redibujan ni vuelven a animarse cuando llega otra página.
+        const stagger = !reduceMotion && index < 8
+        return (
+          <div
+            key={id}
+            ref={selectedPlaceId === id ? selectedRef : null}
+            onMouseEnter={() => onPlaceHover?.(id)}
+            className={cn(stagger && "map-card-enter")}
+            style={stagger ? { animationDelay: `${index * 30}ms` } : undefined}
+            data-list-tail={index >= renderCount - LIST_TAIL ? "" : undefined}
+          >
+            <PlaceMiniCard
+              place={place}
+              selected={selectedPlaceId === id}
+              onSelect={handlePlaceClick}
+              userLocation={userLocation}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }

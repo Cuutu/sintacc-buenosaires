@@ -14,6 +14,8 @@ import { features } from "@/lib/features"
 type FavoritesContextValue = {
   ids: Set<string>
   loaded: boolean
+  /** Sesión iniciada. Los botones de favorito la leen de acá en vez de suscribirse cada uno. */
+  signedIn: boolean
   isFavorite: (placeId: string) => boolean
   add: (placeId: string) => void
   remove: (placeId: string) => void
@@ -75,9 +77,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   const isFavorite = useCallback((placeId: string) => ids.has(placeId), [ids])
 
+  const signedIn = status === "authenticated"
   const value = useMemo(
-    () => ({ ids, loaded, isFavorite, add, remove }),
-    [ids, loaded, isFavorite, add, remove]
+    () => ({ ids, loaded, signedIn, isFavorite, add, remove }),
+    [ids, loaded, signedIn, isFavorite, add, remove]
   )
 
   return (
@@ -91,6 +94,7 @@ export function useFavorites(): FavoritesContextValue {
     return {
       ids: new Set(),
       loaded: true,
+      signedIn: false,
       isFavorite: () => false,
       add: () => undefined,
       remove: () => undefined,

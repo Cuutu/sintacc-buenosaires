@@ -112,6 +112,44 @@ function PanelChip({
   )
 }
 
+/** Lo que se escribe se manda al mapa recién cuando se deja de tipear un momento. */
+const SEARCH_INPUT_DEBOUNCE_MS = 250
+
+/**
+ * El texto del buscador vive acá: tipear ya no re-renderiza la página del mapa en cada
+ * tecla (lista, pins y filtros), solo este input. Borrar se manda enseguida, y un
+ * cambio que viene de afuera (la "x" del chip, la URL) se refleja en el input.
+ */
+function useSearchDraft(value: string, onChange: (next: string) => void) {
+  const [draft, setDraft] = React.useState(value)
+  const lastSentRef = React.useRef(value)
+  const timerRef = React.useRef<number | undefined>(undefined)
+  const onChangeRef = React.useRef(onChange)
+  onChangeRef.current = onChange
+
+  React.useEffect(() => {
+    if (value === lastSentRef.current) return
+    lastSentRef.current = value
+    window.clearTimeout(timerRef.current)
+    setDraft(value)
+  }, [value])
+
+  React.useEffect(() => () => window.clearTimeout(timerRef.current), [])
+
+  const update = React.useCallback((next: string) => {
+    setDraft(next)
+    window.clearTimeout(timerRef.current)
+    const send = () => {
+      lastSentRef.current = next
+      onChangeRef.current(next)
+    }
+    if (next.trim() === "") send()
+    else timerRef.current = window.setTimeout(send, SEARCH_INPUT_DEBOUNCE_MS)
+  }, [])
+
+  return [draft, update] as const
+}
+
 export function MapTopBar({
   filters,
   onFiltersChange,
@@ -142,6 +180,7 @@ export function MapTopBar({
   const [moreOpen, setMoreOpen] = React.useState(false)
   const isSidebar = variant === "sidebar"
   const reduceMotion = usePrefersReducedMotion()
+  const [searchDraft, setSearchDraft] = useSearchDraft(filters.search, onSearchChange)
   const queryLabel = activeQuery?.trim() ?? ""
 
   const toggleTag = (tagId: string) => {
@@ -211,8 +250,8 @@ export function MapTopBar({
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             placeholder={placeholder}
-            value={filters.search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             aria-label="Buscar lugar o zona"
             className="h-11 rounded-2xl border-olive/10 bg-olive/5 pl-10 text-sm text-olive placeholder:text-muted-foreground focus-visible:ring-primary/60"
           />
@@ -470,8 +509,8 @@ export function MapTopBar({
           <Search className="absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 stroke-[1.85] text-[#1F4D35]/45 max-[359px]:left-2.5 sm:left-3.5" aria-hidden />
           <input
             placeholder={placeholder}
-            value={filters.search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             aria-label="Buscar lugar o zona"
             className="flex h-11 min-h-[44px] w-full min-w-0 rounded-full bg-transparent pl-10 pr-2 text-base max-[359px]:pl-9 max-[359px]:pr-1 outline-none transition placeholder:text-[#5F6B63]/70 focus-visible:ring-0 sm:pl-11"
             style={{

@@ -1,6 +1,6 @@
 "use client"
 
-import type { ComponentType } from "react"
+import { memo, type ComponentType } from "react"
 import { PlaceImage } from "@/components/place-image"
 import { Coffee, MapPin, ShoppingBasket, Star, Store, Utensils } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -19,7 +19,8 @@ interface PlaceMiniCardProps {
     googleSnapshot?: { rating?: number; userRatingCount?: number } | null
   }
   selected?: boolean
-  onSelect?: () => void
+  /** Recibe el lugar: así la lista pasa un solo callback estable y la tarjeta (memo) no se redibuja. */
+  onSelect?: (place: IPlace) => void
   userLocation?: UserLatLng | null
 }
 
@@ -37,7 +38,7 @@ const TYPE_LABELS: Record<string, string> = Object.fromEntries(
   TYPES.map((t) => [t.value, t.label])
 )
 
-export function PlaceMiniCard({
+export const PlaceMiniCard = memo(function PlaceMiniCard({
   place,
   selected,
   onSelect,
@@ -74,7 +75,7 @@ export function PlaceMiniCard({
     >
       <button
         type="button"
-        onClick={onSelect}
+        onClick={() => onSelect?.(place)}
         className="flex min-w-0 flex-1 items-start gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         aria-pressed={selected}
         aria-label={`Seleccionar ${place.name}`}
@@ -138,4 +139,4 @@ export function PlaceMiniCard({
       </div>
     </div>
   )
-}
+})
