@@ -9,8 +9,8 @@ Producto: **CeliMap** (www.celimap.com.ar), mapa y directorio de lugares sin TAC
 
 ## 1. Lo más importante (leer primero)
 
-1. **Cada push a `main` es producción.** Vercel despliega automático y no hay previews en el flujo habitual. Además, **las apps iOS/Android son un WebView que carga `https://www.celimap.com.ar`** (`capacitor.config.ts`): un deploy roto rompe también las apps de las stores al instante.
-2. **El build de Vercel NO valida tipos ni lint** (`next.config.js`: `ignoreBuildErrors` / `ignoreDuringBuilds`). Eso lo cubre GitHub Actions, que corre *en paralelo* al deploy. → Antes de commitear corré **siempre** `npx tsc --noEmit`, `npm run lint`, `npm test` y `npm run build` en local. No toques esas flags ni el CI.
+1. **Producción es un VPS propio, no Vercel.** Un push a `main` no publica: se publica corriendo `deploy.sh` en el servidor (compila en `/srv/celimap/releases`, cambia `current`, chequea `/api/health` y vuelve atrás solo si falla). Todo cambio pasa antes por **prueba** (`celimap-prueba subir <rama>` → prueba.celimap.com.ar). **Las apps iOS/Android son un WebView que carga `https://www.celimap.com.ar`** (`capacitor.config.ts`): un deploy roto rompe también las apps de las stores al instante, y lo nativo solo se puede probar contra producción.
+2. **El build NO valida tipos ni lint** (`next.config.js`: `ignoreBuildErrors` / `ignoreDuringBuilds`), y `deploy.sh` tampoco. GitHub Actions corre aparte. → Antes de commitear corré **siempre** `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run build` y `npm run perf:bundle` en local. No toques esas flags ni el CI.
 3. **No borrar lugares.** Despublicar = `status: "pending"`. Existe `DELETE /api/places/[id]` (hard delete): no lo uses ni lo expongas en UI nueva.
 4. **Cambiar `name` o `neighborhood` de un lugar regenera el slug** (`PATCH /api/places/[id]` → `generateUniquePlaceSlug`). La URL vieja `/lugar/<slug-viejo>` pasa a 404 (no hay redirect de slugs). Avisar al usuario antes.
 5. **`dedicated_gf` (100% sin TACC) sólo con evidencia clara.** Ante duda o cocina compartida: `gf_options`. Ver §4.
@@ -33,6 +33,10 @@ Entorno de desarrollo del dueño: **Windows / PowerShell**. Node 20 en CI.
 | Validar env | `npm run check-env` |
 | Índices Mongo | `npm run check-indexes`, `npm run ensure:release-indexes` |
 | Capacitor | `npm run cap:sync` (iOS por defecto), `npx cap sync android` |
+| JS por ruta vs. presupuesto (después de `build`) | `npm run perf:bundle` (`-- --check` falla si alguna ruta se pasa) |
+| Tiempos del servidor (HTML y APIs, caché) | `npm run perf:server -- https://prueba.celimap.com.ar` |
+| PageSpeed local (Lighthouse mobile, mediana de 3) | `npm run perf:lab -- https://prueba.celimap.com.ar` |
+| Prueba de carga (solo contra prueba) | `npm run perf:load -- https://prueba.celimap.com.ar` |
 
 Builds de stores: Codemagic (`codemagic.yaml`: iOS TestFlight, iOS Preview, Android AAB). Ver `docs/store/`.
 
@@ -43,16 +47,16 @@ Builds de stores: Codemagic (`codemagic.yaml`: iOS TestFlight, iOS Preview, Andr
 ## 3. Stack y arquitectura
 
 - **Next.js 14 App Router** + TypeScript strict, alias `@/*` → raíz.
-- **MongoDB Atlas + Mongoose** (`lib/mongodb.ts`, pool de 1 conexión por lambda + `attachDatabasePool`). No agregues retries/disconnects: generaban picos en Atlas.
+- **MongoDB Atlas + Mongoose** (`lib/mongodb.ts`). En el VPS corre un solo proceso de Next: el pool sale del env (`MONGODB_MAX_POOL_SIZE="10"`, `MONGODB_MAX_IDLE_MS="300000"` en producción y en prueba; los defaults del código son los de Vercel, 1 y 4 s). No agregues retries/disconnects: generaban picos en Atlas.
 - **Auth:** NextAuth v4 con JWT. Google OAuth web + providers Credentials `native-google` / `native-apple` (grants one-time desde las apps). Roles `user | admin`; admin se asigna por `ADMIN_EMAILS`.
 - **Mapa:** Mapbox GL (`components/map-view/*`, `MapboxMap.tsx` es el núcleo, con capas WebGL en `map-webgl-layers.ts`).
 - **Imágenes:** Cloudinary (`/api/upload`, `lib/cloudinary/*`). Fotos de Google Places opcionales.
 - **Email:** Resend (`lib/email-*.ts`).
 - **IA:** OpenRouter vía AI SDK. Chat público `/api/chat` (+ `lib/chat/*`), investigación de lugares/sugerencias para admin (`lib/place-research/*`, siempre con aprobación humana), redes sociales admin (`lib/social/*`).
-- **PWA:** `next-pwa` con SW en estado *waiting* hasta que el usuario acepta (`components/pwa/PwaRegister.tsx`). Leé el comentario de `next.config.js` antes de tocar caching.
+- **PWA:** `next-pwa` con SW en estado *waiting* hasta que el usuario acepta (`components/pwa/PwaRegister.tsx`, que lo registra después del `load`). La precarga está vacía a propósito y hay navigation preload: leé el comentario de `next.config.js` antes de tocar caching.
 - **Apps nativas:** Capacitor 8. iOS `com.celimap.app`, Android `com.celimap.mobile`. Lógica nativa en `lib/native-*.ts` y `components/native/*`.
 - **Analytics:** eventos first-party en Mongo (`ProductEvent`, `lib/analytics-*.ts`), incluidas las web vitals (`web_vital`, pestaña Velocidad del admin). Sin Vercel Analytics, PostHog ni Sentry a propósito. Ver `docs/ANALYTICS.md` antes de agregar/renombrar eventos.
-- **Hosting:** Vercel, región `gru1`.
+- **Hosting:** VPS LightNode en Buenos Aires (AlmaLinux 9, 2 vCPU, 3,6 GB). `next start -p 3000` (prueba en el 3001) detrás de Caddy; nunca `-H 127.0.0.1` (rompe el rewrite del middleware y da 500 en las landings). Env de producción en `/srv/celimap/shared/.env.production`: las `NEXT_PUBLIC_*` necesitan rebuild, las de servidor solo `systemctl restart celimap`. Nunca `REGENERAR_ENV=1`. El DNS sigue en Vercel. En route handlers, `request.url` es `https://localhost:3000/...`: los redirects van con `Location` relativa o `lib/base-url`, nunca `new URL(path, request.url)`.
 - `src/` = Remotion (videos de marketing), **no** es código de la app. `reels/`, `newbranding/`, `docs/baselines/`, `www/`, `out/` tampoco son app.
 
 ### Mapa de carpetas
@@ -125,7 +129,16 @@ Modelo: `models/Place.ts`. Validación de entrada: `placeSchema` en `lib/validat
 - **Queries Mongo:** `.lean()` + `.select()` siempre en lecturas públicas. Usá las listas explícitas de `lib/places-public-select.ts` (`PUBLIC_PLACE_LIST_SELECT`, `PUBLIC_PLACE_PAGE_SELECT`, `PUBLIC_PLACE_DETAIL_SELECT`): son inclusión explícita para que campos internos (`aiEnrichment`, `editLog`, `googleSync`, emails) no lleguen al cliente. Índices nuevos → declararlos en el schema y en `docs/INDEXES-CHECKLIST.md` / `scripts/ensure-release-indexes.ts`.
 - `/api/places` cachea por bbox redondeado (`expandViewportBbox`) y filtra después; límite máximo `PUBLIC_PLACES_MAX_LIMIT` (100) — no subirlo sin revisar clientes.
 - **Middleware:** cada invocación cuesta. Si agregás una rama en `middleware.ts`, agregala al `matcher` (lo controla `__tests__/middleware-matcher.test.ts`).
-- **Service Worker:** no agregues runtime caching sobre `/_next/static` ni cambies `skipWaiting/clientsClaim` sin entender el ciclo del banner de actualización.
+- **Service Worker:** no agregues runtime caching sobre `/_next/static`, precarga ni cambies `skipWaiting/clientsClaim` sin entender el ciclo del banner de actualización. Con la precarga vacía, `sw.js` es igual entre builds y el aviso solo sale cuando cambia su configuración. `public/sw.js` lo regenera cada build: no lo commitees.
+
+### Presupuesto de JS y carga diferida
+
+- **Presupuesto:** ≤ 200 KB de JS gzip de primera carga por ruta (`/mapa` ≤ 220), en `scripts/perf/budgets.json`. Lo mide `npm run perf:bundle` después del build. Si una ruta se pasa, lo nuevo se carga diferido.
+- **Mapbox (~450 KB gzip) nunca en el JS inicial:** en `/mapa` va por `MapboxMapLazy` (`lib/mapbox-preload.ts` lo precarga); en landings, `LandingMapLazy`; en `/sugerir`, `LazyMapPickerModal`. No importes el barrel `@/components/map-view` desde páginas: arrastra `MapboxMap`.
+- **zod y `@/lib/validations` no van en componentes** (regla de ESLint): los límites compartidos viven en `lib/places-limits.ts`.
+- **Lo que casi nadie abre se baja al usarlo:** chat (`ChatFab` + panel con `next/dynamic`), formularios de reseña y reporte de la ficha, modales de listas. Patrón: `dynamic` o `import()` + precarga en `onPointerEnter`/`onPointerDown`/`onFocus`.
+- **Mapa:** los lugares se piden por zona redondeada a una grilla (`snapViewportToGrid`), las zonas completas se recuerdan (`isViewportCovered`) y las páginas van en paralelo; `MapboxMap` no hace `setData` si la firma de los datos no cambió. La URL del mapa cambia con `history.replaceState` (no `router.replace`, que vuelve al servidor).
+- **Medir:** web vitals reales en `/admin/analytics` → Velocidad (eventos `web_vital`); en laboratorio, los scripts `perf:*` de la tabla de comandos. Historia y números: `rendimiento/auditoria-rendimiento-2026-10-17.md` en el proyecto de Claude.
 - El build consulta Mongo (ISR/sitemap). `ECONNREFUSED` local en build ≠ bug de SEO.
 
 ---
@@ -172,7 +185,7 @@ Keywords objetivo: "mapa sin TACC", "mapa sin gluten", "lugares sin TACC", "rest
 1. `npx tsc --noEmit`
 2. `npm run lint`
 3. `npm test`
-4. `npm run build`
+4. `npm run build` y `npm run perf:bundle -- --check`
 5. Si tocaste ficha/mapa/landings: probar en `npm run dev` (o `next start`) en mobile y desktop, y revisar consola por errores de hidratación.
 6. Si tocaste SEO: verificar canonical, robots y sitemap después del deploy.
 7. Commits chicos y descriptivos. No pushear sin que el usuario lo pida.
