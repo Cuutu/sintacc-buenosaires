@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { TYPES } from "@/lib/constants"
 
 interface PlaceHeroGalleryProps {
@@ -40,7 +40,7 @@ export function PlaceHeroGallery({
             className="relative overflow-hidden"
             style={{ gridRow: photos.length >= 2 ? "1 / 3" : "1 / 2" }}
           >
-            <Image
+            <PlaceImage
               src={photos[0]}
               alt={`${name} - foto 1`}
               fill
@@ -52,7 +52,7 @@ export function PlaceHeroGallery({
           {/* Foto 2 */}
           {photos.length >= 2 && (
             <div className="relative overflow-hidden">
-              <Image
+              <PlaceImage
                 src={photos[1]}
                 alt={`${name} - foto 2`}
                 fill
@@ -64,7 +64,7 @@ export function PlaceHeroGallery({
           {/* Foto 3 — con overlay si hay más */}
           {photos.length >= 3 && (
             <div className="relative overflow-hidden">
-              <Image
+              <PlaceImage
                 src={photos[2]}
                 alt={`${name} - foto 3`}
                 fill

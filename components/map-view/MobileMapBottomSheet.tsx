@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import Link from "next/link"
 import { ArrowRight, Check, ExternalLink, Info, Navigation, Share2, Star, X } from "lucide-react"
 import type { IPlace } from "@/models/Place"
@@ -323,7 +323,7 @@ export function MobileMapBottomSheet({
           >
             {photoSrc ? (
               <>
-                <Image
+                <PlaceImage
                   src={photoSrc}
                   alt=""
                   fill

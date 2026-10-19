@@ -98,6 +98,10 @@ const nextConfig = {
     }
   },
   images: {
+    // Las fotos de Cloudinary van directo a su CDN (components/place-image.tsx).
+    // Lo que sigue pasando por acá (Google, imágenes locales) queda 30 días en la
+    // caché del servidor en vez de 60 s.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",

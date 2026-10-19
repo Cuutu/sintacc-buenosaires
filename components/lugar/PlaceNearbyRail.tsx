@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
 import type { NearbyPlaceCard } from "@/lib/place-nearby"
@@ -34,7 +35,7 @@ export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
             >
               <div className="relative mb-3 h-16 w-16 overflow-hidden rounded-2xl bg-[#1F4D35]/10">
                 {photo ? (
-                  <Image
+                  <PlaceImage
                     src={photo}
                     alt=""
                     fill

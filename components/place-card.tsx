@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { Check, Star } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { getPlacePath } from "@/lib/place-url"
@@ -70,7 +70,7 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
       >
         {photoSrc ? (
           <>
-            <Image
+            <PlaceImage
               src={photoSrc}
               alt=""
               fill

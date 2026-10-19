@@ -31,3 +31,42 @@ export function getPlaceImageUrl(
   }
   return trimmed
 }
+
+/** Fotos de nuestra cuenta (o cualquier otra) servidas por Cloudinary. */
+export function isCloudinaryImageUrl(src: string): boolean {
+  return /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(src)
+}
+
+const TRANSFORM_TOKEN = /^(?:c|g|w|h|f|q|ar|e|b|x|y|z|r|a|o|fl|dpr|t)_[^,/]+$/
+
+function isTransformSegment(segment: string): boolean {
+  return segment.length > 0 && segment.split(",").every((token) => TRANSFORM_TOKEN.test(token))
+}
+
+/**
+ * Loader de next/image para fotos de Cloudinary: el tamaño y el formato (AVIF o
+ * WebP según el navegador) los resuelve Cloudinary desde su CDN, en vez de que
+ * el servidor baje la foto y la recomprima. Si la URL ya trae un recorte (los
+ * roles de getPlaceImageUrl), se encadena un paso que solo achica.
+ */
+export function cloudinaryImageLoader({
+  src,
+  width,
+  quality,
+}: {
+  src: string
+  width: number
+  quality?: number
+}): string {
+  const marker = "/image/upload/"
+  const idx = src.indexOf(marker)
+  if (idx === -1) return src
+  const head = src.slice(0, idx + marker.length)
+  const rest = src.slice(idx + marker.length)
+  const step = `c_limit,w_${width},f_auto,q_${quality ?? "auto"}`
+  const first = rest.split("/")[0] ?? ""
+  if (isTransformSegment(first)) {
+    return `${head}${first}/${step}/${rest.slice(first.length + 1)}`
+  }
+  return `${head}${step}/${rest}`
+}

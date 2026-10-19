@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { MessageCircle } from "lucide-react"
 import { TYPES } from "@/lib/constants"
 
@@ -44,7 +44,7 @@ export function PhotoStrip({ photos, name, type, types }: PhotoStripProps) {
   return (
     <div>
       <div className="relative w-full aspect-[4/3] md:aspect-square max-h-[200px] md:max-h-none rounded-2xl overflow-hidden border border-white/5">
-        <Image
+        <PlaceImage
           src={photos[0]}
           alt={`${name} - foto principal`}
           fill

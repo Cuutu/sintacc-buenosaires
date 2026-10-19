@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { getCoverThemeForLevel } from "@/components/map-view/place-selected-card-model"
 import { cn } from "@/lib/utils"
 import { emptyHeroPinSrc, heroSafetyCopy } from "./place-detail-ui"
@@ -29,7 +30,7 @@ export function PlaceHero({
   return (
     <div className="relative h-[220px] w-full overflow-hidden lg:h-[380px] lg:rounded-[28px]">
       {hasPhoto ? (
-        <Image
+        <PlaceImage
           src={photos![0]}
           alt={name}
           fill

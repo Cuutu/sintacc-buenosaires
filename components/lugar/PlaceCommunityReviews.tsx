@@ -2,6 +2,7 @@
 
 import { Star } from "lucide-react"
 import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { Button } from "@/components/ui/button"
 import { ReviewForm } from "@/components/review-form"
 import { ReviewAdminReply } from "@/components/review-admin-reply"
@@ -166,7 +167,7 @@ export function PlaceCommunityReviews({
                     rel="noopener noreferrer"
                     className="relative block h-14 w-14 overflow-hidden rounded-xl border border-[#E8E1D6]"
                   >
-                    <Image src={url} alt="Foto de la reseña" width={56} height={56} className="h-full w-full object-cover" />
+                    <PlaceImage src={url} alt="Foto de la reseña" width={56} height={56} className="h-full w-full object-cover" />
                   </a>
                 ))}
               </div>

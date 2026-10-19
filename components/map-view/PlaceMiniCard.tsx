@@ -1,7 +1,7 @@
 "use client"
 
 import type { ComponentType } from "react"
-import Image from "next/image"
+import { PlaceImage } from "@/components/place-image"
 import { Coffee, MapPin, ShoppingBasket, Star, Store, Utensils } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IPlace } from "@/models/Place"
@@ -81,7 +81,7 @@ export function PlaceMiniCard({
       >
         <span className="relative mt-0.5 h-16 w-16 shrink-0 overflow-hidden rounded-[12px] bg-[#1F4D35]/[0.08]">
           {photoSrc ? (
-            <Image
+            <PlaceImage
               src={photoSrc}
               alt=""
               fill
