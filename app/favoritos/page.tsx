@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,7 +22,6 @@ import {
   LazyManageListModal,
   preloadCreateListModal,
 } from "@/components/lists/list-modals-lazy"
-import { OwnerListCard } from "@/components/lists/OwnerListCard"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
@@ -30,6 +30,19 @@ import { toast } from "sonner"
 import { ListPlus } from "lucide-react"
 import { LIST_VISIBILITY } from "@/lib/lists/constants"
 import { cn } from "@/lib/utils"
+
+/**
+ * Las tarjetas de "Mis listas" traen el menú de acciones (Radix DropdownMenu, ~20 KB
+ * gzip) y solo aparecen en la segunda pestaña: se bajan al elegirla.
+ */
+const loadOwnerListCard = () => import("@/components/lists/OwnerListCard")
+const OwnerListCard = dynamic(() => loadOwnerListCard().then((m) => m.OwnerListCard), {
+  loading: () => <div className="h-36 animate-pulse rounded-2xl border border-olive/10 bg-olive/5" aria-hidden />,
+})
+
+function preloadOwnerListCard() {
+  void loadOwnerListCard().catch(() => undefined)
+}
 
 type ListFilter = "all" | "public" | "private"
 type ConfirmKind = "delete" | "regenerate" | "revoke" | null
@@ -306,7 +319,9 @@ export default function FavoritosPage() {
         defaultValue="favoritos"
         className="space-y-6"
         onValueChange={(v) => {
-          if (v === "listas" && !listsFetched) fetchLists()
+          if (v !== "listas") return
+          preloadOwnerListCard()
+          if (!listsFetched) fetchLists()
         }}
       >
         <TabsList className="grid h-11 w-full max-w-md grid-cols-2 rounded-xl border border-olive/10 bg-olive/5 p-1">
@@ -321,6 +336,7 @@ export default function FavoritosPage() {
           </TabsTrigger>
           <TabsTrigger
             value="listas"
+            onPointerEnter={preloadOwnerListCard}
             className={cn(
               "rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none",
               "data-[state=inactive]:text-muted-foreground"
