@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { runAfterLoadWhenIdle } from "@/lib/idle"
 import { isNativeApp } from "@/lib/native-app"
 import { cleanupNativeCelimapServiceWorkers } from "@/lib/native-sw-cleanup"
+import { deleteStaleServiceWorkerCaches } from "@/lib/sw-stale-caches"
 
 export type RuntimeShell = "native" | "web" | "unknown"
 
@@ -18,8 +20,9 @@ export function resolveRuntimeShell(): RuntimeShell {
 }
 
 /**
- * Web/PWA: registra /sw.js manualmente (next-pwa register:false).
- * Nativo: no registra; cleanup + máx. 1 reload/versión.
+ * Web/PWA: registra /sw.js manualmente (next-pwa register:false), después del `load`
+ * y cuando el navegador está libre: bajar e instalar el SW no compite con la página.
+ * Nativo: no registra; cleanup + máx. 1 reload/versión (enseguida, como antes).
  * Update: registration.waiting → aviso; SKIP_WAITING solo al aceptar.
  */
 export function PwaRegister() {
@@ -66,6 +69,8 @@ export function PwaRegister() {
           if (reg?.waiting) setUpdateReady(true)
         }
         syncWaiting()
+        // Con el SW actual ya activo, se borran las caches de versiones viejas.
+        if (reg.active && !reg.waiting) void deleteStaleServiceWorkerCaches()
 
         reg.addEventListener("updatefound", () => {
           const installing = reg!.installing
@@ -83,9 +88,12 @@ export function PwaRegister() {
       }
     }
 
-    void run()
+    const cancelIdle =
+      resolveRuntimeShell() === "web" ? runAfterLoadWhenIdle(() => void run(), { timeoutMs: 5000 }) : undefined
+    if (!cancelIdle) void run()
     return () => {
       cancelled = true
+      cancelIdle?.()
       if (pollId) window.clearInterval(pollId)
     }
   }, [])

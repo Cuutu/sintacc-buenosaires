@@ -58,7 +58,12 @@ describe("native SW helpers + contratos", () => {
     expect(src).toContain("shouldReload")
     const cfg = read("next.config.js")
     expect(cfg).toContain("register: false")
-    expect(cfg).not.toMatch(/handler:\s*["']NetworkOnly["']/)
+    // Ninguna regla runtime sobre /_next/static (los chunks los cachea el navegador).
+    expect(cfg).not.toMatch(/urlPattern:[^\n]*_next\\?\/static/)
+    // El único NetworkOnly es el de navegaciones, que usa el navigation preload.
+    expect(cfg.match(/handler:\s*["']NetworkOnly["']/g) ?? []).toHaveLength(1)
+    expect(cfg).toMatch(/urlPattern: \(\{ request \}\) => request\.mode === "navigate",\s*handler: "NetworkOnly"/)
+    expect(cfg).toContain("navigationPreload: true")
   })
 
   it("cleanup no toca cookies/IDB", () => {

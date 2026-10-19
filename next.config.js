@@ -5,10 +5,22 @@
  * - skipWaiting/clientsClaim false → SW nuevo queda en "waiting".
  *   Ciclo real: waiting → usuario acepta banner → SKIP_WAITING → controllerchange → 1 reload.
  *   Postergar = seguir con build actual. NO afirmar activación automática en cold start.
- * - NO regla runtime NetworkOnly sobre /_next/static (contradice precache).
- *   (La palabra NetworkOnly solo aparece en este comentario de documentación.)
- * - Assets hasheados: sin runtime route (precache + cleanupOutdatedCaches).
+ * - NO reglas runtime sobre /_next/static: los chunks van directo a la red y al cache
+ *   HTTP del navegador (un NetworkOnly ahí hacía que el SW arranque por cada chunk).
+ * - Assets hasheados: sin runtime route. Tienen Cache-Control immutable, así que el
+ *   navegador los guarda solo.
  * - Offline: fonts/images/api runtime.
+ *
+ * Precarga vacía (perf-29). Antes precacheaba todos los chunks y todo public/, y la
+ * instalación fallaba en el segundo archivo (/_next/app-build-manifest.json da 404):
+ * el SW nunca llegó a instalarse en producción. Precargar todo eran ~700 KB gzip
+ * extra para cada visitante nuevo y otra tanda en cada deploy, sin beneficio real
+ * (no hay página offline y el navegador ya cachea los chunks). Sin precarga, sw.js
+ * no cambia entre builds, así que tampoco sale el aviso de actualización en cada deploy.
+ *
+ * navigationPreload: con un SW activo, cada navegación tiene que esperar a que el SW
+ * arranque (50–150 ms en un Android). Con preload, el pedido de la página sale en
+ * paralelo y la regla de navegaciones de abajo usa esa respuesta.
  */
 const withPWA = require("next-pwa")({
   dest: "public",
@@ -16,9 +28,17 @@ const withPWA = require("next-pwa")({
   register: false,
   skipWaiting: false,
   clientsClaim: false,
+  buildExcludes: [/./],
+  additionalManifestEntries: [],
+  navigationPreload: true,
   runtimeCaching: [
-    // NO añadir /_next/static aquí — precacheAndRoute ya versiona por build;
-    // cleanupOutdatedCaches() elimina precache de builds anteriores.
+    // NO añadir /_next/static aquí: son immutable y los cachea el navegador.
+    // Navegaciones: siempre a la red, con la respuesta del navigation preload. Todas las
+    // navegaciones pasan por acá (también /api/auth/*) para que nunca se pida dos veces.
+    {
+      urlPattern: ({ request }) => request.mode === "navigate",
+      handler: "NetworkOnly",
+    },
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
       handler: "CacheFirst",
