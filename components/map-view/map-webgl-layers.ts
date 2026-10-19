@@ -577,6 +577,11 @@ export function placesDataSignature(collection: GeoJSON.FeatureCollection): stri
  * Corre `run` cuando el estilo está listo. `once("load")` no alcanza: si el mapa ya
  * cargó pero el estilo está ocupado un momento (isStyleLoaded() da false), "load" no
  * vuelve a pasar y los pins quedaban sin dibujar hasta el próximo cambio.
+ *
+ * Si espera un evento, `run` va en un microtask: Mapbox dispara "styledata" en medio
+ * de su cuadro (después de recalcular las capas y antes de ubicar los símbolos). Una
+ * capa agregada ahí todavía no tiene layout y Mapbox tiraba
+ * "Cannot read properties of undefined (reading 'get')" en `continuePlacement`.
  * Devuelve una función para cancelar.
  */
 export function whenStyleReady(map: MapboxMapType, run: () => void): () => void {
@@ -591,6 +596,7 @@ export function whenStyleReady(map: MapboxMapType, run: () => void): () => void 
     return () => {}
   }
   let done = false
+  let cancelled = false
   const cleanup = () => {
     try {
       map.off("load", check)
@@ -609,13 +615,16 @@ export function whenStyleReady(map: MapboxMapType, run: () => void): () => void 
     }
     done = true
     cleanup()
-    run()
+    queueMicrotask(() => {
+      if (!cancelled) run()
+    })
   }
   map.on("load", check)
   map.on("styledata", check)
   map.on("idle", check)
   return () => {
     done = true
+    cancelled = true
     cleanup()
   }
 }
