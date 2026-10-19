@@ -83,13 +83,20 @@ bursts.push(await burst("2ª ráfaga", 2))
 bursts.push(await burst("3ª ráfaga", 3))
 await sleep(6000)
 bursts.push(await burst("después de 6 s sin tráfico", 4))
-const single = await timeRequest(`${base}/api/places/near?lat=-34.7&lng=-58.3816&radius=2000`)
+// Referencia: 3 requests de a uno en la misma zona y con el mismo radio que las
+// ráfagas (puntos sin caché), para comparar lo mismo.
+const singles = []
+for (let i = 0; i < 3; i++) {
+  const lat = (-34.6 - (30 + i) * 0.001).toFixed(4)
+  singles.push((await timeRequest(`${base}/api/places/near?lat=${lat}&lng=-58.3816&radius=2000`)).total)
+}
+const single = { total: median(singles) }
 
 printTable(
   ["Ráfaga", "Mínimo", "Mediana", "Máximo"],
   bursts.map((b) => [b.label, fmtMs(b.min), fmtMs(b.median), fmtMs(b.max)])
 )
-console.log(`\nUn request solo, como referencia: ${fmtMs(single.total)}.`)
+console.log(`\nUn request solo en la misma zona, como referencia: ${fmtMs(single.total)}.`)
 console.log("Si las ráfagas tardan mucho más que un request solo, el servidor está abriendo conexiones nuevas a Mongo o haciendo fila.")
 
 const file = saveResult("server", { at: new Date().toISOString(), base, runs, sequential, bursts, single: single.total })
