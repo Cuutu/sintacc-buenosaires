@@ -1,24 +1,25 @@
 import { cn } from "@/lib/utils"
 
-/** Cache-bust: Next/browser cacheaban PNG viejo con fondo cream. */
-const CACHE = "v2"
-
+/**
+ * WebP al doble del tamaño más grande en pantalla (72 px de alto en escritorio).
+ * Los PNG de 1200 px (≈270 KB cada uno) quedan para mails, wallet y cartel.
+ */
 const LOCKUP = {
-  src: `/brand/logo-principal.png?${CACHE}`,
-  width: 1200,
-  height: 366,
+  src: "/brand/logo-principal.webp",
+  width: 485,
+  height: 148,
 } as const
 
 const LOCKUP_INVERSE = {
-  src: `/brand/logo-principal-neg.png?${CACHE}`,
-  width: 1200,
-  height: 370,
+  src: "/brand/logo-principal-neg.webp",
+  width: 480,
+  height: 148,
 } as const
 
 const MARK = {
-  src: `/brand/mark.png?${CACHE}`,
-  width: 512,
-  height: 684,
+  src: "/brand/mark.webp",
+  width: 108,
+  height: 144,
 } as const
 
 const HEIGHT = {

@@ -258,7 +258,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("/noise.png");
+  background-image: url("/noise-128.webp");
   background-repeat: repeat;
   opacity: 0.035;
 }
@@ -267,7 +267,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("/noise.png");
+  background-image: url("/noise-128.webp");
   background-repeat: repeat;
   opacity: 0.035;
   mix-blend-mode: multiply;

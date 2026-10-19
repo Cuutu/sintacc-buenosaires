@@ -54,7 +54,7 @@ export function SearchBar() {
         data-testid="home-celibot-entry"
       >
         <Image
-          src="/brand/celibot.png"
+          src="/brand/celibot-192.webp"
           alt=""
           width={36}
           height={36}

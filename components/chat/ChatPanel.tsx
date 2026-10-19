@@ -84,7 +84,8 @@ function formatClock(date: Date): string {
   return date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
 }
 
-const CELIBOT_SRC = "/brand/celibot.png"
+/** 192 px: el avatar más grande es de 96 px. El PNG original es de 1024 px (≈100 KB). */
+const CELIBOT_SRC = "/brand/celibot-192.webp"
 
 function ChatAvatar() {
   return (

@@ -499,7 +499,7 @@ export function MapTopBar({
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_-3px_rgba(31,42,34,0.35)] max-[359px]:h-9 max-[359px]:w-9 transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           data-testid="map-celibot-entry"
         >
-          <Image src="/brand/celibot.png" alt="" width={34} height={34} className="h-[34px] w-[34px] rounded-full object-contain max-[359px]:h-[30px] max-[359px]:w-[30px]" />
+          <Image src="/brand/celibot-192.webp" alt="" width={34} height={34} className="h-[34px] w-[34px] rounded-full object-contain max-[359px]:h-[30px] max-[359px]:w-[30px]" />
         </button>
       </div>
 
