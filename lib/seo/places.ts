@@ -14,6 +14,7 @@ import { getProvinceBySlug } from "./provinces"
 import { buildNationalCategoryMongoQuery } from "./argentina-place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { canonicalCityPlaceFilter } from "./city-place-match"
+import { escapeRegexLiteral } from "@/lib/chat/regex"
 
 const PER_PAGE = 24
 
@@ -119,7 +120,15 @@ async function loadPlacesByCity(
   }
   if (barrio) {
     const matchedBarrio = city.neighborhoods.find((n) => n.toLowerCase() === barrio.toLowerCase())
-    if (matchedBarrio) query.neighborhood = matchedBarrio
+    if (matchedBarrio) {
+      query.neighborhood = matchedBarrio
+    } else if (barrio.length <= 80) {
+      // Los links de barrio salen de la base (getCityPageStats), no del config de
+      // la ciudad: antes "Los Boulevares" mostraba la lista sin filtrar. Si el
+      // barrio no tiene ningún lugar (URL inventada), se ignora como antes.
+      const byName = { ...query, neighborhood: { $regex: `^${escapeRegexLiteral(barrio.trim())}$`, $options: "i" } }
+      if ((await Place.countDocuments(byName)) > 0) query.neighborhood = byName.neighborhood
+    }
   }
   const skip = (page - 1) * PER_PAGE
 
