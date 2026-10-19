@@ -83,59 +83,78 @@ export function getSafetyRank(place: IPlace): number {
   return 0
 }
 
-function compareName(a: IPlace, b: IPlace): number {
-  return a.name.localeCompare(b.name, "es", { sensitivity: "base" })
-}
+/** Un solo Collator: `localeCompare` con locale crea uno nuevo en cada comparación. */
+const NAME_COLLATOR = new Intl.Collator("es", { sensitivity: "base" })
 
 export function listHasRatings(places: PlaceWithListStats[]): boolean {
   return places.some((place) => getRating(place) > 0)
 }
 
+type SortKeys<T> = {
+  place: T
+  name: string
+  distance: number
+  safety: number
+  rating: number
+  reviews: number
+}
+
+/**
+ * Mismo orden de siempre, pero cada dato (distancia, seguridad, rating) se calcula una
+ * vez por lugar y no en cada comparación: con 600 lugares eran ~10.000 haversines y
+ * otras tantas lecturas de tags por orden.
+ */
 export function sortPlaces<T extends PlaceWithListStats>(
   places: T[],
   sort: PlaceSortOption,
   userLocation: UserLatLng | null
 ): T[] {
-  const list = [...places]
-
-  if (sort === "nearest" && userLocation) {
-    return list.sort((a, b) => {
-      const aLat = a.location?.lat
-      const aLng = a.location?.lng
-      const bLat = b.location?.lat
-      const bLng = b.location?.lng
-      const da =
-        Number.isFinite(aLat) && Number.isFinite(aLng)
-          ? metersBetween(userLocation, { lat: aLat as number, lng: aLng as number })
-          : Number.POSITIVE_INFINITY
-      const db =
-        Number.isFinite(bLat) && Number.isFinite(bLng)
-          ? metersBetween(userLocation, { lat: bLat as number, lng: bLng as number })
-          : Number.POSITIVE_INFINITY
-      if (da !== db) return da - db
-      return compareName(a, b)
-    })
-  }
-
-  if (sort === "rating") {
-    return list.sort((a, b) => {
-      const reviewDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
-      if (reviewDelta !== 0) return reviewDelta
-      const ratingDelta = getRating(b) - getRating(a)
-      if (ratingDelta !== 0) return ratingDelta
-      const countDelta = getReviewCount(b) - getReviewCount(a)
-      if (countDelta !== 0) return countDelta
-      const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
-      if (safetyDelta !== 0) return safetyDelta
-      return compareName(a, b)
-    })
-  }
-
-  return list.sort((a, b) => {
-    const safetyDelta = getSafetyRank(b) - getSafetyRank(a)
-    if (safetyDelta !== 0) return safetyDelta
-    const reviewPresenceDelta = Math.sign(getReviewCount(b)) - Math.sign(getReviewCount(a))
-    if (reviewPresenceDelta !== 0) return reviewPresenceDelta
-    return compareName(a, b)
+  const byDistance = sort === "nearest" && userLocation != null
+  const keys: SortKeys<T>[] = places.map((place) => {
+    let distance = Number.POSITIVE_INFINITY
+    if (byDistance) {
+      const lat = place.location?.lat
+      const lng = place.location?.lng
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        distance = metersBetween(userLocation, { lat: lat as number, lng: lng as number })
+      }
+    }
+    return {
+      place,
+      name: place.name,
+      distance,
+      safety: byDistance ? 0 : getSafetyRank(place),
+      rating: sort === "rating" ? getRating(place) : 0,
+      reviews: byDistance ? 0 : getReviewCount(place),
+    }
   })
+  const byName = (a: SortKeys<T>, b: SortKeys<T>) => NAME_COLLATOR.compare(a.name, b.name)
+
+  if (byDistance) {
+    keys.sort((a, b) => {
+      if (a.distance !== b.distance) return a.distance - b.distance
+      return byName(a, b)
+    })
+  } else if (sort === "rating") {
+    keys.sort((a, b) => {
+      const reviewDelta = Math.sign(b.reviews) - Math.sign(a.reviews)
+      if (reviewDelta !== 0) return reviewDelta
+      const ratingDelta = b.rating - a.rating
+      if (ratingDelta !== 0) return ratingDelta
+      const countDelta = b.reviews - a.reviews
+      if (countDelta !== 0) return countDelta
+      const safetyDelta = b.safety - a.safety
+      if (safetyDelta !== 0) return safetyDelta
+      return byName(a, b)
+    })
+  } else {
+    keys.sort((a, b) => {
+      const safetyDelta = b.safety - a.safety
+      if (safetyDelta !== 0) return safetyDelta
+      const reviewPresenceDelta = Math.sign(b.reviews) - Math.sign(a.reviews)
+      if (reviewPresenceDelta !== 0) return reviewPresenceDelta
+      return byName(a, b)
+    })
+  }
+  return keys.map((entry) => entry.place)
 }

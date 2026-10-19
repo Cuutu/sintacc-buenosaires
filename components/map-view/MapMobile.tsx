@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { List, X } from "lucide-react"
-import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
+import type { MapboxMapRef, MapViewportBounds } from "./MapboxMap"
+import { MapboxMapLazy as MapboxMap } from "./MapboxMapLazy"
 import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { MapBottomSheet, type SheetSnap } from "./BottomSheet"
@@ -24,7 +25,7 @@ import { CountUp } from "./CountUp"
 import { useUserLocation } from "./useUserLocation"
 import { listHasRatings, sortPlaces, type PlaceSortOption, LOCATION_SORT_CTA } from "./place-sort"
 import { useMapPlaceSort } from "./useMapPlaceSort"
-import mapboxgl from "mapbox-gl"
+import type mapboxgl from "mapbox-gl"
 import { filterPlacesInBounds } from "./geo"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
@@ -162,11 +163,15 @@ export function MapMobile({
     return inBounds
   }, [places, bounds, selectedPlaceId, searchQuery])
 
+  // Ordenar solo con la lista abierta: cerrada, el botón solo necesita cuántos hay.
   const sortedPlaces = React.useMemo(
-    () => sortPlaces(visiblePlaces, sort, location.coords),
-    [visiblePlaces, sort, location.coords]
+    () => (listOpen ? sortPlaces(visiblePlaces, sort, location.coords) : visiblePlaces),
+    [listOpen, visiblePlaces, sort, location.coords]
   )
-  const hasRatings = React.useMemo(() => listHasRatings(visiblePlaces), [visiblePlaces])
+  const hasRatings = React.useMemo(
+    () => (listOpen ? listHasRatings(visiblePlaces) : false),
+    [listOpen, visiblePlaces]
+  )
   const activeQuery = searchQuery?.trim() ?? ""
   // Chip de búsqueda: en modo dirección el texto no filtra, pero se puede quitar igual.
   const queryChip = searchPin?.query ?? activeQuery

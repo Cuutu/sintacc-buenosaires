@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ReactDOM from "react-dom";
 import { getBaseUrl } from "@/lib/base-url";
 import { MapaSeoIntro } from "@/components/mapa/MapaSeoIntro";
 import { CELIMAP_ITUNES } from "@/lib/seo/itunes";
@@ -34,6 +35,9 @@ export default function MapaLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Estilo, tiles y fuentes del mapa salen de api.mapbox.com: la conexión se abre
+  // mientras baja el JS, no cuando Mapbox arranca.
+  ReactDOM.preconnect("https://api.mapbox.com", { crossOrigin: "anonymous" })
   // Desktop: mapa full viewport; SEO debajo (H1 siempre en HTML; copy extra md+).
   // Mobile: mapa full dvh; H1 sr-only (no display:none).
   return (

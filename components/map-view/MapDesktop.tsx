@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import mapboxgl from "mapbox-gl"
+import type mapboxgl from "mapbox-gl"
 import { X } from "lucide-react"
-import { MapboxMap, type MapboxMapRef, type MapViewportBounds } from "./MapboxMap"
+import type { MapboxMapRef, MapViewportBounds } from "./MapboxMap"
+import { MapboxMapLazy as MapboxMap } from "./MapboxMapLazy"
 import { MapErrorBoundary } from "./MapErrorBoundary"
 import { MapTopBar, type MapFilters } from "./MapTopBar"
 import { PlacesList } from "./PlacesList"

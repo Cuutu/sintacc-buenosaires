@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams, useRouter } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useEffect, type ComponentType } from "react"
 import {
@@ -14,6 +14,7 @@ import {
   Store,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { preloadMapboxMap } from "@/lib/mapbox-preload"
 import {
   BOTTOM_NAV_SLOT_KEYS,
   resolveBottomNavPerfilHref,
@@ -82,7 +83,6 @@ const itemTone = (active: boolean) =>
 export function BottomNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const router = useRouter()
   const { data: session, status } = useSession()
   const listOpen = searchParams.get("list") === "open"
   const isAdmin = session?.user?.role === "admin"
@@ -157,7 +157,8 @@ export function BottomNav() {
                     const qs = params.toString()
                     const to = qs ? `/mapa?${qs}` : "/mapa"
                     recordBottomNavIntent(pathname || "/", to, stableKey)
-                    router.replace(to, { scroll: false })
+                    // Sin ir al servidor: Next sincroniza replaceState con useSearchParams.
+                    window.history.replaceState(null, "", to)
                   }}
                   className={cn(navItemClass, itemTone(isExplorarActive))}
                   aria-current={isExplorarActive ? "page" : undefined}
@@ -175,6 +176,9 @@ export function BottomNav() {
                 data-nav-slot={stableKey}
                 href="/mapa"
                 onClick={() => recordBottomNavIntent(pathname || "/", "/mapa", stableKey)}
+                onPointerEnter={preloadMapboxMap}
+                onPointerDown={preloadMapboxMap}
+                onFocus={preloadMapboxMap}
                 className={cn(navItemClass, itemTone(false))}
                 aria-label={label}
                 title={label}
@@ -191,6 +195,13 @@ export function BottomNav() {
                 data-nav-slot={stableKey}
                 href={hrefStr}
                 onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
+                {...(hrefStr === "/mapa"
+                  ? {
+                      onPointerEnter: preloadMapboxMap,
+                      onPointerDown: preloadMapboxMap,
+                      onFocus: preloadMapboxMap,
+                    }
+                  : {})}
                 className={cn(centerItemClass, itemTone(isActive))}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={label}
