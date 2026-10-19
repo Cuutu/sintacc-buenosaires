@@ -31,10 +31,13 @@ function E2EBoundaryProbe({ target }: { target: "page" | "chrome" }) {
       }
     }
     window.addEventListener("celimap-e2e-force-boundary", arm)
-    const id = window.setInterval(arm, 50)
+    // El poll solo en E2E (Playwright pone __CELIMAP_E2E__ antes de cargar). En
+    // producción eran dos timers de 50 ms en todas las páginas, todo el tiempo.
+    const e2e = Boolean((window as Window & { __CELIMAP_E2E__?: boolean }).__CELIMAP_E2E__)
+    const id = e2e ? window.setInterval(arm, 50) : null
     return () => {
       window.removeEventListener("celimap-e2e-force-boundary", arm)
-      window.clearInterval(id)
+      if (id !== null) window.clearInterval(id)
     }
   }, [target])
 

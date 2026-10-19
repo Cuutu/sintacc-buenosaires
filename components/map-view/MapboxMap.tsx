@@ -1017,12 +1017,18 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
 
       let bound = false
+      let poll: number | null = null
       const interactiveLayers = [LAYER_SELECTED_PIN, LAYER_CLUSTERS, LAYER_PINS, LAYER_PIN_FALLBACK]
       const tryBind = () => {
         if (bound || disposedRef.current) return
         const ready = interactiveLayers.some((id) => Boolean(m.getLayer(id)))
         if (!ready) return
         bound = true
+        // Ya enganchado: el poll y el idle no hacen falta más (antes seguían
+        // corriendo cada 250 ms y en cada idle mientras el mapa estaba abierto).
+        if (poll !== null) window.clearInterval(poll)
+        poll = null
+        m.off("idle", tryBind)
         m.on("click", onMapClick)
         interactiveLayers.forEach((id) => {
           if (!m.getLayer(id)) return
@@ -1031,12 +1037,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         })
       }
 
-      tryBind()
       m.on("idle", tryBind)
-      const poll = window.setInterval(tryBind, 250)
+      poll = window.setInterval(tryBind, 250)
+      tryBind()
 
       return () => {
-        window.clearInterval(poll)
+        if (poll !== null) window.clearInterval(poll)
         try {
           m.off("idle", tryBind)
           if (bound) {
