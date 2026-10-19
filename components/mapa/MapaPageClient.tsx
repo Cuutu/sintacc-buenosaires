@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { MapScreen, type MapFilters } from "@/components/map-view"
-import type { MapViewportBounds } from "@/components/map-view/geo"
+import { useSearchParams, usePathname } from "next/navigation"
+// Sin el barrel de map-view: el barrel exporta MapboxMap y metía Mapbox GL en el JS inicial.
+import { MapScreen } from "@/components/map-view/MapScreen"
+import type { MapFilters } from "@/components/map-view/MapTopBar"
+import { CABA_CENTER, CABA_ZOOM, type MapViewportBounds } from "@/components/map-view/geo"
 import type { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { findKnownNeighborhoodSearch } from "@/lib/map-search"
@@ -14,6 +16,7 @@ import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
 import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/places-limits"
 import { parseMapTypeParam } from "@/lib/map-url-filters"
+import { preloadMapboxMap } from "@/lib/mapbox-preload"
 import {
   applyOnly100ToTags,
   readOnly100,
@@ -25,32 +28,73 @@ import {
 } from "@/lib/safety-mode"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import {
+  boundsContain,
   buildMapFilterKey,
   claimAdjacentPrefetch,
+  estimateViewportBounds,
   hasFreshCompleteList,
-  hasFreshViewportTile,
   isCompletePlacesResponse,
   isPlacesCacheFresh,
+  isViewportCovered,
   mergeCachedPlaces,
   mergeIntoPlacesCache,
+  persistPlacesCache,
   prefetchPlacesIfStale,
   readPlacesCache,
-  rememberViewportTile,
-  viewportTileCacheKey,
+  rememberCompleteViewport,
+  snapViewportToGrid,
 } from "@/lib/map-places-cache"
-import { nextViewportPage, paginationTotalPages } from "@/lib/map-viewport-pages"
+import {
+  MAP_VIEWPORT_MAX_PAGES,
+  nextViewportPage,
+  paginationTotalPages,
+} from "@/lib/map-viewport-pages"
 import {
   geocodeMapSearchAddress,
   looksLikeStreetAddress,
   type MapSearchPin,
 } from "@/lib/map-address-search"
 
-const SEARCH_DEBOUNCE_MS = 650
+/** El buscador ya espera 250 ms antes de avisar (MapTopBar): en total sigue siendo ~650 ms. */
+const SEARCH_DEBOUNCE_MS = 400
 const MIN_SEARCH_LENGTH = 2
 /** Alineado con el techo de GET /api/places (ver PUBLIC_PLACES_MAX_LIMIT). */
 const MAP_PLACES_LIMIT = PUBLIC_PLACES_MAX_LIMIT
 /** Si el mapa no avisa su área (sin WebGL, red lenta), la lista no espera más que esto. */
 const VIEWPORT_WAIT_MAX_MS = 8000
+// El chunk de Mapbox empieza a bajar apenas se evalúa esta página, en paralelo con la
+// hidratación (el componente del mapa recién se monta después).
+if (typeof window !== "undefined") preloadMapboxMap()
+
+/**
+ * Páginas de un viewport que se piden a la vez, después de la primera. Con 4, el área
+ * de CABA a zoom 12 (5 páginas) sale de una: si se piden de a pocas, cada tanda espera
+ * a que el hilo principal se libere (hidratación, arranque de Mapbox) para salir.
+ */
+const VIEWPORT_PAGE_CONCURRENCY = 4
+
+/**
+ * Cambia la URL del mapa (lista abierta, búsqueda, ciudad) sin ir al servidor. Next 14.2
+ * sincroniza history.replaceState con useSearchParams; router.replace en cambio pedía
+ * de nuevo la página de /mapa al servidor en cada cambio (abrir la lista tardaba ~1 s).
+ */
+function replaceMapUrl(pathname: string, params: URLSearchParams): void {
+  const qs = params.toString()
+  window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname)
+}
+
+/**
+ * Tamaño aproximado del mapa antes de que exista: en el celular ocupa toda la pantalla;
+ * en la compu, la ventana menos la columna de la lista (MapDesktop: entre 440 y 520 px)
+ * y la barra de arriba. Si se queda corto, el mapa pide lo que falte al cargar.
+ */
+function estimatedMapSize(): { width: number; height: number } {
+  const width = window.innerWidth
+  const height = window.innerHeight
+  if (window.matchMedia("(max-width: 768px)").matches) return { width, height }
+  const aside = Math.min(520, Math.max(440, Math.min(480, width * 0.4)))
+  return { width: Math.max(320, width - aside), height: Math.max(320, height - 80) }
+}
 
 function bboxParam(bounds: MapViewportBounds): string {
   return `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`
@@ -58,7 +102,6 @@ function bboxParam(bounds: MapViewportBounds): string {
 
 function MapaContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const pathname = usePathname()
   const placeIdFromUrl = searchParams.get("place")
   const listOpen = searchParams.get("list") === "open"
@@ -111,6 +154,11 @@ function MapaContent() {
   const fetchRequestSeqRef = useRef(0)
   const lastFetchedFilterKeyRef = useRef<string | null>(null)
   const lastBoundsRef = useRef<MapViewportBounds | null>(null)
+  // Viewport que se está pidiendo: un pedido para una zona que ya está en camino no sale.
+  const inflightViewportRef = useRef<{ filterKey: string; bounds: MapViewportBounds } | null>(
+    null
+  )
+  const earlyViewportRequestedRef = useRef(false)
   const forceRefreshRef = useRef(false)
   const mapOpenTracked = useRef(false)
   const lastFilterTrackKey = useRef("")
@@ -269,10 +317,9 @@ function MapaContent() {
     const params = new URLSearchParams(searchParams.toString())
     if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
     else params.delete("search")
-    const qs = params.toString()
     lastSyncedUrlSearchRef.current = debouncedSearch.trim()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [debouncedSearch, pathname, router, searchParams])
+    replaceMapUrl(pathname, params)
+  }, [debouncedSearch, pathname, searchParams])
 
   const fetchPlaces = useCallback(async (opts?: { bounds?: MapViewportBounds; silent?: boolean }) => {
     const search = debouncedSearch.trim()
@@ -369,32 +416,74 @@ function MapaContent() {
       return incoming
     }
 
+    /**
+     * Todas las páginas de un viewport. La 1 se muestra apenas llega; el resto se pide
+     * de a VIEWPORT_PAGE_CONCURRENCY en paralelo y se muestra todo junto al final (un
+     * solo setPlaces, un solo setData en el mapa). IndexedDB se escribe después, una vez.
+     */
     const networkFetchViewport = async (
       key: string,
       neighborhood: string,
       searchText: string,
       viewport: MapViewportBounds,
       requestSeq: number
-    ) => {
-      let page = 1
-      while (page >= 1) {
-        if (requestSeq !== fetchRequestSeqRef.current) return false
-        const data = await fetchPage(neighborhood, searchText, viewport, page)
-        const batch = data.places || []
-        await mergeIntoPlacesCache(key, batch)
-        if (requestSeq !== fetchRequestSeqRef.current) return false
-        applyMerged(key)
-        setAwaitingViewport(false)
-        const next = nextViewportPage({
-          page,
-          received: batch.length,
-          limit: data.pagination?.limit ?? MAP_PLACES_LIMIT,
-          totalPages: paginationTotalPages(data.pagination),
-        })
-        if (next == null) break
-        page = next
+    ): Promise<{ ok: boolean; complete: boolean }> => {
+      const stale = () => requestSeq !== fetchRequestSeqRef.current
+      const first = await fetchPage(neighborhood, searchText, viewport, 1)
+      if (stale()) return { ok: false, complete: false }
+      const firstBatch = first.places || []
+      await mergeIntoPlacesCache(key, firstBatch, { persist: false })
+      if (stale()) return { ok: false, complete: false }
+      applyMerged(key)
+      setAwaitingViewport(false)
+
+      const limit = first.pagination?.limit ?? MAP_PLACES_LIMIT
+      const totalPages = paginationTotalPages(first.pagination)
+
+      if (totalPages == null) {
+        // Sin total (respuesta vieja): de a una, mientras vengan llenas.
+        let page = 1
+        let received = firstBatch.length
+        let next = nextViewportPage({ page, received, limit })
+        while (next != null) {
+          if (stale()) return { ok: false, complete: false }
+          page = next
+          const data = await fetchPage(neighborhood, searchText, viewport, page)
+          const batch = data.places || []
+          received = batch.length
+          await mergeIntoPlacesCache(key, batch, { persist: false })
+          next = nextViewportPage({ page, received, limit })
+        }
+        if (stale()) return { ok: false, complete: false }
+        if (page > 1) applyMerged(key)
+        const capped = page >= MAP_VIEWPORT_MAX_PAGES && received >= limit
+        return { ok: true, complete: !capped }
       }
-      return requestSeq === fetchRequestSeqRef.current
+
+      const lastPage = Math.min(totalPages, MAP_VIEWPORT_MAX_PAGES)
+      const pending: number[] = []
+      for (let page = 2; page <= lastPage; page += 1) pending.push(page)
+      let failure: unknown = null
+      const worker = async () => {
+        while (pending.length > 0 && failure == null && !stale()) {
+          const page = pending.shift() as number
+          try {
+            const data = await fetchPage(neighborhood, searchText, viewport, page)
+            if (stale()) return
+            await mergeIntoPlacesCache(key, data.places || [], { persist: false })
+          } catch (error) {
+            failure = error
+          }
+        }
+      }
+      await Promise.all(
+        Array.from({ length: Math.min(VIEWPORT_PAGE_CONCURRENCY, pending.length) }, worker)
+      )
+      if (stale()) return { ok: false, complete: false }
+      // Lo que llegó se muestra igual; si una página falló, el error sigue para arriba.
+      if (lastPage > 1) applyMerged(key)
+      if (failure != null) throw failure
+      return { ok: true, complete: totalPages <= MAP_VIEWPORT_MAX_PAGES }
     }
 
     const prefetchAdjacent = (primaryKey: string) => {
@@ -436,19 +525,44 @@ function MapaContent() {
     }
 
     if (bounds) {
+      const force = forceRefreshRef.current
+      forceRefreshRef.current = false
+      // Zona ya traída entera para este filtro (por ejemplo, al hacer zoom adentro).
+      if (!force && isViewportCovered(filterKey, bounds)) {
+        if (lastFetchedFilterKeyRef.current !== filterKey) {
+          lastFetchedFilterKeyRef.current = filterKey
+          applyMerged(filterKey)
+        }
+        setPlacesError(null)
+        setLoading(false)
+        setAwaitingViewport(false)
+        return true
+      }
+      const inflight = inflightViewportRef.current
+      if (
+        !force &&
+        inflight &&
+        inflight.filterKey === filterKey &&
+        boundsContain(inflight.bounds, bounds)
+      ) {
+        return false
+      }
+      const thisRequest = { filterKey, bounds }
+      inflightViewportRef.current = thisRequest
       const requestSeq = fetchRequestSeqRef.current + 1
       fetchRequestSeqRef.current = requestSeq
       try {
-        const ok = await networkFetchViewport(
+        const result = await networkFetchViewport(
           filterKey,
           effectiveNeighborhood,
           freeTextSearch,
           bounds,
           requestSeq
         )
-        if (!ok || requestSeq !== fetchRequestSeqRef.current) return false
+        if (!result.ok || requestSeq !== fetchRequestSeqRef.current) return false
+        if (result.complete) rememberCompleteViewport(filterKey, bounds)
+        void persistPlacesCache(filterKey)
         lastFetchedFilterKeyRef.current = filterKey
-        applyMerged(filterKey)
         setPlacesError(null)
         setLoading(false)
         return true
@@ -458,11 +572,17 @@ function MapaContent() {
           setAwaitingViewport(false)
         }
         return false
+      } finally {
+        if (inflightViewportRef.current === thisRequest) inflightViewportRef.current = null
       }
     }
 
+    // Si mientras se lee IndexedDB arrancó el pedido del área visible (el mapa terminó
+    // de cargar), ese manda: no se pisa con la lista de todo el país.
+    const seqBeforeCache = fetchRequestSeqRef.current
     const cached = forceRefreshRef.current ? null : await readPlacesCache(filterKey)
     forceRefreshRef.current = false
+    if (fetchRequestSeqRef.current !== seqBeforeCache) return
     if (cached?.places?.length) {
       lastFetchedFilterKeyRef.current = filterKey
       applyMerged(filterKey)
@@ -526,25 +646,41 @@ function MapaContent() {
     fetchPlaces()
   }, [fetchPlaces, safetyModeReady])
 
+  // Vista de entrada sin búsqueda ni ciudad: los lugares del área que va a mostrar el mapa
+  // se piden ya, sin esperar a que baje Mapbox. Cuando el mapa avisa su área real (que
+  // cae adentro), ese pedido ya está en camino o terminado y no se repite.
+  useEffect(() => {
+    if (!safetyModeReady || earlyViewportRequestedRef.current) return
+    earlyViewportRequestedRef.current = true
+    if (lastBoundsRef.current) return
+    if (debouncedSearch.trim() || placeIdFromUrl) return
+    if (citySlugsFromUrl || provinceSlugsFromUrl || localitySlugsFromUrl) return
+    const zoom = initialZoom ?? CABA_ZOOM
+    const center = initialCenter ?? CABA_CENTER
+    const size = estimatedMapSize()
+    const estimated = estimateViewportBounds(center, zoom, size.width, size.height)
+    void fetchPlaces({ bounds: snapViewportToGrid(estimated, zoom), silent: true })
+    // Solo al entrar: después manda el mapa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safetyModeReady])
+
   useEffect(() => {
     if (placeIdFromUrl) setSelectedPlaceId(placeIdFromUrl)
   }, [placeIdFromUrl])
 
   const handleMapMoveEnd = useCallback(
     (zoom: number, bounds: MapViewportBounds) => {
+      // Se pide la zona redondeada a una grilla: un paneo chico repite la misma URL y,
+      // si esa zona ya se trajo entera, no se pide (lo resuelve fetchPlaces).
+      const snapped = snapViewportToGrid(bounds, zoom)
       const filterKey = lastFetchedFilterKeyRef.current ?? ""
-      const tileKey = viewportTileCacheKey(filterKey, bounds, zoom)
       if (!forceRefreshRef.current && hasFreshCompleteList(filterKey)) {
         // Ya tenemos todo el filtro: el bbox no traería nada nuevo. Guardamos el viewport
         // para que un cambio de filtro pida el área que se está viendo, no una vieja.
-        lastBoundsRef.current = bounds
+        lastBoundsRef.current = snapped
         setAwaitingViewport(false)
-      } else if (forceRefreshRef.current || !hasFreshViewportTile(tileKey)) {
-        void fetchPlaces({ bounds, silent: true }).then((ok) => {
-          if (ok) rememberViewportTile(tileKey, [])
-        })
       } else {
-        setAwaitingViewport(false)
+        void fetchPlaces({ bounds: snapped, silent: true })
       }
 
       const params = new URLSearchParams(searchParams.toString())
@@ -558,15 +694,13 @@ function MapaContent() {
       }
 
       if (!shouldReplaceUrl) return
-      const qs = params.toString()
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+      replaceMapUrl(pathname, params)
     },
     [
       citySlugsFromUrl,
       provinceSlugsFromUrl,
       localitySlugsFromUrl,
       pathname,
-      router,
       searchParams,
       fetchPlaces,
     ]
@@ -575,16 +709,14 @@ function MapaContent() {
   const handleSheetCollapse = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete("list")
-    const qs = params.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [pathname, router, searchParams])
+    replaceMapUrl(pathname, params)
+  }, [pathname, searchParams])
 
   const handleListOpen = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("list", "open")
-    const qs = params.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [pathname, router, searchParams])
+    replaceMapUrl(pathname, params)
+  }, [pathname, searchParams])
 
   // Que el selector y los pines digan lo mismo (ver refinePlacesBySafetyMode).
   const visiblePlaces = useMemo(() => {

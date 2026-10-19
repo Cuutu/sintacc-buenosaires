@@ -3,10 +3,10 @@ import type { MapViewportBounds } from "@/components/map-view/geo"
 
 export const MAP_CACHE_TTL_MS = 8 * 60 * 1000
 export const MAP_MOVE_DEBOUNCE_MS = 280
-const LRU_MAX_TILES = 24
 const IDB_NAME = "celimap-map"
 const IDB_VERSION = 1
 const STORE_PLACES = "places-by-filter"
+/** Ya no se usa (era el LRU de tiles); se sigue creando para no cambiar la versión de la base. */
 const STORE_TILES = "viewport-tiles"
 
 export type CachedPlacesEntry = {
@@ -17,50 +17,7 @@ export type CachedPlacesEntry = {
   complete?: boolean
 }
 
-type TileEntry = {
-  tileKey: string
-  ids: string[]
-  fetchedAt: number
-}
-
-class LruMap<V> {
-  private readonly map = new Map<string, V>()
-
-  constructor(private readonly max: number) {}
-
-  get(key: string): V | undefined {
-    const value = this.map.get(key)
-    if (value === undefined) return undefined
-    this.map.delete(key)
-    this.map.set(key, value)
-    return value
-  }
-
-  set(key: string, value: V): void {
-    if (this.map.has(key)) this.map.delete(key)
-    this.map.set(key, value)
-    while (this.map.size > this.max) {
-      const oldest = this.map.keys().next().value
-      if (oldest == null) break
-      this.map.delete(oldest)
-    }
-  }
-
-  has(key: string): boolean {
-    return this.map.has(key)
-  }
-
-  clear(): void {
-    this.map.clear()
-  }
-
-  keys(): string[] {
-    return [...this.map.keys()]
-  }
-}
-
 const memoryPlaces = new Map<string, CachedPlacesEntry>()
-const memoryTiles = new LruMap<TileEntry>(LRU_MAX_TILES)
 
 function isFresh(fetchedAt: number, now = Date.now()): boolean {
   return now - fetchedAt < MAP_CACHE_TTL_MS
@@ -88,19 +45,123 @@ export function buildMapFilterKey(input: {
   })
 }
 
-export function quantizeViewportTile(
-  bounds: MapViewportBounds,
-  zoom: number
-): string {
-  const step = zoom >= 14 ? 0.008 : zoom >= 12 ? 0.02 : 0.05
-  const q = (n: number) => Math.floor(n / step) * step
-  return [q(bounds.west), q(bounds.south), q(bounds.east), q(bounds.north), Math.floor(zoom)].join(
-    ":"
+/**
+ * Viewport redondeado hacia afuera a una grilla según el zoom (un cuarto de tile de
+ * Mapbox). Un paneo chico cae en la misma celda: misma URL (caché HTTP y del server)
+ * y misma clave para saber si esa zona ya se trajo.
+ */
+export function snapViewportToGrid(bounds: MapViewportBounds, zoom: number): MapViewportBounds {
+  const z = Math.max(0, Math.min(22, Math.floor(Number.isFinite(zoom) ? zoom : 0)))
+  const step = 360 / 2 ** (z + 2)
+  const round = (n: number) => Math.round(n * 1e5) / 1e5
+  const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
+  return {
+    west: round(clamp(Math.floor(bounds.west / step) * step, -180, 180)),
+    south: round(clamp(Math.floor(bounds.south / step) * step, -85, 85)),
+    east: round(clamp(Math.ceil(bounds.east / step) * step, -180, 180)),
+    north: round(clamp(Math.ceil(bounds.north / step) * step, -85, 85)),
+  }
+}
+
+/**
+ * Área que va a mostrar Mapbox con ese centro y zoom en un contenedor de width×height px
+ * (Web Mercator, tiles de 512 px). Sirve para pedir los lugares antes de que el mapa
+ * termine de cargar.
+ */
+export function estimateViewportBounds(
+  center: [number, number],
+  zoom: number,
+  width: number,
+  height: number
+): MapViewportBounds {
+  const worldSize = 512 * 2 ** zoom
+  const x = ((center[0] + 180) / 360) * worldSize
+  const latRad = (center[1] * Math.PI) / 180
+  const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * worldSize
+  const toLng = (px: number) => (px / worldSize) * 360 - 180
+  const toLat = (py: number) => {
+    const n = Math.PI - (2 * Math.PI * py) / worldSize
+    return (180 / Math.PI) * Math.atan(Math.sinh(n))
+  }
+  return {
+    west: toLng(x - width / 2),
+    east: toLng(x + width / 2),
+    north: toLat(y - height / 2),
+    south: toLat(y + height / 2),
+  }
+}
+
+export function boundsContain(outer: MapViewportBounds, inner: MapViewportBounds): boolean {
+  return (
+    outer.west <= inner.west &&
+    outer.south <= inner.south &&
+    outer.east >= inner.east &&
+    outer.north >= inner.north
   )
 }
 
+type CoveredViewport = { bounds: MapViewportBounds; fetchedAt: number }
+
+const MAX_COVERED_PER_FILTER = 24
+const coveredViewports = new Map<string, CoveredViewport[]>()
+
+/** Un viewport que se trajo entero (todas las páginas) para ese filtro. */
+export function rememberCompleteViewport(
+  filterKey: string,
+  bounds: MapViewportBounds,
+  now = Date.now()
+): void {
+  const list = (coveredViewports.get(filterKey) ?? []).filter((entry) => isFresh(entry.fetchedAt, now))
+  list.push({ bounds, fetchedAt: now })
+  while (list.length > MAX_COVERED_PER_FILTER) list.shift()
+  coveredViewports.set(filterKey, list)
+}
+
+/** Lo que queda de `target` fuera de `cut` (hasta 4 rectángulos). */
+function subtractBounds(target: MapViewportBounds, cut: MapViewportBounds): MapViewportBounds[] {
+  const west = Math.max(target.west, cut.west)
+  const east = Math.min(target.east, cut.east)
+  const south = Math.max(target.south, cut.south)
+  const north = Math.min(target.north, cut.north)
+  if (west >= east || south >= north) return [target]
+  const pieces: MapViewportBounds[] = []
+  if (target.west < west) pieces.push({ ...target, east: west })
+  if (east < target.east) pieces.push({ ...target, west: east })
+  if (target.south < south) pieces.push({ west, east, south: target.south, north: south })
+  if (north < target.north) pieces.push({ west, east, south: north, north: target.north })
+  return pieces
+}
+
+/**
+ * true si las zonas ya traídas enteras (y frescas) cubren a `bounds`, aunque sea entre
+ * varias (ir y volver paneando): no hace falta pedirla.
+ */
+export function isViewportCovered(
+  filterKey: string,
+  bounds: MapViewportBounds,
+  now = Date.now()
+): boolean {
+  const list = coveredViewports.get(filterKey)
+  if (!list) return false
+  let remaining: MapViewportBounds[] = [bounds]
+  for (const entry of list) {
+    if (!isFresh(entry.fetchedAt, now)) continue
+    remaining = remaining.flatMap((piece) => subtractBounds(piece, entry.bounds))
+    if (remaining.length === 0) return true
+  }
+  return false
+}
+
+let dbPromise: Promise<IDBDatabase | null> | null = null
+
+/** Una sola conexión por pestaña (antes se abría una nueva en cada lectura y escritura). */
 function openDb(): Promise<IDBDatabase | null> {
   if (typeof indexedDB === "undefined") return Promise.resolve(null)
+  dbPromise ??= openDbOnce()
+  return dbPromise
+}
+
+function openDbOnce(): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     try {
       const req = indexedDB.open(IDB_NAME, IDB_VERSION)
@@ -113,7 +174,19 @@ function openDb(): Promise<IDBDatabase | null> {
           db.createObjectStore(STORE_TILES, { keyPath: "tileKey" })
         }
       }
-      req.onsuccess = () => resolve(req.result)
+      req.onsuccess = () => {
+        const db = req.result
+        // Si el navegador la cierra (otra pestaña con versión nueva, falta de espacio),
+        // la próxima operación abre otra.
+        db.onclose = () => {
+          dbPromise = null
+        }
+        db.onversionchange = () => {
+          db.close()
+          dbPromise = null
+        }
+        resolve(db)
+      }
       req.onerror = () => resolve(null)
     } catch {
       resolve(null)
@@ -178,7 +251,7 @@ export async function readPlacesCache(filterKey: string): Promise<CachedPlacesEn
 export async function writePlacesCache(
   filterKey: string,
   places: IPlace[],
-  opts: { complete?: boolean; fetchedAt?: number } = {}
+  opts: { complete?: boolean; fetchedAt?: number; persist?: boolean } = {}
 ): Promise<void> {
   const entry: CachedPlacesEntry = {
     filterKey,
@@ -187,6 +260,18 @@ export async function writePlacesCache(
     ...(opts.complete ? { complete: true } : {}),
   }
   memoryPlaces.set(filterKey, entry)
+  if (opts.persist === false) return
+  await idbPut(STORE_PLACES, entry)
+}
+
+/**
+ * Guarda en IndexedDB lo que hay en memoria para ese filtro. Las páginas de un viewport
+ * se juntan en memoria (`persist: false`) y se escriben una sola vez al final: cada
+ * escritura copia la lista entera, y con 10 páginas eran 10 copias cada vez más grandes.
+ */
+export async function persistPlacesCache(filterKey: string): Promise<void> {
+  const entry = memoryPlaces.get(filterKey)
+  if (!entry) return
   await idbPut(STORE_PLACES, entry)
 }
 
@@ -211,7 +296,7 @@ export function hasFreshCompleteList(filterKey: string, now = Date.now()): boole
 export async function mergeIntoPlacesCache(
   filterKey: string,
   incoming: IPlace[],
-  opts: { complete?: boolean } = {}
+  opts: { complete?: boolean; persist?: boolean } = {}
 ): Promise<IPlace[]> {
   const entry = memoryPlaces.get(filterKey)
   const existing = entry?.places ?? []
@@ -225,10 +310,11 @@ export async function mergeIntoPlacesCache(
     if (id) byId.set(id, place)
   }
   const merged = [...byId.values()]
+  const persist = opts.persist
   if (opts.complete === undefined && entry?.complete) {
-    await writePlacesCache(filterKey, merged, { complete: true, fetchedAt: entry.fetchedAt })
+    await writePlacesCache(filterKey, merged, { complete: true, fetchedAt: entry.fetchedAt, persist })
   } else {
-    await writePlacesCache(filterKey, merged, { complete: opts.complete === true })
+    await writePlacesCache(filterKey, merged, { complete: opts.complete === true, persist })
   }
   return merged
 }
@@ -265,14 +351,6 @@ export function claimAdjacentPrefetch(primaryKey: string, now = Date.now()): boo
   return true
 }
 
-export function viewportTileCacheKey(
-  filterKey: string,
-  bounds: MapViewportBounds,
-  zoom: number
-): string {
-  return `${filterKey}|${quantizeViewportTile(bounds, zoom)}`
-}
-
 export function mergeCachedPlaces(keys: string[]): IPlace[] {
   const byId = new Map<string, IPlace>()
   for (const key of keys) {
@@ -286,29 +364,10 @@ export function mergeCachedPlaces(keys: string[]): IPlace[] {
   return [...byId.values()]
 }
 
-export function rememberViewportTile(
-  tileKey: string,
-  ids: string[],
-  now = Date.now()
-): void {
-  const entry: TileEntry = { tileKey, ids, fetchedAt: now }
-  memoryTiles.set(tileKey, entry)
-  void idbPut(STORE_TILES, entry)
-}
-
-export function hasFreshViewportTile(tileKey: string, now = Date.now()): boolean {
-  const entry = memoryTiles.get(tileKey)
-  return Boolean(entry && isFresh(entry.fetchedAt, now))
-}
-
-/** Exportado para tests del LRU. */
-export function _viewportLruSize(): number {
-  return memoryTiles.keys().length
-}
-
 export function _resetMapPlacesCacheForTests(): void {
   memoryPlaces.clear()
-  memoryTiles.clear()
+  coveredViewports.clear()
   inflightPrefetches.clear()
   adjacentPrefetchAt.clear()
+  dbPromise = null
 }

@@ -1,10 +1,13 @@
 import {
   buildMapFilterKey,
-  hasFreshViewportTile,
+  boundsContain,
+  estimateViewportBounds,
+  isViewportCovered,
   MAP_CACHE_TTL_MS,
   MAP_MOVE_DEBOUNCE_MS,
-  quantizeViewportTile,
-  rememberViewportTile,
+  persistPlacesCache,
+  rememberCompleteViewport,
+  snapViewportToGrid,
   writePlacesCache,
   mergeCachedPlaces,
   mergeIntoPlacesCache,
@@ -15,7 +18,6 @@ import {
   prefetchPlacesIfStale,
   readPlacesCache,
   _resetMapPlacesCacheForTests,
-  _viewportLruSize,
 } from "@/lib/map-places-cache"
 import { getAdjacentNeighborhoods } from "@/lib/map-neighborhood-graph"
 import { celimapPinSvg, pinAssetPath, pinFillForSafety, pinImageId } from "@/lib/celimap-pin"
@@ -60,21 +62,50 @@ describe("map places cache", () => {
     expect(merged.map((p) => String(p._id)).sort()).toEqual(["1", "2"])
   })
 
-  it("LRU de viewport tiles no crece sin bound", () => {
-    for (let i = 0; i < 40; i += 1) {
-      rememberViewportTile(`tile-${i}`, ["a"])
-    }
-    expect(_viewportLruSize()).toBeLessThanOrEqual(24)
-    expect(hasFreshViewportTile("tile-39")).toBe(true)
+  it("la grilla redondea hacia afuera y un paneo chico da la misma celda", () => {
+    const a = snapViewportToGrid({ west: -58.431, south: -34.612, east: -58.372, north: -34.561 }, 13.4)
+    const b = snapViewportToGrid({ west: -58.43, south: -34.6115, east: -58.373, north: -34.5615 }, 13.2)
+    expect(a).toEqual(b)
+    expect(boundsContain(a, { west: -58.431, south: -34.612, east: -58.372, north: -34.561 })).toBe(true)
+    // Más zoom → celdas más chicas
+    const fine = snapViewportToGrid({ west: -58.431, south: -34.612, east: -58.372, north: -34.561 }, 16)
+    expect(fine.east - fine.west).toBeLessThan(a.east - a.west)
   })
 
-  it("quantize viewport produce key con zoom", () => {
-    const key = quantizeViewportTile(
-      { west: -58.43, south: -34.59, east: -58.40, north: -34.56 },
-      13
-    )
-    expect(key.split(":")).toHaveLength(5)
-    expect(key.endsWith(":13")).toBe(true)
+  it("una zona traída entera cubre las de adentro (zoom in) y no las más grandes", () => {
+    const k = buildMapFilterKey({})
+    const zone = { west: -58.45, south: -34.65, east: -58.35, north: -34.55 }
+    rememberCompleteViewport(k, zone)
+    expect(isViewportCovered(k, { west: -58.42, south: -34.62, east: -58.38, north: -34.58 })).toBe(true)
+    expect(isViewportCovered(k, { west: -58.5, south: -34.7, east: -58.3, north: -34.5 })).toBe(false)
+    expect(isViewportCovered(buildMapFilterKey({ type: "cafe" }), zone)).toBe(false)
+  })
+
+  it("dos zonas que se pisan cubren lo que queda entre las dos", () => {
+    const k = "k"
+    rememberCompleteViewport(k, { west: -58.5, south: -34.7, east: -58.4, north: -34.6 })
+    rememberCompleteViewport(k, { west: -58.42, south: -34.7, east: -58.3, north: -34.6 })
+    expect(isViewportCovered(k, { west: -58.45, south: -34.68, east: -58.35, north: -34.62 })).toBe(true)
+    // Se sale por arriba
+    expect(isViewportCovered(k, { west: -58.45, south: -34.68, east: -58.35, north: -34.58 })).toBe(false)
+  })
+
+  it("estima el área de CABA a zoom 12 en un celular como la calcula Mapbox", () => {
+    const b = estimateViewportBounds([-58.3816, -34.6037], 12, 390, 844)
+    // 390 px de ancho a zoom 12 = 390 / (512 · 2^12) · 360° ≈ 0,0669°
+    expect(b.east - b.west).toBeCloseTo(0.06695, 4)
+    expect((b.east + b.west) / 2).toBeCloseTo(-58.3816, 4)
+    expect(b.north).toBeGreaterThan(-34.6037)
+    expect(b.south).toBeLessThan(-34.6037)
+    // A esa latitud el alto en grados es menor que 844/390 veces el ancho
+    expect(b.north - b.south).toBeLessThan((b.east - b.west) * (844 / 390))
+  })
+
+  it("la cobertura vence con el caché (8 minutos)", () => {
+    const zone = { west: -58.45, south: -34.65, east: -58.35, north: -34.55 }
+    rememberCompleteViewport("k", zone, 1_000)
+    expect(isViewportCovered("k", zone, 1_000 + MAP_CACHE_TTL_MS - 1)).toBe(true)
+    expect(isViewportCovered("k", zone, 1_000 + MAP_CACHE_TTL_MS)).toBe(false)
   })
 })
 
@@ -316,5 +347,39 @@ describe("place image thumbs", () => {
     const thumb = getPlaceImageUrl(src, "thumb")
     expect(thumb).toContain("w_168")
     expect(getPlaceImageUrl(thumb, "thumb")).toBe(thumb)
+  })
+})
+
+describe("IndexedDB: una conexión y una escritura por filtro", () => {
+  beforeEach(() => {
+    _resetMapPlacesCacheForTests()
+  })
+
+  it("abre la base una sola vez", async () => {
+    const idb = installFakeIndexedDb()
+    const fake = (globalThis as { indexedDB: { open: (...args: unknown[]) => unknown } }).indexedDB
+    const open = jest.spyOn(fake, "open")
+    try {
+      await writePlacesCache("a", [fakePlace("1")])
+      await writePlacesCache("b", [fakePlace("2")])
+      await readPlacesCache("c")
+      expect(open).toHaveBeenCalledTimes(1)
+    } finally {
+      idb.uninstall()
+    }
+  })
+
+  it("con persist: false junta en memoria y persistPlacesCache escribe una vez", async () => {
+    const idb = installFakeIndexedDb()
+    try {
+      await mergeIntoPlacesCache("k", [fakePlace("1")], { persist: false })
+      await mergeIntoPlacesCache("k", [fakePlace("2")], { persist: false })
+      expect(idb.stores.get("places-by-filter")?.get("k")).toBeUndefined()
+      expect(getPlacesFromMemory("k")?.places).toHaveLength(2)
+      await persistPlacesCache("k")
+      expect((idb.stores.get("places-by-filter")?.get("k") as { places: unknown[] }).places).toHaveLength(2)
+    } finally {
+      idb.uninstall()
+    }
   })
 })
