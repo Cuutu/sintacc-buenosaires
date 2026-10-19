@@ -20,9 +20,10 @@ jest.mock("@/lib/wallet/loyalty", () => ({
   ...jest.requireActual("@/lib/wallet/loyalty"),
   getProgramWithPlace: (...a: unknown[]) => mockGetProgram(...a),
 }))
+const mockGoogleOn = jest.fn()
 jest.mock("@/lib/wallet/config", () => ({
   isApplePassConfigured: () => true,
-  isGoogleWalletConfigured: () => true,
+  isGoogleWalletConfigured: () => mockGoogleOn(),
 }))
 const mockBadges = jest.fn()
 jest.mock("@/lib/wallet/badges", () => ({
@@ -73,6 +74,7 @@ describe("/local/cartel/[programaId]", () => {
     jest.clearAllMocks()
     mockGetProgram.mockResolvedValue(program())
     mockBadges.mockReturnValue({ apple: null, google: null })
+    mockGoogleOn.mockReturnValue(true)
   })
 
   it("sends people without a session to log in and come back", async () => {
@@ -117,6 +119,29 @@ describe("/local/cartel/[programaId]", () => {
     expect(html).not.toContain("Funciona con Apple Wallet y Google Wallet.")
     expect(html).toContain("Apple y Apple Wallet son marcas de Apple Inc.")
     expect(html).toContain("Google Wallet es una marca de Google LLC.")
+  })
+
+  it("always shows both Wallets (the poster lasts), and tells the admin which one is still off", async () => {
+    mockGoogleOn.mockReturnValue(false)
+    mockBadges.mockReturnValue({
+      apple: { src: "/wallet/badges/agregar-a-apple-wallet.svg", width: 160, height: 48, alt: "Agregar a Apple Wallet" },
+      google: { src: "/wallet/badges/agregar-a-google-wallet.svg", width: 199, height: 48, alt: "Agregar a Google Wallet" },
+    })
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    const shop = await render()
+    expect(mockBadges).toHaveBeenCalledWith({ apple: true, google: true })
+    expect(shop).toContain("/wallet/badges/agregar-a-google-wallet.svg")
+    expect(shop).not.toContain("Sólo lo ves vos")
+
+    mockSession.mockResolvedValue({ user: { email: "franco@celimap.com.ar", role: "admin" } })
+    expect(await render()).toContain("Sólo lo ves vos: Google Wallet todavía no está activo")
+  })
+
+  it("draws the stamps in vector (the PNG looked bad in the PDF)", async () => {
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    const html = await render()
+    expect(html).not.toContain("stamp-mark.png")
+    expect(html).toContain("lucide-wheat")
   })
 
   it("warns when the card is paused", async () => {

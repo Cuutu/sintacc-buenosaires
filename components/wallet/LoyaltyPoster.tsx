@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Gift } from "lucide-react"
+import { Gift, Wheat } from "lucide-react"
 import { posterQr, QR_QUIET_ZONE } from "@/lib/wallet/poster-qr"
 import { stampTilt } from "@/lib/wallet/stamp-style"
 import { CARD_SAFETY_LABEL, type CardSafety } from "@/lib/wallet/card-safety"
@@ -71,7 +71,14 @@ function PosterQrCode({ value }: { value: string }) {
   )
 }
 
-/** Muestra de cómo se llena la tarjeta: hasta 5 lugares y, si son más sellos, "…" antes del premio. */
+const CREAM = "#F7F3EB"
+const TERRACOTTA = "#D4633A"
+
+/**
+ * Muestra de cómo se llena la tarjeta: hasta 5 lugares y, si son más sellos, "…" antes del premio.
+ * Todo en vector (espiga y regalo) y con bordes lisos: el PNG del sello y los bordes punteados
+ * quedaban mal en el PDF.
+ */
 function StampRow({ total }: { total: number }) {
   const slot = { width: u(11), height: u(11) }
   const shown = Math.min(total, 5)
@@ -82,38 +89,35 @@ function StampRow({ total }: { total: number }) {
       {Array.from({ length: filled }, (_, i) => (
         <span
           key={`sello-${i}`}
-          className="flex items-center justify-center rounded-full bg-[#F7F3EB]"
-          style={{ ...slot, transform: `rotate(${stampTilt(i)}deg)` }}
+          className="flex items-center justify-center rounded-full"
+          style={{ ...slot, background: CREAM, transform: `rotate(${stampTilt(i)}deg)` }}
         >
-          <Image
-            src="/wallet/apple/stamp-mark.png"
-            alt=""
-            width={179}
-            height={240}
-            priority
-            style={{ height: u(6.6), width: "auto" }}
-          />
+          <Wheat style={{ width: u(6.4), height: u(6.4), color: OLIVE }} strokeWidth={2} />
         </span>
       ))}
       {empty.map((n) => (
         <span
           key={`vacio-${n}`}
-          className="flex items-center justify-center rounded-full border-dashed border-[#F7F3EB]/50 font-bold text-[#F7F3EB]/60"
-          style={{ ...slot, borderWidth: u(0.45), fontSize: u(4.2) }}
+          className="flex items-center justify-center rounded-full font-bold leading-none"
+          style={{
+            ...slot,
+            border: `${u(0.45)} solid rgba(247, 243, 235, 0.45)`,
+            color: "rgba(247, 243, 235, 0.7)",
+            fontSize: u(4.2),
+          }}
         >
           {n}
         </span>
       ))}
       {total > shown && (
-        <span className="font-bold tracking-widest text-[#F7F3EB]/60" style={{ fontSize: u(4.2) }}>
-          …
-        </span>
+        <svg viewBox="0 0 26 6" style={{ width: u(6.4), height: u(1.5), display: "block" }}>
+          {[3, 13, 23].map((cx) => (
+            <circle key={cx} cx={cx} cy={3} r={2.6} fill="rgba(247, 243, 235, 0.6)" />
+          ))}
+        </svg>
       )}
-      <span
-        className="flex items-center justify-center rounded-full border-dashed border-[#D4633A] bg-[#404731]"
-        style={{ ...slot, borderWidth: u(0.45) }}
-      >
-        <Gift className="text-[#D4633A]" style={{ width: u(5), height: u(5) }} />
+      <span className="flex items-center justify-center rounded-full" style={{ ...slot, background: TERRACOTTA }}>
+        <Gift style={{ width: u(5.4), height: u(5.4), color: CREAM }} strokeWidth={2.2} />
       </span>
     </div>
   )
