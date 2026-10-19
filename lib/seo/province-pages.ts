@@ -10,6 +10,13 @@ import {
 import { CATEGORIES, CATEGORY_SLUG_TO_TYPE } from "./cities"
 import { isProvinceCategoryIndexable } from "./indexing-rules"
 
+/**
+ * Lugares que se listan en la página de provincia. Eran 200 tarjetas de cliente:
+ * en CABA el HTML tardaba 111–149 ms aun cacheado y había que hidratarlas todas.
+ * El resto se ve en el mapa (link debajo de la lista).
+ */
+export const PROVINCE_LIST_LIMIT = 60
+
 export type ProvinceLocalities = {
   name: string
   slug: string
@@ -60,9 +67,9 @@ async function loadProvincePageData(provinceSlug: string): Promise<ProvincePageD
     }
   }
 
-  // La lista muestra hasta 200 lugares, pero los conteos salen de todos.
+  // La lista muestra los más recientes; los conteos salen de todos.
   const [{ places, total }, localities, lastUpdated, counts] = await Promise.all([
-    getPlacesByProvinceSlug(provinceSlug, { limit: 200 }),
+    getPlacesByProvinceSlug(provinceSlug, { limit: PROVINCE_LIST_LIMIT }),
     getProvinceLocalities(provinceSlug),
     getProvinceLastUpdated(provinceSlug),
     getProvinceCounts(provinceSlug),

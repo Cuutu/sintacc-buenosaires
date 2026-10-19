@@ -143,6 +143,14 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
               <ProvincialPlaceCard key={place._id} place={place} provinceSlug={province.slug} />
             ))}
           </div>
+          {total > places.length && (
+            <p className="mt-6 text-sm text-muted-foreground">
+              Acá están los {places.length} más recientes.{" "}
+              <Link href={`/mapa?provinceSlugs=${province.slug}`} className="font-medium text-primary hover:underline">
+                Ver los {total} en el mapa →
+              </Link>
+            </p>
+          )}
         </section>
       )}
 
