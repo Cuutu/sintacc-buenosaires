@@ -96,7 +96,6 @@ describe("/local/cartel/[programaId]", () => {
     mockSession.mockResolvedValue({ user: { email: "Caja@Polvorin.com", role: "user" } })
     const html = await render()
     expect(html).toContain("Polvorín")
-    expect(html).toContain("Cookie")
     expect(html).toContain("Funciona con Apple Wallet y Google Wallet.")
     expect(html).toContain("size: A5 portrait")
     expect(mockPosterQr).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`/tarjeta/${programId}$`)))
@@ -137,11 +136,12 @@ describe("/local/cartel/[programaId]", () => {
     expect(await render()).toContain("Sólo lo ves vos: Google Wallet todavía no está activo")
   })
 
-  it("draws the stamps in vector (the PNG looked bad in the PDF)", async () => {
+  it("does not print the stamps or the reward: the shop can change them and the poster stays", async () => {
     mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
     const html = await render()
+    expect(html).not.toContain("Cookie")
+    expect(html).not.toContain("Juntá")
     expect(html).not.toContain("stamp-mark.png")
-    expect(html).toContain("lucide-wheat")
   })
 
   it("warns when the card is paused", async () => {

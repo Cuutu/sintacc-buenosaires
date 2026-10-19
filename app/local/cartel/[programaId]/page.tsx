@@ -128,8 +128,6 @@ export default async function CartelPage({ params, searchParams }: Props) {
       <div className="flex justify-center px-4 pb-12">
         <LoyaltyPoster
           placeName={placeName}
-          reward={program.reward}
-          stampsForReward={program.stampsForReward}
           safety={safety}
           enrollUrl={absoluteUrl(enrollPathFor(program._id.toString()))}
           wallets={wallets}

@@ -1,7 +1,5 @@
 import Image from "next/image"
-import { Gift, Wheat } from "lucide-react"
 import { posterQr, QR_QUIET_ZONE } from "@/lib/wallet/poster-qr"
-import { stampTilt } from "@/lib/wallet/stamp-style"
 import { CARD_SAFETY_LABEL, type CardSafety } from "@/lib/wallet/card-safety"
 import { BADGE_TRADEMARK, type WalletBadge } from "@/lib/wallet/badges"
 
@@ -9,6 +7,7 @@ import { BADGE_TRADEMARK, type WalletBadge } from "@/lib/wallet/badges"
  * Cartel para la caja del local: el QR lleva a la página de la tarjeta (/tarjeta/<programa>).
  * Se diseña en milímetros de una hoja A5 (148 × 210) con la variable --u, que la página
  * cambia según el tamaño elegido y la pantalla.
+ * No dice cuántos sellos ni qué premio: el local los puede cambiar y el cartel impreso queda.
  */
 
 const u = (n: number) => `calc(var(--u) * ${n})`
@@ -17,8 +16,6 @@ const OLIVE = "#2D4A34"
 
 type Props = {
   placeName: string
-  reward: string
-  stampsForReward: number
   enrollUrl: string
   wallets: { apple: boolean; google: boolean }
   /** Como en el mapa: verde si es 100% sin TACC, terracota si tiene opciones. */
@@ -71,58 +68,6 @@ function PosterQrCode({ value }: { value: string }) {
   )
 }
 
-const CREAM = "#F7F3EB"
-const TERRACOTTA = "#D4633A"
-
-/**
- * Muestra de cómo se llena la tarjeta: hasta 5 lugares y, si son más sellos, "…" antes del premio.
- * Todo en vector (espiga y regalo) y con bordes lisos: el PNG del sello y los bordes punteados
- * quedaban mal en el PDF.
- */
-function StampRow({ total }: { total: number }) {
-  const slot = { width: u(11), height: u(11) }
-  const shown = Math.min(total, 5)
-  const filled = Math.min(3, Math.max(0, shown - 2))
-  const empty = Array.from({ length: Math.max(0, shown - 1 - filled) }, (_, i) => filled + i + 1)
-  return (
-    <div className="flex items-center" style={{ gap: u(2.6) }} aria-hidden>
-      {Array.from({ length: filled }, (_, i) => (
-        <span
-          key={`sello-${i}`}
-          className="flex items-center justify-center rounded-full"
-          style={{ ...slot, background: CREAM, transform: `rotate(${stampTilt(i)}deg)` }}
-        >
-          <Wheat style={{ width: u(6.4), height: u(6.4), color: OLIVE }} strokeWidth={2} />
-        </span>
-      ))}
-      {empty.map((n) => (
-        <span
-          key={`vacio-${n}`}
-          className="flex items-center justify-center rounded-full font-bold leading-none"
-          style={{
-            ...slot,
-            border: `${u(0.45)} solid rgba(247, 243, 235, 0.45)`,
-            color: "rgba(247, 243, 235, 0.7)",
-            fontSize: u(4.2),
-          }}
-        >
-          {n}
-        </span>
-      ))}
-      {total > shown && (
-        <svg viewBox="0 0 26 6" style={{ width: u(6.4), height: u(1.5), display: "block" }}>
-          {[3, 13, 23].map((cx) => (
-            <circle key={cx} cx={cx} cy={3} r={2.6} fill="rgba(247, 243, 235, 0.6)" />
-          ))}
-        </svg>
-      )}
-      <span className="flex items-center justify-center rounded-full" style={{ ...slot, background: TERRACOTTA }}>
-        <Gift style={{ width: u(5.4), height: u(5.4), color: CREAM }} strokeWidth={2.2} />
-      </span>
-    </div>
-  )
-}
-
 /** Las insignias tal cual las dan Apple y Google, del mismo alto y sin tocarlas. */
 function BadgeRow({ badges }: { badges: WalletBadge[] }) {
   return (
@@ -143,7 +88,7 @@ function BadgeRow({ badges }: { badges: WalletBadge[] }) {
   )
 }
 
-export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, wallets, safety, badges }: Props) {
+export function LoyaltyPoster({ placeName, enrollUrl, wallets, safety, badges }: Props) {
   const shownBadges = [wallets.apple ? badges?.apple : null, wallets.google ? badges?.google : null].filter(
     (b): b is WalletBadge => Boolean(b)
   )
@@ -152,7 +97,6 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
     wallets.google && badges?.google ? BADGE_TRADEMARK.google : null,
   ].filter(Boolean)
   const steps = ["Escaneá el QR con la cámara", "Guardá la tarjeta en tu Wallet", "Mostrala al pagar y sumá sellos"]
-  const offer = `Juntá ${stampsForReward} sellos y te llevás ${reward}.`
   return (
     <div
       data-cartel
@@ -206,10 +150,6 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
             {CARD_SAFETY_LABEL[safety]}
           </span>
         )}
-        <p className="shrink-0" style={{ fontSize: u(offer.length > 50 ? 4 : 4.6), marginTop: u(3), lineHeight: 1.3 }}>
-          Juntá {stampsForReward} sellos y te llevás{" "}
-          <strong className="text-[#B84420]">{reward}</strong>.
-        </p>
 
         <div
           className="flex min-h-0 flex-col items-center rounded-[6%] border border-[#E8E1D6] bg-white shadow-[0_2px_10px_rgba(45,74,52,0.12)]"
@@ -242,18 +182,14 @@ export function LoyaltyPoster({ placeName, reward, stampsForReward, enrollUrl, w
 
       <div
         className="relative flex shrink-0 flex-col items-center bg-[#2D4A34] text-center text-[#F7F3EB]"
-        style={{ marginTop: u(5), padding: `${u(6)} ${u(12)} ${u(8)}` }}
+        style={{ marginTop: u(5), padding: `${u(6)} ${u(12)}` }}
       >
-        <StampRow total={stampsForReward} />
         {shownBadges.length === 0 && (
-          <p className="font-semibold" style={{ fontSize: u(3.6), marginTop: u(4) }}>
+          <p className="font-semibold" style={{ fontSize: u(3.6), marginBottom: u(0.6) }}>
             {walletsLine(wallets)}
           </p>
         )}
-        <p
-          className="text-[#F7F3EB]/75"
-          style={{ fontSize: u(3.3), marginTop: shownBadges.length === 0 ? u(0.6) : u(4) }}
-        >
+        <p className="text-[#F7F3EB]/75" style={{ fontSize: u(3.3) }}>
           Sin descargar nada y sin crear cuenta ·{" "}
           <span className="font-serif italic text-[#D6CDBA]">celimap.com.ar</span>
         </p>
