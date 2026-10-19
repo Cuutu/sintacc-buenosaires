@@ -26,21 +26,27 @@ export function haversineMeters(a: { lat: number; lng: number }, b: { lat: numbe
 
 type WithLocation = { location?: { lat?: number; lng?: number } | null }
 
+/**
+ * En dos pasos: primero solo id y coordenadas de todo el rectángulo (documentos
+ * chicos), para elegir los más cercanos; después los datos completos de esos.
+ * En CABA el rectángulo trae cientos de lugares y bajar todos con fotos y
+ * horarios era lo que más tardaba.
+ */
 export async function findPlacesNear<T extends WithLocation>(options: {
   lat: number
   lng: number
   radiusMeters: number
   /** Filtro extra (status, tipo, tags…). Se combina con el rectángulo. */
   filter: FilterQuery<IPlace>
-  /** Tiene que incluir `location`. */
+  /** Campos del resultado. `location` se agrega siempre. */
   projection: Record<string, number>
   limit: number
-  /** Cuántos lugares del rectángulo se traen como máximo antes de ordenar. */
+  /** Cuántos lugares del rectángulo se miran como máximo. */
   maxCandidates?: number
 }): Promise<(T & { distance: number })[]> {
-  const { lat, lng, radiusMeters, filter, projection, limit, maxCandidates = 1500 } = options
+  const { lat, lng, radiusMeters, filter, projection, limit, maxCandidates = 3000 } = options
   const box = boundingBox(lat, lng, radiusMeters)
-  const candidates = await Place.find(
+  const points = await Place.find(
     {
       $and: [
         filter,
@@ -50,19 +56,31 @@ export async function findPlacesNear<T extends WithLocation>(options: {
         },
       ],
     },
-    { ...projection, location: 1 }
+    { _id: 1, "location.lat": 1, "location.lng": 1 }
   )
     .limit(maxCandidates)
-    .lean<T[]>()
+    .lean<(WithLocation & { _id: unknown })[]>()
 
-  const near: (T & { distance: number })[] = []
-  for (const doc of candidates) {
+  const nearest: { id: unknown; distance: number }[] = []
+  for (const doc of points) {
     const pLat = doc.location?.lat
     const pLng = doc.location?.lng
     if (typeof pLat !== "number" || typeof pLng !== "number") continue
     const distance = haversineMeters({ lat, lng }, { lat: pLat, lng: pLng })
-    if (distance <= radiusMeters) near.push({ ...doc, distance })
+    if (distance <= radiusMeters) nearest.push({ id: doc._id, distance })
   }
-  near.sort((a, b) => a.distance - b.distance)
-  return near.slice(0, limit)
+  nearest.sort((a, b) => a.distance - b.distance)
+  nearest.length = Math.min(nearest.length, limit)
+  if (nearest.length === 0) return []
+
+  const docs = await Place.find({ _id: { $in: nearest.map((n) => n.id) } }, { ...projection, location: 1 })
+    .limit(nearest.length)
+    .lean<(T & { _id: unknown })[]>()
+  const byId = new Map(docs.map((d) => [String(d._id), d]))
+  const out: (T & { distance: number })[] = []
+  for (const n of nearest) {
+    const doc = byId.get(String(n.id))
+    if (doc) out.push({ ...doc, distance: n.distance })
+  }
+  return out
 }

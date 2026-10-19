@@ -39,9 +39,31 @@ describe("places-near", () => {
       limit: 12,
     })
     expect(near.map((p) => p.name)).toEqual(["A", "B"])
-    const [query, projection] = mockFind.mock.calls[0]
+    // Paso 1: solo id y coordenadas del rectángulo, con el filtro del que llama.
+    const [query, pointsProjection] = mockFind.mock.calls[0]
     expect(query.$and[0]).toBe(filter)
     expect(query.$and[1]).toHaveProperty(["location.lat"])
+    expect(pointsProjection).toEqual({ _id: 1, "location.lat": 1, "location.lng": 1 })
+    // Paso 2: los datos pedidos, solo de los elegidos.
+    const [byIds, projection] = mockFind.mock.calls[1]
+    expect(byIds).toEqual({ _id: { $in: ["a", "b"] } })
     expect(projection).toEqual({ name: 1, location: 1 })
+  })
+
+  it("si no hay nada en el radio no hace el segundo paso", async () => {
+    mockFind.mockReset()
+    mockFind.mockReturnValue({
+      limit: () => ({ lean: () => Promise.resolve([{ _id: "lejos", location: { lat: -34.7, lng: -58.5 } }]) }),
+    })
+    const near = await findPlacesNear({
+      lat: -34.6037,
+      lng: -58.3816,
+      radiusMeters: 500,
+      filter: {},
+      projection: { name: 1 },
+      limit: 12,
+    })
+    expect(near).toEqual([])
+    expect(mockFind).toHaveBeenCalledTimes(1)
   })
 })
