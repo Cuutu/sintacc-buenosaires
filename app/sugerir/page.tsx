@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
-import { MapPickerModal } from "@/components/map-picker-modal"
+import { LazyMapPickerModal, preloadMapPicker } from "@/components/map-picker-modal-lazy"
 import { LocationPinPreview } from "@/components/location-pin-preview"
 import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geocode"
 import { toast } from "sonner"
@@ -550,6 +550,9 @@ export default function SugerirPage() {
             <button
               type="button"
               onClick={() => setMapPickerOpen(true)}
+              onPointerEnter={preloadMapPicker}
+              onPointerDown={preloadMapPicker}
+              onFocus={preloadMapPicker}
               className="text-primary hover:underline"
             >
               Ubicala en el mapa
@@ -557,7 +560,7 @@ export default function SugerirPage() {
           </p>
         </div>
 
-        <MapPickerModal
+        <LazyMapPickerModal
           open={mapPickerOpen}
           onOpenChange={setMapPickerOpen}
           initialLocation={
