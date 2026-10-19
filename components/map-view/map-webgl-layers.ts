@@ -163,11 +163,15 @@ function unselectedPinFilter(selectedId: string | null): FilterSpecification {
   ]
 }
 
+/** Lo que cambia filtros y opacidades: solo una selección (el hover no los toca). */
+function presentedSelectionId(selection: SelectionState | undefined): string | null {
+  return selection?.mode === "selected" ? selection.id : null
+}
+
 function applySelectionPresentation(map: MapboxMapType, reduceMotion: boolean): void {
   const selection = selectionByMap.get(map)
-  const selectedId = selection?.id ?? null
-  const dim =
-    selectedId && selection?.mode === "selected" ? DIMMED_OPACITY : 1
+  const selectedId = presentedSelectionId(selection)
+  const dim = selectedId ? DIMMED_OPACITY : 1
   const fade = transitionMs(reduceMotion)
 
   const pinFilter = unselectedPinFilter(selectedId)
@@ -298,7 +302,6 @@ export function ensurePlacesLayers(
   })
 
   const fadeMs = transitionMs(reduceMotion)
-  const sizeTransition = { duration: fadeMs, delay: 0 }
 
   addLayerSafe(map, {
     id: LAYER_CLUSTER_SHADOW,
@@ -438,8 +441,6 @@ export function ensurePlacesLayers(
     },
     paint: {
       "icon-opacity": 1,
-      // Mapbox interpola icon-size entre updates de layout si hay transition.
-      ...( { "icon-size-transition": sizeTransition } as Record<string, unknown> ),
     },
   })
 
@@ -551,9 +552,72 @@ export function ensurePlacesLayers(
   applySelectionPresentation(map, reduceMotion)
 }
 
-export function setPlacesSourceData(map: MapboxMapType, places: IPlace[]): void {
+export function setPlacesSourceData(
+  map: MapboxMapType,
+  places: IPlace[] | GeoJSON.FeatureCollection
+): void {
   const source = map.getSource(PLACES_SOURCE) as GeoJSONSource | undefined
-  source?.setData(placesToGeoJSON(places))
+  source?.setData(Array.isArray(places) ? placesToGeoJSON(places) : places)
+}
+
+/**
+ * Lo que el mapa dibuja de cada lugar (id, posición y tipo de pin). Si no cambió, no
+ * hace falta setData: rearmar los clusters en el worker es lo que más cuesta.
+ */
+export function placesDataSignature(collection: GeoJSON.FeatureCollection): string {
+  let signature = ""
+  for (const feature of collection.features) {
+    const coordinates = (feature.geometry as GeoJSON.Point).coordinates
+    signature += `${feature.id}:${coordinates[0]},${coordinates[1]}:${feature.properties?.pin ?? ""}|`
+  }
+  return signature
+}
+
+/**
+ * Corre `run` cuando el estilo está listo. `once("load")` no alcanza: si el mapa ya
+ * cargó pero el estilo está ocupado un momento (isStyleLoaded() da false), "load" no
+ * vuelve a pasar y los pins quedaban sin dibujar hasta el próximo cambio.
+ * Devuelve una función para cancelar.
+ */
+export function whenStyleReady(map: MapboxMapType, run: () => void): () => void {
+  let isReady = false
+  try {
+    isReady = Boolean(map.isStyleLoaded?.())
+  } catch {
+    isReady = false
+  }
+  if (isReady) {
+    run()
+    return () => {}
+  }
+  let done = false
+  const cleanup = () => {
+    try {
+      map.off("load", check)
+      map.off("styledata", check)
+      map.off("idle", check)
+    } catch {
+      /* mapa destruido */
+    }
+  }
+  function check() {
+    if (done) return
+    try {
+      if (!map.isStyleLoaded?.()) return
+    } catch {
+      return
+    }
+    done = true
+    cleanup()
+    run()
+  }
+  map.on("load", check)
+  map.on("styledata", check)
+  map.on("idle", check)
+  return () => {
+    done = true
+    cleanup()
+  }
 }
 
 export function resetPinEntrance(map: MapboxMapType): void {
@@ -759,10 +823,19 @@ export function setSelectedPlaceOnMap(
 ): void {
   const source = map.getSource(SELECTED_SOURCE) as GeoJSONSource | undefined
   if (!source) return
+  const presentedBefore = presentedSelectionId(selectionByMap.get(map))
+  // Filtros y opacidades (~10 setFilter/setPaintProperty) solo cuando cambia la selección.
+  // El hover del escritorio solo dibuja el halo arriba: pasar el mouse por la lista ya no
+  // reconfigura las capas en cada tarjeta.
+  const presentIfChanged = () => {
+    if (presentedSelectionId(selectionByMap.get(map)) !== presentedBefore) {
+      applySelectionPresentation(map, reduceMotion)
+    }
+  }
   if (!place) {
     selectionByMap.set(map, { id: null, mode: "hovered" })
     source.setData(emptyCollection())
-    applySelectionPresentation(map, reduceMotion)
+    presentIfChanged()
     return
   }
   const id = place._id != null ? String(place._id) : null
@@ -779,7 +852,7 @@ export function setSelectedPlaceOnMap(
   }
   if (mode === "selected" && !reduceMotion) {
     applyMode("hovered")
-    applySelectionPresentation(map, reduceMotion)
+    presentIfChanged()
     window.requestAnimationFrame(() => {
       const current = selectionByMap.get(map)
       if (current?.id !== id || current.mode !== "selected") return
@@ -788,7 +861,7 @@ export function setSelectedPlaceOnMap(
     return
   }
   applyMode(mode)
-  applySelectionPresentation(map, reduceMotion)
+  presentIfChanged()
 }
 
 export function expandClusterAt(

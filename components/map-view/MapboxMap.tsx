@@ -47,12 +47,15 @@ import {
   markPinsSeen,
   PIN_FOCUS_ZOOM,
   PIN_POPUP_OFFSET,
+  placesDataSignature,
+  placesToGeoJSON,
   playVisiblePinEntrance,
   queryPlaceOrClusterAt,
   resetPinEntrance,
   revealRenderedPins,
   setPlacesSourceData,
   setSelectedPlaceOnMap,
+  whenStyleReady,
 } from "./map-webgl-layers"
 import { easeOutUnit, MOTION_MS } from "./motion"
 import { isNativeApp } from "@/lib/native-app"
@@ -65,6 +68,8 @@ export type { MapViewportBounds }
 export const CELIMAP_DEFAULT_MAP_STYLE = "mapbox://styles/cuutu/cmtnrjtlq003a01qmclt69831"
 /** El que usa el mapa: `NEXT_PUBLIC_MAPBOX_STYLE_URL` si es válido (otro estilo de Studio), si no el de arriba. */
 export const CELIMAP_MAP_STYLE = configuredMapStyleUrl(CELIMAP_DEFAULT_MAP_STYLE)
+const MAPBOX_STYLE_FRESH =
+  process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_MAPBOX_STYLE_FRESH === "1"
 const CELIMAP_MAP_STYLE_ID = mapStyleIdFromUrl(CELIMAP_MAP_STYLE)
 
 export interface MapboxMapRef {
@@ -215,6 +220,10 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const hadPlacesRef = useRef(false)
     const placesFadeTimerRef = useRef<number | null>(null)
     const lastPlaceIdsRef = useRef<Set<string>>(new Set())
+    // Firma de lo último que se mandó al mapa: misma firma = mismos pins, no hay setData.
+    const lastDataSignatureRef = useRef<string | null>(null)
+    // reduceMotion con el que se configuraron las capas (las transiciones dependen de eso).
+    const layersMotionRef = useRef<boolean | null>(null)
     const lastFocusedPlaceIdRef = useRef<string | null>(null)
     const lastOverlayPaddingKeyRef = useRef<string | null>(null)
     const selectedPlaceIdRef = useRef(selectedPlaceId)
@@ -534,8 +543,12 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             worldview: "AR",
             failIfMajorPerformanceCaveat: false,
             transformRequest: (url, resourceType) => {
-              // Studio publish queda cacheado en CDN. fresh=true pide el style publicado ya.
+              // Studio publish queda cacheado en CDN. fresh=true pide el style publicado ya,
+              // pero se saltea la caché de Mapbox en cada visita (el estilo tarda más):
+              // solo en desarrollo, o en producción con NEXT_PUBLIC_MAPBOX_STYLE_FRESH=1
+              // un rato después de publicar un estilo nuevo.
               if (
+                MAPBOX_STYLE_FRESH &&
                 !darkStyle &&
                 resourceType === "Style" &&
                 CELIMAP_MAP_STYLE_ID &&
@@ -547,17 +560,8 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
               return { url }
             },
           })
-          instance.on("load", () => {
-            if (disposedRef.current || isPrivateGuide) return
-            ensurePlacesLayers(instance, reduceMotion, false)
-            setPlacesSourceData(instance, placesRef.current)
-            void loadCeliMapPinImages(instance).then((pinsReady) => {
-              if (disposedRef.current || map.current !== instance) return
-              pinsReadyRef.current = pinsReady
-              ensurePlacesLayers(instance, reduceMotion, pinsReady)
-              setPlacesSourceData(instance, placesRef.current)
-            })
-          })
+          // Las capas y los datos los pone un solo lugar: el efecto de `places`, que
+          // espera a que el estilo esté listo.
         }
         if (disposedRef.current) {
           try {
@@ -825,13 +829,21 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     useEffect(() => {
       const m = map.current
       if (!m || disposedRef.current) return
+      let lastEmitted = ""
       const onLoadOrMoveEnd = () => {
         if (disposedRef.current || !map.current) return
         try {
-          setMarkerLayoutVersion((version) => version + 1)
+          // Solo los marcadores numerados (guías) dependen de la cámara.
+          if (useNumberedMarkersRef.current) setMarkerLayoutVersion((version) => version + 1)
           const b = m.getBounds()
           if (!b) return
-          onBoundsChangeRef.current?.(b)
+          // Mismos límites (un moveend sin movimiento, el padding de la hoja): no se avisa,
+          // así la lista no se vuelve a filtrar ni ordenar.
+          const signature = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(",")
+          if (signature !== lastEmitted) {
+            lastEmitted = signature
+            onBoundsChangeRef.current?.(b)
+          }
           if (!useNumberedMarkersRef.current && !isE2eMapboxMockEnabled()) {
             revealRenderedPins(m)
           }
@@ -922,38 +934,67 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             run()
           }
         }
-        const applyData = (pulse: boolean) => {
-          setPlacesSourceData(instance, placesRef.current)
+        const collection = placesToGeoJSON(placesRef.current)
+        const signature = placesDataSignature(collection)
+        const applyData = (pulse: boolean, data: GeoJSON.FeatureCollection = collection) => {
+          setPlacesSourceData(instance, data)
+          lastDataSignatureRef.current = placesDataSignature(data)
           resetPinEntrance(instance)
           playEntrance(pulse)
         }
         const nextIds = new Set<string>()
-        placesRef.current.forEach((place) => {
-          if (place._id != null) nextIds.add(String(place._id))
+        collection.features.forEach((feature) => {
+          if (feature.id != null) nextIds.add(String(feature.id))
         })
-        const prevIds = lastPlaceIdsRef.current
-        lastPlaceIdsRef.current = nextIds
+
         if (!didInitLayersRef.current) {
+          // Único camino de inicio: capas (con círculos mientras bajan los pins), datos,
+          // y cuando están las imágenes, los pins con su entrada.
           didInitLayersRef.current = true
+          lastPlaceIdsRef.current = nextIds
+          layersMotionRef.current = reduceMotion
           ensurePlacesLayers(instance, reduceMotion, false)
           applyData(false)
+          hadPlacesRef.current = nextIds.size > 0
           void loadCeliMapPinImages(instance).then((pinsReady) => {
             if (disposedRef.current || map.current !== instance) return
             pinsReadyRef.current = pinsReady
             ensurePlacesLayers(instance, reduceMotion, pinsReady)
-            applyData(false)
+            const latest = placesToGeoJSON(placesRef.current)
+            if (placesDataSignature(latest) === lastDataSignatureRef.current) {
+              resetPinEntrance(instance)
+              playEntrance(false)
+            } else {
+              lastPlaceIdsRef.current = new Set(
+                latest.features.map((feature) => String(feature.id))
+              )
+              applyData(false, latest)
+            }
             hadPlacesRef.current = placesRef.current.length > 0
           })
-          hadPlacesRef.current = placesRef.current.length > 0
           return
         }
-        ensurePlacesLayers(instance, reduceMotion, pinsReadyRef.current)
+
+        // Las capas se configuran al iniciar; acá solo si cambió reduceMotion (antes se
+        // reconfiguraban ~40 propiedades en cada cambio de datos).
+        if (layersMotionRef.current !== reduceMotion) {
+          layersMotionRef.current = reduceMotion
+          ensurePlacesLayers(instance, reduceMotion, pinsReadyRef.current)
+        }
+
+        // Mismos pins que ya están dibujados (otra página igual, un refetch sin cambios):
+        // ni setData ni animación.
+        if (signature === lastDataSignatureRef.current) return
+
+        const prevIds = lastPlaceIdsRef.current
+        lastPlaceIdsRef.current = nextIds
         const removedIds = [...prevIds].filter((id) => !nextIds.has(id))
         if (prevIds.size > 0 && removedIds.length === 0) {
           // Pan/zoom/paginado del viewport: solo se suman lugares. Los pins que ya
           // estaban quedan quietos; únicamente los nuevos hacen la entrada.
           markPinsSeen(instance, prevIds)
-          setPlacesSourceData(instance, placesRef.current)
+          setPlacesSourceData(instance, collection)
+          lastDataSignatureRef.current = signature
           if (nextIds.size > prevIds.size) playEntrance(false)
           hadPlacesRef.current = nextIds.size > 0
           return
@@ -969,9 +1010,9 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         }, delay)
       }
 
-      if (m.isStyleLoaded?.() ?? m.loaded?.()) setup()
-      else m.once("load", setup)
+      const cancelWait = whenStyleReady(m, setup)
       return () => {
+        cancelWait()
         if (placesFadeTimerRef.current) window.clearTimeout(placesFadeTimerRef.current)
       }
     }, [places, reduceMotion, useNumberedMarkers])
@@ -1058,24 +1099,36 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
     }, [reduceMotion, useNumberedMarkers])
 
+    // El pin destacado depende del id (y de dónde está), no del array: antes cada página
+    // nueva de lugares volvía a dibujar la selección.
+    const highlighted = useMemo(() => {
+      const find = (id: string | null | undefined) =>
+        id ? places.find((place) => place._id != null && String(place._id) === id) ?? null : null
+      const selected = find(selectedPlaceId)
+      if (selected) return { place: selected, mode: "selected" as const }
+      const hovered = find(hoveredPlaceId)
+      return hovered ? { place: hovered, mode: "hovered" as const } : null
+    }, [places, selectedPlaceId, hoveredPlaceId])
+    const highlightedRef = useRef(highlighted)
+    highlightedRef.current = highlighted
+    const highlightKey = highlighted
+      ? `${highlighted.mode}:${String(highlighted.place._id)}:${highlighted.place.location?.lng},${highlighted.place.location?.lat}:${inferSafetyLevel(highlighted.place) ?? ""}`
+      : ""
+
     useEffect(() => {
       const m = map.current
       if (!m || disposedRef.current || useNumberedMarkers) return
       if (isE2eMapboxMockEnabled()) return
-      const selected =
-        selectedPlaceId
-          ? places.find((place) => place._id != null && String(place._id) === selectedPlaceId) ?? null
-          : null
-      const hovered =
-        !selected && hoveredPlaceId
-          ? places.find((place) => place._id != null && String(place._id) === hoveredPlaceId) ?? null
-          : null
-      try {
-        setSelectedPlaceOnMap(m, selected ?? hovered, selected ? "selected" : "hovered", reduceMotion)
-      } catch {
-        /* source still not ready */
-      }
-    }, [selectedPlaceId, hoveredPlaceId, places, useNumberedMarkers, reduceMotion])
+      return whenStyleReady(m, () => {
+        if (disposedRef.current || map.current !== m) return
+        const current = highlightedRef.current
+        try {
+          setSelectedPlaceOnMap(m, current?.place ?? null, current?.mode ?? "hovered", reduceMotion)
+        } catch {
+          /* source still not ready */
+        }
+      })
+    }, [highlightKey, useNumberedMarkers, reduceMotion])
 
     useEffect(() => {
       const m = map.current

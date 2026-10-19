@@ -75,6 +75,17 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
     let stop: (() => void) | undefined
     let observer: ResizeObserver | undefined
     let cancelled = false
+    let frame = 0
+
+    // Mover el mapa avisa en cada `move`: se reubica una vez por cuadro, en el siguiente
+    // requestAnimationFrame, y no en medio del render de Mapbox.
+    const scheduleUpdate = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        if (!cancelled) update()
+      })
+    }
 
     const bind = () => {
       if (cancelled) return
@@ -84,15 +95,16 @@ export function DesktopMapPopover({ place, mapRef, onClose, closing = false }: D
         return
       }
       update()
-      stop = api.subscribeViewChange(update)
+      stop = api.subscribeViewChange(scheduleUpdate)
       if (cardRef.current) {
-        observer = new ResizeObserver(update)
+        observer = new ResizeObserver(scheduleUpdate)
         observer.observe(cardRef.current)
       }
     }
     bind()
     return () => {
       cancelled = true
+      if (frame) window.cancelAnimationFrame(frame)
       stop?.()
       observer?.disconnect()
     }
