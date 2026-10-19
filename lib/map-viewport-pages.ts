@@ -1,4 +1,4 @@
-import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/places-limits"
 
 /** Tope de páginas por viewport. 20 × 100 cubre el catálogo nacional sin dump en una request. */
 export const MAP_VIEWPORT_MAX_PAGES = 20

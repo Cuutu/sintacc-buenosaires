@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/places-limits"
 import {
   ventureCategoryIds,
   ventureModalityIds,
@@ -134,11 +135,8 @@ function parseBbox(value: unknown): z.infer<typeof bboxSchema> | undefined {
   return { west, south, east, north }
 }
 
-/**
- * Máximo de `limit` por request en GET /api/places.
- * El mapa pide bbox y pagina hasta vaciar el viewport; no hay dump del catálogo en una request.
- */
-export const PUBLIC_PLACES_MAX_LIMIT = 100
+/** Re-export: el valor vive en lib/places-limits (sin zod, lo puede importar el cliente). */
+export { PUBLIC_PLACES_MAX_LIMIT }
 
 /** Máximo de `limit` en GET /api/ventures. */
 export const PUBLIC_VENTURES_MAX_LIMIT = 100

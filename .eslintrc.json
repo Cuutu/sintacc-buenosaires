@@ -1,3 +1,28 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "overrides": [
+    {
+      "files": [
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "zod",
+                "message": "zod suma ~13 KB gzip al JS del navegador. Validá en el servidor (lib/validations) y en componentes usá tipos o constantes de lib/places-limits."
+              },
+              {
+                "name": "@/lib/validations",
+                "message": "lib/validations trae zod al cliente. Para límites usá @/lib/places-limits; para validar, hacelo en la API."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

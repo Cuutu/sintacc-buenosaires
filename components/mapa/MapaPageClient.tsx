@@ -12,7 +12,7 @@ import { trackEvent } from "@/lib/analytics"
 import { recordIntentSignal } from "@/lib/analytics-discovery"
 import { unlockStoreBanner } from "@/lib/bottom-prompt"
 import { sanitizeSearchQuery } from "@/lib/analytics-search"
-import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
+import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/places-limits"
 import { parseMapTypeParam } from "@/lib/map-url-filters"
 import {
   applyOnly100ToTags,
