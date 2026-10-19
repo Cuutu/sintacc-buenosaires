@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { openCeliBot } from "@/lib/celibot-open"
+import { openCeliBot, preloadCeliBot } from "@/lib/celibot-open"
 
 /**
  * Buscador home: una sola píldora blanca con botón integrado.
@@ -50,6 +50,9 @@ export function SearchBar() {
       <button
         type="button"
         onClick={() => openCeliBot(query)}
+        onPointerEnter={preloadCeliBot}
+        onPointerDown={preloadCeliBot}
+        onFocus={preloadCeliBot}
         className="mt-2.5 inline-flex min-h-[44px] max-w-full items-center gap-2.5 rounded-full py-1 pl-1 pr-3 text-left text-[14px] font-semibold text-[#2D4A34]/80 transition-colors hover:text-[#2D4A34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
         data-testid="home-celibot-entry"
       >

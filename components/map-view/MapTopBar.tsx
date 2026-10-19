@@ -4,7 +4,7 @@ import * as React from "react"
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
-import { openCeliBot } from "@/lib/celibot-open"
+import { openCeliBot, preloadCeliBot } from "@/lib/celibot-open"
 import { safetyModeFromTags, withSafetyMode, type SafetyMode } from "@/lib/safety-mode"
 import { cn } from "@/lib/utils"
 import { TYPES } from "@/lib/constants"
@@ -495,6 +495,9 @@ export function MapTopBar({
         <button
           type="button"
           onClick={() => openCeliBot()}
+          onPointerEnter={preloadCeliBot}
+          onPointerDown={preloadCeliBot}
+          onFocus={preloadCeliBot}
           aria-label="Preguntale a CeliBot"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_-3px_rgba(31,42,34,0.35)] max-[359px]:h-9 max-[359px]:w-9 transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           data-testid="map-celibot-entry"

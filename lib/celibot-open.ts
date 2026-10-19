@@ -33,3 +33,27 @@ export function setCeliBotWidgetReady(ready: boolean): OpenCeliBotDetail | null 
   pending = null
   return next
 }
+
+let preloader: (() => void) | null = null
+let preloadRequested = false
+
+/**
+ * Lo registra ChatWidget al montar: baja el código del panel del chat. Si alguien ya
+ * pidió precargar antes de que el widget montara, se precarga en ese momento.
+ */
+export function setCeliBotPreloader(fn: (() => void) | null): void {
+  preloader = fn
+  if (fn && preloadRequested) {
+    preloadRequested = false
+    fn()
+  }
+}
+
+/**
+ * Hover, pointerdown o foco en una entrada a CeliBot: empieza a bajar el panel para
+ * que al tocar abra sin esperar.
+ */
+export function preloadCeliBot(): void {
+  if (preloader) preloader()
+  else preloadRequested = true
+}

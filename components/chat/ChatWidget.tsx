@@ -1,16 +1,42 @@
 "use client"
 
 import { X } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { ChatFab, ChatPanel } from "@/components/chat/ChatPanel"
+import { ChatFab } from "@/components/chat/ChatFab"
 import {
   useMobileBodyLock,
   useVisualViewportBox,
 } from "@/components/chat/use-visual-viewport-box"
 import { cn } from "@/lib/utils"
-import { OPEN_CELIBOT_EVENT, setCeliBotWidgetReady, type OpenCeliBotDetail } from "@/lib/celibot-open"
+import {
+  OPEN_CELIBOT_EVENT,
+  setCeliBotPreloader,
+  setCeliBotWidgetReady,
+  type OpenCeliBotDetail,
+} from "@/lib/celibot-open"
 import "@/components/chat/chat-ui.css"
+
+/**
+ * El panel (AI SDK, markdown, tarjetas de lugares) se baja recién al abrir CeliBot,
+ * o un toque antes si el puntero pasa por el botón o por el saludo.
+ */
+const loadChatPanel = () => import("@/components/chat/ChatPanel")
+
+const ChatPanel = dynamic(() => loadChatPanel().then((mod) => mod.ChatPanel), {
+  ssr: false,
+  loading: () => <div className="flex h-full w-full flex-col bg-[#F7F3EB]" aria-busy="true" />,
+})
+
+let chatPanelPreload: Promise<unknown> | null = null
+
+function preloadChatPanel() {
+  // Si falla (sin conexión), se vuelve a intentar al abrir.
+  chatPanelPreload ??= loadChatPanel().catch(() => {
+    chatPanelPreload = null
+  })
+}
 
 const CLOSE_MS = 300
 const HINT_DELAY_MS = 1400
@@ -128,10 +154,12 @@ export function ChatWidget() {
       showRef.current(detail?.prompt)
     }
     window.addEventListener(OPEN_CELIBOT_EVENT, onOpen)
+    setCeliBotPreloader(preloadChatPanel)
     const pendingOpen = setCeliBotWidgetReady(true)
     if (pendingOpen) showRef.current(pendingOpen.prompt)
     return () => {
       setCeliBotWidgetReady(false)
+      setCeliBotPreloader(null)
       window.removeEventListener(OPEN_CELIBOT_EVENT, onOpen)
     }
   }, [])
@@ -216,6 +244,9 @@ export function ChatWidget() {
             <button
               type="button"
               onClick={() => show()}
+              onPointerEnter={preloadChatPanel}
+              onPointerDown={preloadChatPanel}
+              onFocus={preloadChatPanel}
               className="block w-full whitespace-nowrap text-left text-[13px] font-medium leading-[1.35] text-[#333]"
             >
               {HINT_TEXT}
@@ -230,7 +261,11 @@ export function ChatWidget() {
         >
           {pulse ? <span className="celimap-fab-ping" aria-hidden /> : null}
           <div className="relative z-[1]">
-            <ChatFab open={open} onToggle={() => (open ? hide() : show())} />
+            <ChatFab
+              open={open}
+              onToggle={() => (open ? hide() : show())}
+              onIntent={preloadChatPanel}
+            />
           </div>
         </div>
       </div>
