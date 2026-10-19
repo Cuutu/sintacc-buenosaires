@@ -1,78 +1,32 @@
-"use client"
-
-import { useEffect, useState, useCallback } from "react"
-import { MapScreen, type MapFilters } from "@/components/map-view"
-import type { IPlace } from "@/models/Place"
-import { fetchApi } from "@/lib/fetchApi"
-import { PUBLIC_PLACES_MAX_LIMIT } from "@/lib/validations"
-import { toast } from "sonner"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 import { getCityCenter, getCityBySlug } from "@/lib/seo/cities"
+import { LandingMapLazy } from "@/components/seo/LandingMapLazy"
 
 interface CityMapEmbedProps {
   citySlug: string
   cityName: string
 }
 
+/**
+ * Componente de servidor: arma el centro, los filtros y el link al mapa completo
+ * acá, así el cliente no recibe el listado de ciudades ni Mapbox hasta que se pide.
+ */
 export function CityMapEmbed({ citySlug, cityName }: CityMapEmbedProps) {
   const centerConfig = getCityCenter(citySlug)
   const city = getCityBySlug(citySlug)
-  const [places, setPlaces] = useState<IPlace[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
-  const [filters, setFilters] = useState<MapFilters>({
-    search: "",
-    tags: [],
-    type: undefined,
-    neighborhood: undefined,
-    safetyLevel: undefined,
-  })
-
-  const fetchPlaces = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.append("limit", String(PUBLIC_PLACES_MAX_LIMIT))
-      if (city) {
-        params.append("provinceSlugs", city.provinceSlug)
-        params.append("localitySlugs", citySlug)
-      } else {
-        params.append("citySlugs", citySlug)
-      }
-      const data = await fetchApi<{ places: IPlace[] }>(`/api/places?${params.toString()}`)
-      setPlaces(data.places || [])
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error al cargar lugares")
-      setPlaces([])
-    } finally {
-      setLoading(false)
-    }
-  }, [city, citySlug])
-
-  useEffect(() => {
-    fetchPlaces()
-  }, [fetchPlaces])
+  const apiQuery = city
+    ? `provinceSlugs=${encodeURIComponent(city.provinceSlug)}&localitySlugs=${encodeURIComponent(citySlug)}`
+    : `citySlugs=${encodeURIComponent(citySlug)}`
 
   return (
     <section className="border rounded-xl overflow-hidden bg-card/50">
-      <div className="h-[min(500px,70vh)] min-h-[360px] relative">
-        <MapScreen
-          places={places}
-          loading={loading}
-          filters={filters}
-          onFiltersChange={setFilters}
-          onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
-          searchQuery=""
-          selectedPlaceId={selectedPlaceId}
-          onPlaceSelect={(p) => setSelectedPlaceId(p._id.toString())}
-          onPlaceDeselect={() => setSelectedPlaceId(null)}
-          initialCenter={centerConfig?.center}
-          initialZoom={centerConfig?.zoom}
-          placeIdToFocus={null}
-          listOpen={false}
-        />
-      </div>
+      <LandingMapLazy
+        label={`Ver el mapa de ${cityName}`}
+        apiQuery={apiQuery}
+        initialCenter={centerConfig?.center}
+        initialZoom={centerConfig?.zoom}
+      />
       <div className="p-3 border-t bg-muted/30 flex justify-center">
         <Link
           href={
