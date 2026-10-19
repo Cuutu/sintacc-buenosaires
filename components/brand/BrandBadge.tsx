@@ -19,7 +19,7 @@ const BADGE_VARIANTS = {
     className: "bg-accent text-accent-foreground border-terracotta/20",
   },
   community: {
-    label: "Verificado por la comunidad",
+    label: "Aportado por la comunidad",
     Icon: HeartHandshake,
     className: "bg-olive/8 text-olive border-olive/15",
   },

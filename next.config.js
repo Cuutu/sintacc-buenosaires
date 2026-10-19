@@ -152,7 +152,8 @@ const nextConfig = {
       "font-src 'self' data:",
       "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com https://accounts.google.com https://appleid.apple.com https://places.googleapis.com https://res.cloudinary.com",
       "worker-src 'self' blob:",
-      "frame-src 'self' https://accounts.google.com https://appleid.apple.com",
+      // maps.google.com: vista previa del pin en /sugerir y en el admin (output=embed).
+      "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://maps.google.com https://www.google.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' https://accounts.google.com https://appleid.apple.com",
