@@ -19,12 +19,19 @@ export type ReportedWebVital = {
 // la que tenga abierta cuando se reportan al cerrar la pestaña.
 let entryRoute: WebVitalRouteGroup | null = null
 
-export function reportWebVital(metric: ReportedWebVital): void {
+/** Fija la ruta de entrada si todavía no está. WebVitalsReporter la llama al montar. */
+export function primeWebVitalEntryRoute(): void {
   if (typeof window === "undefined") return
-  if (!isWebVitalMetric(metric.name)) return
   if (entryRoute == null) {
     entryRoute = webVitalRouteGroup(window.location.pathname)
   }
+}
+
+export function reportWebVital(metric: ReportedWebVital): void {
+  if (typeof window === "undefined") return
+  if (!isWebVitalMetric(metric.name)) return
+  primeWebVitalEntryRoute()
+  if (entryRoute == null) return
   const props: Record<string, string | number> = {
     metric: metric.name,
     value: roundWebVitalValue(metric.name, metric.value),
