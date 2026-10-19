@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
-import { ContaminationReportForm } from "@/components/contamination-report-form"
+import { LazyContaminationReportForm } from "@/components/contamination-report-lazy"
 import { placeCardClass } from "./place-detail-ui"
 
 interface PlaceReportCardProps {
@@ -27,7 +27,7 @@ export function PlaceReportCard({ placeId, onSuccess }: PlaceReportCardProps) {
           Si notaste contaminación cruzada, avisá a la comunidad.
         </p>
         <div className="mt-3">
-          <ContaminationReportForm
+          <LazyContaminationReportForm
             placeId={placeId}
             onSuccess={handleSuccess}
             trigger={

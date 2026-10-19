@@ -23,6 +23,8 @@ interface ContaminationReportFormProps {
   onSuccess?: () => void
   trigger?: React.ReactNode
   showHint?: boolean
+  /** Abrir el diálogo al montar (lo usa LazyContaminationReportForm después del clic). */
+  defaultOpen?: boolean
 }
 
 export function ContaminationReportForm({
@@ -30,10 +32,11 @@ export function ContaminationReportForm({
   onSuccess,
   trigger,
   showHint = false,
+  defaultOpen = false,
 }: ContaminationReportFormProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [comment, setComment] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")

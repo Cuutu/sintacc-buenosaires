@@ -4,9 +4,8 @@ import { Star } from "lucide-react"
 import Image from "next/image"
 import { PlaceImage } from "@/components/place-image"
 import { Button } from "@/components/ui/button"
-import { ReviewForm } from "@/components/review-form"
 import { ReviewAdminReply } from "@/components/review-admin-reply"
-import { ReviewAdminReplyForm } from "@/components/review-admin-reply-form"
+import { LazyReviewAdminReplyForm, LazyReviewForm, preloadReviewForm } from "./place-lazy-forms"
 import { placeCardClass } from "./place-detail-ui"
 import type { IReview } from "@/models/Review"
 
@@ -62,6 +61,9 @@ export function PlaceCommunityReviews({
           <button
             type="button"
             onClick={() => onShowReviewForm(true)}
+            onPointerEnter={preloadReviewForm}
+            onPointerDown={preloadReviewForm}
+            onFocus={preloadReviewForm}
             className="h-11 shrink-0 rounded-2xl border-2 border-[#1F4D35]/30 px-4 text-base font-semibold text-[#1F4D35] hover:bg-[#1F4D35]/5"
           >
             Escribir reseña
@@ -74,7 +76,7 @@ export function PlaceCommunityReviews({
           <Button variant="ghost" className="mb-3 text-base" onClick={() => onShowReviewForm(false)}>
             ← Volver
           </Button>
-          <ReviewForm
+          <LazyReviewForm
             placeId={placeId}
             onSuccess={() => {
               onReviewSuccess()
@@ -97,6 +99,9 @@ export function PlaceCommunityReviews({
           <button
             type="button"
             onClick={() => onShowReviewForm(true)}
+            onPointerEnter={preloadReviewForm}
+            onPointerDown={preloadReviewForm}
+            onFocus={preloadReviewForm}
             className="mt-4 inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#C85A2E] px-6 text-base font-bold text-[#F8F5EF]"
           >
             Sé el primero en opinar
@@ -194,7 +199,7 @@ export function PlaceCommunityReviews({
               />
             )}
             {isAdmin && (
-              <ReviewAdminReplyForm
+              <LazyReviewAdminReplyForm
                 reviewId={review._id.toString()}
                 existingReply={review.adminReply}
                 onSuccess={onReviewSuccess}
