@@ -9,7 +9,7 @@ const loadMapPicker = () => import("@/components/map-picker-modal")
 
 /** Empieza a bajar el selector (y Mapbox) antes del click: al pasar el mouse o apoyar el dedo. */
 export function preloadMapPicker() {
-  void loadMapPicker()
+  void loadMapPicker().catch(() => undefined)
 }
 
 const MapPickerModalInner = dynamic(() => loadMapPicker().then((m) => m.MapPickerModal), { ssr: false })

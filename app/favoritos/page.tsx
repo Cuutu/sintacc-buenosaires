@@ -16,8 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CreateListModal } from "@/components/lists/CreateListModal"
-import { ManageListModal } from "@/components/lists/ManageListModal"
+import {
+  LazyCreateListModal,
+  LazyManageListModal,
+  preloadCreateListModal,
+} from "@/components/lists/list-modals-lazy"
 import { OwnerListCard } from "@/components/lists/OwnerListCard"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 import { IPlace } from "@/models/Place"
@@ -289,6 +292,9 @@ export default function FavoritosPage() {
           type="button"
           className="h-10 shrink-0 gap-1.5"
           onClick={() => setCreateModalOpen(true)}
+          onPointerEnter={preloadCreateListModal}
+          onPointerDown={preloadCreateListModal}
+          onFocus={preloadCreateListModal}
         >
           <ListPlus className="h-4 w-4" />
           <span className="hidden sm:inline">Nueva lista</span>
@@ -391,6 +397,9 @@ export default function FavoritosPage() {
                 {lists.length === 0 ? (
                   <Button
                     onClick={() => setCreateModalOpen(true)}
+                    onPointerEnter={preloadCreateListModal}
+                    onPointerDown={preloadCreateListModal}
+                    onFocus={preloadCreateListModal}
                     className="gap-2"
                   >
                     <ListPlus className="h-4 w-4" />
@@ -429,7 +438,7 @@ export default function FavoritosPage() {
         </TabsContent>
       </Tabs>
 
-      <CreateListModal
+      <LazyCreateListModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         favorites={favorites}
@@ -440,7 +449,7 @@ export default function FavoritosPage() {
         }}
       />
 
-      <ManageListModal
+      <LazyManageListModal
         open={Boolean(manageList)}
         onOpenChange={(open) => !open && setManageList(null)}
         list={manageList}

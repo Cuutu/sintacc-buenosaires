@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ListCard, type ListWithDetails } from "@/components/lists/ListCard"
-import { CreateListModal } from "@/components/lists/CreateListModal"
+import { LazyCreateListModal, preloadCreateListModal } from "@/components/lists/list-modals-lazy"
 import { fetchApi } from "@/lib/fetchApi"
 import { ListPlus, ArrowLeft, LogIn } from "lucide-react"
 import { IPlace } from "@/models/Place"
@@ -42,6 +42,8 @@ export default function ListasPageContent({
     }
     if (status !== "authenticated") return
 
+    // El modal se baja mientras se piden los favoritos.
+    preloadCreateListModal()
     setLoadingCreate(true)
     try {
       const [favData, mineData] = await Promise.all([
@@ -138,7 +140,7 @@ export default function ListasPageContent({
         </div>
       )}
 
-      <CreateListModal
+      <LazyCreateListModal
         open={createOpen}
         onOpenChange={setCreateOpen}
         favorites={favorites}
