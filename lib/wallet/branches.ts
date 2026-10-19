@@ -1,7 +1,8 @@
 /**
- * Marcas con sucursales: una sola tarjeta que vale en todas.
+ * Quién puede hacer qué con la tarjeta de un local (y de una marca con sucursales).
  * - Encargados (program.staffEmails): todo, en todas las sucursales.
- * - Personal de una sucursal (branches[].staffEmails): sólo suma sellos ahí y ve su panel.
+ * - Empleados del local principal (program.employeeEmails) y de cada sucursal
+ *   (branches[].staffEmails): sólo suman sellos ahí y ven su panel.
  */
 
 import type mongoose from "mongoose"
@@ -14,9 +15,11 @@ export const MAX_PASS_LOCATIONS = 10
 export const MAX_BRANCHES = 30
 
 type ProgramStaff = Pick<ILoyaltyProgram, "placeId" | "staffEmails"> & {
+  employeeEmails?: string[]
   branches?: Array<{ placeId: mongoose.Types.ObjectId; staffEmails: string[] }>
 }
 
+/** "branch" = empleado (del local principal o de una sucursal): sólo suma sellos. */
 export type StaffRole = "admin" | "manager" | "branch"
 
 type Session = { user?: { email?: string | null; role?: string } } | null
@@ -38,6 +41,7 @@ export function staffRole(program: ProgramStaff, session: Session): StaffRole | 
   const email = norm(session.user.email)
   if (!email) return null
   if (program.staffEmails.includes(email)) return "manager"
+  if ((program.employeeEmails ?? []).includes(email)) return "branch"
   if ((program.branches ?? []).some((b) => b.staffEmails.includes(email))) return "branch"
   return null
 }
@@ -53,7 +57,10 @@ export function stampPlaceIdsFor(program: ProgramStaff, session: Session): strin
   if (!role) return []
   if (role !== "branch") return programPlaceIds(program)
   const email = norm(session?.user?.email)
-  return (program.branches ?? []).filter((b) => b.staffEmails.includes(email)).map((b) => b.placeId.toString())
+  return [
+    ...((program.employeeEmails ?? []).includes(email) ? [program.placeId.toString()] : []),
+    ...(program.branches ?? []).filter((b) => b.staffEmails.includes(email)).map((b) => b.placeId.toString()),
+  ]
 }
 
 /** La sucursal donde se suma el sello: la pedida si puede, o la única que tiene, o la principal. */
@@ -63,9 +70,9 @@ export function resolveStampPlace(allowed: string[], requested: string | null | 
   return allowed[0]
 }
 
-/** Programas donde el mail es encargado o personal de una sucursal (para /local). */
+/** Programas donde el mail es encargado o empleado (para /local). */
 export function staffProgramFilter(email: string) {
-  return { $or: [{ staffEmails: email }, { "branches.staffEmails": email }] }
+  return { $or: [{ staffEmails: email }, { employeeEmails: email }, { "branches.staffEmails": email }] }
 }
 
 /** La etiqueta TACC de la tarjeta: sólo si todas las sucursales coinciden. */

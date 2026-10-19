@@ -46,6 +46,17 @@ jest.mock("@/lib/wallet/config", () => ({ getGoogleWalletConfig: () => mockGoogl
 jest.mock("@/lib/wallet/google-wallet", () => ({
   expireGoogleCards: (...a: unknown[]) => mockExpire(...a),
 }))
+const mockNotifyReward = jest.fn()
+const mockRefresh = jest.fn()
+jest.mock("@/lib/wallet/notify", () => ({
+  notifyRewardChanged: (...a: unknown[]) => mockNotifyReward(...a),
+  refreshProgramCards: (...a: unknown[]) => mockRefresh(...a),
+}))
+const mockGetData = jest.fn()
+jest.mock("@/lib/wallet/loyalty", () => ({
+  ...jest.requireActual("@/lib/wallet/loyalty"),
+  getProgramWithPlace: (...a: unknown[]) => mockGetData(...a),
+}))
 
 import { POST } from "@/app/api/admin/wallet/programs/route"
 import { DELETE, PATCH } from "@/app/api/admin/wallet/programs/[id]/route"
@@ -78,6 +89,13 @@ describe("admin loyalty programs API", () => {
     mockProgramExists.mockResolvedValue(null)
     mockCreate.mockResolvedValue({ _id: PROGRAM_ID })
     mockUpdate.mockResolvedValue({ _id: PROGRAM_ID })
+    mockProgramFindById.mockResolvedValue({
+      _id: PROGRAM_ID,
+      placeId: PLACE_ID,
+      stampsForReward: 5,
+      reward: "Un café de regalo",
+    })
+    mockGetData.mockResolvedValue({ program: { _id: PROGRAM_ID } })
   })
 
   it("requires admin", async () => {
@@ -103,6 +121,39 @@ describe("admin loyalty programs API", () => {
   it("allows only one program per place", async () => {
     mockProgramExists.mockResolvedValue({ _id: PROGRAM_ID })
     expect((await POST(post(valid))).status).toBe(409)
+  })
+
+  it("changing the stamps or the reward updates the saved cards and tells the customers", async () => {
+    const res = await PATCH(patch({ stampsForReward: 8 }), { params: { id: PROGRAM_ID } })
+    expect(res.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalledWith(
+      PROGRAM_ID,
+      { $set: { stampsForReward: 8, rewardChangedAt: expect.any(Date) } },
+      expect.anything()
+    )
+    expect(mockNotifyReward).toHaveBeenCalledWith({ program: { _id: PROGRAM_ID } })
+    expect(mockRefresh).not.toHaveBeenCalled()
+  })
+
+  it("saving the same stamps and reward does not notify anyone", async () => {
+    await PATCH(patch({ stampsForReward: 5, reward: "Un café de regalo", active: true }), {
+      params: { id: PROGRAM_ID },
+    })
+    expect(mockUpdate).toHaveBeenCalledWith(
+      PROGRAM_ID,
+      { $set: { stampsForReward: 5, reward: "Un café de regalo", active: true } },
+      expect.anything()
+    )
+    expect(mockNotifyReward).not.toHaveBeenCalled()
+  })
+
+  it("saves employees (they only add stamps)", async () => {
+    await PATCH(patch({ employeeEmails: ["Caja@Local.com"] }), { params: { id: PROGRAM_ID } })
+    expect(mockUpdate).toHaveBeenCalledWith(
+      PROGRAM_ID,
+      { $set: { employeeEmails: ["caja@local.com"] } },
+      expect.anything()
+    )
   })
 
   it("pauses a program (it does not delete it)", async () => {

@@ -17,6 +17,8 @@ import { hasBranches, programPlaceIds, stampPlaceIdsFor, staffProgramFilter, sta
 import { MonthlyStamps } from "@/components/wallet/MonthlyStamps"
 import { NoticeForm } from "@/components/wallet/NoticeForm"
 import { PromosForm } from "@/components/wallet/PromosForm"
+import { RewardForm } from "@/components/wallet/RewardForm"
+import { nextRewardChangeAt } from "@/lib/wallet/reward-change"
 import { ShareCardLink } from "@/components/wallet/ShareCardLink"
 import { VisitsChart } from "@/components/wallet/VisitsChart"
 
@@ -117,6 +119,7 @@ export default async function LocalPage() {
               const place = placeById.get(program.placeId.toString())
               const name = program.brandName || place?.name || "Local"
               const nextNotice = nextNoticeAt(program.notice, now)
+              const nextReward = nextRewardChangeAt(program, now)
               const isManager = staffRole(program, session) !== "branch"
               const branchIds = hasBranches(program) ? programPlaceIds(program) : []
               const myBranchIds = stampPlaceIdsFor(program, session)
@@ -210,10 +213,19 @@ export default async function LocalPage() {
                       }
                       initialReferral={Boolean(program.referralEnabled)}
                     />
+                    <RewardForm
+                      programId={id}
+                      placeName={name}
+                      stampsForReward={program.stampsForReward}
+                      reward={program.reward}
+                      cards={s.inWallet}
+                      nextAt={nextReward ? formatNoticeTime(nextReward) : null}
+                      isAdmin={session.user.role === "admin"}
+                    />
                     </>
                   ) : (
                     <p className="mt-5 rounded-2xl bg-[#F8F5EF] p-4 text-sm text-olive/80">
-                      Los avisos a los clientes y las promos los maneja el encargado de {name}.
+                      Los avisos a los clientes, las promos y el premio los maneja el encargado de {name}.
                     </p>
                   )}
 

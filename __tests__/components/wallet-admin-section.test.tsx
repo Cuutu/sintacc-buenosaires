@@ -22,6 +22,7 @@ const row = (id: string, placeName: string, current: number, previous: number): 
   stampsForReward: 10,
   reward: "Cookie",
   staffEmails: [],
+  employeeEmails: [],
   brandName: "",
   branches: [],
   active: true,
@@ -43,5 +44,17 @@ describe("AdminLoyaltySection", () => {
     expect(html).toContain("(+73% vs. el mes pasado)")
     expect(html.indexOf("Otro Local")).toBeLessThan(html.indexOf("Polvorín"))
     expect(html).toContain("Sellos por mes")
+  })
+
+  it("tells managers from employees", () => {
+    const html = renderToStaticMarkup(
+      <AdminLoyaltySection
+        initialPrograms={[
+          { ...row("a", "Polvorín", 6, 5), staffEmails: ["duenio@polvorin.com"], employeeEmails: ["caja@polvorin.com"] },
+        ]}
+      />
+    )
+    expect(html).toContain("Encargados</span> duenio@polvorin.com")
+    expect(html).toContain("Empleados</span> caja@polvorin.com")
   })
 })

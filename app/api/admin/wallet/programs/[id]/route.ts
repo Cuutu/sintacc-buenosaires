@@ -12,7 +12,7 @@ import {
   updateProgramSchema,
 } from "@/lib/wallet/loyalty-admin"
 import { getProgramWithPlace } from "@/lib/wallet/loyalty"
-import { refreshProgramCards } from "@/lib/wallet/notify"
+import { notifyRewardChanged, refreshProgramCards } from "@/lib/wallet/notify"
 import { getGoogleWalletConfig } from "@/lib/wallet/config"
 import { expireGoogleCards } from "@/lib/wallet/google-wallet"
 
@@ -39,9 +39,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     await connectDB()
     const { branches, brandName } = parsed.data
+    const current = await LoyaltyProgram.findById(params.id)
+      .select("placeId stampsForReward reward")
+      .lean<{ placeId: mongoose.Types.ObjectId; stampsForReward: number; reward: string }>()
+    if (!current) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
+    // Cambiaron los sellos o el premio: las tarjetas guardadas lo muestran como novedad.
+    const rewardChanged =
+      (parsed.data.stampsForReward !== undefined && parsed.data.stampsForReward !== current.stampsForReward) ||
+      (parsed.data.reward !== undefined && parsed.data.reward !== current.reward)
     if (branches) {
-      const current = await LoyaltyProgram.findById(params.id).select("placeId").lean<{ placeId: mongoose.Types.ObjectId }>()
-      if (!current) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
       const ids = branches.map((b) => b.placeId)
       if (ids.includes(current.placeId.toString())) {
         return NextResponse.json({ error: "El local principal no va como sucursal" }, { status: 400 })
@@ -56,13 +62,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const program = await LoyaltyProgram.findByIdAndUpdate(
       params.id,
-      { $set: parsed.data },
+      { $set: { ...parsed.data, ...(rewardChanged ? { rewardChangedAt: new Date() } : {}) } },
       { new: true, runValidators: true }
     )
     if (!program) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
 
-    // Sucursales o nombre nuevos: cambian las ubicaciones y el nombre de las tarjetas (sin aviso).
-    if (branches || brandName !== undefined) {
+    if (rewardChanged) {
+      // Sellos o premio nuevos: se actualizan todas las tarjetas y les llega el aviso.
+      const data = await getProgramWithPlace(params.id)
+      if (data) void notifyRewardChanged(data)
+    } else if (branches || brandName !== undefined) {
+      // Sucursales o nombre nuevos: cambian las ubicaciones y el nombre de las tarjetas (sin aviso).
       const data = await getProgramWithPlace(params.id)
       if (data) void refreshProgramCards(data)
     }

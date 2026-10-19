@@ -27,11 +27,17 @@ export interface ILoyaltyProgram extends Document {
    * promos desde /local.
    */
   staffEmails: string[]
+  /** Empleados del local principal: sólo suman sellos (no mandan avisos ni cambian promos o premio). */
+  employeeEmails: string[]
   active: boolean
   notice?: LoyaltyNotice
   doubleStamp?: DoubleStampWindow
   /** "Traé un amigo": cuando el invitado suma su primer sello, ganan uno de regalo los dos. */
   referralEnabled: boolean
+  /** Último cambio de sellos o premio (local o admin): la tarjeta lo cuenta como novedad. */
+  rewardChangedAt?: Date
+  /** Último cambio hecho por el local desde /local (puede cambiarlo una vez cada 15 días). */
+  shopRewardChangedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -55,6 +61,7 @@ const LoyaltyProgramSchema = new Schema<ILoyaltyProgram>(
     stampsForReward: { type: Number, required: true, min: 1, max: 20 },
     reward: { type: String, required: true, trim: true, maxlength: 80 },
     staffEmails: { type: [String], default: [], index: true },
+    employeeEmails: { type: [String], default: [], index: true },
     active: { type: Boolean, default: true },
     notice: {
       type: new Schema<LoyaltyNotice>(
@@ -79,6 +86,8 @@ const LoyaltyProgramSchema = new Schema<ILoyaltyProgram>(
       required: false,
     },
     referralEnabled: { type: Boolean, default: false },
+    rewardChangedAt: Date,
+    shopRewardChangedAt: Date,
   },
   { timestamps: true }
 )

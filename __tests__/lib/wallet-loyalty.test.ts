@@ -300,7 +300,7 @@ describe("loyalty helpers", () => {
     expect(result.ok).toBe(true)
     const [filter, update] = mockFindOneAndUpdate.mock.calls[1]
     expect(filter.stamps).toEqual({ $gte: 5 })
-    expect(update.$set).toEqual({ stamps: 0 })
+    expect(update.$set).toEqual({ stamps: 0, lastRedeemAt: expect.any(Date) })
     expect(mockStampCreate).toHaveBeenCalledWith(expect.objectContaining({ kind: "redeem" }))
   })
 

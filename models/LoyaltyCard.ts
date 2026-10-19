@@ -21,6 +21,8 @@ export interface ILoyaltyCard extends Document {
   visits?: number
   rewardsRedeemed: number
   lastStampAt?: Date
+  /** Último canje del premio. */
+  lastRedeemAt?: Date
   /** Cuántos sellos sumó la última vez y por qué (sello doble…). */
   lastStampAdded?: number
   lastStampReason?: StampReasonValue
@@ -50,6 +52,7 @@ const LoyaltyCardSchema = new Schema<ILoyaltyCard>(
     visits: { type: Number, min: 0 },
     rewardsRedeemed: { type: Number, default: 0, min: 0 },
     lastStampAt: Date,
+    lastRedeemAt: Date,
     lastStampAdded: { type: Number, min: 0 },
     lastStampReason: { type: String, enum: STAMP_REASONS },
     requestKey: { type: String },

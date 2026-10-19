@@ -79,7 +79,11 @@ describe("/local", () => {
     await LocalPage()
     // Encargados o personal de alguna sucursal.
     expect(mockPrograms).toHaveBeenCalledWith({
-      $or: [{ staffEmails: "caja@polvorin.com" }, { "branches.staffEmails": "caja@polvorin.com" }],
+      $or: [
+        { staffEmails: "caja@polvorin.com" },
+        { employeeEmails: "caja@polvorin.com" },
+        { "branches.staffEmails": "caja@polvorin.com" },
+      ],
     })
   })
 
@@ -104,6 +108,46 @@ describe("/local", () => {
     expect(html).toContain("Imprimir cartel con QR")
     expect(html).toContain(`/tarjeta/${programId}`)
     expect(html).toContain('href="/lugar/polvorin"')
+    // El encargado puede cambiar los sellos y el premio.
+    expect(html).toContain("Sellos y premio")
+    expect(html).toContain("una vez cada 15 días")
+  })
+
+  it("an employee only stamps: no notices, promos or reward changes", async () => {
+    mockPrograms.mockResolvedValue([
+      {
+        _id: programId,
+        placeId,
+        stampsForReward: 10,
+        reward: "Cookie",
+        staffEmails: ["duenio@polvorin.com"],
+        employeeEmails: ["caja@polvorin.com"],
+        active: true,
+      },
+    ])
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    const html = renderToStaticMarkup(await LocalPage())
+    expect(html).toContain("Escanear tarjeta")
+    expect(html).not.toContain("Mandá un aviso a tus clientes")
+    expect(html).not.toContain("Sellos y premio")
+    expect(html).toContain("las promos y el premio los maneja el encargado")
+  })
+
+  it("after a change, the shop sees until when it has to wait", async () => {
+    mockPrograms.mockResolvedValue([
+      {
+        _id: programId,
+        placeId,
+        stampsForReward: 8,
+        reward: "Café",
+        staffEmails: ["caja@polvorin.com"],
+        active: true,
+        shopRewardChangedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      },
+    ])
+    mockSession.mockResolvedValue({ user: { email: "caja@polvorin.com", role: "user" } })
+    const html = renderToStaticMarkup(await LocalPage())
+    expect(html).toContain("Lo vas a poder cambiar de nuevo")
   })
 
   it("explains what to do while nobody has stamped yet, instead of empty charts", async () => {

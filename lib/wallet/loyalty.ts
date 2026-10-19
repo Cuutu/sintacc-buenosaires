@@ -19,6 +19,7 @@ import { cardSafetyFor, type CardSafety } from "@/lib/wallet/card-safety"
 import { activeNotice, nextNoticeAt, NOTICE_COOLDOWN_MS } from "@/lib/wallet/notice"
 import { argentinaDate } from "@/lib/wallet/visits"
 import { commonSafety, MAX_PASS_LOCATIONS, programPlaceIds } from "@/lib/wallet/branches"
+import { rewardChangedForCard } from "@/lib/wallet/reward-change"
 import {
   doubleStampText,
   REFERRAL_MAX_PER_CARD,
@@ -225,6 +226,7 @@ export function passInputFor(card: ILoyaltyCard, data: ProgramWithPlace, now = n
     rewardsRedeemed: card.rewardsRedeemed,
     lastStampAdded: card.lastStampAdded,
     lastStampReason: card.lastStampReason,
+    rewardChanged: rewardChangedForCard(card, data.program),
     webService: {
       url: absoluteUrl(APPLE_WEB_SERVICE_PATH),
       authenticationToken: card.authToken,
@@ -351,7 +353,7 @@ export async function redeemReward(
 ): Promise<StampResult> {
   const updated = await LoyaltyCard.findOneAndUpdate(
     { _id: card._id, stamps: { $gte: program.stampsForReward } },
-    { $set: { stamps: 0 }, $inc: { rewardsRedeemed: 1 } },
+    { $set: { stamps: 0, lastRedeemAt: new Date() }, $inc: { rewardsRedeemed: 1 } },
     { new: true }
   )
   if (!updated) return { ok: false, reason: "not_ready" }

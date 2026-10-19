@@ -18,17 +18,26 @@ type FormValues = {
   stampsForReward: number
   reward: string
   staffEmails: string
+  employeeEmails: string
   brandName: string
   branches: BranchDraft[]
 }
 
-const EMPTY_VALUES: FormValues = { stampsForReward: 5, reward: "", staffEmails: "", brandName: "", branches: [] }
+const EMPTY_VALUES: FormValues = {
+  stampsForReward: 5,
+  reward: "",
+  staffEmails: "",
+  employeeEmails: "",
+  brandName: "",
+  branches: [],
+}
 
 /** Lo que se manda a la API (mails separados, sucursales sin el nombre). */
 const programBody = (values: FormValues) => ({
   stampsForReward: values.stampsForReward,
   reward: values.reward,
   staffEmails: parseEmails(values.staffEmails),
+  employeeEmails: parseEmails(values.employeeEmails),
   brandName: values.brandName.trim(),
   branches: values.branches.map((b) => ({ placeId: b.placeId, staffEmails: parseEmails(b.staffEmails) })),
 })
@@ -265,21 +274,32 @@ function ProgramFields({
       </label>
       <label className="grid gap-1 sm:col-span-2">
         <span className={adminUi.label}>
-          {values.branches.length > 0 ? "Encargados (todas las sucursales)" : "Mails del local (Google)"}, separados
-          por coma
+          Encargados: manejan todo (sellos, avisos, promos y premio
+          {values.branches.length > 0 ? ", en todas las sucursales" : ""}). Mails de Google, separados por coma
         </span>
         <input
           className={input}
-          placeholder="caja@local.com, duenio@gmail.com"
+          placeholder="duenio@gmail.com"
           value={values.staffEmails}
           onChange={(e) => onChange({ ...values, staffEmails: e.target.value })}
+        />
+      </label>
+      <label className="grid gap-1 sm:col-span-2">
+        <span className={adminUi.label}>
+          Empleados{values.branches.length > 0 ? " del local principal" : ""}: sólo suman sellos. Separados por coma
+        </span>
+        <input
+          className={input}
+          placeholder="caja@gmail.com (opcional)"
+          value={values.employeeEmails}
+          onChange={(e) => onChange({ ...values, employeeEmails: e.target.value })}
         />
       </label>
 
       <fieldset className={`grid gap-3 rounded-xl border ${adminUi.border} p-3 sm:col-span-2`}>
         <legend className={`px-1 ${adminUi.label}`}>Sucursales</legend>
         <p className={`text-sm ${adminUi.muted}`}>
-          Una sola tarjeta que vale en todas. Cada sucursal puede tener sus mails: esos sólo suman sellos ahí; los
+          Una sola tarjeta que vale en todas. Cada sucursal puede tener sus empleados: sólo suman sellos ahí; los
           encargados de arriba manejan todo.
         </p>
         {values.branches.length > 0 && (
@@ -308,8 +328,8 @@ function ProgramFields({
             </div>
             <input
               className={input}
-              aria-label={`Mails de ${b.name}`}
-              placeholder="Mails de esta sucursal (opcional)"
+              aria-label={`Empleados de ${b.name}`}
+              placeholder="Empleados de esta sucursal: sólo suman sellos (opcional)"
               value={b.staffEmails}
               onChange={(e) => setBranch(i, { staffEmails: e.target.value })}
             />
@@ -387,6 +407,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
     stampsForReward: program.stampsForReward,
     reward: program.reward,
     staffEmails: program.staffEmails.join(", "),
+    employeeEmails: program.employeeEmails.join(", "),
     brandName: program.brandName,
     branches: program.branches.map((b) => ({ placeId: b.placeId, name: b.name, staffEmails: b.staffEmails.join(", ") })),
   })
@@ -479,13 +500,21 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       ) : (
         <>
           <p className={`text-sm ${adminUi.muted}`}>
-            {program.branches.length > 0 ? "Encargados" : "Local"}:{" "}
+            <span className={adminUi.chipActive}>Encargados</span>{" "}
             {program.staffEmails.length > 0 ? program.staffEmails.join(", ") : "sin mails cargados"}
+          </p>
+          <p className={`text-sm ${adminUi.muted}`}>
+            <span className={adminUi.chip}>Empleados</span>{" "}
+            {program.employeeEmails.length > 0
+              ? `${program.employeeEmails.join(", ")}${program.branches.length > 0 ? ` (${program.placeName})` : ""}`
+              : "ninguno"}
           </p>
           {program.branches.length > 0 && (
             <p className={`text-sm ${adminUi.muted}`}>
               Sucursales: {program.placeName} (principal)
-              {program.branches.map((b) => `, ${b.name}${b.staffEmails.length ? ` (${b.staffEmails.join(", ")})` : ""}`)}
+              {program.branches.map(
+                (b) => `, ${b.name}${b.staffEmails.length ? ` (empleados: ${b.staffEmails.join(", ")})` : ""}`
+              )}
             </p>
           )}
         </>

@@ -29,14 +29,17 @@ const branches = z
 const fields = {
   stampsForReward: z.number().int().min(1).max(20),
   reward: z.string().trim().min(2, "Escribí el premio").max(80),
+  /** Encargados: todo (sellos, avisos, promos, premio). */
   staffEmails,
+  /** Empleados del local principal: sólo suman sellos. */
+  employeeEmails: staffEmails,
   /** Nombre en la tarjeta si hay sucursales. Vacío = el nombre del local. */
   brandName: z.string().trim().max(60).optional(),
   branches,
 }
 
 export const createProgramSchema = z
-  .object({ placeId: objectId, ...fields, branches: branches.default([]) })
+  .object({ placeId: objectId, ...fields, employeeEmails: staffEmails.default([]), branches: branches.default([]) })
   .refine((v) => !v.branches.some((b) => b.placeId === v.placeId), "El local principal no va como sucursal")
 
 /**
@@ -76,6 +79,7 @@ export type AdminProgramRow = {
   stampsForReward: number
   reward: string
   staffEmails: string[]
+  employeeEmails: string[]
   brandName: string
   /** Otras sucursales (el principal es placeId). */
   branches: Array<{ placeId: string; name: string; staffEmails: string[] }>
@@ -114,6 +118,7 @@ export async function listProgramsForAdmin(): Promise<AdminProgramRow[]> {
       stampsForReward: p.stampsForReward,
       reward: p.reward,
       staffEmails: p.staffEmails,
+      employeeEmails: p.employeeEmails ?? [],
       brandName: p.brandName ?? "",
       branches: (p.branches ?? []).map((b) => ({
         placeId: b.placeId.toString(),
