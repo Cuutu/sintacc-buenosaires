@@ -34,10 +34,13 @@ const nunito = Nunito({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+// Fraunces solo se usa en itálica (taglines: "con confianza.", "para descubrir"…):
+// todas las clases font-serif van con italic. La versión normal era un archivo
+// más que bajaba cada página sin usarse.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
-  style: ["normal", "italic"],
+  style: ["italic"],
   weight: ["400", "500", "600"],
 });
 
