@@ -12,7 +12,7 @@ import { NativeStatusBar } from "@/components/native/NativeStatusBar";
 import { NativeLayoutDebug } from "@/components/native/NativeLayoutDebug";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { StoreAppBanner } from "@/components/store-banner/StoreAppBanner";
-import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
+import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { ClientErrorListeners } from "@/components/ClientErrorListeners";
 import { AnalyticsSessionInit } from "@/components/analytics/AnalyticsSessionInit";
 import { WebVitalsReporter } from "@/components/analytics/WebVitalsReporter";
@@ -154,7 +154,7 @@ export default function RootLayout({
             <StoreAppBanner />
             <InstallPrompt />
           </Suspense>
-          <OnboardingModal />
+          <OnboardingGate />
           <ChatWidgetHost />
         </Providers>
       </body>
