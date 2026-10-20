@@ -110,7 +110,7 @@ export async function PUT(request: NextRequest) {
     invalidateApiCache(["public:places:"])
 
     const places = await Place.find({ featured: true, status: "approved" })
-      .select("name neighborhood type photos featuredOrder slug")
+      .select("name neighborhood type photos featuredOrder slug safetyLevel tags")
       .sort({ featuredOrder: 1 })
       .lean()
 
@@ -124,6 +124,8 @@ export async function PUT(request: NextRequest) {
         photos: p.photos ?? [],
         slug: p.slug,
         featuredOrder: p.featuredOrder ?? index,
+        safetyLevel: p.safetyLevel,
+        tags: p.tags ?? [],
       })),
       max: MAX_FEATURED_PLACES,
     })

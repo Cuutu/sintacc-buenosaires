@@ -3,26 +3,28 @@ import Image from "next/image"
 import { Check, Star } from "lucide-react"
 import { getPlacePath } from "@/lib/place-url"
 import { resolvePrimarySafety, type PlaceWithStats } from "@/components/featured/featured-utils"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { cn } from "@/lib/utils"
 
-function ratingOf(place: PlaceWithStats): number | null {
-  const google = place.googleSnapshot?.rating
-  if (typeof google === "number" && google > 0) return Math.round(google * 10) / 10
+/** Misma regla que el resto del sitio: primero las reseñas de CeliMap, después Google. */
+function ratingOf(place: PlaceWithStats): { score: string; source: string } | null {
   const local = place.stats?.avgRating
   if (typeof local === "number" && local > 0 && (place.stats?.totalReviews ?? 0) > 0) {
-    return Math.round(local * 10) / 10
+    return { score: local.toFixed(1), source: "CeliMap" }
   }
+  const google = place.googleSnapshot?.rating
+  if (typeof google === "number" && google > 0) return { score: google.toFixed(1), source: "Google" }
   return null
 }
 
 /**
- * Portada tipográfica cuando el lugar no tiene foto. El color sale del id (estable
- * entre renders y servidor/cliente), nunca del estado TACC: eso lo dice la etiqueta.
+ * Portada cuando el lugar no tiene foto. El color sale del id (estable entre
+ * servidor y cliente), nunca del estado TACC: eso lo dice la etiqueta.
  */
 const COVERS = [
-  { bg: "bg-[#2D4A34]", texture: "celi-trigo-crema", ink: "text-[#F7F3EB]", dark: true },
-  { bg: "bg-[#E6DAC4]", texture: "celi-trigo-oliva", ink: "text-[#2D4A34]", dark: false },
-  { bg: "bg-[#BCC9B0]", texture: "celi-trigo-oliva", ink: "text-[#2D4A34]", dark: false },
+  { bg: "bg-[#2D4A34]", texture: "celi-trigo-crema", ink: "text-[#F7F3EB]/80", dark: true },
+  { bg: "bg-[#E6DAC4]", texture: "celi-trigo-oliva", ink: "text-[#2D4A34]/70", dark: false },
+  { bg: "bg-[#BCC9B0]", texture: "celi-trigo-oliva", ink: "text-[#2D4A34]/70", dark: false },
 ] as const
 
 function coverFor(id: string) {
@@ -31,14 +33,19 @@ function coverFor(id: string) {
   return COVERS[h % COVERS.length]
 }
 
-function SafetyPill({ place, onDark }: { place: PlaceWithStats; onDark: boolean }) {
+/**
+ * La etiqueta es el dato más importante para un celíaco: 100% va en verde lleno con
+ * tilde y "Con opciones" en crema con punto terracota, para que no se confundan.
+ * Sobre la portada verde, el 100% va en crema (si no, se pierde).
+ */
+export function SafetyPill({ place, onGreen }: { place: PlaceWithStats; onGreen: boolean }) {
   const safety = resolvePrimarySafety(place)
   if (safety === "dedicated_gf") {
     return (
       <span
         className={cn(
-          "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-extrabold",
-          onDark ? "bg-[#F7F3EB] text-[#1F4D35]" : "bg-[#2D4A34] text-[#F7F3EB]"
+          "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-extrabold shadow-[0_4px_12px_-6px_rgba(20,30,23,0.5)]",
+          onGreen ? "bg-[#F7F3EB] text-[#1F4D35]" : "bg-[#1F4D35] text-[#F7F3EB]"
         )}
       >
         <Check className="h-3 w-3" strokeWidth={3.2} aria-hidden />
@@ -48,66 +55,68 @@ function SafetyPill({ place, onDark }: { place: PlaceWithStats; onDark: boolean 
   }
   if (safety === "gf_options") {
     return (
-      <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#F7F3EB] px-2.5 text-xs font-extrabold text-[#9A3A1B]">
+      <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#F7F3EB] px-2.5 text-xs font-extrabold text-[#9A3A1B] shadow-[0_4px_12px_-6px_rgba(20,30,23,0.5)]">
         <span className="h-2 w-2 rounded-full bg-[#C85A2E]" aria-hidden />
         Con opciones
       </span>
     )
   }
-  // Sin dato claro no se muestra etiqueta (antes decía "Verificado", que el copy público no permite).
+  // Sin dato claro no se muestra etiqueta.
   return null
 }
 
+/** Tarjeta de destacados: foto arriba y el nombre abajo, donde siempre se lee. */
 export function HomeFeaturedCard({ place }: { place: PlaceWithStats }) {
   const photo = place.photos?.[0]
   const rating = ratingOf(place)
   const location = place.neighborhood || "Argentina"
   const cover = coverFor(String(place._id))
-  const onDark = photo ? true : cover.dark
 
   return (
     <Link
       href={getPlacePath(place)}
-      className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-4 focus-visible:ring-offset-[#F7F3EB] rounded-[26px]"
+      className="group flex h-full flex-col rounded-[20px] bg-white p-2 shadow-[0_14px_34px_-26px_rgba(31,42,34,0.5),0_0_0_1px_rgba(45,74,52,0.07)] transition-shadow hover:shadow-[0_22px_44px_-24px_rgba(31,42,34,0.55),0_0_0_1px_rgba(45,74,52,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-4 focus-visible:ring-offset-[#F7F3EB]"
     >
       <div
         className={cn(
-          "relative aspect-[4/5] w-full overflow-hidden rounded-[26px]",
-          photo ? "bg-olive/10" : cn(cover.bg, cover.texture)
+          "relative aspect-[4/3] w-full overflow-hidden rounded-[14px]",
+          photo ? "bg-olive/10" : cn(cover.bg, cover.texture, "flex items-center justify-center")
         )}
       >
         {photo ? (
-          <>
-            <Image
-              src={photo}
-              alt=""
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              sizes="(max-width: 768px) 80vw, 33vw"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" aria-hidden />
-          </>
-        ) : null}
-        <div className="absolute left-3.5 top-3.5">
-          <SafetyPill place={place} onDark={onDark} />
+          <Image
+            src={photo}
+            alt=""
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            sizes="(max-width: 768px) 80vw, 33vw"
+          />
+        ) : (
+          <CategoryIcon category={place.type} className={cn("h-9 w-9", cover.ink)} />
+        )}
+        <div className="absolute left-3 top-3">
+          <SafetyPill place={place} onGreen={!photo && cover.dark} />
         </div>
-        <h3
-          className={cn(
-            "absolute inset-x-[18px] bottom-5 line-clamp-3 font-serif text-[32px] font-medium italic leading-[0.98] tracking-[-0.02em]",
-            photo ? "text-white" : cover.ink
-          )}
-        >
+      </div>
+      <div className="flex flex-1 flex-col px-2 pb-2 pt-3">
+        <h3 className="line-clamp-2 font-serif text-[22px] font-medium italic leading-[1.1] tracking-[-0.015em] text-[#2D4A34]">
           {place.name}
         </h3>
-      </div>
-      <div className="mt-3 flex items-center justify-between px-1">
-        <span className="truncate text-sm font-bold text-[#5E6A60]">{location}</span>
-        {rating != null ? (
-          <span className="flex shrink-0 items-center gap-1 text-sm font-extrabold text-olive">
-            <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" strokeWidth={1.5} aria-hidden />
-            <span className="tabular-nums">{rating.toFixed(1)}</span>
-          </span>
-        ) : null}
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+          <span className="truncate text-sm font-bold text-[#5E6A60]">{location}</span>
+          {rating ? (
+            <span
+              className="flex shrink-0 items-center gap-1 text-sm font-extrabold text-olive"
+              title={`${rating.source} ${rating.score}`}
+            >
+              <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" strokeWidth={1.5} aria-hidden />
+              <span className="tabular-nums">{rating.score}</span>
+              <span className="text-[11px] font-bold text-[#5E6A60]">{rating.source}</span>
+            </span>
+          ) : (
+            <span className="shrink-0 text-xs font-semibold text-[#5E6A60]">Sin reseñas todavía</span>
+          )}
+        </div>
       </div>
     </Link>
   )

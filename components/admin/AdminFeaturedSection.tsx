@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
+import { inferSafetyLevel, type PlaceWithStats } from "@/components/featured/featured-utils"
 
 export type FeaturedPlaceItem = {
   _id: string
@@ -16,6 +17,8 @@ export type FeaturedPlaceItem = {
   photos?: string[]
   slug?: string
   featuredOrder?: number
+  safetyLevel?: PlaceWithStats["safetyLevel"]
+  tags?: string[]
 }
 
 type SearchHit = {
@@ -151,7 +154,10 @@ export function AdminFeaturedSection() {
     <div className="space-y-6">
       <div className={cn(adminUi.card, "p-5")}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[#6B746C]">Hasta {max} lugares. El orden es el del carrusel home.</p>
+          <p className="text-sm text-[#6B746C]">
+            Hasta {max} lugares. El orden es el del carrusel home. En la home solo se muestran los
+            100% sin TACC; si faltan, se completa con otros 100% con foto.
+          </p>
           <div className="flex gap-2">
             <button type="button" className={adminUi.btnGhost} onClick={fetchFeatured} disabled={loading || saving}>
               Recargar
@@ -235,6 +241,12 @@ export function AdminFeaturedSection() {
                 <p className="mt-1 text-sm text-[#6B746C]">
                   {place.neighborhood} · {TYPES.find((t) => t.value === place.type)?.label || place.type}
                 </p>
+                {/* Recién agregado desde el buscador no trae tags: se sabe al guardar. */}
+                {place.tags !== undefined && inferSafetyLevel(place) !== "dedicated_gf" ? (
+                  <p className="mt-2 rounded-xl bg-[#FBEFE6] px-2.5 py-1.5 text-xs font-semibold text-[#9A3A1B]">
+                    No es 100% sin TACC: no aparece en la home.
+                  </p>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" className={adminUi.chip} onClick={() => move(index, -1)} disabled={index === 0}>
                     <ArrowUp className="mr-1 h-3.5 w-3.5" />

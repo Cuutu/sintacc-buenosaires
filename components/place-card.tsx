@@ -64,6 +64,7 @@ export function PlaceCard({
   const cover = getPlaceCoverTheme(place)
   const safety = getPlaceSafety(place)
   const safetyLevel = inferSafetyLevel(place) ?? "unknown"
+  const dedicated = safetyLevel === "dedicated_gf"
   const rating = getPlaceCardRating(place)
   const detailTags = getPlaceSheetDetailTags(place.tags)
   const reports = place.stats?.contaminationReportsCount ?? 0
@@ -105,7 +106,12 @@ export function PlaceCard({
         </h3>
         <p className="mt-1 truncate text-[13px] font-bold text-[#5E6A60]">{meta || "Lugar"}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="inline-flex h-[22px] max-w-full items-center gap-1 rounded-full bg-[#F1ECE2] px-2 text-[11px] font-extrabold text-[#1F4D35]">
+          <span
+            className={cn(
+              "inline-flex h-[22px] max-w-full items-center gap-1 rounded-full px-2 text-[11px] font-extrabold",
+              dedicated ? "bg-[#1F4D35] text-[#F7F3EB]" : "bg-[#F1ECE2] text-[#1F4D35]"
+            )}
+          >
             {safetyLevel === "dedicated_gf" ? (
               <Check className="h-3 w-3 shrink-0" strokeWidth={3.2} aria-hidden />
             ) : (
@@ -156,7 +162,14 @@ export function PlaceCard({
             />
           </>
         ) : null}
-        <span className="absolute left-3 top-3 inline-flex h-7 max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full bg-[#F7F3EB] px-2.5 text-[12px] font-black leading-none text-[#1F4D35] shadow-[0_4px_12px_-6px_rgba(20,30,23,0.45)]">
+        {/* 100% en verde lleno, "Con opciones" en crema: que no se vean iguales. Sobre la
+            portada verde (100% sin foto) va en crema para no perderse. */}
+        <span
+          className={cn(
+            "absolute left-3 top-3 inline-flex h-7 max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-black leading-none shadow-[0_4px_12px_-6px_rgba(20,30,23,0.45)]",
+            dedicated && onPhoto ? "bg-[#1F4D35] text-[#F7F3EB]" : "bg-[#F7F3EB] text-[#1F4D35]"
+          )}
+        >
           {safetyLevel === "dedicated_gf" ? (
             <Check className="h-3 w-3 shrink-0" strokeWidth={3.2} aria-hidden />
           ) : (
