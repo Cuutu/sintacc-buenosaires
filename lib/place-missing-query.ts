@@ -33,11 +33,20 @@ export const MISSING_PHONE = {
   ],
 }
 
+/**
+ * Links de Google Maps cargados en "Sitio web" (ver lib/place-website.ts). Sirven
+ * para ubicar el lugar, pero la ficha no los muestra: para el admin cuentan como
+ * "sin web", así aparecen en ese filtro y se pueden completar.
+ */
+export const MAPS_LINK_URL_PATTERN =
+  "^(https?://)?(www\\.)?(maps\\.app\\.goo\\.gl|goo\\.gl/maps|maps\\.google\\.|g\\.page/|share\\.google/|g\\.co/|google\\.[a-z.]+/maps)"
+
 export const MISSING_WEB = {
   $or: [
     { contact: { $exists: false } },
     { "contact.url": { $exists: false } },
     { "contact.url": { $in: [null, ""] } },
+    { "contact.url": { $regex: MAPS_LINK_URL_PATTERN, $options: "i" } },
   ],
 }
 

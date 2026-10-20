@@ -4,6 +4,7 @@ import { getPlacePath } from "@/lib/place-url"
 import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getCityBySlug } from "@/lib/seo/cities"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
+import { getMapsLink, getPublicWebsite } from "@/lib/place-website"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -57,7 +58,9 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   const imageUrl = place.photos?.[0] ? place.photos[0] : `${BASE_URL}/CelimapLOGO.png`
   const typeLabel = TYPE_LABELS[place.type] || "Local"
   const schemaType = SCHEMA_TYPES[place.type] || "LocalBusiness"
-  const sameAs = [place.contact?.url, normalizeInstagramUrl(place.contact?.instagram)].filter(Boolean)
+  // Un link de Maps en "Sitio web" no es la web del local: va como hasMap, no en sameAs.
+  const sameAs = [getPublicWebsite(place.contact?.url), normalizeInstagramUrl(place.contact?.instagram)].filter(Boolean)
+  const hasMap = getMapsLink(place.contact?.url)
 
   const area = getCanonicalPlaceArea(place)
   const safety = inferSafetyLevel(place)
@@ -106,6 +109,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     ...(servesCuisine ? { servesCuisine } : {}),
     telephone: place.contact?.phone || undefined,
     ...(sameAs.length ? { sameAs } : {}),
+    ...(hasMap ? { hasMap } : {}),
   }
 
   if (place.stats?.totalReviews && place.stats.totalReviews > 0 && place.stats.avgRating != null) {

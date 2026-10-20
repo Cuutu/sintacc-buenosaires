@@ -733,7 +733,7 @@ export default function SugerirPage() {
 
               {/* Web */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Sitio web</Label>
+                <Label className="text-xs">Link de Google Maps o sitio web</Label>
                 <Input
                   type="url"
                   placeholder="https://maps.app.goo.gl/... o web"

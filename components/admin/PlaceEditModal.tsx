@@ -11,6 +11,7 @@ import { MapPickerModal } from "@/components/map-picker-modal"
 import { LocationPinPreview } from "@/components/location-pin-preview"
 import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geocode"
 import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { isMapsLink } from "@/lib/place-website"
 import { readPlaceCoords } from "@/lib/place-research/maps-location"
 import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
@@ -815,7 +816,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         />
                       </div>
                       <div>
-                        <Label>Sitio web</Label>
+                        <Label>Sitio web / Google Maps</Label>
                         <Input
                           value={formData.contact.url}
                           onChange={(e) =>
@@ -835,6 +836,12 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             }))
                           }}
                         />
+                        {isMapsLink(formData.contact.url) ? (
+                          <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+                            Es un link de Google Maps: sirve para ubicar el lugar, pero en la ficha
+                            no se muestra como sitio web. Si tiene web propia, pegala acá.
+                          </p>
+                        ) : null}
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             type="button"

@@ -8,6 +8,7 @@ import { getApprovedPlaceByRouteParam } from "@/lib/place-route"
 import { getPlaceLiveStats } from "@/lib/place-stats"
 import { getNearbyPlacesForPlace } from "@/lib/place-nearby"
 import { formatFullPlaceAddress } from "@/lib/place-location-display"
+import { getPublicWebsite } from "@/lib/place-website"
 import { getPlaceReviewLines } from "@/lib/place-review-display"
 import { placeCategoryLine } from "@/lib/seo/place-metadata"
 import { PlaceHero } from "@/components/lugar/PlaceHero"
@@ -147,7 +148,7 @@ export default async function LugarPage({ params }: LugarPageProps) {
               mapHref={`/mapa?place=${placeId}`}
               openingHours={place.openingHours}
               phone={place.contact?.phone}
-              website={place.contact?.url}
+              website={getPublicWebsite(place.contact?.url) ?? undefined}
             />
 
             <div className="lg:hidden">
