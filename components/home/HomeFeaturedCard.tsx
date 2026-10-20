@@ -10,6 +10,14 @@ function plural(n: number, one: string, many: string) {
   return `${n.toLocaleString("es-AR")} ${n === 1 ? one : many}`
 }
 
+/** "812", "1,2 mil", "12 mil": en la tarjeta no entra "12.345 en Google" al lado del barrio. */
+export function shortCount(n: number): string {
+  if (n < 1000) return String(n)
+  const thousands = n / 1000
+  const value = thousands < 10 ? Math.floor(thousands * 10) / 10 : Math.floor(thousands)
+  return `${String(value).replace(".", ",")} mil`
+}
+
 /**
  * Misma regla que el resto del sitio: primero las reseñas de CeliMap, después Google.
  * Con la cantidad al lado (revisión 20/10): un 5.0 solo, con 3 reseñas, parecía inflado.
@@ -26,7 +34,7 @@ export function ratingOf(place: PlaceWithStats): { score: string; detail: string
   if (typeof google === "number" && google > 0) {
     const score = google.toFixed(1)
     const count = place.googleSnapshot?.userRatingCount ?? 0
-    const detail = count > 0 ? `${count.toLocaleString("es-AR")} en Google` : "Google"
+    const detail = count > 0 ? `${shortCount(count)} en Google` : "Google"
     return { score, detail, title: `${score} de 5 en Google${count > 0 ? `, ${plural(count, "reseña", "reseñas")}` : ""}` }
   }
   return null

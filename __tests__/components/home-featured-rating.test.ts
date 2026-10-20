@@ -1,4 +1,4 @@
-import { ratingOf } from "@/components/home/HomeFeaturedCard"
+import { ratingOf, shortCount } from "@/components/home/HomeFeaturedCard"
 import type { PlaceWithStats } from "@/components/featured/featured-utils"
 
 function place(extra: Partial<PlaceWithStats>): PlaceWithStats {
@@ -23,8 +23,18 @@ describe("puntaje de los destacados: con cantidad al lado", () => {
   it("sin reseñas de CeliMap usa Google y dice de dónde sale", () => {
     const r = ratingOf(place({ googleSnapshot: { rating: 4.6, userRatingCount: 1234 } }))
     expect(r?.score).toBe("4.6")
-    expect(r?.detail).toBe("1.234 en Google")
+    expect(r?.detail).toBe("1,2 mil en Google")
     expect(r?.title).toBe("4.6 de 5 en Google, 1.234 reseñas")
+  })
+
+  it("las cantidades grandes van cortas (la exacta queda en el title)", () => {
+    expect(shortCount(812)).toBe("812")
+    expect(shortCount(1000)).toBe("1 mil")
+    expect(shortCount(1299)).toBe("1,2 mil")
+    expect(shortCount(12345)).toBe("12 mil")
+    expect(ratingOf(place({ googleSnapshot: { rating: 4.6, userRatingCount: 12345 } }))?.title).toBe(
+      "4.6 de 5 en Google, 12.345 reseñas"
+    )
   })
 
   it("Google sin cantidad muestra solo la fuente; sin nada, null", () => {
