@@ -30,13 +30,36 @@ interface PlaceCardProps {
     position: number
     source: string
   }
+  /** Ciudad del listado: si el barrio cargado es la misma ciudad, no se repite. */
+  cityName?: string
+  /**
+   * "compact": fila con miniatura, para listados largos (/restaurantes-sin-gluten
+   * tiene cientos de lugares y las tarjetas de 350 px mostraban solo el nombre).
+   */
+  variant?: "default" | "compact"
+}
+
+function sameArea(a: string, b: string): boolean {
+  const norm = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+  return norm(a) === norm(b)
 }
 
 /**
  * Tarjeta "Edición" para listados (ciudades, provincias, categorías): portada con foto
  * o color con textura, nombre en Fraunces itálica y puntaje con su fuente.
  */
-export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardProps) {
+export function PlaceCard({
+  place,
+  onMapClick,
+  cityClickAnalytics,
+  cityName,
+  variant = "default",
+}: PlaceCardProps) {
   const photoSrc = getPlaceImageUrl(place.photos?.[0], "popup")
   const cover = getPlaceCoverTheme(place)
   const safety = getPlaceSafety(place)
@@ -44,7 +67,11 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
   const rating = getPlaceCardRating(place)
   const detailTags = getPlaceSheetDetailTags(place.tags)
   const reports = place.stats?.contaminationReportsCount ?? 0
-  const meta = [getPlaceTypeLabel(place), place.neighborhood].filter(Boolean).join(" · ")
+  const area =
+    place.neighborhood && !(cityName && sameArea(place.neighborhood, cityName))
+      ? place.neighborhood
+      : null
+  const meta = [getPlaceTypeLabel(place), area].filter(Boolean).join(" · ")
   // Los listados son ISR: "Abierto" se calcula recién al montar (ver use-client-open-status).
   const hours = useClientOpenStatus(place.openingHours)
   const openNow = hours.kind === "ready" && hours.detail.isOpen
@@ -62,7 +89,52 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
     })
   }
 
-  const cardContent = (
+  const compactContent = (
+    <article className="group flex h-full items-start gap-3 rounded-[20px] bg-white p-2 shadow-[0_10px_26px_-22px_rgba(31,42,34,0.5),0_0_0_1px_rgba(45,74,52,0.07)] transition-shadow duration-200 hover:shadow-[0_16px_34px_-22px_rgba(31,42,34,0.55),0_0_0_1px_rgba(45,74,52,0.12)]">
+      <div
+        className={cn("relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[14px]", !onPhoto && cover.texture)}
+        style={onPhoto ? undefined : { backgroundColor: cover.bg }}
+      >
+        {photoSrc ? (
+          <PlaceImage src={photoSrc} alt="" fill className="object-cover" sizes="84px" />
+        ) : null}
+      </div>
+      <div className="min-w-0 flex-1 py-0.5 pr-1">
+        <h3 className="line-clamp-2 font-serif text-[19px] font-medium italic leading-[1.1] tracking-[-0.015em] text-[#2D4A34]">
+          {place.name}
+        </h3>
+        <p className="mt-1 truncate text-[13px] font-bold text-[#5E6A60]">{meta || "Lugar"}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="inline-flex h-[22px] max-w-full items-center gap-1 rounded-full bg-[#F1ECE2] px-2 text-[11px] font-extrabold text-[#1F4D35]">
+            {safetyLevel === "dedicated_gf" ? (
+              <Check className="h-3 w-3 shrink-0" strokeWidth={3.2} aria-hidden />
+            ) : (
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: safety.accent }} aria-hidden />
+            )}
+            <span className="truncate">{safety.label}</span>
+          </span>
+          {rating ? (
+            <span className="inline-flex items-center gap-1 text-[13px] font-black text-[#2D4A34]" title={rating.label}>
+              <Star className="h-3 w-3 fill-[#B84420] text-[#B84420]" aria-hidden />
+              <span aria-hidden>{rating.score}</span>
+              <span className="text-[11px] font-bold text-[#5E6A60]" aria-hidden>
+                {rating.source}
+              </span>
+              <span className="sr-only">{rating.label}</span>
+            </span>
+          ) : null}
+          {openNow ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2D7A4E]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2D7A4E]" aria-hidden />
+              Abierto
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  )
+
+  const cardContent = variant === "compact" ? compactContent : (
     <article className="group flex h-full flex-col rounded-[26px] bg-white p-2 shadow-[0_14px_34px_-26px_rgba(31,42,34,0.5),0_0_0_1px_rgba(45,74,52,0.07)] transition-shadow duration-200 hover:shadow-[0_22px_44px_-24px_rgba(31,42,34,0.55),0_0_0_1px_rgba(45,74,52,0.12)]">
       <div
         className={cn("relative h-[172px] overflow-hidden rounded-[20px]", !onPhoto && cover.texture)}
@@ -78,7 +150,8 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 330px"
             />
             <span
-              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,30,23,0.18)_0%,rgba(20,30,23,0)_36%,rgba(20,30,23,0.72)_100%)]"
+              // Más oscuro abajo: sobre fotos claras el nombre blanco no se leía.
+              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,30,23,0.18)_0%,rgba(20,30,23,0)_28%,rgba(20,30,23,0.5)_62%,rgba(20,30,23,0.86)_100%)]"
               aria-hidden
             />
           </>
@@ -162,7 +235,10 @@ export function PlaceCard({ place, onMapClick, cityClickAnalytics }: PlaceCardPr
     <Link
       href={getPlacePath(place)}
       onClick={trackCityClick}
-      className="block h-full rounded-[26px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-4 focus-visible:ring-offset-[#F7F3EB]"
+      className={cn(
+        "block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-4 focus-visible:ring-offset-[#F7F3EB]",
+        variant === "compact" ? "rounded-[20px]" : "rounded-[26px]"
+      )}
     >
       {cardContent}
     </Link>

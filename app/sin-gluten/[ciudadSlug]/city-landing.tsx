@@ -225,7 +225,9 @@ export async function CityLanding({
           ...(province
             ? [
                 {
-                  label: province.name,
+                  // "Córdoba > Córdoba" no se entiende: si se llaman igual, se aclara.
+                  label:
+                    province.name === city.name ? `Provincia de ${province.name}` : province.name,
                   href: `/sin-gluten/provincia/${province.slug}`,
                 },
               ]

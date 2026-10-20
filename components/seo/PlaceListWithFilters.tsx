@@ -15,6 +15,8 @@ interface PlaceListWithFiltersProps {
   basePath?: string
   provinceSlug?: string
   provinceName?: string
+  /** "compact" en listados largos (hubs nacionales de categoría). */
+  cardVariant?: "default" | "compact"
 }
 
 export function PlaceListWithFilters({
@@ -26,9 +28,36 @@ export function PlaceListWithFilters({
   basePath = "/sin-gluten",
   provinceSlug,
   provinceName,
+  cardVariant = "default",
 }: PlaceListWithFiltersProps) {
   return (
+    // Los lugares van primero: antes había que pasar barrios, "Ver también" y la
+    // provincia para llegar a la lista.
     <div className="space-y-8">
+      <section>
+        <h2 className="text-lg font-semibold mb-4">
+          {currentCategory
+            ? `${CATEGORIES.find((c) => c.slug === currentCategory)?.name ?? currentCategory} en ${cityName}`
+            : `Lugares en ${cityName}`}
+        </h2>
+        <div className={cardVariant === "compact" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"}>
+          {places.map((p, index) => (
+            <PlaceCard
+              key={p._id}
+              place={placeSeoToCardPlace(p) as Parameters<typeof PlaceCard>[0]["place"]}
+              cityName={citySlug ? cityName : undefined}
+              variant={cardVariant}
+              cityClickAnalytics={{
+                city_slug: citySlug,
+                position: index + 1,
+                source: currentCategory
+                  ? `city_category:${currentCategory}`
+                  : "city_page",
+              }}
+            />
+          ))}
+        </div>
+      </section>
       {topNeighborhoods.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold mb-3">Barrios con más opciones sin gluten</h2>
@@ -76,28 +105,6 @@ export function PlaceListWithFilters({
         </section>
       )}
 
-      <section>
-        <h2 className="text-lg font-semibold mb-4">
-          {currentCategory
-            ? `${CATEGORIES.find((c) => c.slug === currentCategory)?.name ?? currentCategory} en ${cityName}`
-            : `Lugares en ${cityName}`}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {places.map((p, index) => (
-            <PlaceCard
-              key={p._id}
-              place={placeSeoToCardPlace(p) as Parameters<typeof PlaceCard>[0]["place"]}
-              cityClickAnalytics={{
-                city_slug: citySlug,
-                position: index + 1,
-                source: currentCategory
-                  ? `city_category:${currentCategory}`
-                  : "city_page",
-              }}
-            />
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

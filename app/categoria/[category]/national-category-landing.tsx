@@ -63,7 +63,7 @@ export async function NationalCategoryLanding({ category, page }: { category: st
   }
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-5xl px-4 py-8 md:px-5 md:py-12">
       <Breadcrumbs
         items={[
           { label: "Sin gluten Argentina", href: "/sin-gluten-argentina" },
@@ -82,6 +82,7 @@ export async function NationalCategoryLanding({ category, page }: { category: st
         cityName="Argentina"
         currentCategory={category}
         basePath={`/${category}-sin-gluten`}
+        cardVariant="compact"
       />
       {pages > 1 && (
         <Pagination

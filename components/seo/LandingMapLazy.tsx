@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Loader2, MapPin } from "lucide-react"
 import type { LandingMapProps } from "@/components/seo/LandingMap"
@@ -30,7 +31,14 @@ export function LandingMapLazy({ label, ...mapProps }: LandingMapProps & { label
   }
 
   return (
-    <div className="relative h-[min(500px,70vh)] min-h-[360px] bg-[#2D4A34]">
+    // Celular: cerrado es una franja de 200 px (antes ~500, y los lugares quedaban muy
+    // abajo); al abrirlo crece para poder usarlo. En compu, igual que antes.
+    <div
+      className={cn(
+        "relative bg-[#2D4A34] md:h-[min(500px,70vh)] md:min-h-[360px]",
+        open ? "h-[min(420px,65vh)]" : "h-[200px]"
+      )}
+    >
       {open ? (
         <LandingMap {...mapProps} />
       ) : (
