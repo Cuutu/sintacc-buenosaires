@@ -1,4 +1,5 @@
-import { Globe, MapPin, Phone } from "lucide-react"
+import Link from "next/link"
+import { Globe, Map as MapIcon, MapPin, Phone } from "lucide-react"
 import { placeCardClass } from "./place-detail-ui"
 import { PlaceHoursToggle } from "./PlaceHoursToggle"
 import { formatPhoneForDisplay } from "@/lib/phone-display"
@@ -6,6 +7,8 @@ import { formatPhoneForDisplay } from "@/lib/phone-display"
 interface PlaceInfoCardProps {
   address: string
   mapsUrl: string
+  /** /mapa?place=…: el lugar en el mapa de CeliMap, con los que tiene cerca. */
+  mapHref?: string
   openingHours?: string
   phone?: string
   website?: string
@@ -14,6 +17,7 @@ interface PlaceInfoCardProps {
 export function PlaceInfoCard({
   address,
   mapsUrl,
+  mapHref,
   openingHours,
   phone,
   website,
@@ -37,6 +41,16 @@ export function PlaceInfoCard({
           <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#1F4D35]" />
           <span className="text-base leading-relaxed text-[#1F4D35]">{address}</span>
         </a>
+
+        {mapHref ? (
+          <Link
+            href={mapHref}
+            className="flex items-center gap-3 py-4 text-base font-semibold text-[#1F4D35] underline decoration-[#1F4D35]/25 underline-offset-4 transition-colors hover:decoration-[#1F4D35]/60"
+          >
+            <MapIcon className="h-5 w-5 shrink-0" aria-hidden />
+            Ver en el mapa de CeliMap
+          </Link>
+        ) : null}
 
         {openingHours ? <PlaceHoursToggle hours={openingHours} /> : null}
 

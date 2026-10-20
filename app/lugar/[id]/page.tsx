@@ -131,17 +131,20 @@ export default async function LugarPage({ params }: LugarPageProps) {
             <PlaceTrustCard reportCount={reportCount} isDedicated={isDedicated} />
 
             <div className="lg:hidden">
+              {/* Guardar y Compartir ya están arriba, sobre la foto: acá solo "Cómo llegar". */}
               <PlacePrimaryActions
                 mapsUrl={mapsUrl}
                 placeId={placeId}
                 name={place.name}
                 shareUrl={shareUrl}
+                showSaveShare={false}
               />
             </div>
 
             <PlaceInfoCard
               address={addressText}
               mapsUrl={mapsUrl}
+              mapHref={`/mapa?place=${placeId}`}
               openingHours={place.openingHours}
               phone={place.contact?.phone}
               website={place.contact?.url}

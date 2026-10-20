@@ -12,6 +12,8 @@ interface PlacePrimaryActionsProps {
   placeId: string
   name: string
   shareUrl: string
+  /** En el celular Guardar y Compartir ya están sobre la foto (PlaceHeroChrome). */
+  showSaveShare?: boolean
 }
 
 export function PlacePrimaryActions({
@@ -19,6 +21,7 @@ export function PlacePrimaryActions({
   placeId,
   name,
   shareUrl,
+  showSaveShare = true,
 }: PlacePrimaryActionsProps) {
   const handleShare = async () => {
     try {
@@ -48,13 +51,15 @@ export function PlacePrimaryActions({
         <MapPinned className="h-5 w-5" />
         Cómo llegar
       </a>
-      <div className="grid grid-cols-2 gap-3">
-        <PlaceSaveButton placeId={placeId} variant="labeled" />
-        <button type="button" onClick={handleShare} className={placeSecondaryBtnClass}>
-          <Share2 className="h-5 w-5" />
-          Compartir
-        </button>
-      </div>
+      {showSaveShare ? (
+        <div className="grid grid-cols-2 gap-3">
+          <PlaceSaveButton placeId={placeId} variant="labeled" />
+          <button type="button" onClick={handleShare} className={placeSecondaryBtnClass}>
+            <Share2 className="h-5 w-5" />
+            Compartir
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }

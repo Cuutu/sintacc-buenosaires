@@ -29,13 +29,14 @@ export function PlaceHoursToggle({ hours }: { hours: string }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p
-              className={`text-base font-semibold ${labelColor}`}
-            >
-              {detail ? detail.label : "Horarios"}
+            {/* En compu el estado de hoy ya está en la columna de la derecha (PlaceDesktopAside):
+                acá queda solo "Horarios" para no repetirlo. */}
+            <p className={`text-base font-semibold ${labelColor} lg:text-[#1F4D35]`}>
+              <span className="lg:hidden">{detail ? detail.label : "Horarios"}</span>
+              <span className="hidden lg:inline">Horarios</span>
             </p>
             {detail?.relativeText && (
-              <p className="mt-0.5 text-sm text-[#5F6B63]">{detail.relativeText}</p>
+              <p className="mt-0.5 text-sm text-[#5F6B63] lg:hidden">{detail.relativeText}</p>
             )}
           </div>
           {hasSchedule && (
