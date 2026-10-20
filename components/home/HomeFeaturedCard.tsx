@@ -45,7 +45,7 @@ export function SafetyPill({ place, onGreen }: { place: PlaceWithStats; onGreen:
       <span
         className={cn(
           "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-extrabold shadow-[0_4px_12px_-6px_rgba(20,30,23,0.5)]",
-          onGreen ? "bg-[#F7F3EB] text-[#1F4D35]" : "bg-[#1F4D35] text-[#F7F3EB]"
+          onGreen ? "bg-[#F7F3EB] text-[#1F4D35]" : "bg-[#1F4D35] text-[#F7F3EB] ring-1 ring-[#F7F3EB]/40"
         )}
       >
         <Check className="h-3 w-3" strokeWidth={3.2} aria-hidden />

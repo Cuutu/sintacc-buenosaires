@@ -167,7 +167,7 @@ export function PlaceCard({
         <span
           className={cn(
             "absolute left-3 top-3 inline-flex h-7 max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-black leading-none shadow-[0_4px_12px_-6px_rgba(20,30,23,0.45)]",
-            dedicated && onPhoto ? "bg-[#1F4D35] text-[#F7F3EB]" : "bg-[#F7F3EB] text-[#1F4D35]"
+            dedicated && onPhoto ? "bg-[#1F4D35] text-[#F7F3EB] ring-1 ring-[#F7F3EB]/40" : "bg-[#F7F3EB] text-[#1F4D35]"
           )}
         >
           {safetyLevel === "dedicated_gf" ? (
