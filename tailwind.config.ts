@@ -23,13 +23,19 @@ const config = {
       },
     },
     extend: {
-      // Opacidades que el código ya usa (bg-olive/8, bg-terracotta/12, bg-black/78…)
+      // Opacidades que el código ya usa (bg-olive/8, bg-terracotta/12, bg-[#F8F5EF]/88…)
       // y que no están en la escala de Tailwind: sin esto esas clases no generaban
-      // nada (badges sin fondo, skeleton del mapa invisible, hover sin fondo).
+      // nada (badges sin fondo, skeleton del mapa invisible, botones de la ficha
+      // transparentes sobre la foto, pastilla "Ver lugares" sin fondo).
       opacity: {
+        6: "0.06",
         8: "0.08",
         12: "0.12",
+        18: "0.18",
+        22: "0.22",
         78: "0.78",
+        88: "0.88",
+        92: "0.92",
       },
       colors: {
         border: "hsl(var(--border))",

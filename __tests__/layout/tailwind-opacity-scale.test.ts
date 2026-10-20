@@ -16,8 +16,9 @@ describe("opacidades de color de Tailwind", () => {
       ((config.theme?.extend as Record<string, unknown> | undefined)?.opacity ?? {}) as Record<string, string>
     ).map(Number)
     const valid = new Set([...DEFAULT_SCALE, ...extended])
+    // Colores con nombre (bg-olive/8) y colores hex (bg-[#F8F5EF]/88).
     const out = execSync(
-      'git grep -hoE "(bg|text|border|ring|divide|fill|stroke|outline|decoration|accent|caret|shadow)-[a-z]+(-[0-9]{2,3})?/[0-9]{1,3}" -- app components lib',
+      'git grep -hoE "(bg|text|border|ring|divide|fill|stroke|outline|decoration|accent|caret|shadow|from|via|to)-([a-z]+(-[0-9]{2,3})?|\\[#[0-9A-Fa-f]{3,8}\\])/[0-9]{1,3}" -- app components lib',
       { cwd: root, encoding: "utf8" }
     )
     const invalid = [...new Set(out.split("\n").filter(Boolean))].filter((cls) => {
