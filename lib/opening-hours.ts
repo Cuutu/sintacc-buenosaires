@@ -94,6 +94,11 @@ function parseDayRange(str: string): number[] | null {
         days.add(from)
         continue
       }
+      // "Domingo a domingo" / "lunes a lunes": toda la semana (antes quedaba solo ese día).
+      if (from === to) {
+        for (let d = 0; d < 7; d++) days.add(d)
+        continue
+      }
       for (let d = from; ; d = (d + 1) % 7) {
         days.add(d)
         if (d === to) break

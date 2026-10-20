@@ -285,6 +285,17 @@ describe("horarios reales de Google y manuales que antes fallaban", () => {
     expect(isOpenNow(hours, new Date("2026-10-04T22:00:00.000Z"))).toBe(false)
   })
 
+  it("'Domingo a domingo' es toda la semana", () => {
+    const hours = "Domingo a domingo: 8 am a 1 am"
+    /** Martes 20 oct 12:00 AR (antes: "Cerrado · abre el domingo") */
+    expect(isOpenNow(hours, new Date("2026-10-20T15:00:00.000Z"))).toBe(true)
+    /** Martes 20 oct 00:30 AR: sigue abierto por el horario del lunes */
+    expect(isOpenNow(hours, new Date("2026-10-20T03:30:00.000Z"))).toBe(true)
+    /** Martes 20 oct 03:00 AR: cerrado, abre a las 8 */
+    expect(isOpenNow(hours, new Date("2026-10-20T06:00:00.000Z"))).toBe(false)
+    expect(isOpenNow("Lunes a lunes 10 a 18", new Date("2026-10-22T15:00:00.000Z"))).toBe(true)
+  })
+
   it("rango de días con guion largo 'Lun–Sáb'", () => {
     /** Martes 29 sep 10:00 AR */
     expect(isOpenNow("Lun–Sáb 09:00–21:00; Dom 09:00–13:00", new Date("2026-09-29T13:00:00.000Z"))).toBe(true)
