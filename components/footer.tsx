@@ -24,12 +24,13 @@ const INFO_LINKS = [
   { href: "/guias", label: "Guías" },
 ] as const
 
+// inline-flex + min-h: el texto mide ~22 px, la zona de toque 40 px.
 const linkClass =
-  "text-base text-[#C9D9CE] transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+  "inline-flex min-h-[40px] items-center text-base text-[#C9D9CE] transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 md:min-h-[32px]"
 
 function FooterLinkList({ links }: { links: readonly { href: string; label: string }[] }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col gap-0.5 md:gap-1.5">
       {links.map((link) => (
         <li key={link.href}>
           <Link href={link.href} className={linkClass}>
@@ -130,7 +131,7 @@ export function Footer() {
               © {new Date().getFullYear()} CeliMap. Confirmá siempre la información directamente con
               el local.
             </p>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <div className="flex flex-wrap gap-x-6 text-sm">
               <Link href="/contacto" className={linkClass}>
                 Contacto
               </Link>

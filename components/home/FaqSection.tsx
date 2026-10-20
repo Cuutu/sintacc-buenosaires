@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react"
+import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 
 export const FAQ_ITEMS = [
   {
@@ -70,10 +71,9 @@ export const FAQ_ITEMS = [
 
 type FaqItemData = (typeof FAQ_ITEMS)[number]
 
-function FaqItem({ item, defaultOpen = false }: { item: FaqItemData; defaultOpen?: boolean }) {
+function FaqItem({ item }: { item: FaqItemData }) {
   return (
     <details
-      open={defaultOpen}
       className="group rounded-[24px] border border-olive/10 bg-cream-card shadow-soft [&[open]]:border-olive/20"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 select-none [&::-webkit-details-marker]:hidden">
@@ -92,27 +92,16 @@ function FaqItem({ item, defaultOpen = false }: { item: FaqItemData; defaultOpen
 }
 
 export function FaqSection() {
-  const mid = Math.ceil(FAQ_ITEMS.length / 2)
-  const left = FAQ_ITEMS.slice(0, mid)
-  const right = FAQ_ITEMS.slice(mid)
-
+  // Una sola columna: en dos quedaban desparejas, y en el teléfono el container
+  // sumaba 2rem al padding (≈50 px de margen contra 16 en el resto de la home).
   return (
-    <section className="px-4 py-12 md:py-16" aria-label="Preguntas frecuentes">
-      <div className="container mx-auto max-w-5xl">
-        <h2 className="mb-6 text-center font-display text-2xl font-bold text-olive md:mb-8">
-          Preguntas frecuentes
-        </h2>
-        <div className="grid items-start gap-3 md:grid-cols-2 md:gap-x-4">
-          <div className="flex flex-col gap-3">
-            {left.map((item, i) => (
-              <FaqItem key={item.question} item={item} defaultOpen={i === 0} />
-            ))}
-          </div>
-          <div className="flex flex-col gap-3">
-            {right.map((item) => (
-              <FaqItem key={item.question} item={item} />
-            ))}
-          </div>
+    <section className="px-4 py-10 md:px-5 md:py-16" aria-labelledby="faq-heading">
+      <div className="container mx-auto max-w-5xl px-0">
+        <HomeSectionHeader id="faq-heading" kicker="lo que más nos preguntan" title="Preguntas frecuentes" />
+        <div className="flex max-w-3xl flex-col gap-3">
+          {FAQ_ITEMS.map((item) => (
+            <FaqItem key={item.question} item={item} />
+          ))}
         </div>
       </div>
     </section>

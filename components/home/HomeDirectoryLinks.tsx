@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 import {
   Beer,
   Coffee,
@@ -35,15 +36,13 @@ export function HomeDirectoryLinks() {
     <section className="px-4 py-8 md:px-5 md:py-16" aria-labelledby="directory-heading">
       {/* px-0: mismo borde que Guías y Destacados (el container de Tailwind suma 2rem). */}
       <div className="container mx-auto max-w-5xl px-0">
-        <h2
+        <HomeSectionHeader
           id="directory-heading"
-          className="font-display text-2xl font-bold tracking-[-0.02em] text-olive md:text-3xl"
-        >
-          Explorá por tipo y ciudad
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#4D6554] md:text-base">
-          Restaurantes, bares, panaderías y más, en las ciudades con más opciones Sin TACC.
-        </p>
+          kicker="en todo el país"
+          title="Explorá por tipo y ciudad"
+          description="Restaurantes, bares, panaderías y más, en las ciudades con más opciones sin TACC."
+          className="mb-0 md:mb-0"
+        />
 
         <h3
           id="directory-types-heading"

@@ -91,7 +91,10 @@ describe("catálogo /emprendimientos", () => {
     const src = read("app/emprendimientos/EmprendimientosPageContent.tsx")
     expect(src).toContain("Deslizá para ver más categorías")
     expect(src).toContain("scroll-mt-[calc(var(--desktop-nav-clearance)")
-    expect(src).toContain("bottom-nav-clearance")
+    // El lugar de la barra de abajo lo reserva el footer (que sigue a la página);
+    // sumarlo también acá dejaba un hueco vacío antes del pie.
+    expect(src).not.toContain("pb-[calc(var(--bottom-nav-clearance)")
+    expect(read("components/footer.tsx")).toContain("pb-[var(--bottom-nav-clearance)]")
     expect(src).toContain("VENTURE_CATALOG_INTRO")
     expect(read("lib/ventures-server.ts")).toContain("dedicatedVentureMongoFilter")
     expect(read("app/api/ventures/route.ts")).toContain("dedicatedVentureMongoFilter")

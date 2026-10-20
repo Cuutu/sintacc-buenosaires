@@ -64,7 +64,7 @@ function NavGlyph({
       />
       <span
         className={cn(
-          "relative z-[1] whitespace-nowrap text-[10px] leading-none tracking-[-0.01em] min-[360px]:text-[10.5px]",
+          "relative z-[1] whitespace-nowrap text-[10px] leading-none tracking-[-0.01em] min-[360px]:text-[11px]",
           active ? "font-extrabold" : "font-bold"
         )}
         aria-hidden

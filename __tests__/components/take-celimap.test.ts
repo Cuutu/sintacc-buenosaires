@@ -36,10 +36,12 @@ describe("Llevá CeliMap con vos", () => {
     expect(layout).toContain("suppressHydrationWarning")
   })
 
-  it("home la muestra arriba de Lugares destacados", () => {
+  it("home la muestra abajo, antes de las preguntas frecuentes", () => {
+    // Revisión visual 19/10: arriba del pliegue quedan solo el buscador y "Abrir el mapa".
     const page = read("app/page.tsx")
     expect(page.indexOf("<TakeCeliMapWithYou />")).toBeGreaterThan(-1)
-    expect(page.indexOf("<TakeCeliMapWithYou />")).toBeLessThan(page.indexOf("<HomeFeatured"))
+    expect(page.indexOf("<TakeCeliMapWithYou />")).toBeGreaterThan(page.indexOf("<HomeFeatured"))
+    expect(page.indexOf("<TakeCeliMapWithYou />")).toBeLessThan(page.indexOf("<FaqSection />"))
   })
 
   it("InstallPrompt no se abre solo al cargar", () => {

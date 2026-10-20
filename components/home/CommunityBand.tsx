@@ -39,20 +39,21 @@ export function CommunityBand({ stats }: { stats?: StatsApi | null }) {
         </p>
 
         {metrics.length === 3 ? (
-          <ul className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          // Tres columnas iguales: en el teléfono quedaban 2 + 1.
+          <ul className="mx-auto mt-8 grid max-w-xl grid-cols-3 gap-2">
             {metrics.map((item) => (
-              <li key={item.label} className="text-cream">
+              <li key={item.label} className="flex flex-col items-center text-cream">
                 <span className="font-display text-2xl font-bold tabular-nums md:text-3xl">
                   {item.value}
-                </span>{" "}
-                <span className="text-sm text-cream/70">{item.label}</span>
+                </span>
+                <span className="mt-0.5 text-sm text-cream/70">{item.label}</span>
               </li>
             ))}
           </ul>
         ) : null}
 
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild size="lg" className="h-12 min-h-[48px] px-8">
+        <div className="mx-auto mt-8 flex max-w-xs flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row">
+          <Button asChild size="lg" className="h-12 min-h-[48px] px-8 sm:w-[220px]">
             <Link href="/sugerir" className="flex items-center gap-2">
               Sugerir un lugar
               <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
@@ -62,7 +63,7 @@ export function CommunityBand({ stats }: { stats?: StatsApi | null }) {
             asChild
             size="lg"
             variant="outline"
-            className="h-12 min-h-[48px] border-cream bg-transparent px-8 text-cream hover:bg-cream/10"
+            className="h-12 min-h-[48px] border-cream bg-transparent px-8 text-cream hover:bg-cream/10 sm:w-[220px]"
           >
             <Link href="/mapa">Ver el mapa</Link>
           </Button>

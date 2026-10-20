@@ -84,7 +84,9 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
         id="contenido-principal"
         className={cn(
           "min-h-screen",
-          showMobileChrome && "pb-[var(--bottom-nav-clearance)]",
+          // Fuera del mapa el footer ya reserva el lugar de la barra de abajo: sumarlo
+          // también acá dejaba un hueco vacío antes del pie en todas las páginas.
+          showMobileChrome && isMapRoute && "pb-[var(--bottom-nav-clearance)]",
           showMobileChrome && !isMapRoute && "pt-[var(--safe-area-top)]",
           hidePublicChrome && "pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)]"
         )}

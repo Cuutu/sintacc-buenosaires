@@ -52,8 +52,9 @@ export default async function HomePage() {
   ])
 
   const placesFloor = floorDisplayCount(initialStats?.placesCount)
-  const heroSubline = placesFloor
-    ? `${formatFlooredPrefix(placesFloor)} lugares sin gluten recomendados por la comunidad celíaca.`
+  const placesPrefix = placesFloor ? formatFlooredPrefix(placesFloor) : null
+  const heroSubline = placesPrefix
+    ? `${placesPrefix} lugares sin gluten recomendados por la comunidad celíaca.`
     : "Lugares sin gluten recomendados por la comunidad celíaca."
 
   const faqSchema = {
@@ -109,7 +110,10 @@ export default async function HomePage() {
               {heroSubline}
             </p>
             <p className="mt-4 max-w-[560px] text-lg leading-relaxed text-[#F7F3EB]/80 max-md:sr-only">
-              CeliMap es un mapa colaborativo Sin TACC en Argentina. Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
+              {placesPrefix
+                ? `CeliMap es un mapa colaborativo sin TACC con ${placesPrefix} lugares en Argentina. `
+                : "CeliMap es un mapa colaborativo sin TACC en Argentina. "}
+              Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
             {/* CTA + modo "Sólo 100%": apilados en mobile, en fila desde sm. */}
@@ -141,8 +145,6 @@ export default async function HomePage() {
         <CategoryChips />
       </div>
 
-      <TakeCeliMapWithYou />
-
       <section className="px-4 pb-4 pt-12 md:px-5 md:py-16">
         {/* px-0: el container de Tailwind suma 2rem y duplicaba el margen lateral (24 vs 58 px). */}
         <div className="container mx-auto max-w-5xl px-0">
@@ -156,19 +158,23 @@ export default async function HomePage() {
 
       <HomeDirectoryLinks />
 
-      <section className="px-4 py-8 md:py-16">
-        <div className="container mx-auto max-w-5xl">
+      {/* px-0: el container de Tailwind suma 2rem; así todas las secciones tienen el mismo borde. */}
+      <section className="px-4 py-10 md:px-5 md:py-16">
+        <div className="container mx-auto max-w-5xl px-0">
           <EmprendimientosSection />
         </div>
       </section>
 
-      <section className="px-4 py-8 md:py-16">
-        <div className="container mx-auto max-w-5xl">
+      <section className="px-4 py-10 md:px-5 md:py-16">
+        <div className="container mx-auto max-w-5xl px-0">
           <HowItWorks />
         </div>
       </section>
 
       <CommunityBand stats={initialStats} />
+
+      {/* La promo de las apps va abajo: arriba del pliegue ya hay buscador y mapa. */}
+      <TakeCeliMapWithYou />
 
       <FaqSection />
     </div>

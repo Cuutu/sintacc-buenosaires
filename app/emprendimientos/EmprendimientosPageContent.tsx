@@ -250,7 +250,7 @@ export default function EmprendimientosPageContent({
     : `${list.length} ${list.length === 1 ? "emprendimiento" : "emprendimientos"}`
 
   return (
-    <div className="min-h-screen scroll-mt-[var(--desktop-nav-clearance)] bg-[#F3EEE4] pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-16">
+    <div className="min-h-screen scroll-mt-[var(--desktop-nav-clearance)] bg-[#F3EEE4] pb-10 md:pb-16">
       <div className="mx-auto max-w-5xl px-5 pb-8 pt-6 md:pt-10">
         <header className="mb-8 max-w-3xl">
           <p className="font-serif text-lg font-medium italic text-[#B84420] md:text-xl">para pedir y comprar</p>

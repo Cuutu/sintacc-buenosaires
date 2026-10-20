@@ -91,7 +91,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
   const hasBuyLinks = Boolean(links.whatsapp || links.instagram || links.web)
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 pb-[calc(var(--bottom-nav-clearance)+1.5rem)] md:pb-12 lg:max-w-5xl lg:px-5 lg:pt-10">
+    <div className="container mx-auto max-w-2xl px-4 py-8 pb-10 md:pb-12 lg:max-w-5xl lg:px-5 lg:pt-10">
       <Breadcrumbs
         items={[
           { label: "Emprendimientos", href: "/emprendimientos" },

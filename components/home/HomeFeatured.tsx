@@ -14,6 +14,7 @@ import {
 import { fetchApi } from "@/lib/fetchApi"
 import { MAX_FEATURED_PLACES } from "@/lib/featured-places"
 import type { PlaceWithStats } from "@/components/featured/featured-utils"
+import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 import { HomeFeaturedCard } from "@/components/home/HomeFeaturedCard"
 import { FeaturedSkeleton } from "@/components/featured/FeaturedSkeleton"
 
@@ -73,24 +74,20 @@ export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[]
 
   return (
     <section id="lugares" aria-labelledby="featured-heading">
-      <div className="mb-5 flex items-end justify-between gap-4 md:mb-8">
-        <div>
-          <p className="font-serif text-lg font-medium italic text-[#B84420]">elegidos por la comunidad</p>
-          <h2
-            id="featured-heading"
-            className="mt-0.5 text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive md:text-4xl"
+      <HomeSectionHeader
+        id="featured-heading"
+        kicker="elegidos por la comunidad"
+        title="Lugares destacados"
+        action={
+          <Link
+            href="/mapa"
+            aria-label="Ver todos los lugares"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E6DFD2] bg-white text-olive transition-colors hover:border-olive/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
           >
-            Lugares destacados
-          </h2>
-        </div>
-        <Link
-          href="/mapa"
-          aria-label="Ver todos los lugares"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E6DFD2] bg-white text-olive transition-colors hover:border-olive/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
-        >
-          <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden />
-        </Link>
-      </div>
+            <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden />
+          </Link>
+        }
+      />
 
       <div className="relative" data-overflow-allowed="featured-carousel">
         <Carousel setApi={setApi} opts={{ align: "start", loop: items.length > 1 }} className="w-full">
@@ -112,7 +109,7 @@ export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[]
           ) : null}
         </Carousel>
         {count > 1 ? (
-          <div className="mt-5 flex justify-center gap-2" role="tablist" aria-label="Lugares destacados">
+          <div className="mt-3 flex justify-center" role="tablist" aria-label="Lugares destacados">
             {Array.from({ length: count }).map((_, i) => (
               <button
                 key={i}
@@ -121,10 +118,16 @@ export function HomeFeatured({ places: placesProp }: { places?: PlaceWithStats[]
                 aria-selected={i === current}
                 aria-label={`Lugar ${i + 1} de ${count}`}
                 onClick={() => api?.scrollTo(i)}
-                className={`h-2 rounded-full transition-all ${
-                  i === current ? "w-8 bg-olive" : "w-2 bg-olive/25 hover:bg-olive/40"
-                }`}
-              />
+                className="group flex h-8 min-w-6 items-center justify-center px-1 focus-visible:outline-none"
+              >
+                {/* El punto se ve chico, pero la zona de toque es de 32 px de alto. */}
+                <span
+                  aria-hidden
+                  className={`block h-2 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-olive/40 ${
+                    i === current ? "w-8 bg-olive" : "w-2 bg-olive/25 group-hover:bg-olive/40"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         ) : null}

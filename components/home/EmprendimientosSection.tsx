@@ -1,58 +1,65 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { ArrowRight, ChefHat, Cake, Wheat } from "lucide-react"
+import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 
 const CARDS = [
   {
     icon: ChefHat,
-    title: "Viandas sin gluten",
+    title: "Viandas",
     href: "/emprendimientos/viandas-sin-gluten",
   },
   {
     icon: Cake,
-    title: "Pastelería y tortas",
+    title: "Pastelería",
     href: "/emprendimientos/pasteleria-sin-gluten",
   },
   {
     icon: Wheat,
-    title: "Panificados y productos",
+    title: "Panificados",
     href: "/emprendimientos/panificados-sin-gluten",
   },
 ] as const
 
+/** Emprendimientos sin local: tres accesos compactos en fila y los dos botones. */
 export function EmprendimientosSection() {
   return (
-    <div className="text-center">
-      <h2 className="text-xl md:text-2xl font-bold mb-2">
-        También podés descubrir emprendimientos
-      </h2>
-      <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-        No todos los lugares sin gluten tienen local. En CeliMap también podés encontrar marcas,
-        cocineros y proyectos que venden productos aptos por encargo, delivery o redes sociales.
-      </p>
+    <section aria-labelledby="home-ventures-heading">
+      <HomeSectionHeader
+        id="home-ventures-heading"
+        kicker="sin local a la calle"
+        title="Emprendimientos sin gluten"
+        description="Marcas y cocineros que venden por encargo, delivery o redes sociales."
+      />
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-8">
+      <ul className="grid grid-cols-3 gap-2 sm:gap-3">
         {CARDS.map((card) => (
-          <Link key={card.href} href={card.href}>
-            <div className="flex flex-col items-center gap-3 p-6 rounded-xl border border-olive/10 bg-olive/5 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 h-full">
-              <card.icon className="h-8 w-8 text-primary" />
-              <span className="text-sm font-medium">{card.title}</span>
-            </div>
-          </Link>
+          <li key={card.href} className="min-w-0">
+            <Link
+              href={card.href}
+              className="flex h-full min-h-[84px] flex-col items-center justify-center gap-2 rounded-[16px] border border-[#E6DFD2] bg-white px-2 py-3 text-center transition-colors hover:border-olive/30 hover:bg-[#FBF8F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30 sm:flex-row sm:gap-3 sm:px-4"
+            >
+              <card.icon className="h-6 w-6 shrink-0 text-[#B84420]" strokeWidth={1.75} aria-hidden />
+              <span className="text-sm font-extrabold leading-tight text-olive">{card.title}</span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button asChild size="lg" className="min-h-[48px] gap-2">
-          <Link href="/emprendimientos">
-            Ver emprendimientos
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button asChild size="lg" variant="outline" className="min-h-[48px]">
-          <Link href="/sugerir-emprendimiento">Sugerir emprendimiento</Link>
-        </Button>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/emprendimientos"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-[16px] bg-olive px-6 text-[15px] font-extrabold text-[#F7F3EB] transition-colors hover:bg-[#234A33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-2 sm:w-[240px]"
+        >
+          Ver emprendimientos
+          <ArrowRight className="h-4 w-4" strokeWidth={2.2} aria-hidden />
+        </Link>
+        <Link
+          href="/sugerir-emprendimiento"
+          className="inline-flex h-12 items-center justify-center rounded-[16px] border border-olive/25 px-6 text-[15px] font-extrabold text-olive transition-colors hover:bg-olive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30 sm:w-[240px]"
+        >
+          Sugerir emprendimiento
+        </Link>
       </div>
-    </div>
+    </section>
   )
 }

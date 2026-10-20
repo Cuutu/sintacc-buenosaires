@@ -4,10 +4,12 @@ import Image from "next/image"
  * Pines de marca sobre el mapa nocturno del hero (decorativos).
  * Imágenes chicas (96px) en /public/brand/hero, no los PNG de 512px del mapa.
  */
-// Mobile: todos terminan antes de los ~150px; el texto del hero arranca más abajo y no se pisan.
+// Mobile: la fila del logo ocupa hasta ~60px (más el área segura en las apps, que el
+// contenedor ya suma) y el texto arranca en ~172px. Los pines van entre medio, sin
+// tocar el logo.
 const HERO_PINS = [
   { src: "/brand/hero/pin-100-crema.png", left: "16%", top: 74, w: 24 },
-  { src: "/brand/hero/pin-opciones.png", left: "40%", top: 58, w: 22 },
+  { src: "/brand/hero/pin-opciones.png", left: "40%", top: 96, w: 22 },
   { src: "/brand/hero/pin-100-crema.png", left: "60%", top: 84, w: 28 },
   { src: "/brand/hero/pin-opciones.png", left: "6%", top: 118, w: 20 },
   { src: "/brand/hero/pin-100-crema.png", left: "84%", top: 112, w: 20 },
@@ -32,7 +34,7 @@ export function HeroPins() {
     <>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[170px] max-w-5xl lg:hidden min-[769px]:top-[var(--desktop-nav-clearance)]"
+        className="pointer-events-none absolute inset-x-0 top-[calc(max(1rem,calc(var(--safe-area-top,0px)+0.5rem))-1rem)] mx-auto h-[170px] max-w-5xl lg:hidden min-[769px]:top-[var(--desktop-nav-clearance)]"
       >
         {HERO_PINS.map((pin, i) => (
           <Image

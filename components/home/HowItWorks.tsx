@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 
 const STEPS = [
   {
@@ -21,26 +22,21 @@ const STEPS = [
 export function HowItWorks() {
   return (
     <section aria-labelledby="how-heading">
-      <h2
-        id="how-heading"
-        className="mb-8 text-center font-display text-2xl font-bold text-olive md:mb-10 md:text-[1.75rem]"
-      >
-        Cómo funciona
-      </h2>
-      <ol className="grid gap-8 md:grid-cols-3 md:gap-12">
+      <HomeSectionHeader id="how-heading" kicker="en tres pasos" title="Cómo funciona" />
+      <ol className="grid gap-6 md:grid-cols-3 md:gap-12">
         {STEPS.map((step) => (
-          <li key={step.n} className="text-center md:text-left">
-            <p className="font-serif text-4xl italic leading-none text-terracotta/80">{step.n}</p>
-            <h3 className="mt-3 font-display text-lg font-bold text-olive">{step.title}</h3>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-[#4D6554] md:max-w-none">
-              {step.body}
+          <li key={step.n} className="grid grid-cols-[52px_1fr] items-start gap-x-2 md:block">
+            <p className="row-span-2 font-serif text-4xl italic leading-none text-[#B84420]" aria-hidden>
+              {step.n}
             </p>
+            <h3 className="font-display text-lg font-bold text-olive md:mt-3">{step.title}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-[#4D6554] md:mt-2">{step.body}</p>
           </li>
         ))}
       </ol>
-      <p className="mt-8 text-center text-sm text-[#4D6554]">
+      <p className="mt-8 text-sm text-[#4D6554]">
         Más detalle en{" "}
-        <Link href="/como-funciona" className="font-medium text-olive underline-offset-2 hover:underline">
+        <Link href="/como-funciona" className="font-medium text-olive underline decoration-olive/30 underline-offset-4 hover:text-[#B84420]">
           cómo funciona CeliMap
         </Link>
         .
