@@ -1,9 +1,9 @@
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowRight, ChefHat, Cake, MapPin, Wheat } from "lucide-react"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 import { homeBtn } from "@/components/home/home-ui"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
+import { VENTURE_LOGO_BACKDROP, VentureCoverImage } from "@/components/ventures/VentureCoverImage"
 import type { HomeVenture } from "@/lib/home/get-home-ventures"
 import { cn } from "@/lib/utils"
 
@@ -25,15 +25,18 @@ function HomeVentureCard({ venture, className }: { venture: HomeVenture; classNa
         <div
           className={cn(
             "relative aspect-square w-full overflow-hidden rounded-[14px]",
-            venture.photo ? "bg-olive/10" : "celi-trigo-crema flex items-center justify-center bg-[#2D4A34]"
+            venture.photo
+              ? venture.photoIsLogo
+                ? VENTURE_LOGO_BACKDROP
+                : "bg-olive/10"
+              : "celi-trigo-crema flex items-center justify-center bg-[#2D4A34]"
           )}
         >
           {venture.photo ? (
-            <Image
+            <VentureCoverImage
               src={venture.photo}
-              alt=""
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              isLogo={venture.photoIsLogo}
+              className="transition-transform duration-500 group-hover:scale-[1.04]"
               sizes="(max-width: 768px) 45vw, 240px"
             />
           ) : (

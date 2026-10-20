@@ -17,6 +17,7 @@ function venture(id: string, category: string, photo: boolean, knownProducts = t
     sells: category,
     zone: "CABA",
     photo: photo ? `https://res.cloudinary.com/x/${id}.jpg` : null,
+    photoIsLogo: false,
     knownProducts,
   }
 }
@@ -41,6 +42,7 @@ describe("emprendimientos de la home", () => {
       sells: "Panificados · Pastelería",
       zone: "CABA y zona norte",
       photo: "https://res.cloudinary.com/x/1.jpg",
+      photoIsLogo: false,
       knownProducts: true,
     })
   })
@@ -88,6 +90,16 @@ describe("emprendimientos de la home", () => {
       venture("b", "viandas", false),
     ]
     expect(pickHomeVentures(list).map((v) => v.id)).toEqual(["a", "feria", "b"])
+  })
+
+  it("las fotos de producto van antes que los logos", () => {
+    const logo = { ...venture("logo", "congelados", true), photoIsLogo: true }
+    const list = [logo, venture("a", "pasteleria", true), venture("b", "viandas", false)]
+    expect(pickHomeVentures(list).map((v) => v.id)).toEqual(["a", "logo", "b"])
+    expect(
+      toHomeVenture({ _id: { toString: () => "x" }, name: "Celi Point", categories: ["congelados"], photos: ["https://x/l.png"], coverIsLogo: true })
+        .photoIsLogo
+    ).toBe(true)
   })
 
   it("completa con los que no tienen foto si faltan", () => {

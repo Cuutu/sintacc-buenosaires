@@ -23,6 +23,8 @@ export type HomeVenture = {
   /** Zona corta: hasta dos partes, sin la provincia ni el país al final. */
   zone: string
   photo: string | null
+  /** La portada es un logo (marcado en el admin): va entero sobre crema. */
+  photoIsLogo: boolean
   /** false si solo cargaron formas de venta (ferias, envíos) y no qué productos hacen. */
   knownProducts: boolean
 }
@@ -36,6 +38,7 @@ type VentureRow = {
   zone?: string | null
   modalities?: string[] | null
   photos?: Array<string | null> | null
+  coverIsLogo?: boolean | null
 }
 
 export const HOME_VENTURES_SHOW = 4
@@ -77,20 +80,23 @@ export function toHomeVenture(row: VentureRow): HomeVenture {
     sells,
     zone: shortVentureZone(row.zone),
     photo: getVentureCoverPhoto(row.photos),
+    photoIsLogo: row.coverIsLogo === true,
     knownProducts: products.length > 0,
   }
 }
 
 /**
- * Elige los de la home: primero los que tienen foto y dicen qué hacen; dentro de cada
- * grupo, uno por categoría antes de repetir (para que no salgan cuatro pastelerías).
- * Respeta el orden de entrada (los más nuevos primero).
+ * Elige los de la home: primero los que tienen foto de producto y dicen qué hacen,
+ * después los que tienen logo; dentro de cada grupo, uno por categoría antes de repetir
+ * (para que no salgan cuatro pastelerías). Respeta el orden de entrada (los más nuevos
+ * primero).
  */
 export function pickHomeVentures(ventures: HomeVenture[], max = HOME_VENTURES_SHOW): HomeVenture[] {
   const picked: HomeVenture[] = []
   const usedCategories = new Set<string>()
   const groups = [
-    ventures.filter((v) => v.photo && v.knownProducts),
+    ventures.filter((v) => v.photo && !v.photoIsLogo && v.knownProducts),
+    ventures.filter((v) => v.photo && v.photoIsLogo && v.knownProducts),
     ventures.filter((v) => v.photo && !v.knownProducts),
     ventures.filter((v) => !v.photo && v.knownProducts),
     ventures.filter((v) => !v.photo && !v.knownProducts),
@@ -118,7 +124,7 @@ async function loadHomeVentures(): Promise<HomeVenture[]> {
     ...dedicatedVentureMongoFilter(),
     ...argentinaVentureMongoFilter(),
   })
-    .select("name slug category categories zone modalities photos")
+    .select("name slug category categories zone modalities photos coverIsLogo")
     .sort({ createdAt: -1 })
     .limit(CANDIDATES)
     .lean()) as unknown as VentureRow[]

@@ -28,6 +28,7 @@ export type VenturePublic = {
   purchaseChannels?: string
   description?: string
   photos: string[]
+  coverIsLogo?: boolean
   status: IVenture["status"]
   source?: IVenture["source"]
   createdAt?: Date
@@ -53,6 +54,7 @@ function serializeVenture(
     purchaseChannels: d.purchaseChannels,
     description: d.description,
     photos: d.photos ?? [],
+    coverIsLogo: d.coverIsLogo === true,
     status: d.status,
     source: d.source,
     createdAt: d.createdAt,

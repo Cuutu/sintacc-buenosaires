@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { Instagram, MessageCircle } from "lucide-react"
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
@@ -15,6 +14,7 @@ import { parseVentureLinks } from "@/lib/venture-contact"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
 import { formatVentureZone } from "@/lib/venture-zone-display"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
+import { VENTURE_LOGO_BACKDROP, VentureCoverImage } from "@/components/ventures/VentureCoverImage"
 import { cn } from "@/lib/utils"
 
 export type VentureCardData = {
@@ -27,6 +27,7 @@ export type VentureCardData = {
   modalities?: string[]
   safetyLevel?: string
   photos?: string[]
+  coverIsLogo?: boolean
   contact?: { instagram?: string; whatsapp?: string }
   purchaseChannels?: string
   stats?: VentureReviewStats
@@ -99,15 +100,14 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
         <div
           className={cn(
             "relative overflow-hidden",
-            featured ? "h-[200px]" : "aspect-[4/3]"
+            featured ? "h-[200px]" : "aspect-[4/3]",
+            photo && venture.coverIsLogo && VENTURE_LOGO_BACKDROP
           )}
         >
           {photo ? (
-            <Image
+            <VentureCoverImage
               src={photo}
-              alt=""
-              fill
-              className="object-cover"
+              isLogo={venture.coverIsLogo}
               sizes={featured ? "320px" : "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"}
             />
           ) : (

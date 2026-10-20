@@ -225,6 +225,7 @@ export const ventureSchema = z.object({
   purchaseChannels: z.string().max(1000).optional(),
   description: z.string().max(2000).optional(),
   photos: z.array(z.string().url()).max(3).default([]),
+  coverIsLogo: z.boolean().optional(),
   status: z.enum(["approved", "pending"]).optional(),
   source: z.enum(["suggestion", "manual"]).optional(),
 })

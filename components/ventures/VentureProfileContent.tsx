@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
@@ -21,6 +20,7 @@ import { isArgentinaVentureZone } from "@/lib/venture-argentina"
 import { formatVentureZone } from "@/lib/venture-zone-display"
 import { getBaseUrl } from "@/lib/base-url"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
+import { VENTURE_LOGO_BACKDROP, VentureCoverImage } from "@/components/ventures/VentureCoverImage"
 import { VentureShareButton } from "@/components/ventures/VentureShareButton"
 import { VentureCard } from "@/components/ventures/VentureCard"
 import type { VenturePublic } from "@/lib/ventures-server"
@@ -101,13 +101,17 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
 
       {/* Compu: foto a la izquierda (alto completo) y datos a la derecha. */}
       <article className="mt-6 overflow-hidden rounded-2xl border border-olive/10 bg-olive/5 lg:grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:rounded-[28px]">
-        <div className="relative aspect-[16/9] min-h-[200px] overflow-hidden lg:aspect-auto lg:min-h-[480px]">
+        <div
+          className={cn(
+            "relative aspect-[16/9] min-h-[200px] overflow-hidden lg:aspect-auto lg:min-h-[480px]",
+            photo && venture.coverIsLogo && VENTURE_LOGO_BACKDROP
+          )}
+        >
           {photo ? (
-            <Image
+            <VentureCoverImage
               src={photo}
               alt={venture.name}
-              fill
-              className="object-cover"
+              isLogo={venture.coverIsLogo}
               priority
               sizes="(max-width: 1024px) 100vw, 480px"
             />
@@ -116,7 +120,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               <VentureCategoryIcon category={venture.category} className="h-10 w-10 text-[#F7F3EB]/80" />
             </div>
           )}
-          {photo && (
+          {photo && !venture.coverIsLogo && (
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
           )}
         </div>

@@ -44,8 +44,17 @@ describe("toPublicVentureListItem", () => {
     )
 
     expect(item.photos).toEqual(["https://img/v.jpg"])
+    expect(item.coverIsLogo).toBe(false)
     expect(item).not.toHaveProperty("contact")
     expect(item).not.toHaveProperty("description")
+  })
+
+  it("dice si la portada es un logo (la tarjeta lo muestra entero sobre crema)", () => {
+    const item = toPublicVentureListItem(
+      { _id: "v2", name: "Celi Point", photos: ["https://img/logo.png"], coverIsLogo: true },
+      { avgRating: 0, totalReviews: 0 }
+    )
+    expect(item.coverIsLogo).toBe(true)
   })
 })
 

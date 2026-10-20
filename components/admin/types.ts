@@ -148,6 +148,7 @@ export type VentureItem = {
   status: string
   contact?: { instagram?: string; whatsapp?: string }
   photos?: string[]
+  coverIsLogo?: boolean
   slug?: string
   description?: string
   purchaseChannels?: string

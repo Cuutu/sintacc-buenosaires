@@ -13,6 +13,7 @@ export const PUBLIC_VENTURE_LIST_SELECT = [
   "modalities",
   "safetyLevel",
   "photos",
+  "coverIsLogo",
   "status",
   "certifiedProducts",
   "createdAt",
@@ -28,6 +29,7 @@ type VentureListSource = {
   modalities?: string[]
   safetyLevel?: string
   photos?: string[]
+  coverIsLogo?: boolean
   status?: string
   certifiedProducts?: boolean
   createdAt?: Date | string
@@ -51,6 +53,7 @@ export function toPublicVentureListItem(
     modalities: venture.modalities ?? [],
     safetyLevel: venture.safetyLevel,
     photos,
+    coverIsLogo: venture.coverIsLogo === true,
     status: venture.status,
     certifiedProducts: venture.certifiedProducts,
     createdAt: venture.createdAt,

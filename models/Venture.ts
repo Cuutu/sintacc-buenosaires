@@ -23,6 +23,8 @@ export interface IVenture extends Document {
   purchaseChannels?: string
   description?: string
   photos: string[]
+  /** La primera foto es un logo: se muestra entera sobre crema, no recortada. */
+  coverIsLogo?: boolean
   status: "approved" | "pending"
   source?: "suggestion" | "manual"
   createdAt: Date
@@ -72,6 +74,7 @@ const VentureSchema = new Schema<IVenture>(
       },
       default: [],
     },
+    coverIsLogo: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ["approved", "pending"],

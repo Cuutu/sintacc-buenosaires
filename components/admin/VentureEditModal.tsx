@@ -43,6 +43,7 @@ type FormState = {
   instagram: string
   whatsapp: string
   photos: string[]
+  coverIsLogo: boolean
   slug: string
 }
 
@@ -61,6 +62,7 @@ function formFromVenture(v: VentureItem): FormState {
     instagram: v.contact?.instagram ?? "",
     whatsapp: v.contact?.whatsapp ?? "",
     photos: v.photos ?? [],
+    coverIsLogo: v.coverIsLogo === true,
     slug: v.slug ?? "",
   }
 }
@@ -156,6 +158,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
           responsibleEmail: email,
           contact: { instagram: igHandle, whatsapp: formData.whatsapp.trim() },
           photos: formData.photos,
+          coverIsLogo: formData.coverIsLogo,
           ...(formData.slug.trim().length >= 2 ? { slug: formData.slug.trim() } : {}),
         }),
       })
@@ -276,6 +279,21 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                   photos={formData.photos}
                   onChange={(urls) => patchForm({ photos: urls.slice(0, 3) })}
                 />
+                {formData.photos.length > 0 ? (
+                  <label className="-mt-2 flex min-h-11 items-center gap-2 text-sm text-[#234A33]">
+                    <input
+                      type="checkbox"
+                      checked={formData.coverIsLogo}
+                      onChange={(e) => patchForm({ coverIsLogo: e.target.checked })}
+                    />
+                    <span>
+                      La primera foto es un logo
+                      <span className="block text-xs text-[#6B746C]">
+                        Se muestra entero sobre crema, sin recortar. Mejor una foto de producto.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
 
                 <div className="-mx-1 flex gap-1 overflow-x-auto px-1" data-overflow-allowed="admin-ops-quick">
                   {EDIT_TABS.map((item) => (
@@ -508,10 +526,17 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
 
               <aside className="space-y-4">
                 <article className={cn(adminUi.card, "overflow-hidden")}>
-                  <div className="relative h-36 bg-[#E8E1D6]">
+                  <div className={cn("relative h-36", formData.coverIsLogo && formData.photos[0] ? "bg-[#F7F3EB]" : "bg-[#E8E1D6]")}>
                     {formData.photos[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={formData.photos[0]} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={formData.photos[0]}
+                        alt=""
+                        className={cn(
+                          "h-full w-full",
+                          formData.coverIsLogo ? "object-contain p-4 mix-blend-multiply" : "object-cover"
+                        )}
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center font-display text-xl font-bold text-[#234A33]">
                         {(formData.name || "CM").slice(0, 2).toUpperCase()}
