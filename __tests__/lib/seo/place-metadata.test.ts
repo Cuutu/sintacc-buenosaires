@@ -2,6 +2,7 @@ import {
   buildPlaceDescription,
   buildPlaceMetadata,
   buildPlaceTitle,
+  placeCategoryLine,
 } from "@/lib/seo/place-metadata"
 import { missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
 
@@ -64,14 +65,49 @@ describe("place metadata titles", () => {
     expect(title).not.toContain("| CeliMap")
   })
 
-  it("name ya con libre de gluten no dobla oferta", () => {
+  it("100% con \"libre de gluten\" en el nombre igual dice sin TACC", () => {
     const title = buildPlaceTitle(namedGlutenFree)
     expect(title).toContain("Libre de Gluten")
     expect(title).toMatch(/Panadería/)
     const afterPipe = title.split("|")[1] ?? ""
-    expect(afterPipe).not.toMatch(/sin TACC/)
+    expect(afterPipe).toMatch(/sin TACC/)
     expect(afterPipe).not.toMatch(/100%/)
     expect(title).not.toContain("| CeliMap")
+  })
+
+  it("100% con \"Gluten Free\" en el nombre: título, descripción y línea de la ficha dicen sin TACC", () => {
+    const painDuJour = {
+      name: "Pain du Jour - Gluten Free",
+      type: "bakery",
+      neighborhood: "Palermo",
+      tags: ["100_gf"],
+      safetyLevel: "dedicated_gf" as const,
+    }
+    expect(buildPlaceTitle(painDuJour)).toBe("Pain du Jour - Gluten Free | Panadería sin TACC en Palermo")
+    expect(buildPlaceDescription(painDuJour)).toMatch(/^Pain du Jour - Gluten Free: Panadería sin TACC en Palermo\./)
+    expect(placeCategoryLine(painDuJour)).toBe("Panadería · sin TACC · Palermo")
+  })
+
+  it("100% con \"sin TACC\" en el nombre no lo repite", () => {
+    const title = buildPlaceTitle({
+      name: "Sin TACC Express",
+      type: "cafe",
+      neighborhood: "Almagro",
+      tags: ["100_gf"],
+      safetyLevel: "dedicated_gf",
+    })
+    expect(title).toBe("Sin TACC Express | Café en Almagro")
+  })
+
+  it("con opciones y \"Gluten Free\" en el nombre aclara que son opciones", () => {
+    const title = buildPlaceTitle({
+      name: "Gluten Free Corner",
+      type: "cafe",
+      neighborhood: "Boedo",
+      tags: ["opciones_sin_tacc"],
+      safetyLevel: "gf_options",
+    })
+    expect(title.split("|")[1]).toMatch(/con opciones sin TACC/)
   })
 
   it("tag opciones gana aunque safetyLevel diga dedicated", () => {

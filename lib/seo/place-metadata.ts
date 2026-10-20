@@ -50,25 +50,35 @@ export function shortPlaceLabel(place: PlaceMetadataInput): string {
   return ""
 }
 
-export function nameAlreadyStatesOffer(name: string): boolean {
-  const n = name
+/** ¿El nombre ya dice "sin TACC"? "Gluten free" o "libre de gluten" no cuentan: no es lo que busca la gente. */
+export function nameStatesSinTacc(name: string): boolean {
+  return name
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-  return (
-    n.includes("sin tacc") ||
-    n.includes("sin gluten") ||
-    n.includes("gluten free") ||
-    n.includes("libre de gluten")
-  )
+    .includes("sin tacc")
+}
+
+/** inferSafetyLevel no acepta null en safetyLevel (los docs lean sí pueden traerlo). */
+function placeSafety(place: PlaceMetadataInput) {
+  return inferSafetyLevel({ tags: place.tags, safetyLevel: place.safetyLevel ?? undefined })
 }
 
 /** Misma inferencia que la UI. Dedicado → sin TACC; opciones → con opciones. Si dudás, no 100%. */
 export function placeOfferPhrase(place: PlaceMetadataInput): string {
-  const safety = inferSafetyLevel(place)
+  const safety = placeSafety(place)
   if (safety === "dedicated_gf") return "sin TACC"
   if (safety === "gf_options") return "con opciones sin TACC"
   return ""
+}
+
+/**
+ * La oferta se omite solo si el lugar es 100% y el nombre ya dice "sin TACC":
+ * "Pain du Jour - Gluten Free" igual lleva "sin TACC". Con opciones se aclara
+ * siempre: un nombre con "Gluten Free" en un lugar con opciones confunde.
+ */
+function skipOfferPhrase(place: PlaceMetadataInput): boolean {
+  return placeSafety(place) === "dedicated_gf" && nameStatesSinTacc(place.name)
 }
 
 function tipoOferta(place: PlaceMetadataInput, skipOffer: boolean): string {
@@ -78,7 +88,7 @@ function tipoOferta(place: PlaceMetadataInput, skipOffer: boolean): string {
 }
 
 export function buildPlaceTitle(place: PlaceMetadataInput): string {
-  const skipOffer = nameAlreadyStatesOffer(place.name)
+  const skipOffer = skipOfferPhrase(place)
   const mid = tipoOferta(place, skipOffer)
   const loc = shortPlaceLabel(place)
   if (loc) return `${place.name} | ${mid} en ${loc}`
@@ -93,7 +103,7 @@ function shortAddress(address?: string | null): string {
 }
 
 export function buildPlaceDescription(place: PlaceMetadataInput): string {
-  const skipOffer = nameAlreadyStatesOffer(place.name)
+  const skipOffer = skipOfferPhrase(place)
   const mid = tipoOferta(place, skipOffer)
   const loc = shortPlaceLabel(place)
   const locBit = loc ? ` en ${loc}` : ""
@@ -109,7 +119,7 @@ export function buildPlaceDescription(place: PlaceMetadataInput): string {
 }
 
 export function placeCategoryLine(place: PlaceMetadataInput): string {
-  const skipOffer = nameAlreadyStatesOffer(place.name)
+  const skipOffer = skipOfferPhrase(place)
   const offer = skipOffer ? "" : placeOfferPhrase(place)
   return [placeTypeLabel(place), offer, shortPlaceLabel(place)].filter(Boolean).join(" · ")
 }
