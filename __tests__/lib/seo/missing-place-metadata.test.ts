@@ -1,4 +1,4 @@
-import { missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
+import { missingPageMetadata, missingPlaceMetadata } from "@/lib/seo/missing-place-metadata"
 import { readFileSync } from "fs"
 import path from "path"
 
@@ -12,14 +12,24 @@ describe("404 ficha metadata", () => {
     expect(missingPlaceMetadata.openGraph).toBeUndefined()
   })
 
-  it("not-found exporta esa metadata y un H1", () => {
-    const src = readFileSync(path.join(__dirname, "../../../app/not-found.tsx"), "utf8")
-    expect(src).toContain("missingPlaceMetadata")
-    expect(src).toContain("export const metadata")
+  it("la ficha tiene su propio 404 con el texto del lugar", () => {
+    const src = readFileSync(path.join(__dirname, "../../../app/lugar/[id]/not-found.tsx"), "utf8")
     expect(src).toContain("No encontramos este lugar")
     expect(src).toContain('href="/"')
     expect(src).toContain('href="/mapa"')
     expect(src).not.toContain("| CeliMap")
+  })
+
+  it("el 404 general habla de la página, no de un lugar", () => {
+    const src = readFileSync(path.join(__dirname, "../../../app/not-found.tsx"), "utf8")
+    expect(src).toContain("missingPageMetadata")
+    expect(src).toContain("export const metadata")
+    expect(src).toContain("No encontramos esta página")
+    expect(src).not.toContain("No encontramos este lugar")
+    expect(src).toContain('href="/"')
+    expect(src).toContain('href="/mapa"')
+    expect(missingPageMetadata.robots).toEqual({ index: false, follow: true })
+    expect(String(missingPageMetadata.title)).not.toContain("| CeliMap")
   })
 
   it("BrandEmptyState del 404 es h1", () => {
