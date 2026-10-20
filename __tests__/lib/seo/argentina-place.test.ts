@@ -108,7 +108,7 @@ describe("getPlacesByCategory query (hub nacional)", () => {
     const fn = src.slice(src.indexOf("export async function getPlacesByCategory"))
     const body = fn.slice(0, fn.indexOf("export async function getPlacesByCategoryAndCity"))
     expect(body).toContain("buildNationalCategoryMongoQuery(type)")
-    expect(body).toContain("Place.find(query, PLACE_SEO_PROJECTION)")
+    expect(body).toContain("findDedicatedFirst(query, skip, PER_PAGE)")
     expect(body).toContain("Place.countDocuments(query)")
   })
 })

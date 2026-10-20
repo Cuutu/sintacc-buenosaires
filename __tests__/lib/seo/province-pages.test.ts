@@ -19,6 +19,11 @@ const mockPlaces = [
   { _id: "5", name: "Lugar Río Cuarto 2", type: "restaurant", types: ["restaurant"], neighborhood: "Centro", province: "cordoba", locality: "rio-cuarto", tags: [], safetyLevel: "unknown", updatedAt: new Date("2024-05-01") },
 ]
 
+function isDedicated(p: (typeof mockPlaces)[number]): boolean {
+  const { inferSafetyLevel } = jest.requireActual("@/components/featured/featured-utils")
+  return inferSafetyLevel(p) === "dedicated_gf"
+}
+
 function filterPlaces(query: any): any[] {
   return mockPlaces.filter((p) => {
     if (query.province && p.province !== query.province) return false
@@ -27,19 +32,24 @@ function filterPlaces(query: any): any[] {
       const type = query.$or[0].type
       if (!(p.type === type || p.types?.includes(type))) return false
     }
+    // 100% primero: $and con DISPLAY_DEDICATED_MATCH o con su $nor.
+    for (const condition of query.$and ?? []) {
+      if (condition.$nor ? isDedicated(p) : !isDedicated(p)) return false
+    }
     return true
   })
 }
 
 jest.mock("@/models/Place", () => ({
   Place: {
-    find: jest.fn((query: any) => ({
-      sort: () => ({
+    find: jest.fn((query: any) => {
+      const page = (skip: number) => ({
         limit: (limit: number) => ({
-          lean: () => Promise.resolve(filterPlaces(query).slice(0, limit)),
+          lean: () => Promise.resolve(filterPlaces(query).slice(skip, skip + limit)),
         }),
-      }),
-    })),
+      })
+      return { sort: () => ({ ...page(0), skip: (n: number) => page(n) }) }
+    }),
     findOne: jest.fn(() => ({
       sort: () => ({ select: () => ({ lean: () => Promise.resolve({ updatedAt: new Date("2024-05-01") }) }) }),
     })),
@@ -98,6 +108,13 @@ describe("lib/seo/province-pages", () => {
     const { places, total } = await getPlacesByProvinceSlug("cordoba", { limit: 2 })
     expect(total).toBe(4) // 4 lugares de cordoba en mock
     expect(places.length).toBe(2)
+  })
+
+  it("los 100% sin TACC van primero aunque sean más viejos", async () => {
+    const { places } = await getPlacesByProvinceSlug("buenos-aires")
+    expect(places[0].name).toBe("Lugar MDP")
+    const cordoba = await getPlacesByProvinceSlug("cordoba", { limit: 2 })
+    expect(cordoba.places.map((p) => p.name)).toEqual(["Lugar Córdoba", "Lugar Córdoba 2"])
   })
 
   it("getProvinceLocalities agrupa por locality y mapea citySlug", async () => {

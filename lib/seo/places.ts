@@ -78,6 +78,43 @@ export type PlaceSEO = {
 
 const EMPTY_PLACE_PAGE = { places: [] as PlaceSEO[], total: 0, pages: 0 }
 
+/** Suma una condición sin pisar los $and que ya tenga la consulta (ni sus otros campos). */
+function andMatch(query: Record<string, any>, condition: Record<string, unknown>): Record<string, any> {
+  return { ...query, $and: [...(query.$and ?? []), condition] }
+}
+
+/**
+ * Una página de una landing con los 100% sin TACC primero (revisión 20/10): antes iban
+ * por fecha de carga y en Buenos Aires 20 de los primeros 24 eran "Con opciones".
+ * Dentro de cada grupo, los más nuevos primero; la paginación sigue siendo estable
+ * (la página 2 arranca donde terminó la 1, cruzando de un grupo al otro).
+ */
+async function findDedicatedFirst(query: Record<string, any>, skip: number, limit: number): Promise<any[]> {
+  const dedicatedQuery = andMatch(query, DISPLAY_DEDICATED_MATCH)
+  const restQuery = andMatch(query, { $nor: [DISPLAY_DEDICATED_MATCH] })
+  const dedicatedTotal = await Place.countDocuments(dedicatedQuery)
+  const fromDedicated = Math.max(0, Math.min(limit, dedicatedTotal - skip))
+  const fromRest = limit - fromDedicated
+
+  const page = (q: Record<string, any>, from: number, n: number) => {
+    const cursor = Place.find(q, PLACE_SEO_PROJECTION).sort({ createdAt: -1 })
+    return (from > 0 ? cursor.skip(from) : cursor).limit(n).lean()
+  }
+  const [dedicated, rest] = await Promise.all([
+    fromDedicated > 0 ? page(dedicatedQuery, skip, fromDedicated) : Promise.resolve([]),
+    fromRest > 0 ? page(restQuery, Math.max(0, skip - dedicatedTotal), fromRest) : Promise.resolve([]),
+  ])
+  return [...(dedicated as any[]), ...(rest as any[])]
+}
+
+/** Dentro de la página: 100% primero y, en cada grupo, el mejor puntaje arriba. */
+function sortDedicatedThenRating(places: PlaceSEO[]): PlaceSEO[] {
+  const rank = (p: PlaceSEO) => (inferSafetyLevel(p as any) === "dedicated_gf" ? 0 : 1)
+  return places.sort(
+    (a, b) => rank(a) - rank(b) || (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0)
+  )
+}
+
 async function enrichPlacesWithStats(places: any[]): Promise<PlaceSEO[]> {
   const statsMap = await getReviewStatsFor(places.map((p: any) => p._id))
   return places.map((p: any) => ({
@@ -118,12 +155,11 @@ async function loadPlacesByCity(
   const skip = (page - 1) * PER_PAGE
 
   const [places, total] = await Promise.all([
-    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    findDedicatedFirst(query, skip, PER_PAGE),
     Place.countDocuments(query),
   ])
 
-  const enriched = await enrichPlacesWithStats(places as any[])
-  enriched.sort((a, b) => (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0))
+  const enriched = sortDedicatedThenRating(await enrichPlacesWithStats(places))
   const pages = Math.ceil(total / PER_PAGE)
   return { places: enriched, total, pages }
 }
@@ -149,12 +185,11 @@ async function loadPlacesByCityAndCategory(
   }
 
   const [places, total] = await Promise.all([
-    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    findDedicatedFirst(query, skip, PER_PAGE),
     Place.countDocuments(query),
   ])
 
-  const enriched = await enrichPlacesWithStats(places as any[])
-  enriched.sort((a, b) => (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0))
+  const enriched = sortDedicatedThenRating(await enrichPlacesWithStats(places))
   const pages = Math.ceil(total / PER_PAGE)
   return { places: enriched, total, pages }
 }
@@ -174,12 +209,11 @@ export async function getPlacesByCategory(
   const query = buildNationalCategoryMongoQuery(type)
 
   const [places, total] = await Promise.all([
-    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).skip(skip).limit(PER_PAGE).lean(),
+    findDedicatedFirst(query, skip, PER_PAGE),
     Place.countDocuments(query),
   ])
 
-  const enriched = await enrichPlacesWithStats(places as any[])
-  enriched.sort((a, b) => (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0))
+  const enriched = sortDedicatedThenRating(await enrichPlacesWithStats(places))
   const pages = Math.ceil(total / PER_PAGE)
   return { places: enriched, total, pages }
 }
@@ -244,12 +278,11 @@ export async function getPlacesByProvinceSlug(
 
   const limit = options?.limit ?? 200
   const [places, total] = await Promise.all([
-    Place.find(query, PLACE_SEO_PROJECTION).sort({ createdAt: -1 }).limit(limit).lean(),
+    findDedicatedFirst(query, 0, limit),
     Place.countDocuments(query),
   ])
 
-  const enriched = await enrichPlacesWithStats(places as any[])
-  enriched.sort((a, b) => (b.stats?.avgRating ?? 0) - (a.stats?.avgRating ?? 0))
+  const enriched = sortDedicatedThenRating(await enrichPlacesWithStats(places))
 
   // Dedupe por _id
   const seen = new Set<string>()
