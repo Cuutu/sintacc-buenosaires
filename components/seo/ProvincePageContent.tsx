@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { ProvincialMapEmbed } from "@/components/seo/ProvincialMapEmbed"
 import { ProvincialPlaceCard } from "@/components/seo/ProvincialPlaceCard"
@@ -104,7 +105,8 @@ export function ProvincePageContent({ data }: ProvincePageContentProps) {
                 href={`/sin-gluten/provincia/${province.slug}/${cat.slug}`}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-colors"
               >
-                {cat.emoji} {cat.name} ({cat.count})
+                <CategoryIcon category={cat.slug} />
+                {cat.name} ({cat.count})
               </Link>
             ))}
           </div>

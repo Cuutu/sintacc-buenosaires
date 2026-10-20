@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { Metadata } from "next"
 import { getArgentinaLandingTitle, getArgentinaLandingDescription } from "@/lib/seo/templates"
 import { CITIES, CATEGORIES } from "@/lib/seo/cities"
@@ -112,7 +113,8 @@ export default async function SinGlutenArgentinaPage() {
               href={`/${cat.slug}-sin-gluten`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-medium"
             >
-              {cat.emoji} {cat.name} sin gluten
+              <CategoryIcon category={cat.slug} />
+              {cat.name} sin gluten
             </Link>
           ))}
         </div>

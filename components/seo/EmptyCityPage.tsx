@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { getCiudadSEOData } from "@/lib/seo/ciudades-data"
 import { getCityBySlug } from "@/lib/seo/cities"
@@ -8,12 +9,12 @@ import { PlusCircle, MapPin } from "lucide-react"
 import { getBaseUrl } from "@/lib/base-url"
 
 const CATEGORIES_PREVIEW = [
-  { emoji: "🍽️", label: "Restaurantes sin gluten" },
-  { emoji: "🥐", label: "Panaderías y pastelerías sin TACC" },
-  { emoji: "🛒", label: "Dietéticas y almacenes naturales" },
-  { emoji: "🍦", label: "Heladerías con opciones sin gluten" },
-  { emoji: "☕", label: "Cafés con opciones Sin TACC" },
-  { emoji: "📍", label: "Otros establecimientos sin TACC" },
+  { category: "restaurantes", label: "Restaurantes sin TACC" },
+  { category: "panaderias", label: "Panaderías y pastelerías sin TACC" },
+  { category: "tiendas", label: "Dietéticas y almacenes naturales" },
+  { category: "heladerias", label: "Heladerías con opciones sin TACC" },
+  { category: "cafes", label: "Cafés con opciones sin TACC" },
+  { category: "otros", label: "Otros lugares sin TACC" },
 ]
 
 const BASE_URL =
@@ -133,7 +134,7 @@ export function EmptyCityPage({ citySlug }: EmptyCityPageProps) {
               key={cat.label}
               className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
             >
-              <span className="text-2xl">{cat.emoji}</span>
+              <CategoryIcon category={cat.category} className="h-5 w-5 text-[#B84420]" />
               <span className="font-medium">
                 {cat.label} en {nombre}
               </span>

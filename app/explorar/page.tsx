@@ -5,6 +5,7 @@ import Link from "next/link"
 import { MapPin, Star, Sparkles, Navigation } from "lucide-react"
 import { PlaceCard } from "@/components/place-card"
 import { TYPES } from "@/lib/constants"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { fetchApi } from "@/lib/fetchApi"
 import type { IPlace } from "@/models/Place"
 
@@ -154,7 +155,7 @@ export default function ExplorarPage() {
             aria-pressed={selectedType === type.value}
             className={chipClass(selectedType === type.value)}
           >
-            <span aria-hidden>{type.emoji}</span>
+            <CategoryIcon category={type.value} />
             {type.label}
           </button>
         ))}

@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, ArrowUp, X } from "lucide-react"
+import { ArrowLeft, ArrowUp, Coffee, HelpCircle, MapPin, X, type LucideIcon } from "lucide-react"
 import { useChat } from "@ai-sdk/react"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type UIEvent } from "react"
@@ -25,9 +25,9 @@ import type { UIMessage } from "ai"
 import "@/components/chat/chat-ui.css"
 
 const CHIPS = [
-  { icon: "📍", label: "100% sin TACC en Palermo", send: "Lugares 100% sin TACC en Palermo" },
-  { icon: "🔍", label: "¿Qué es la contaminación cruzada?", send: "¿Qué es la contaminación cruzada?" },
-  { icon: "☕", label: "Cafeterías cerca mío", send: "Cafeterías cerca mío" },
+  { icon: MapPin, label: "100% sin TACC en Palermo", send: "Lugares 100% sin TACC en Palermo" },
+  { icon: HelpCircle, label: "¿Qué es la contaminación cruzada?", send: "¿Qué es la contaminación cruzada?" },
+  { icon: Coffee, label: "Cafeterías cerca mío", send: "Cafeterías cerca mío" },
 ] as const
 
 const BARRIO_CHIPS = ["Palermo", "Belgrano", "Recoleta", "San Telmo", "Caballito"] as const
@@ -119,17 +119,14 @@ function ChatChip({
   onClick,
 }: {
   label: string
-  icon?: string
+  icon?: LucideIcon
   disabled?: boolean
   onClick: () => void
 }) {
+  const Icon = icon
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={CHIP_BTN}>
-      {icon ? (
-        <span className="mr-1.5 shrink-0" aria-hidden>
-          {icon}
-        </span>
-      ) : null}
+      {Icon ? <Icon className="mr-1.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden /> : null}
       <span className="min-w-0">{label}</span>
     </button>
   )
