@@ -15,7 +15,7 @@ export function CeliBotEntry() {
       onPointerEnter={preloadCeliBot}
       onPointerDown={preloadCeliBot}
       onFocus={preloadCeliBot}
-      className="inline-flex min-h-[44px] max-w-full items-center gap-2.5 rounded-full py-1 pl-1 pr-3 text-left text-[15px] font-semibold text-[#2D4A34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
+      className="inline-flex min-h-[44px] max-w-full items-center gap-2.5 rounded-full py-1 pl-1 pr-3 text-left text-base font-bold text-[#2D4A34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30"
       data-testid="home-celibot-entry"
     >
       <Image

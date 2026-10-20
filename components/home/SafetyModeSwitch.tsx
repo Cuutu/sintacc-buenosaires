@@ -72,10 +72,10 @@ export function SafetyModeSwitch({ variant = "card" }: { variant?: "card" | "chi
       className="flex min-h-[48px] w-full items-center gap-3 rounded-[18px] border border-[#F7F3EB]/20 bg-[#1F3527]/45 px-4 py-2.5 text-left transition-colors hover:bg-[#1F3527]/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60 sm:min-h-[56px] sm:w-auto sm:min-w-[300px]"
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-extrabold leading-tight text-[#F7F3EB]">
+        <span className="block text-sm font-extrabold leading-tight text-[#F7F3EB]">
           Solo 100% sin TACC
         </span>
-        <span className="mt-0.5 block text-[12px] leading-snug text-[#F7F3EB]/65">
+        <span className="mt-0.5 block text-xs leading-snug text-[#F7F3EB]/65">
           El mapa oculta los lugares con opciones
         </span>
       </span>

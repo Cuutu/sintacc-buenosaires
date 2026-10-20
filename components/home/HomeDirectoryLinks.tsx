@@ -55,7 +55,7 @@ export function HomeDirectoryLinks({ cityCounts = {} }: { cityCounts?: Record<st
 
         <h3
           id="directory-types-heading"
-          className="mt-8 mb-4 text-lg font-semibold text-olive"
+          className="mt-8 mb-4 text-lg font-extrabold text-olive"
         >
           Por tipo de lugar
         </h3>
@@ -83,7 +83,7 @@ export function HomeDirectoryLinks({ cityCounts = {} }: { cityCounts?: Record<st
 
         <h3
           id="directory-cities-heading"
-          className="mt-12 mb-4 text-lg font-semibold text-olive md:mt-14"
+          className="mt-12 mb-4 text-lg font-extrabold text-olive md:mt-14"
         >
           Ciudades principales
         </h3>

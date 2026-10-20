@@ -61,7 +61,7 @@ function StoreBadge({
     >
       {glyph}
       <span className="flex flex-col items-start leading-none">
-        <span className={onDark ? "text-[10px] font-medium text-[#2D4A34]/75" : "text-[10px] font-medium text-[#F7F3EB]/80"}>
+        <span className={onDark ? "text-xs text-[#2D4A34]/75" : "text-xs text-[#F7F3EB]/80"}>
           {kicker}
         </span>
         <span className="mt-0.5 text-sm font-bold">{name}</span>
@@ -138,11 +138,11 @@ export function TakeCeliMapWithYou({ variant = "card" }: { variant?: "card" | "b
             <div className="min-w-0">
               <h2
                 id="take-celimap-heading"
-                className="text-[15px] font-extrabold leading-tight tracking-[-0.02em] text-[#2D4A34]"
+                className="text-base font-extrabold leading-tight tracking-[-0.02em] text-[#2D4A34]"
               >
                 Llevá CeliMap con vos
               </h2>
-              <p className="text-[13px] leading-snug text-[#55635A]">
+              <p className="text-sm leading-snug text-[#55635A]">
                 El mapa sin gluten, siempre a mano.
               </p>
             </div>

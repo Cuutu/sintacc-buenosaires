@@ -30,8 +30,8 @@ export function HowItWorks() {
             <p className="row-span-2 font-serif text-4xl italic leading-none text-[#B84420]" aria-hidden>
               {step.n}
             </p>
-            <h3 className="font-display text-lg font-bold text-olive md:mt-3">{step.title}</h3>
-            <p className="mt-1 text-sm leading-relaxed text-[#4D6554] md:mt-2">{step.body}</p>
+            <h3 className="text-lg font-extrabold text-olive md:mt-3">{step.title}</h3>
+            <p className="mt-1 text-base leading-relaxed text-[#4D6554] md:mt-2">{step.body}</p>
           </li>
         ))}
       </ol>

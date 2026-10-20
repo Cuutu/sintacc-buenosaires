@@ -37,12 +37,12 @@ export function SearchBar({ className }: { className?: string }) {
         placeholder="Buscá un lugar o una ciudad"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="min-w-0 flex-1 bg-transparent text-base font-semibold text-olive outline-none placeholder:font-semibold placeholder:text-olive/45"
+        className="min-w-0 flex-1 bg-transparent text-base font-bold text-olive outline-none placeholder:font-bold placeholder:text-olive/45"
         aria-label="Buscar lugares o ciudades"
       />
       <button
         type="submit"
-        className="inline-flex h-12 shrink-0 items-center justify-center rounded-[14px] bg-[#B84420] px-4 text-[15px] font-extrabold text-white transition-colors hover:bg-[#9A3A1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/40 md:px-6"
+        className="inline-flex h-12 shrink-0 items-center justify-center rounded-[16px] bg-[#B84420] px-4 text-base font-extrabold text-white transition-colors hover:bg-[#9A3A1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84420]/40 md:px-6"
       >
         Buscar
       </button>

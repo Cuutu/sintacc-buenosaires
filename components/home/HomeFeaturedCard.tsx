@@ -111,10 +111,10 @@ export function HomeFeaturedCard({ place }: { place: PlaceWithStats }) {
             >
               <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" strokeWidth={1.5} aria-hidden />
               <span className="tabular-nums">{rating.score}</span>
-              <span className="text-[11px] font-bold text-[#5E6A60]">{rating.source}</span>
+              <span className="text-xs font-bold text-[#5E6A60]">{rating.source}</span>
             </span>
           ) : (
-            <span className="shrink-0 text-xs font-semibold text-[#5E6A60]">Sin reseñas todavía</span>
+            <span className="shrink-0 text-xs font-bold text-[#5E6A60]">Sin reseñas todavía</span>
           )}
         </div>
       </div>

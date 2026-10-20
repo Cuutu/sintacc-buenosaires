@@ -14,7 +14,7 @@ export function ExploreChip({ href, children, icon, align = "center" }: ExploreC
     <Link
       href={href}
       className={cn(
-        "flex h-full min-h-[44px] w-full min-w-0 items-center gap-2 rounded-[16px] border border-olive/15 bg-white px-4 py-3 text-sm font-medium text-[#2D4A34] touch-manipulation",
+        "flex h-full min-h-[44px] w-full min-w-0 items-center gap-2 rounded-[16px] border border-olive/15 bg-white px-4 py-3 text-sm font-bold text-[#2D4A34] touch-manipulation",
         "transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out",
         "hover:-translate-y-0.5 hover:border-terracotta/45 hover:shadow-[0_8px_20px_-12px_rgba(45,74,52,0.28)]",
         "active:scale-[0.98]",

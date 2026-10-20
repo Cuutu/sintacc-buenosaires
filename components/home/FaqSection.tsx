@@ -79,12 +79,12 @@ function FaqItem({ item }: { item: FaqItemData }) {
       className="group rounded-[24px] border border-olive/10 bg-cream-card shadow-soft [&[open]]:border-olive/20"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 select-none [&::-webkit-details-marker]:hidden">
-        <span className="pr-2 font-semibold leading-snug text-olive">{item.question}</span>
+        <span className="pr-2 font-bold leading-snug text-olive">{item.question}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-olive/40 transition-transform duration-200 group-open:rotate-180" />
       </summary>
       <div className="space-y-3 px-5 pb-5">
         {item.answer.split("\n\n").map((paragraph, index) => (
-          <p key={index} className="text-sm leading-relaxed text-[#4D6554] md:text-[15px]">
+          <p key={index} className="text-base leading-relaxed text-[#4D6554]">
             {paragraph}
           </p>
         ))}
@@ -105,7 +105,8 @@ export function FaqSection() {
             <FaqItem key={item.question} item={item} />
           ))}
         </div>
-        <div className="mt-6">
+        {/* Solo en el celular: en compu ya está la mascota flotante de CeliBot. */}
+        <div className="mt-6 md:hidden">
           <CeliBotEntry />
         </div>
       </div>

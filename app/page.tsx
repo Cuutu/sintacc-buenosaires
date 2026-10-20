@@ -98,7 +98,7 @@ export default async function HomePage() {
           <div className="h-[96px] md:h-[150px]" aria-hidden />
 
           <div className="max-w-[680px]">
-            <p className="text-[11px] font-extrabold tracking-[0.16em] text-[#F7F3EB]/[0.72]">
+            <p className="text-xs font-extrabold tracking-[0.16em] text-[#F7F3EB]/[0.72]">
               MAPA SIN TACC · ARGENTINA
             </p>
             <h1 className="mt-2.5 max-w-[340px] text-[36px] [text-wrap:balance] font-extrabold leading-[1.02] tracking-[-0.045em] text-[#F7F3EB] md:max-w-none md:text-6xl">
@@ -107,7 +107,7 @@ export default async function HomePage() {
                 con confianza.
               </span>
             </h1>
-            <p className="mt-3 max-w-[340px] text-[15px] leading-relaxed text-[#F7F3EB]/80 md:hidden">
+            <p className="mt-3 max-w-[340px] text-base leading-relaxed text-[#F7F3EB]/80 md:hidden">
               {heroSubline}
             </p>
             <p className="mt-4 max-w-[560px] text-lg leading-relaxed text-[#F7F3EB]/80 max-md:sr-only">

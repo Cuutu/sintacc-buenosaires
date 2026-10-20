@@ -33,7 +33,7 @@ export function CommunityBand({ stats, children }: { stats?: StatsApi | null; ch
   return (
     <section className="bg-olive-organic" aria-labelledby="community-heading">
       <div className="container mx-auto max-w-5xl px-4 py-16 text-center md:px-5 md:py-24">
-        <p className="mb-3 font-serif text-lg italic text-cream/80">tu mapa sin gluten</p>
+        <p className="mb-3 font-serif text-lg font-medium italic text-cream/80">tu mapa sin gluten</p>
         <h2
           id="community-heading"
           className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] text-cream [text-wrap:balance] md:text-4xl"
