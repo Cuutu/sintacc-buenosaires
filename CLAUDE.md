@@ -12,7 +12,7 @@ Producto: **CeliMap** (www.celimap.com.ar), mapa y directorio de lugares sin TAC
 1. **Producción es un VPS propio, no Vercel.** Un push a `main` no publica: se publica corriendo `deploy.sh` en el servidor (compila en `/srv/celimap/releases`, cambia `current`, chequea `/api/health` y vuelve atrás solo si falla). Todo cambio pasa antes por **prueba** (`celimap-prueba subir <rama>` → prueba.celimap.com.ar). **Las apps iOS/Android son un WebView que carga `https://www.celimap.com.ar`** (`capacitor.config.ts`): un deploy roto rompe también las apps de las stores al instante, y lo nativo solo se puede probar contra producción.
 2. **El build NO valida tipos ni lint** (`next.config.js`: `ignoreBuildErrors` / `ignoreDuringBuilds`), y `deploy.sh` tampoco. GitHub Actions corre aparte. → Antes de commitear corré **siempre** `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run build` y `npm run perf:bundle` en local. No toques esas flags ni el CI.
 3. **No borrar lugares.** Despublicar = `status: "pending"`. Existe `DELETE /api/places/[id]` (hard delete): no lo uses ni lo expongas en UI nueva.
-4. **Cambiar `name` o `neighborhood` de un lugar regenera el slug** (`PATCH /api/places/[id]` → `generateUniquePlaceSlug`). La URL vieja `/lugar/<slug-viejo>` pasa a 404 (no hay redirect de slugs). Avisar al usuario antes.
+4. **Cambiar `name` o `neighborhood` de un lugar regenera el slug** (`PATCH /api/places/[id]` → `generateUniquePlaceSlug`). El slug viejo queda en `previousSlugs` y `/lugar/<slug-viejo>` redirige 301 al nuevo (`lib/place-route.ts`). Los renombres anteriores a ese cambio (oct. 2026) no tienen historial: esas URLs siguen en 404. Avisar al usuario antes igual (cambian título y URL).
 5. **`dedicated_gf` (100% sin TACC) sólo con evidencia clara.** Ante duda o cocina compartida: `gf_options`. Ver §4.
 6. **Nada que dependa de la hora actual se renderiza en el servidor** en páginas ISR (fichas `/lugar/*`, landings). Causa errores de hidratación y datos viejos. Ver §6.
 
@@ -96,7 +96,7 @@ Modelo: `models/Place.ts`. Validación de entrada: `placeSchema` en `lib/validat
 - Sugerencias de usuarios → `Suggestion` (pending/approved/rejected) → el admin aprueba y se crea el `Place`.
 - `editLog` guarda los últimos 12 cambios del admin.
 
-**Slugs:** `lib/place-slugs.ts` (`name` + `neighborhood`, único con sufijo `-2`, `-3`…). URL canónica: `getPlacePath()` en `lib/place-url.ts`.
+**Slugs:** `lib/place-slugs.ts` (`name` + `neighborhood`, único con sufijo `-2`, `-3`…; los slugs viejos de otros lugares cuentan como ocupados). Historial en `previousSlugs` (hasta 10, `nextPreviousSlugs`). URL canónica: `getPlacePath()` en `lib/place-url.ts`.
 
 **Horarios (`openingHours`, string libre):**
 - Formato canónico: `Lun–Vie 08:00–12:30 y 16:00–20:00; Sáb 08:00–12:00; Dom cerrado`. Sin teléfonos, URLs ni notas.

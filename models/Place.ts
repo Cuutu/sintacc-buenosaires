@@ -47,6 +47,8 @@ export interface IPlace extends Document {
   /** Slug normalizado de la localidad/ciudad (ej: "san-miguel-de-tucuman", "la-plata") */
   locality?: string
   slug?: string
+  /** Slugs anteriores (renombres): /lugar/<viejo> redirige 301 al actual. Ver lib/place-slugs.ts. */
+  previousSlugs?: string[]
   location: {
     lat: number
     lng: number
@@ -146,6 +148,11 @@ const PlaceSchema = new Schema<IPlace>(
       unique: true,
       sparse: true,
       index: true,
+    },
+    // Sin default: los lugares que nunca cambiaron de nombre no tienen el campo (índice sparse).
+    previousSlugs: {
+      type: [String],
+      default: undefined,
     },
     location: {
       lat: { type: Number, required: true },
@@ -294,6 +301,7 @@ PlaceSchema.index({ status: 1, province: 1, locality: 1, type: 1 })
 PlaceSchema.index({ status: 1, province: 1, locality: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, province: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, slug: 1 })
+PlaceSchema.index({ previousSlugs: 1 }, { sparse: true })
 PlaceSchema.index({ status: 1, safetyLevel: 1, createdAt: -1 })
 PlaceSchema.index({ status: 1, tags: 1, createdAt: -1 })
 PlaceSchema.index({ "contact.instagram": 1, status: 1 })

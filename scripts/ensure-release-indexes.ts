@@ -152,6 +152,13 @@ export const RELEASE_INDEXES: IndexSpec[] = [
     name: "distinctId_1_ts_-1",
     reason: "Unique users and retention by anonymous device",
   },
+  {
+    collection: "places",
+    keys: { previousSlugs: 1 },
+    name: "previousSlugs_1",
+    sparse: true,
+    reason: "Slugs viejos: /lugar/<viejo> redirige 301 al slug actual (Plan SEO Q4)",
+  },
 ]
 
 function redactUri(uri: string): { host: string; db: string } {

@@ -14,6 +14,7 @@
 | Place | `{ status: 1, province: 1, locality: 1, createdAt: -1 }` | Landing de ciudad (filtro + orden) |
 | Place | `{ status: 1, province: 1, createdAt: -1 }` | Landing de provincia (filtro + orden) |
 | Place | `{ neighborhood: 1, type: 1 }` | Filtro por barrio |
+| Place | `{ previousSlugs: 1 }` (sparse) | Slug viejo → 301 al actual (`lib/place-route.ts`) |
 | Review | `{ placeId: 1, status: 1 }` | Reviews por lugar |
 | Review | `{ placeId: 1, createdAt: -1 }` | Paginación + sort |
 | Review | `{ userId: 1, createdAt: -1 }` | Reviews por usuario |

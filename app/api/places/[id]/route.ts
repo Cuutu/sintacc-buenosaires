@@ -8,7 +8,7 @@ import { placeSchema } from "@/lib/validations"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { invalidateApiCache, revalidatePlacePages } from "@/lib/api-cache"
-import { generateUniquePlaceSlug } from "@/lib/place-slugs"
+import { generateUniquePlaceSlug, nextPreviousSlugs } from "@/lib/place-slugs"
 import { syncAddressTextOnPatch } from "@/lib/place-location-patch"
 import { PUBLIC_PLACE_DETAIL_SELECT } from "@/lib/places-public-select"
 import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
@@ -141,15 +141,20 @@ export async function PATCH(
       ...(existing.editLog ?? []),
     ].slice(0, 12)
 
+    const nextSlug = validated.slug
+      ? validated.slug
+      : shouldRegenerateSlug
+        ? await generateUniquePlaceSlug(nextName, nextNeighborhood, existing._id)
+        : existing.slug
+    // El slug viejo se guarda para que /lugar/<viejo> redirija 301 al nuevo (lib/place-route.ts).
+    const previousSlugs = nextPreviousSlugs(existing.previousSlugs, existing.slug, nextSlug)
+
     const place = await Place.findByIdAndUpdate(
       params.id,
       {
         ...validated,
-        slug: validated.slug
-          ? validated.slug
-          : shouldRegenerateSlug
-            ? await generateUniquePlaceSlug(nextName, nextNeighborhood, existing._id)
-            : existing.slug,
+        slug: nextSlug,
+        ...(previousSlugs ? { previousSlugs } : {}),
         editLog,
         updatedAt: new Date(),
       },

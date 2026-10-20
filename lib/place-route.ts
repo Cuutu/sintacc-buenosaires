@@ -38,7 +38,12 @@ async function loadApprovedPlaceByRouteParam(
     const bySlug = await Place.findOne({ slug: routeParam, status: "approved" })
       .select(PUBLIC_PLACE_PAGE_SELECT)
       .lean()
-    return bySlug as PlaceRouteDoc | null
+    if (bySlug) return bySlug as PlaceRouteDoc
+    // Slug de antes de un renombre: devuelve el lugar y la página redirige 301 al slug actual.
+    const byPreviousSlug = await Place.findOne({ previousSlugs: routeParam, status: "approved" })
+      .select(PUBLIC_PLACE_PAGE_SELECT)
+      .lean()
+    return byPreviousSlug as PlaceRouteDoc | null
   }
 
   const byId = await Place.findOne({

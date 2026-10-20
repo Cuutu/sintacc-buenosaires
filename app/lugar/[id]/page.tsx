@@ -1,6 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation"
 import { Star } from "lucide-react"
-import mongoose from "mongoose"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getPlacePath } from "@/lib/place-url"
 import { getBaseUrl } from "@/lib/base-url"
@@ -45,11 +44,8 @@ export default async function LugarPage({ params }: LugarPageProps) {
   const place = await getApprovedPlaceByRouteParam(id)
   if (!place) notFound()
 
-  if (
-    mongoose.Types.ObjectId.isValid(id) &&
-    place.slug &&
-    place.slug !== id
-  ) {
+  // ObjectId o slug viejo (renombre) → 301 al slug actual.
+  if (place.slug && place.slug !== id) {
     permanentRedirect(getPlacePath(place))
   }
 
