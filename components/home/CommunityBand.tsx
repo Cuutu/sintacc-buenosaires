@@ -1,7 +1,9 @@
+import type { ReactNode } from "react"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import { floorDisplayCount, floorGoogleReviewsDisplay, formatFlooredPrefix } from "@/lib/stats/floor-display-count"
+import { homeBtn } from "@/components/home/home-ui"
+import { cn } from "@/lib/utils"
 
 type StatsApi = {
   placesCount?: number
@@ -17,57 +19,54 @@ function line(raw: number | undefined, label: string, google?: boolean) {
   return { value: formatFlooredPrefix(floored), label }
 }
 
-export function CommunityBand({ stats }: { stats?: StatsApi | null }) {
+/**
+ * Franja de la comunidad: el único llamado a sugerir de la home (antes había otro
+ * bloque naranja) y, abajo, las apps. Los números son lugares y reseñas: "+300
+ * usuarios" al lado de "+2.400 lugares" achicaba la comunidad (revisión 20/10).
+ */
+export function CommunityBand({ stats, children }: { stats?: StatsApi | null; children?: ReactNode }) {
   const metrics = [
     line(stats?.placesCount, "lugares"),
     line(stats?.reviewsCountGoogle ?? stats?.reviewsCount, "reseñas", true),
-    line(stats?.usersCount, "usuarios"),
   ].filter(Boolean) as Array<{ value: string; label: string }>
 
   return (
     <section className="bg-olive-organic" aria-labelledby="community-heading">
-      <div className="container mx-auto max-w-5xl px-4 py-12 text-center md:py-16">
-        <p className="mb-3 font-serif text-sm italic text-cream/80">tu mapa sin gluten</p>
+      <div className="container mx-auto max-w-5xl px-4 py-16 text-center md:px-5 md:py-24">
+        <p className="mb-3 font-serif text-lg italic text-cream/80">tu mapa sin gluten</p>
         <h2
           id="community-heading"
-          className="font-display text-2xl font-extrabold text-cream md:text-4xl"
+          className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] text-cream [text-wrap:balance] md:text-4xl"
         >
-          La comunidad que hace crecer el mapa
+          ¿Falta tu lugar favorito?
         </h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-cream/75 md:text-base">
-          Cada lugar lo suma alguien que también come sin gluten. Ayudá a que el mapa siga creciendo.
+        <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-cream/80">
+          Cada lugar lo suma alguien que también come sin gluten. Sugerilo: lo revisamos y lo
+          sumamos al mapa para toda la comunidad.
         </p>
 
-        {metrics.length === 3 ? (
-          // Tres columnas iguales: en el teléfono quedaban 2 + 1.
-          <ul className="mx-auto mt-8 grid max-w-xl grid-cols-3 gap-2">
+        {metrics.length === 2 ? (
+          <ul className="mx-auto mt-8 grid max-w-sm grid-cols-2 gap-2">
             {metrics.map((item) => (
               <li key={item.label} className="flex flex-col items-center text-cream">
-                <span className="font-display text-2xl font-bold tabular-nums md:text-3xl">
-                  {item.value}
-                </span>
-                <span className="mt-0.5 text-sm text-cream/70">{item.label}</span>
+                <span className="text-3xl font-extrabold tabular-nums md:text-4xl">{item.value}</span>
+                <span className="mt-0.5 text-sm text-cream/75">{item.label}</span>
               </li>
             ))}
           </ul>
         ) : null}
 
         <div className="mx-auto mt-8 flex max-w-xs flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row">
-          <Button asChild size="lg" className="h-12 min-h-[48px] px-8 sm:w-[220px]">
-            <Link href="/sugerir" className="flex items-center gap-2">
-              Sugerir un lugar
-              <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="h-12 min-h-[48px] border-cream bg-transparent px-8 text-cream hover:bg-cream/10 sm:w-[220px]"
-          >
-            <Link href="/mapa">Ver el mapa</Link>
-          </Button>
+          <Link href="/sugerir" className={cn(homeBtn.primary, "focus-visible:ring-offset-[#2D4A34] sm:w-[240px]")}>
+            <Plus className="h-4 w-4" strokeWidth={2.4} aria-hidden />
+            Sugerir un lugar
+          </Link>
+          <Link href="/mapa" className={cn(homeBtn.secondaryOnDark, "sm:w-[240px]")}>
+            Ver el mapa
+          </Link>
         </div>
+
+        {children}
       </div>
     </section>
   )

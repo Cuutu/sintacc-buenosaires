@@ -29,6 +29,9 @@ function PlayGlyph() {
 
 const storeBadgeClass =
   "inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#2D4A34] pl-3 pr-4 text-[#F7F3EB] transition-colors hover:bg-[#234A33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40"
+/** Sobre la franja verde de la comunidad: badges crema. */
+const storeBadgeOnDarkClass =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#F7F3EB] pl-3 pr-4 text-[#2D4A34] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60"
 
 function StoreBadge({
   store,
@@ -37,6 +40,7 @@ function StoreBadge({
   name,
   label,
   glyph,
+  onDark = false,
 }: {
   store: "ios" | "android"
   href: string
@@ -44,6 +48,7 @@ function StoreBadge({
   name: string
   label: string
   glyph: React.ReactNode
+  onDark?: boolean
 }) {
   return (
     <a
@@ -52,11 +57,13 @@ function StoreBadge({
       rel="noopener noreferrer"
       aria-label={label}
       data-store-badge={store}
-      className={storeBadgeClass}
+      className={onDark ? storeBadgeOnDarkClass : storeBadgeClass}
     >
       {glyph}
       <span className="flex flex-col items-start leading-none">
-        <span className="text-[10px] font-medium text-[#F7F3EB]/80">{kicker}</span>
+        <span className={onDark ? "text-[10px] font-medium text-[#2D4A34]/75" : "text-[10px] font-medium text-[#F7F3EB]/80"}>
+          {kicker}
+        </span>
         <span className="mt-0.5 text-sm font-bold">{name}</span>
       </span>
     </a>
@@ -68,7 +75,7 @@ function StoreBadge({
  * qué badge ve cada teléfono y el ocultamiento en app nativa / PWA lo resuelve CSS
  * con los atributos de DEVICE_HINT_SCRIPT. El efecto es sólo un respaldo.
  */
-export function TakeCeliMapWithYou() {
+export function TakeCeliMapWithYou({ variant = "card" }: { variant?: "card" | "band" }) {
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
@@ -76,6 +83,44 @@ export function TakeCeliMapWithYou() {
   }, [])
 
   if (hidden) return null
+
+  // Dentro de la franja de la comunidad (revisión 20/10): sin tarjeta blanca, una
+  // línea y los badges en crema. Antes parecía agregada a último momento.
+  if (variant === "band") {
+    return (
+      <div
+        data-get-app
+        className="mt-10 flex flex-col items-center gap-4 border-t border-[#F7F3EB]/15 pt-8 sm:flex-row sm:justify-center sm:gap-6"
+      >
+        <p className="text-center sm:text-left">
+          <span id="take-celimap-heading" className="block text-base font-extrabold text-cream">
+            Llevá CeliMap con vos
+          </span>
+          <span className="block text-sm text-cream/75">El mapa sin gluten, siempre a mano.</span>
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <StoreBadge
+            store="ios"
+            href={CELIMAP_APP_STORE_URL}
+            kicker="Disponible en"
+            name="App Store"
+            label="Descargar CeliMap en el App Store"
+            glyph={<AppleGlyph />}
+            onDark
+          />
+          <StoreBadge
+            store="android"
+            href={CELIMAP_PLAY_STORE_URL}
+            kicker="Disponible en"
+            name="Google Play"
+            label="Descargar CeliMap en Google Play"
+            glyph={<PlayGlyph />}
+            onDark
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section data-get-app aria-labelledby="take-celimap-heading" className="px-4 pt-8 md:px-5 md:pt-10">

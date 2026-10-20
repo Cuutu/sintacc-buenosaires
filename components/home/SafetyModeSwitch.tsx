@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
 import { readOnly100, SAFETY_MODE_EVENT, writeOnly100 } from "@/lib/safety-mode"
@@ -10,7 +11,7 @@ import { readOnly100, SAFETY_MODE_EVENT, writeOnly100 } from "@/lib/safety-mode"
  * dispositivo y el mapa arranca filtrado. El estado se lee después de montar
  * (la home es ISR): hasta entonces se muestra apagado y sin transición.
  */
-export function SafetyModeSwitch() {
+export function SafetyModeSwitch({ variant = "card" }: { variant?: "card" | "chip" }) {
   const [on, setOn] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -27,6 +28,38 @@ export function SafetyModeSwitch() {
     setOn(next)
     writeOnly100(next)
     trackEvent("safety_mode_set", { source: "home_hero", mode: next ? "only100" : "all" })
+  }
+
+  // Chip del hero (revisión 20/10): mismo interruptor, al lado de "Cerca mío".
+  if (variant === "chip") {
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={toggle}
+        data-testid="home-safety-mode"
+        title="El mapa oculta los lugares con opciones"
+        className={cn(
+          "inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60",
+          ready && "transition-colors",
+          on
+            ? "border-[#F7F3EB] bg-[#F7F3EB] text-[#2D4A34]"
+            : "border-[#F7F3EB]/40 text-[#F7F3EB] hover:bg-[#F7F3EB]/10"
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "flex h-4 w-4 items-center justify-center rounded-[5px] border",
+            on ? "border-[#2D4A34] bg-[#2D4A34] text-[#F7F3EB]" : "border-[#F7F3EB]/60"
+          )}
+        >
+          {on ? <Check className="h-3 w-3" strokeWidth={3.2} /> : null}
+        </span>
+        Solo 100% sin TACC
+      </button>
+    )
   }
 
   return (

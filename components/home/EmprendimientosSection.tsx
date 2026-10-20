@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { ArrowRight, ChefHat, Cake, Wheat } from "lucide-react"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
+import { homeBtn } from "@/components/home/home-ui"
+import { cn } from "@/lib/utils"
 
 const CARDS = [
   {
@@ -45,19 +47,13 @@ export function EmprendimientosSection() {
         ))}
       </ul>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <Link
-          href="/emprendimientos"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-[16px] bg-olive px-6 text-[15px] font-extrabold text-[#F7F3EB] transition-colors hover:bg-[#234A33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/40 focus-visible:ring-offset-2 sm:w-[240px]"
-        >
+      <div className="mt-5 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-6">
+        <Link href="/emprendimientos" className={cn(homeBtn.secondary, "w-full sm:w-[240px]")}>
           Ver emprendimientos
           <ArrowRight className="h-4 w-4" strokeWidth={2.2} aria-hidden />
         </Link>
-        <Link
-          href="/sugerir-emprendimiento"
-          className="inline-flex h-12 items-center justify-center rounded-[16px] border border-olive/25 px-6 text-[15px] font-extrabold text-olive transition-colors hover:bg-olive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30 sm:w-[240px]"
-        >
-          Sugerir emprendimiento
+        <Link href="/sugerir-emprendimiento" className={homeBtn.link}>
+          Sugerir un emprendimiento
         </Link>
       </div>
     </section>

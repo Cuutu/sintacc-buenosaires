@@ -1,26 +1,29 @@
 import { getBaseUrl } from "@/lib/base-url"
 import { getPublicStatsSafe } from "@/lib/stats/get-public-stats"
 import { getHomeFeaturedPlaces } from "@/lib/home/get-home-featured-places"
+import { getHomeCityCountsSafe } from "@/lib/home/get-home-city-counts"
+import { getTop10CitySlugs } from "@/lib/seo/cities"
 import type { Metadata } from "next"
 import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME } from "@/lib/seo/brand"
 import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 import { FAQ_ITEMS, FaqSection } from "@/components/home/FaqSection"
 import Link from "next/link"
-import { ArrowRight, MapPin, Plus } from "lucide-react"
+import { ArrowRight, MapPin } from "lucide-react"
 import { SearchBar } from "@/components/search-bar"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroPins } from "@/components/home/HeroPins"
 import { floorDisplayCount, formatFlooredPrefix } from "@/lib/stats/floor-display-count"
 import { HomeGuides } from "@/components/home/HomeGuides"
 import { SafetyModeSwitch } from "@/components/home/SafetyModeSwitch"
-import { HomeSuggestBand } from "@/components/home/HomeSuggestBand"
-import { CategoryChips } from "@/components/home/CategoryChips"
 import { HomeFeatured } from "@/components/home/HomeFeatured"
 import { HowItWorks } from "@/components/home/HowItWorks"
 import { CommunityBand } from "@/components/home/CommunityBand"
 import { TakeCeliMapWithYou } from "@/components/home/TakeCeliMapWithYou"
 import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
 import { EmprendimientosSection } from "@/components/home/EmprendimientosSection"
+import { NearMeButton } from "@/components/home/NearMeButton"
+import { homeBtn, homeSection } from "@/components/home/home-ui"
+import { cn } from "@/lib/utils"
 
 const BASE_URL = getBaseUrl()
 
@@ -46,9 +49,10 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [initialStats, featuredPlaces] = await Promise.all([
+  const [initialStats, featuredPlaces, cityCounts] = await Promise.all([
     getPublicStatsSafe(),
     getHomeFeaturedPlaces(),
+    getHomeCityCountsSafe(getTop10CitySlugs()),
   ])
 
   const placesFloor = floorDisplayCount(initialStats?.placesCount)
@@ -78,23 +82,18 @@ export default async function HomePage() {
       />
 
       {/* Hero "Edición": oliva con mapa nocturno estático (sin Mapbox) y pines de marca.
-          Nada depende de la hora ni del usuario: seguro para ISR. */}
+          Nada depende de la hora ni del usuario: seguro para ISR.
+          Revisión 20/10: la acción principal es buscar (o "Cerca mío"); "Abrir el mapa"
+          queda como link. Antes había ~9 acciones arriba del pliegue. */}
       <section className="celi-hero-mapa relative overflow-hidden min-[769px]:-mt-[var(--desktop-nav-clearance)] min-[769px]:pt-[var(--desktop-nav-clearance)]">
         <HeroPins />
-        <div className="container relative mx-auto max-w-5xl px-5 pb-[52px] pt-[max(1rem,calc(var(--safe-area-top)+0.5rem))] md:pb-24 md:pt-10">
-          {/* En desktop la navbar ya muestra logo y "Sugerir lugar". */}
-          <div className="flex items-center justify-between min-[769px]:hidden">
+        <div className="container relative mx-auto max-w-5xl px-5 pb-10 pt-[max(1rem,calc(var(--safe-area-top)+0.5rem))] md:pb-20 md:pt-10">
+          {/* En el celular, "Sugerir" ya está en la barra de abajo; en compu, en la de arriba. */}
+          <div className="min-[769px]:hidden">
             <BrandLogo inverse size="sm" />
-            <Link
-              href="/sugerir"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#F7F3EB]/30 bg-[#1F3527]/50 pl-3 pr-4 text-[13px] font-extrabold text-[#F7F3EB] transition-colors hover:bg-[#1F3527]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.4} aria-hidden />
-              Sugerir lugar
-            </Link>
           </div>
 
-          <div className="h-[112px] md:h-[150px]" aria-hidden />
+          <div className="h-[96px] md:h-[150px]" aria-hidden />
 
           <div className="max-w-[680px]">
             <p className="text-[11px] font-extrabold tracking-[0.16em] text-[#F7F3EB]/[0.72]">
@@ -116,65 +115,54 @@ export default async function HomePage() {
               Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
-            {/* CTA + modo "Sólo 100%": apilados en mobile, en fila desde sm. */}
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
-              <Link
-                href="/mapa"
-                data-testid="home-open-map"
-                className="inline-flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-[18px] bg-[#F7F3EB] px-6 text-base font-extrabold text-[#2D4A34] shadow-[0_14px_30px_-14px_rgba(0,0,0,0.55)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4A34] sm:w-auto"
-              >
-                <MapPin className="h-5 w-5" strokeWidth={2} aria-hidden />
-                Abrir el mapa
+            <div className="mt-6 max-w-[640px]">
+              <SearchBar />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <NearMeButton />
+                {/* Modo "Solo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
+                <SafetyModeSwitch variant="chip" />
+              </div>
+              <Link href="/mapa" data-testid="home-open-map" className={cn(homeBtn.linkOnDark, "mt-1")}>
+                <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
+                o abrí el mapa
                 <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
               </Link>
-              {/* Modo "Sólo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
-              <SafetyModeSwitch />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Buscador montado sobre el borde del hero (debajo del CTA: el CTA va primero). */}
-      <div className="relative z-10 mx-auto -mt-[30px] w-full max-w-5xl px-4 md:-mt-8 md:px-5">
-        <div className="max-w-[760px]">
-          <SearchBar />
-        </div>
-      </div>
-
-      <div className="mt-7 md:mt-10">
-        <CategoryChips />
-      </div>
-
-      <section className="px-4 pb-4 pt-12 md:px-5 md:py-16">
+      {/* Orden (revisión 20/10): destacados → cómo funciona (explica 100% vs. opciones,
+          lo que diferencia a CeliMap) → explorar → emprendimientos → guías → comunidad
+          (único llamado a sugerir, con las apps) → preguntas frecuentes. */}
+      <section className={homeSection}>
         {/* px-0: el container de Tailwind suma 2rem y duplicaba el margen lateral (24 vs 58 px). */}
         <div className="container mx-auto max-w-5xl px-0">
           <HomeFeatured places={featuredPlaces.length ? featuredPlaces : undefined} />
         </div>
       </section>
 
-      <HomeGuides />
-
-      <HomeSuggestBand />
-
-      <HomeDirectoryLinks />
-
-      {/* px-0: el container de Tailwind suma 2rem; así todas las secciones tienen el mismo borde. */}
-      <section className="px-4 py-10 md:px-5 md:py-16">
-        <div className="container mx-auto max-w-5xl px-0">
-          <EmprendimientosSection />
-        </div>
-      </section>
-
-      <section className="px-4 py-10 md:px-5 md:py-16">
+      <section className={homeSection}>
         <div className="container mx-auto max-w-5xl px-0">
           <HowItWorks />
         </div>
       </section>
 
-      <CommunityBand stats={initialStats} />
+      <HomeDirectoryLinks cityCounts={cityCounts} />
 
-      {/* La promo de las apps va abajo: arriba del pliegue ya hay buscador y mapa. */}
-      <TakeCeliMapWithYou />
+      <section className={homeSection}>
+        <div className="container mx-auto max-w-5xl px-0">
+          <EmprendimientosSection />
+        </div>
+      </section>
+
+      <HomeGuides />
+
+      <div className="my-8 md:my-12">
+        <CommunityBand stats={initialStats}>
+          <TakeCeliMapWithYou variant="band" />
+        </CommunityBand>
+      </div>
 
       <FaqSection />
     </div>

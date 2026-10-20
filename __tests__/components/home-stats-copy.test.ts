@@ -29,7 +29,9 @@ describe("Home landing v3 copy + structure", () => {
     const directory = read("components/home/HomeDirectoryLinks.tsx")
     expect(src).toContain("Encontrá lugares sin gluten")
     expect(src).toContain("Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca")
-    expect(src).toContain("CategoryChips")
+    // Revisión 20/10: los chips de categorías se repetían con "Por tipo de lugar".
+    expect(src).not.toContain("<CategoryChips")
+    expect(src).not.toContain("<HomeSuggestBand")
     expect(src).not.toContain("HeroMetrics")
     expect(src).not.toContain('data-testid="home-stats"')
     expect(src).toContain("HomeFeatured")
@@ -38,8 +40,11 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).toContain("CommunityBand")
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
-    // CTA "Abrir el mapa" antes que el buscador (antes se lograba con order-4).
-    expect(src.indexOf('data-testid="home-open-map"')).toBeLessThan(src.indexOf("<SearchBar />"))
+    // Revisión 20/10: buscar es la acción principal; "Abrir el mapa" queda como link debajo.
+    expect(src.indexOf("<SearchBar />")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
+    expect(src).toContain("<NearMeButton />")
+    // Cómo funciona va antes que explorar (explica 100% vs. opciones).
+    expect(src.indexOf("<HowItWorks />")).toBeLessThan(src.indexOf("<HomeDirectoryLinks"))
     expect(src).toContain('data-testid="home-open-map"')
     expect(src).toContain("max-md:sr-only")
     expect(directory).toContain("`/${c.slug}-sin-gluten`")

@@ -1,5 +1,7 @@
 import { ChevronDown } from "lucide-react"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
+import { CeliBotEntry } from "@/components/home/CeliBotEntry"
+import { homeSection } from "@/components/home/home-ui"
 
 export const FAQ_ITEMS = [
   {
@@ -95,13 +97,16 @@ export function FaqSection() {
   // Una sola columna: en dos quedaban desparejas, y en el teléfono el container
   // sumaba 2rem al padding (≈50 px de margen contra 16 en el resto de la home).
   return (
-    <section className="px-4 py-10 md:px-5 md:py-16" aria-labelledby="faq-heading">
+    <section className={homeSection} aria-labelledby="faq-heading">
       <div className="container mx-auto max-w-5xl px-0">
-        <HomeSectionHeader id="faq-heading" kicker="lo que más nos preguntan" title="Preguntas frecuentes" />
+        <HomeSectionHeader id="faq-heading" title="Preguntas frecuentes" />
         <div className="flex max-w-3xl flex-col gap-3">
           {FAQ_ITEMS.map((item) => (
             <FaqItem key={item.question} item={item} />
           ))}
+        </div>
+        <div className="mt-6">
+          <CeliBotEntry />
         </div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
+import { homeBtn, homeSection } from "@/components/home/home-ui"
 import {
   Beer,
   Coffee,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react"
 import { CITIES, CATEGORIES, getCityBySlug, getTop10CitySlugs } from "@/lib/seo/cities"
 import { ExploreChip } from "./ExploreChip"
+import { cn } from "@/lib/utils"
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   restaurantes: Utensils,
@@ -27,18 +29,25 @@ const CATEGORY_LINKS = CATEGORIES.filter((c) => c.slug !== "otros").map((c) => (
   Icon: CATEGORY_ICONS[c.slug],
 }))
 
-export function HomeDirectoryLinks() {
+/** Nombres cortos para que no se desarme la grilla. */
+const SHORT_CITY_NAMES: Record<string, string> = {
+  "San Miguel de Tucumán": "Tucumán",
+}
+
+/** En el celular se ven 6 ciudades (las 10 ocupaban casi una pantalla). */
+const MOBILE_CITIES = 6
+
+export function HomeDirectoryLinks({ cityCounts = {} }: { cityCounts?: Record<string, number> }) {
   const cities = getTop10CitySlugs()
     .map((slug) => getCityBySlug(slug) ?? CITIES.find((c) => c.slug === slug))
     .filter((city): city is NonNullable<typeof city> => Boolean(city))
 
   return (
-    <section className="px-4 py-8 md:px-5 md:py-16" aria-labelledby="directory-heading">
+    <section className={homeSection} aria-labelledby="directory-heading">
       {/* px-0: mismo borde que Guías y Destacados (el container de Tailwind suma 2rem). */}
       <div className="container mx-auto max-w-5xl px-0">
         <HomeSectionHeader
           id="directory-heading"
-          kicker="en todo el país"
           title="Explorá por tipo y ciudad"
           description="Restaurantes, bares, panaderías y más, en las ciudades con más opciones sin TACC."
           className="mb-0 md:mb-0"
@@ -82,17 +91,27 @@ export function HomeDirectoryLinks() {
           aria-labelledby="directory-cities-heading"
           className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"
         >
-          {cities.map((city) => (
-            <li key={city.slug} className="min-h-[44px] min-w-0">
-              <ExploreChip href={`/sin-gluten/${city.slug}`}>{city.name}</ExploreChip>
-            </li>
-          ))}
+          {cities.map((city, index) => {
+            const count = cityCounts[city.slug]
+            return (
+              <li
+                key={city.slug}
+                className={cn("min-h-[44px] min-w-0", index >= MOBILE_CITIES && "hidden md:block")}
+              >
+                <ExploreChip href={`/sin-gluten/${city.slug}`}>
+                  <span className="block font-bold">{SHORT_CITY_NAMES[city.name] ?? city.name}</span>
+                  {count ? (
+                    <span className="block text-xs text-[#5E6A60]">
+                      {count.toLocaleString("es-AR")} {count === 1 ? "lugar" : "lugares"}
+                    </span>
+                  ) : null}
+                </ExploreChip>
+              </li>
+            )
+          })}
         </ul>
-        <p className="mt-5 text-sm">
-          <Link
-            href="/sin-gluten-argentina"
-            className="font-medium text-terracotta underline-offset-4 transition-colors duration-200 hover:text-terracotta-hover hover:underline motion-reduce:transition-none"
-          >
+        <p className="mt-3">
+          <Link href="/sin-gluten-argentina" className={homeBtn.link}>
             Ver todas las ciudades
           </Link>
         </p>

@@ -34,7 +34,7 @@ export function HomeSectionHeader({
           {title}
         </h2>
         {description ? (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#4D6554] md:text-base">
+          <p className="mt-2 max-w-2xl text-base leading-relaxed text-[#4D6554]">
             {description}
           </p>
         ) : null}

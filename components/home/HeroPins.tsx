@@ -5,7 +5,7 @@ import Image from "next/image"
  * Imágenes chicas (96px) en /public/brand/hero, no los PNG de 512px del mapa.
  */
 // Mobile: la fila del logo ocupa hasta ~60px (más el área segura en las apps, que el
-// contenedor ya suma) y el texto arranca en ~172px. Los pines van entre medio, sin
+// contenedor ya suma) y el texto arranca en ~156px. Los pines van entre medio, sin
 // tocar el logo.
 const HERO_PINS = [
   { src: "/brand/hero/pin-100-crema.png", left: "16%", top: 74, w: 24 },

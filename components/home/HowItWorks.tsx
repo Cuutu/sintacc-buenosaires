@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
+import { homeBtn } from "@/components/home/home-ui"
 
 const STEPS = [
   {
@@ -34,12 +35,10 @@ export function HowItWorks() {
           </li>
         ))}
       </ol>
-      <p className="mt-8 text-sm text-[#4D6554]">
-        Más detalle en{" "}
-        <Link href="/como-funciona" className="font-medium text-olive underline decoration-olive/30 underline-offset-4 hover:text-[#B84420]">
-          cómo funciona CeliMap
+      <p className="mt-6">
+        <Link href="/como-funciona" className={homeBtn.link}>
+          Más sobre cómo funciona CeliMap
         </Link>
-        .
       </p>
     </section>
   )

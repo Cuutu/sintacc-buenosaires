@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getPublishedGuides } from "@/lib/seo/guides"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
+import { homeBtn, homeSection } from "@/components/home/home-ui"
 
 const MAX_GUIDES = 3
 
@@ -12,16 +13,15 @@ export function HomeGuides() {
   if (guides.length === 0) return null
 
   return (
-    <section aria-labelledby="home-guides-heading" className="px-4 py-10 md:px-5 md:py-16">
+    <section aria-labelledby="home-guides-heading" className={homeSection}>
       <div className="container mx-auto max-w-5xl px-0">
         <HomeSectionHeader
           id="home-guides-heading"
-          kicker="para comer afuera"
           title="Guías para celíacos"
           action={
             <Link
               href="/guias"
-              className="inline-flex min-h-[44px] items-center text-sm font-extrabold text-olive underline decoration-olive/30 underline-offset-4 hover:text-[#B84420]"
+              className={homeBtn.link}
             >
               Ver todas
             </Link>
