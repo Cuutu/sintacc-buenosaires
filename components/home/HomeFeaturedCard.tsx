@@ -6,14 +6,29 @@ import { resolvePrimarySafety, type PlaceWithStats } from "@/components/featured
 import { CategoryIcon } from "@/components/seo/CategoryIcon"
 import { cn } from "@/lib/utils"
 
-/** Misma regla que el resto del sitio: primero las reseñas de CeliMap, después Google. */
-function ratingOf(place: PlaceWithStats): { score: string; source: string } | null {
+function plural(n: number, one: string, many: string) {
+  return `${n.toLocaleString("es-AR")} ${n === 1 ? one : many}`
+}
+
+/**
+ * Misma regla que el resto del sitio: primero las reseñas de CeliMap, después Google.
+ * Con la cantidad al lado (revisión 20/10): un 5.0 solo, con 3 reseñas, parecía inflado.
+ */
+export function ratingOf(place: PlaceWithStats): { score: string; detail: string; title: string } | null {
   const local = place.stats?.avgRating
-  if (typeof local === "number" && local > 0 && (place.stats?.totalReviews ?? 0) > 0) {
-    return { score: local.toFixed(1), source: "CeliMap" }
+  const localCount = place.stats?.totalReviews ?? 0
+  if (typeof local === "number" && local > 0 && localCount > 0) {
+    const score = local.toFixed(1)
+    const detail = plural(localCount, "reseña", "reseñas")
+    return { score, detail, title: `${score} de 5 en CeliMap, ${detail}` }
   }
   const google = place.googleSnapshot?.rating
-  if (typeof google === "number" && google > 0) return { score: google.toFixed(1), source: "Google" }
+  if (typeof google === "number" && google > 0) {
+    const score = google.toFixed(1)
+    const count = place.googleSnapshot?.userRatingCount ?? 0
+    const detail = count > 0 ? `${count.toLocaleString("es-AR")} en Google` : "Google"
+    return { score, detail, title: `${score} de 5 en Google${count > 0 ? `, ${plural(count, "reseña", "reseñas")}` : ""}` }
+  }
   return null
 }
 
@@ -107,11 +122,11 @@ export function HomeFeaturedCard({ place }: { place: PlaceWithStats }) {
           {rating ? (
             <span
               className="flex shrink-0 items-center gap-1 text-sm font-extrabold text-olive"
-              title={`${rating.source} ${rating.score}`}
+              title={rating.title}
             >
               <Star className="h-3.5 w-3.5 fill-[#B84420] text-[#B84420]" strokeWidth={1.5} aria-hidden />
               <span className="tabular-nums">{rating.score}</span>
-              <span className="text-xs font-bold text-[#5E6A60]">{rating.source}</span>
+              <span className="text-xs font-bold text-[#5E6A60]">· {rating.detail}</span>
             </span>
           ) : (
             <span className="shrink-0 text-xs font-bold text-[#5E6A60]">Sin reseñas todavía</span>
