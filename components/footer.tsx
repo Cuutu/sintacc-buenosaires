@@ -146,6 +146,8 @@ export function Footer() {
             </div>
           </div>
         </div>
+        {/* Con el cartel de la app abierto, el final del footer quedaba tapado. */}
+        <div aria-hidden className="h-[var(--store-banner-space,0px)] md:hidden" />
       </footer>
     </div>
   )

@@ -93,12 +93,33 @@ export function isHomePath(pathname: string | null | undefined): boolean {
   return pathname === "/"
 }
 
-/** Home nunca muestra banner. Resto: solo si ya se vio un lugar (o debug). */
+/**
+ * El mapa en celular avisa cuando tiene abierta la tarjeta de un lugar, los filtros
+ * o la lista: ahí el cartel de la app quedaba encima de los botones.
+ */
+let mapOverlayOpen = false
+
+export function setMapOverlayOpen(open: boolean): void {
+  if (mapOverlayOpen === open) return
+  mapOverlayOpen = open
+  notifyBottomPromptChange()
+}
+
+export function isMapOverlayOpen(): boolean {
+  return mapOverlayOpen
+}
+
+/**
+ * Home nunca muestra banner. Resto: solo si ya se vio un lugar (o debug).
+ * Con algo abierto abajo en el mapa, nunca (tampoco en debug).
+ */
 export function shouldShowStoreBanner(input: {
   pathname: string | null | undefined
   unlocked: boolean
   debugBanner?: boolean
+  mapOverlayOpen?: boolean
 }): boolean {
+  if (input.mapOverlayOpen) return false
   if (input.debugBanner) return true
   if (isHomePath(input.pathname)) return false
   return input.unlocked

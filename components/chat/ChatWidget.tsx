@@ -210,7 +210,8 @@ export function ChatWidget() {
         ref={dockRef}
         className={cn(
           "celimap-chat-dock fixed bottom-6 right-6 z-[90]",
-          "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+0.75rem)] max-md:right-4",
+          // Si está el cartel de la app, el botón va arriba del cartel (antes le tapaba la X).
+          "max-md:bottom-[calc(var(--bottom-nav-clearance,1.5rem)+0.75rem+var(--store-banner-space,0px))] max-md:right-4",
           open && "max-md:hidden",
           FAB_HIDDEN_MOBILE_PATHS.has(pathname) && "max-md:hidden"
         )}

@@ -7,6 +7,7 @@ import { X } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
 import {
   claimStoreBannerShownSession,
+  isMapOverlayOpen,
   isStoreBannerUnlocked,
   shouldShowStoreBanner,
   subscribeBottomPromptChange,
@@ -15,26 +16,54 @@ import {
 import { CELIMAP_STORE_URLS } from "@/lib/device-platform"
 import { useBottomPrompt } from "@/lib/use-bottom-prompt"
 
+/**
+ * Lo que ocupa el cartel arriba de la barra de abajo (su alto + 0.5rem de despegue
+ * + 0.5rem de aire). El botón de CeliBot y los controles del mapa lo suman a su
+ * `bottom` para no quedar tapados: antes el botón de CeliBot tapaba la X del cartel.
+ */
+export const STORE_BANNER_SPACE_VAR = "--store-banner-space"
+
 export function StoreAppBanner() {
   const pathname = usePathname()
   const { prompt, browser, store, ready, debugBanner, dismissStore } = useBottomPrompt()
   const [debugHidden, setDebugHidden] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
+  const [mapOverlayOpen, setMapOverlayOpenState] = useState(false)
   const shownRef = useRef(false)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (pathname.startsWith("/lugar/")) unlockStoreBanner()
   }, [pathname])
 
   useEffect(() => {
-    const sync = () => setUnlocked(debugBanner || isStoreBannerUnlocked())
+    const sync = () => {
+      setUnlocked(debugBanner || isStoreBannerUnlocked())
+      setMapOverlayOpenState(isMapOverlayOpen())
+    }
     sync()
     return subscribeBottomPromptChange(sync)
   }, [debugBanner])
 
-  const gated = shouldShowStoreBanner({ pathname, unlocked, debugBanner })
+  const gated = shouldShowStoreBanner({ pathname, unlocked, debugBanner, mapOverlayOpen })
   const visible = ready && prompt === "store" && store != null && !debugHidden && gated
   const href = store ? CELIMAP_STORE_URLS[store] : ""
+
+  useEffect(() => {
+    const el = rootRef.current
+    if (!visible || !el) return
+    const root = document.documentElement
+    const apply = () => {
+      root.style.setProperty(STORE_BANNER_SPACE_VAR, `${Math.ceil(el.offsetHeight) + 16}px`)
+    }
+    apply()
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(apply) : null
+    observer?.observe(el)
+    return () => {
+      observer?.disconnect()
+      root.style.removeProperty(STORE_BANNER_SPACE_VAR)
+    }
+  }, [visible, href])
 
   useEffect(() => {
     if (!visible || !store || debugBanner) return
@@ -51,6 +80,7 @@ export function StoreAppBanner() {
 
   return (
     <div
+      ref={rootRef}
       role="region"
       aria-label="Abrí CeliMap en la app"
       data-store-banner=""

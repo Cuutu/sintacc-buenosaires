@@ -17,6 +17,7 @@ import {
   locationPermissionDeniedCopy,
 } from "@/lib/native-location-copy"
 import { registerAndroidMapBackHandlers } from "@/lib/native-android-back"
+import { setMapOverlayOpen } from "@/lib/bottom-prompt"
 import {
   getLocationAutoEnabled,
   setLocationAutoEnabled,
@@ -193,6 +194,14 @@ export function MapMobile({
       delete root.dataset.chatFab
     }
   }, [chatFabPlacement])
+
+  // Con la tarjeta del lugar, los filtros o la lista abiertos, el cartel "Abrí el mapa
+  // en la app" no se muestra: quedaba encima de sus botones.
+  const overlayOpen = Boolean(selectedPlace) || moreOpen || listOpen
+  React.useEffect(() => {
+    setMapOverlayOpen(overlayOpen)
+  }, [overlayOpen])
+  React.useEffect(() => () => setMapOverlayOpen(false), [])
 
   const sheetPx = selectedPlace
     ? sheetSnap === "expanded"
@@ -416,14 +425,14 @@ export function MapMobile({
           bottomOffset={
             selectedPlace
               ? `calc(var(--bottom-nav-clearance) + ${MOBILE_SHEET_COMPACT_PX + 16}px)`
-              : "calc(var(--bottom-nav-clearance) + 0.5rem)"
+              : "calc(var(--bottom-nav-clearance) + 0.5rem + var(--store-banner-space, 0px))"
           }
         />
       )}
 
       {!listOpen && !selectedPlace && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-[var(--bottom-nav-clearance)] z-20 flex flex-col items-center gap-2 px-3"
+          className="pointer-events-none absolute inset-x-0 bottom-[calc(var(--bottom-nav-clearance)+var(--store-banner-space,0px))] z-20 flex flex-col items-center gap-2 px-3"
           data-overflow-allowed="decoration"
         >
           <button

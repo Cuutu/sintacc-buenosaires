@@ -1,9 +1,12 @@
 import {
+  isMapOverlayOpen,
   isStoreBannerEligible,
   isStoreBannerDebugQuery,
   resolveBottomPrompt,
   readBottomPromptSnapshot,
+  setMapOverlayOpen,
   shouldShowStoreBanner,
+  subscribeBottomPromptChange,
   STORE_BANNER_SNOOZE_MS,
 } from "@/lib/bottom-prompt"
 
@@ -150,5 +153,26 @@ describe("shouldShowStoreBanner", () => {
     expect(shouldShowStoreBanner({ pathname: "/mapa", unlocked: false })).toBe(false)
     expect(shouldShowStoreBanner({ pathname: "/mapa", unlocked: true })).toBe(true)
     expect(shouldShowStoreBanner({ pathname: "/", unlocked: false, debugBanner: true })).toBe(true)
+  })
+
+  it("con la tarjeta, los filtros o la lista del mapa abiertos no se muestra (ni en debug)", () => {
+    expect(shouldShowStoreBanner({ pathname: "/mapa", unlocked: true, mapOverlayOpen: true })).toBe(false)
+    expect(
+      shouldShowStoreBanner({ pathname: "/mapa", unlocked: true, debugBanner: true, mapOverlayOpen: true })
+    ).toBe(false)
+  })
+})
+
+describe("setMapOverlayOpen", () => {
+  it("avisa a los suscriptores solo cuando cambia", () => {
+    const fn = jest.fn()
+    const unsubscribe = subscribeBottomPromptChange(fn)
+    setMapOverlayOpen(true)
+    setMapOverlayOpen(true)
+    expect(isMapOverlayOpen()).toBe(true)
+    setMapOverlayOpen(false)
+    expect(isMapOverlayOpen()).toBe(false)
+    expect(fn).toHaveBeenCalledTimes(2)
+    unsubscribe()
   })
 })

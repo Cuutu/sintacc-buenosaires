@@ -303,7 +303,7 @@
 @media (max-width: 767.98px) {
   html[data-chat-fab="above-map-fab"] .celimap-chat-dock {
     right: 0.75rem;
-    bottom: calc(var(--bottom-nav-clearance) + 0.5rem + 3rem + 0.75rem);
+    bottom: calc(var(--bottom-nav-clearance) + 0.5rem + 3rem + 0.75rem + var(--store-banner-space, 0px));
   }
 
   html[data-chat-fab="hidden"] .celimap-chat-dock {
