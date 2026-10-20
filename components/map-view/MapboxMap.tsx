@@ -92,7 +92,8 @@ export type MapOverlayPadding = {
 
 const CAMERA_FOCUS_MS = 420
 const CAMERA_PADDING_MS = 300
-const PIN_KEEP_ZOOM = 15.5
+/** Si ya se está más cerca que el zoom de foco, no se aleja al elegir un pin. */
+const PIN_KEEP_ZOOM = 15
 const PIN_ENTRANCE_IDLE_FALLBACK_MS = 600
 /** Búsqueda por dirección: cuadras alrededor, no un solo pin. */
 const SEARCH_PIN_ZOOM = 15

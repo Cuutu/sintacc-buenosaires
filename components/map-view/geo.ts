@@ -1,5 +1,8 @@
-/** CABA bounds aproximados */
-export const CABA_CENTER: [number, number] = [-58.3816, -34.6037]
+/**
+ * Vista inicial del mapa en CABA. No es el Obelisco (-58.3816): centrado ahí, media
+ * pantalla de compu era río. Un poco al oeste entran Palermo, Almagro y el centro.
+ */
+export const CABA_CENTER: [number, number] = [-58.41, -34.6]
 export const CABA_ZOOM = 12
 
 export interface MapViewportBounds {

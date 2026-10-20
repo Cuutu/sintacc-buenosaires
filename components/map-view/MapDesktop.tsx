@@ -125,6 +125,16 @@ export function MapDesktop({
     [places, selectedPlaceId]
   )
 
+  // CeliBot es global y va abajo a la derecha: en el mapa de compu quedaba encima de la
+  // lista (tapaba el corazón de la última tarjeta). Se corre a la izquierda del aside.
+  React.useEffect(() => {
+    const root = document.documentElement
+    root.dataset.chatFab = "beside-map-aside"
+    return () => {
+      delete root.dataset.chatFab
+    }
+  }, [])
+
   React.useEffect(() => {
     if (selectedPlace) {
       setPopoverPlace(selectedPlace)
@@ -201,6 +211,7 @@ export function MapDesktop({
         )}
       </div>
 
+      {/* Si cambia el ancho, actualizar --map-aside-width en chat-ui.css. */}
       <aside className="flex w-[min(480px,40vw)] min-w-[440px] max-w-[520px] shrink-0 flex-col overflow-hidden border-l border-olive/10 bg-cream">
         <MapTopBar
           variant="sidebar"

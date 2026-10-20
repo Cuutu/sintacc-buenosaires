@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { List, X } from "lucide-react"
+import { ChevronDown, List, X } from "lucide-react"
 import type { MapboxMapRef, MapViewportBounds } from "./MapboxMap"
 import { MapboxMapLazy as MapboxMap } from "./MapboxMapLazy"
 import { MapErrorBoundary } from "./MapErrorBoundary"
@@ -483,18 +483,27 @@ export function MapMobile({
         >
           <div className="pt-2">
             <div className="mb-2 flex items-center justify-between gap-2 px-4">
-              <label className="relative inline-flex items-center">
+              {/* Título con la cantidad, como en la lista de compu. */}
+              <h2 className="min-w-0 truncate text-[15px] font-extrabold tracking-[-0.01em] text-[#1F4D35]">
+                {loading
+                  ? "Lugares"
+                  : `${sortedPlaces.length} ${sortedPlaces.length === 1 ? "lugar" : "lugares"}${
+                      activeQuery ? ` en ${activeQuery}` : ""
+                    }`}
+              </h2>
+              <label className="relative inline-flex shrink-0 items-center">
                 <span className="sr-only">Ordenar resultados</span>
                 <select
                   value={sort}
                   name="map-place-sort"
                   onChange={(e) => setSort(e.target.value as PlaceSortOption)}
-                  className="h-9 appearance-none rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-[#1F4D35]/80"
+                  className="h-9 appearance-none rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/5 py-1.5 pl-3 pr-8 text-xs font-semibold text-[#1F4D35]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                 >
                   <option value="nearest">Más cercanos</option>
                   <option value="recommended">Recomendados</option>
                   {hasRatings ? <option value="rating">Mejor valorados</option> : null}
                 </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-[#1F4D35]/60" aria-hidden />
               </label>
             </div>
             <PlacesList

@@ -10,8 +10,8 @@ import { FavoriteButton } from "@/components/favorite-button"
 import { TYPES } from "@/lib/constants"
 import { getPlaceImageUrl } from "@/lib/place-image"
 import { getCanonicalPlaceArea } from "@/lib/place-location-display"
-import { getPlaceReviewLines } from "@/lib/place-review-display"
 import { formatListDistance, metersBetween, type UserLatLng } from "./geo"
+import { getCoverThemeForLevel, getPlaceCardRating } from "./place-selected-card-model"
 
 interface PlaceMiniCardProps {
   place: IPlace & {
@@ -49,9 +49,9 @@ export const PlaceMiniCard = memo(function PlaceMiniCard({
   const typeLabel = primaryType && primaryType !== "other" ? TYPE_LABELS[primaryType] : undefined
   const safetyLevel = inferSafetyLevel(place) ?? "unknown"
   const photoSrc = getPlaceImageUrl(place.photos?.[0], "thumb")
-  const reviewLine =
-    getPlaceReviewLines(place, { emptyCommunity: "never" }).find((line) => line.hasScore) ?? null
-  const ratingLabel = reviewLine?.text ?? null
+  const cover = getCoverThemeForLevel(safetyLevel)
+  // Misma fuente que el popover y la tarjeta del mapa: primero CeliMap, después Google.
+  const ratingLabel = getPlaceCardRating(place)?.label ?? null
 
   const placeLat = place.location?.lat
   const placeLng = place.location?.lng
@@ -90,7 +90,12 @@ export const PlaceMiniCard = memo(function PlaceMiniCard({
               sizes="64px"
             />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-[#1F4D35]" aria-hidden>
+            // Sin foto: la misma portada con espigas que la tarjeta del mapa y la ficha.
+            <span
+              className={cn("flex h-full w-full items-center justify-center", cover.texture)}
+              style={{ backgroundColor: cover.bg, color: cover.ink }}
+              aria-hidden
+            >
               <TypeIcon className="h-5 w-5 stroke-[1.85]" />
             </span>
           )}

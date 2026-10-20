@@ -34,7 +34,8 @@ export const CLUSTER_MAX_ZOOM = 13
 /** Radio chico + mínimo 3: dos lugares vecinos se ven como pins, no como "2". */
 export const CLUSTER_RADIUS_PX = 30
 export const CLUSTER_MIN_POINTS = 3
-export const PIN_FOCUS_ZOOM = 16
+/** Zoom al elegir un lugar (o abrir /mapa?place=): barrio cercano, no una sola cuadra. */
+export const PIN_FOCUS_ZOOM = 15
 /** Gota lógica 64×84 @ pixelRatio 3. Desktop ≥ mobile. */
 export const PIN_ICON_SIZE = 0.58
 export const PIN_ENTER_SCALE = 0.85
