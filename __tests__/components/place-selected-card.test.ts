@@ -50,7 +50,7 @@ describe("ficha seleccionada del mapa", () => {
     )
     expect(html).not.toContain("<img")
     expect(html).not.toContain("object-fit:cover")
-    expect(html).toContain("Tiene opciones")
+    expect(html).toContain("Con opciones")
     expect(html).toContain("La Cocina de Don Pablo")
     expect(html).toContain("Restaurante • Almagro")
     expect(html).toContain("Avenida Boedo 605, Almagro")

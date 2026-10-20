@@ -336,7 +336,7 @@ export default function EmprendimientosPageContent({
                     className={cn(
                       "h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors",
                       selected
-                        ? "border-terracotta-strong bg-terracotta-strong text-[#F8F5EF]"
+                        ? "border-[#1F4D35] bg-[#1F4D35] text-[#F8F5EF]"
                         : "border-[#E8E1D6] bg-white text-[#1F4D35] hover:border-[#1F4D35]/30"
                     )}
                   >

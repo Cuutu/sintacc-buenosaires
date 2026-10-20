@@ -117,7 +117,7 @@ export function PrivateGuidePlaceCard({
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {hasCelimapRating ? (
             <span className="inline-flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              <Star className="h-3.5 w-3.5 fill-[#C85A2E] text-[#C85A2E]" />
               <span className="font-semibold text-olive">
                 {place.stats?.avgRating?.toFixed(1)}
               </span>
@@ -125,7 +125,7 @@ export function PrivateGuidePlaceCard({
             </span>
           ) : googleRating != null && Number.isFinite(googleRating) ? (
             <span className="inline-flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              <Star className="h-3.5 w-3.5 fill-[#C85A2E] text-[#C85A2E]" />
               <span className="font-semibold text-olive">
                 {googleRating.toFixed(1)}
               </span>

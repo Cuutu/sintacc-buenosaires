@@ -434,7 +434,7 @@ export default function SugerirPage() {
                 )}
               >
                 <div className="text-xl mb-1">🟡</div>
-                <div className="text-sm font-semibold">Tiene opciones</div>
+                <div className="text-sm font-semibold">Con opciones</div>
                 <div className="text-xs text-muted-foreground">También tiene con TACC</div>
               </button>
             </div>
@@ -593,7 +593,7 @@ export default function SugerirPage() {
           <div className="space-y-1">
             <Label>Nivel de seguridad <span className="text-primary">*</span></Label>
             <p className="text-xs text-muted-foreground">
-              Si tenés dudas, elegí <span className="font-medium">&quot;Tiene opciones&quot;</span> — es mejor ser conservador.
+              Si tenés dudas, elegí <span className="font-medium">&quot;Con opciones&quot;</span> — es mejor ser conservador.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -636,7 +636,7 @@ export default function SugerirPage() {
               )}
             >
               <div className="text-xl mb-1">🟡</div>
-              <div className="text-sm font-semibold">Tiene opciones</div>
+              <div className="text-sm font-semibold">Con opciones</div>
               <div className="text-xs text-muted-foreground">También tiene con TACC</div>
             </button>
           </div>

@@ -89,7 +89,7 @@ export function VentureReviewForm({ ventureId, onSuccess }: VentureReviewFormPro
                   <Star
                     className={`h-8 w-8 ${
                       star <= rating
-                        ? "fill-amber-400 text-amber-400"
+                        ? "fill-[#C85A2E] text-[#C85A2E]"
                         : "text-muted-foreground"
                     }`}
                   />

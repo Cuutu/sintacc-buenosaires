@@ -105,7 +105,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
                   <Star
                     className={`h-10 w-10 md:h-8 md:w-8 ${
                       star <= rating
-                        ? "fill-amber-400 text-amber-400"
+                        ? "fill-[#C85A2E] text-[#C85A2E]"
                         : "text-muted-foreground"
                     }`}
                   />

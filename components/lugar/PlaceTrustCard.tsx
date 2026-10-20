@@ -36,7 +36,7 @@ export function PlaceTrustCard({ reportCount, isDedicated }: PlaceTrustCardProps
         </p>
         <p className="mt-1 text-base leading-relaxed text-[#5F6B63]">
           {isDedicated
-            ? "Clasificado 100% Sin TACC. Ningún usuario reportó problemas."
+            ? "Clasificado 100% sin TACC. Ningún usuario reportó problemas."
             : "Ningún usuario reportó problemas."}
         </p>
       </div>

@@ -30,7 +30,7 @@ const SAFETY_CONFIG = {
     className: "bg-olive/10 text-olive border-olive/25",
   },
   gf_options: {
-    label: "Tiene opciones",
+    label: "Con opciones",
     dot: "🟡",
     className: "bg-[#C85A2E]/10 text-[#A84A26] border-[#C85A2E]/30",
   },

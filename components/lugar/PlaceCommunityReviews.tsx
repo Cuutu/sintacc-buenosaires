@@ -111,7 +111,7 @@ export function PlaceCommunityReviews({
 
       {!showReviewForm && totalReviews > 0 && (
         <p className="mb-4 text-base text-[#5F6B63]">
-          <Star className="mr-1 inline h-4 w-4 fill-amber-400 text-amber-400" />
+          <Star className="mr-1 inline h-4 w-4 fill-[#C85A2E] text-[#C85A2E]" />
           {avgRating.toFixed(1)} · {totalReviews} {totalReviews === 1 ? "reseña" : "reseñas"}
         </p>
       )}
@@ -145,7 +145,7 @@ export function PlaceCommunityReviews({
                         key={i}
                         className={`h-4 w-4 ${
                           i <= review.rating
-                            ? "fill-amber-400 text-amber-400"
+                            ? "fill-[#C85A2E] text-[#C85A2E]"
                             : "text-[#E8E1D6]"
                         }`}
                       />

@@ -28,7 +28,7 @@ export function emptyHeroPinSrc(safetyLevel?: string): string {
 export function heroSafetyCopy(level?: string): { label: string; className: string } {
   if (level === "dedicated_gf") {
     return {
-      label: "100% Sin TACC",
+      label: "100% sin TACC",
       className: "bg-[#1F4D35] text-[#F8F5EF]",
     }
   }

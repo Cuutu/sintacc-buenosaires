@@ -111,12 +111,13 @@ export const PlaceMiniCard = memo(function PlaceMiniCard({
                 100% sin TACC
               </span>
             ) : safetyLevel === "gf_options" ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B64320]">
+              // Misma pastilla que "100% sin TACC", en terracota (antes era texto suelto).
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#B64320]/20 bg-[#B64320]/10 px-2 py-0.5 text-[10px] font-semibold text-[#A33B1B]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#B64320]" aria-hidden />
-                Tiene opciones
+                Con opciones
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B645C]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#CFC9BF]/60 bg-[#CFC9BF]/20 px-2 py-0.5 text-[10px] font-semibold text-[#6B645C]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#CFC9BF]" aria-hidden />
                 Sin información
               </span>

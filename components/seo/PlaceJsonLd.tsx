@@ -66,7 +66,7 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   let servesCuisine: string | undefined = undefined
   
   if (safety === "dedicated_gf") {
-    offerPhrase = "100% Sin TACC"
+    offerPhrase = "100% sin TACC"
     servesCuisine = "Comida sin gluten"
   } else if (safety === "gf_options") {
     offerPhrase = "con opciones Sin TACC"

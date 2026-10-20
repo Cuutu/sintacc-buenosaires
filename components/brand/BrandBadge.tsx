@@ -14,7 +14,7 @@ const BADGE_VARIANTS = {
     className: "bg-olive/10 text-olive border-olive/20",
   },
   options: {
-    label: "Tiene opciones",
+    label: "Con opciones",
     Icon: CheckCircle2,
     className: "bg-accent text-accent-foreground border-terracotta/20",
   },

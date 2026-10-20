@@ -78,7 +78,7 @@ export function MapDesktop({
   const activeFilters = React.useMemo(() => {
     const parts: string[] = []
     if (safetyMode === "cien") parts.push("100% sin TACC")
-    if (safetyMode === "opc") parts.push("Tiene opciones")
+    if (safetyMode === "opc") parts.push("Con opciones")
     if (filters.type) parts.push(TYPE_LABELS[filters.type] ?? filters.type)
     if (filters.tags.includes("certificado_sin_tacc")) parts.push("Insumos certificados")
     if (filters.tags.includes("cocina_separada")) parts.push("Cocina separada")

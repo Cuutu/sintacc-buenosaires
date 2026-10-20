@@ -70,7 +70,7 @@ export async function NationalCategoryLanding({ category, page }: { category: st
           { label: `${catName} sin gluten` },
         ]}
       />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-6">
+      <h1 className="mt-5 mb-6 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getCategoryH1(null, category)}
       </h1>
       {intro ? (

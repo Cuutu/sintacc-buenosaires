@@ -13,7 +13,7 @@ describe("rediseño ficha lugar", () => {
     const chrome = read("components/lugar/PlaceHeroChrome.tsx")
     const ui = read("components/lugar/place-detail-ui.ts")
     expect(src).toContain("h-[220px]")
-    expect(ui).toContain("100% Sin TACC")
+    expect(ui).toContain("100% sin TACC")
     expect(ui).toContain("Con opciones")
     expect(src).toContain("emptyHeroPinSrc")
     expect(chrome).toContain("Volver")

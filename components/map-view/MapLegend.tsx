@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 
 const ITEMS = [
   { color: "#1F4D35", label: "100% sin TACC" },
-  { color: "#C85A2E", label: "Tiene opciones" },
+  { color: "#C85A2E", label: "Con opciones" },
   { color: "#CFC9BF", label: "Sin información" },
 ] as const
 

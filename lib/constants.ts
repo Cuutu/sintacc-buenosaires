@@ -100,7 +100,7 @@ export const TAG_BADGE_CONFIG: Record<string, { label: string; className: string
     className: "bg-olive/10 text-olive border-olive/20",
   },
   opciones_sin_tacc: {
-    label: "Tiene opciones",
+    label: "Con opciones",
     className: "bg-accent text-accent-foreground border-terracotta/20",
   },
   certificado_sin_tacc: {

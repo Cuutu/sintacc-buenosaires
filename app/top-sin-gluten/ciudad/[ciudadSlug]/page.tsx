@@ -66,7 +66,7 @@ export default async function TopSinGlutenPage({
           { label: "Top lugares" },
         ]}
       />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-2">
+      <h1 className="mt-5 mb-2 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         Top lugares sin gluten en {city.name}
       </h1>
       <p className="text-muted-foreground mb-6">

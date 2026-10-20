@@ -128,7 +128,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
           <div className="flex min-h-[1.25rem] items-center gap-1.5 text-sm">
             {hasCelimapRating ? (
               <>
-                <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
+                <Star className="h-3.5 w-3.5 shrink-0 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
                 <span className="font-semibold text-olive">
                   {place.stats?.avgRating?.toFixed(1)}
                 </span>
@@ -136,7 +136,7 @@ export function ListPlaceCard({ place }: ListPlaceCardProps) {
               </>
             ) : googleRating != null && Number.isFinite(googleRating) ? (
               <>
-                <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
+                <Star className="h-3.5 w-3.5 shrink-0 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
                 <span className="font-semibold text-olive">{googleRating.toFixed(1)}</span>
                 {googleCount != null && googleCount > 0 ? (
                   <span className="text-muted-foreground">

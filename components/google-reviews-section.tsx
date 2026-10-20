@@ -50,7 +50,7 @@ export function GoogleReviewsSection({ snapshot, showAllReviews = false }: Props
                 key={i}
                 className={`h-3.5 w-3.5 ${
                   i <= Math.round(snapshot.rating!)
-                    ? "fill-amber-400 text-amber-400"
+                    ? "fill-[#C85A2E] text-[#C85A2E]"
                     : "text-muted-foreground/20"
                 }`}
               />

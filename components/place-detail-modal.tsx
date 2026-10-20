@@ -140,7 +140,7 @@ export function PlaceDetailModal({ placeId, open, onOpenChange }: PlaceDetailMod
 
               {place.stats && (
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star className="h-4 w-4 fill-[#C85A2E] text-[#C85A2E]" />
                   <span className="font-semibold">{place.stats.avgRating?.toFixed(1) || "—"}</span>
                   <span className="text-muted-foreground">
                     ({place.stats.totalReviews || 0} reseñas)

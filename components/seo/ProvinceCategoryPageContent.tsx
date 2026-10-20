@@ -25,7 +25,7 @@ export function ProvinceCategoryPageContent({ data }: ProvinceCategoryPageConten
           { label: catName },
         ]}
       />
-      <h1 className="text-2xl md:text-3xl font-bold mt-4 mb-4">
+      <h1 className="mt-5 mb-4 text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-olive [text-wrap:balance] md:text-[46px]">
         {getProvinceCategoryH1(province, categorySlug)}
       </h1>
       <p className="text-muted-foreground mb-8 max-w-2xl">

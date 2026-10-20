@@ -105,7 +105,7 @@ export default async function LugarPage({ params }: LugarPageProps) {
           <div className="space-y-8 px-5 pt-6 lg:space-y-10 lg:px-0 lg:pt-8">
             <header>
               {/* En la compu el nombre va en Fraunces itálica, como en las tarjetas. */}
-              <h1 className="text-[32px] font-bold leading-tight tracking-tight text-[#1F4D35] lg:font-serif lg:text-[52px] lg:font-medium lg:italic lg:leading-[1.0] lg:tracking-[-0.02em] lg:text-[#2D4A34] lg:[text-wrap:balance]">
+              <h1 className="font-serif text-[34px] font-medium italic leading-[1.05] tracking-[-0.02em] text-[#2D4A34] [text-wrap:balance] lg:text-[52px] lg:leading-[1.0]">
                 {place.name}
               </h1>
               {categoryLine ? (
@@ -119,7 +119,7 @@ export default async function LugarPage({ params }: LugarPageProps) {
                   className="mt-2 flex items-center gap-1.5 text-base text-[#1F4D35]"
                 >
                   {line.hasScore ? (
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    <Star className="h-4 w-4 fill-[#C85A2E] text-[#C85A2E]" />
                   ) : null}
                   <span className={line.hasScore ? "font-semibold" : "text-[#5F6B63]"}>
                     {line.text}

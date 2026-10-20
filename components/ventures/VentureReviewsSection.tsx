@@ -132,7 +132,7 @@ export function VentureReviewsSection({
                   key={i}
                   className={`h-3 w-3 ${
                     i <= Math.round(avgRating)
-                      ? "fill-amber-400 text-amber-400"
+                      ? "fill-[#C85A2E] text-[#C85A2E]"
                       : "text-muted-foreground/20"
                   }`}
                 />
@@ -218,7 +218,7 @@ export function VentureReviewsSection({
                         key={i}
                         className={`h-3 w-3 ${
                           i <= review.rating
-                            ? "fill-amber-400 text-amber-400"
+                            ? "fill-[#C85A2E] text-[#C85A2E]"
                             : "text-muted-foreground/15"
                         }`}
                       />

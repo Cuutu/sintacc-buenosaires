@@ -53,7 +53,7 @@ export function getPlaceSafety(place: IPlace): PlaceCardSafety {
   }
   if (level === "gf_options") {
     return {
-      label: "Tiene opciones",
+      label: "Con opciones",
       accent: PLACE_CARD.terracotta,
       badgeBg: "rgba(200,90,46,0.12)",
       badgeBorder: "rgba(200,90,46,0.28)",

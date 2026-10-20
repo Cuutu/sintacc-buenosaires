@@ -120,7 +120,7 @@ export function FeaturedCard({ place }: FeaturedCardProps) {
         <div className="mt-3 flex min-h-[1.25rem] flex-wrap items-center gap-1.5">
           {hasCelimapRating ? (
             <>
-              <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
+              <Star className="h-4 w-4 shrink-0 fill-[#C85A2E] text-[#C85A2E]" aria-hidden />
               <span className="text-sm font-semibold">
                 {stats.avgRating?.toFixed(1) ?? "—"}
               </span>
