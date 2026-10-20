@@ -119,7 +119,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] bg-[#1F3527] shadow-[0_18px_40px_-14px_rgba(20,34,25,0.65)] ring-1 ring-black/5 sm:left-3 sm:right-3"
+      className="fixed left-2 right-2 z-50 mx-auto max-w-[440px] rounded-[2rem] bg-[#1F3527] shadow-[0_18px_40px_-14px_rgba(20,34,25,0.65)] ring-1 ring-[#F7F3EB]/15 sm:left-3 sm:right-3"
       style={{
         bottom: "calc(var(--bottom-nav-float-gap) + var(--bottom-nav-edge))",
       }}

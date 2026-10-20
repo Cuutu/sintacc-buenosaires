@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { signInWithGoogle } from "@/lib/native-sign-in"
 import { Button } from "@/components/ui/button"
-import { LogOut, LogIn, Shield, Heart } from "lucide-react"
+import { LogIn } from "lucide-react"
+import { UserMenu } from "@/components/nav/UserMenu"
 import { features } from "@/lib/features"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { cn } from "@/lib/utils"
@@ -81,29 +82,12 @@ export function Navbar() {
 
           <div className="flex shrink-0 items-center justify-self-end gap-1">
             {session?.user?.id ? (
-              <>
-                {features.favorites && (
-                  <Link href="/favoritos">
-                    <Button variant="ghost" size="icon" aria-label="Favoritos" className="h-10 w-10 min-h-[40px] min-w-[40px] rounded-full text-olive">
-                      <Heart className="h-5 w-5" strokeWidth={1.75} />
-                    </Button>
-                  </Link>
-                )}
-                {session.user.role === "admin" && (
-                  <Link href="/admin">
-                    <Button variant="ghost" size="sm" className="min-h-[40px] rounded-full text-olive" title="Panel de administración">
-                      <Shield className="h-5 w-5 mr-1.5" strokeWidth={1.75} />
-                      <span className="hidden lg:inline">Admin</span>
-                    </Button>
-                  </Link>
-                )}
-                <span className={cn("hidden text-sm text-muted-foreground xl:inline", compact && "xl:hidden")}>
-                  {session.user.name}
-                </span>
-                <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Cerrar sesión" className="h-10 w-10 min-h-[40px] min-w-[40px] rounded-full text-olive">
-                  <LogOut className="h-5 w-5" strokeWidth={1.75} />
-                </Button>
-              </>
+              <UserMenu
+                name={session.user.name}
+                isAdmin={session.user.role === "admin"}
+                showFavorites={features.favorites}
+                compact={compact}
+              />
             ) : (
               <>
                 <Button
