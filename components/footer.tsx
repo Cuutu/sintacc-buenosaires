@@ -19,7 +19,7 @@ const INFO_LINKS = [
   { href: "/que-es-celimap", label: "Qué es CeliMap" },
   { href: "/sobre-nosotros", label: "Sobre nosotros" },
   { href: "/como-funciona", label: "Cómo funciona" },
-  { href: "/como-verificamos-los-lugares", label: "Cómo verificamos la información" },
+  { href: "/como-verificamos-los-lugares", label: "Cómo trabajamos la información" },
   { href: "/por-que-usar-celimap", label: "Por qué usar CeliMap" },
   { href: "/guias", label: "Guías" },
 ] as const
@@ -133,9 +133,6 @@ export function Footer() {
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               <Link href="/contacto" className={linkClass}>
                 Contacto
-              </Link>
-              <Link href="/sobre-nosotros" className={linkClass}>
-                Sobre nosotros
               </Link>
               <Link href="/privacidad" className={linkClass}>
                 Privacidad

@@ -1,6 +1,7 @@
 import { Globe, MapPin, Phone } from "lucide-react"
 import { placeCardClass } from "./place-detail-ui"
 import { PlaceHoursToggle } from "./PlaceHoursToggle"
+import { formatPhoneForDisplay } from "@/lib/phone-display"
 
 interface PlaceInfoCardProps {
   address: string
@@ -42,7 +43,7 @@ export function PlaceInfoCard({
         {phone ? (
           <a href={`tel:${phone}`} className="flex items-center gap-3 py-4 hover:opacity-80">
             <Phone className="h-5 w-5 shrink-0 text-[#1F4D35]" />
-            <span className="text-base text-[#1F4D35]">{phone}</span>
+            <span className="text-base text-[#1F4D35]">{formatPhoneForDisplay(phone)}</span>
           </a>
         ) : null}
 

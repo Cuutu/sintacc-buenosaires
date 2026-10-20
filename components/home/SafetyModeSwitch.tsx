@@ -40,7 +40,7 @@ export function SafetyModeSwitch() {
     >
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-extrabold leading-tight text-[#F7F3EB]">
-          Sólo 100% sin TACC
+          Solo 100% sin TACC
         </span>
         <span className="mt-0.5 block text-[12px] leading-snug text-[#F7F3EB]/65">
           El mapa oculta los lugares con opciones

@@ -220,7 +220,7 @@ export function ChatWidget() {
           <div
             ref={hintRef}
             role="status"
-            aria-label="CeliBOT"
+            aria-label="CeliBot"
             className={cn(
               "celimap-fab-hint absolute bottom-[calc(100%+10px)] right-0 z-[2] w-max max-w-[min(220px,calc(100vw-5rem))] rounded-[16px] bg-white px-3.5 py-2 pr-7 text-left shadow-[0_4px_16px_rgba(0,0,0,0.12)]",
               hintLeaving && "celimap-fab-hint-leave",

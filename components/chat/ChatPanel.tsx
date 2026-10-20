@@ -326,7 +326,7 @@ function ChatPanelLive({
         variant === "widget" && "md:rounded-[20px] md:shadow-[0_8px_28px_-8px_rgba(31,77,53,0.35)]"
       )}
       role={variant === "widget" ? "dialog" : "region"}
-      aria-label="CeliBOT"
+      aria-label="CeliBot"
       aria-modal={variant === "widget" || undefined}
     >
       <header
@@ -358,7 +358,7 @@ function ChatPanelLive({
           />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[16px] font-bold leading-tight text-white">CeliBOT</p>
+          <p className="truncate text-[16px] font-bold leading-tight text-white">CeliBot</p>
           <p className="mt-0.5 text-[11px] leading-snug text-white/60">
             Puede cometer errores · Confirmá siempre en el lugar
           </p>
@@ -368,7 +368,7 @@ function ChatPanelLive({
             type="button"
             onClick={onClose}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-            aria-label="Cerrar CeliBOT"
+            aria-label="Cerrar CeliBot"
           >
             <X className="h-5 w-5" strokeWidth={2.2} />
           </button>

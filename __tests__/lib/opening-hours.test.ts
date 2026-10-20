@@ -258,7 +258,7 @@ describe("horarios reales de Google y manuales que antes fallaban", () => {
     expect(isOpenNow(hours, new Date("2026-10-03T03:15:00.000Z"))).toBe(true)
     /** Sábado 3 oct 02:00 AR: cerrado */
     expect(isOpenNow(hours, new Date("2026-10-03T05:00:00.000Z"))).toBe(false)
-    expect(getOpenStatusLabel(hours, WEDNESDAY_2PM)).toBe("Cierra a las 0:30")
+    expect(getOpenStatusLabel(hours, WEDNESDAY_2PM)).toBe("Cierra a las 00:30")
   })
 
   it("Google omite p.m. en la apertura: '7:00 – 11:00 p.m.' es de 19 a 23", () => {

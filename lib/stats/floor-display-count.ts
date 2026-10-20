@@ -94,7 +94,8 @@ export function formatPlacesInArgentinaLine(placesCount: unknown): string {
 
 /**
  * Display conservador para reseñas Google en home:
- * si hay ≥1000, mostrar "1000+" (nunca más que el total real).
+ * si hay ≥1000, mostrar "1.000+" (nunca más que el total real), con el punto de
+ * miles como el resto de los números ("+2.400 lugares").
  */
 export function floorGoogleReviewsDisplay(
   raw: unknown,
@@ -107,7 +108,7 @@ export function floorGoogleReviewsDisplay(
       raw: n,
       displayValue: 1000,
       showPlus: true,
-      formatted: "1000+",
+      formatted: `${(1000).toLocaleString(locale)}+`,
     }
   }
   return floorDisplayCount(n, locale)

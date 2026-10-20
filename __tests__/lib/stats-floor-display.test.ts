@@ -46,9 +46,9 @@ describe("floorDisplayCount", () => {
     expect(formatPlacesInArgentinaLine(null)).toBe("Lugares en Argentina")
   })
 
-  it("reseñas Google UI: piso conservador 1000+", () => {
-    expect(floorGoogleReviewsDisplay(2_008_153)?.formatted).toBe("1000+")
-    expect(floorGoogleReviewsDisplay(1000)?.formatted).toBe("1000+")
+  it("reseñas Google UI: piso conservador 1.000+", () => {
+    expect(floorGoogleReviewsDisplay(2_008_153)?.formatted).toBe("1.000+")
+    expect(floorGoogleReviewsDisplay(1000)?.formatted).toBe("1.000+")
     expect(floorGoogleReviewsDisplay(999)?.formatted).toBe("900+")
     expect(floorGoogleReviewsDisplay(87)?.formatted).toBe("87")
     expect(floorGoogleReviewsDisplay(2_008_153)!.displayValue).toBeLessThanOrEqual(

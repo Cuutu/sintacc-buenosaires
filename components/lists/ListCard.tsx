@@ -91,11 +91,13 @@ export function ListCard({
               <User className="h-3 w-3" />
               <span>{list.createdBy?.name ?? "Usuario"}</span>
               {!isPrivate ? (
-                <>
-                  <span>·</span>
-                  <Heart className="h-3 w-3" />
-                  <span>{list.likesCount}</span>
-                </>
+                list.likesCount > 0 ? (
+                  <>
+                    <span>·</span>
+                    <Heart className="h-3 w-3" />
+                    <span>{list.likesCount}</span>
+                  </>
+                ) : null
               ) : (
                 <>
                   <span>·</span>
@@ -132,12 +134,13 @@ export function ListCard({
                 <Lock className="h-3 w-3" />
                 Privada
               </span>
-            ) : (
+            ) : list.likesCount > 0 ? (
+              // Sin likes no se muestra el "♥ 0".
               <span className="flex shrink-0 items-center gap-1 text-sm text-white/90">
                 <Heart className="h-4 w-4 fill-current" />
                 {list.likesCount}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
         <CardContent className="p-4">

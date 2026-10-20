@@ -241,10 +241,11 @@ function evaluateIntervals(intervals: WeeklyInterval[], now: Date): ParsedOpenSt
   return { open: false, minutesUntilChange: upcoming.length ? Math.min(...upcoming) : undefined }
 }
 
+/** Siempre con dos dígitos ("08:00", "00:30"), como el formato canónico de horarios. */
 function formatClock(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60) % 24
   const m = totalMinutes % 60
-  return `${h}:${String(m).padStart(2, "0")}`
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
 }
 
 /** UTF-8 leído como Latin-1: "MiÃ©rcoles" → "Miércoles". */

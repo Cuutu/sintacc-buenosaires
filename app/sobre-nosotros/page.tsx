@@ -120,7 +120,7 @@ export default function SobreNosotrosPage() {
           </Link>{" "}
           y{" "}
           <Link href="/como-verificamos-los-lugares" className="text-primary hover:underline">
-            Cómo verificamos los lugares
+            Cómo trabajamos la información de los lugares
           </Link>
           .
         </p>

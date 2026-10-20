@@ -84,7 +84,7 @@ const STEPS: OnboardingStep[] = [
 const MODE_OPTIONS = [
   {
     only100: true,
-    title: "Sólo 100% sin TACC",
+    title: "Solo 100% sin TACC",
     detail: "Lugares que la comunidad marcó como 100% sin TACC.",
     pin: "/map/pin-dedicated.png",
   },
