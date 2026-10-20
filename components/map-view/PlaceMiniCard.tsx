@@ -101,7 +101,7 @@ export const PlaceMiniCard = memo(function PlaceMiniCard({
           )}
         </span>
         <span className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-[-0.015em] text-[#1F4D35]">
+          <h3 className="line-clamp-2 font-serif text-[18px] font-medium italic leading-[1.1] tracking-[-0.015em] text-[#1F4D35]">
             {place.name}
           </h3>
           {metaParts.length > 0 ? (

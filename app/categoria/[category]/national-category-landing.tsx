@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import { getPlacesByCategory } from "@/lib/seo/places"
@@ -54,9 +55,13 @@ export async function NationalCategoryLanding({ category, page }: { category: st
 
   if (total === 0) {
     return (
-      <div className="container py-12">
+      <div className="container max-w-5xl px-4 py-12 md:px-5">
         <p className="text-muted-foreground">
-          No hay {catName.toLowerCase()} registradas aun.
+          Todavía no hay lugares cargados en {catName.toLowerCase()}.{" "}
+          <Link href="/sugerir" className="font-semibold text-olive underline underline-offset-4">
+            Sugerí el primero
+          </Link>
+          .
         </p>
       </div>
     )

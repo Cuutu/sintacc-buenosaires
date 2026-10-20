@@ -336,14 +336,20 @@ export function OnboardingModal() {
     trackEvent("safety_mode_set", { source: "onboarding", mode: next ? "only100" : "all" })
   }
 
-  // En el último paso el botón "Seguir" se reemplaza por "Abrir el mapa": el foco se
-  // lleva ahí (si no, caía en el cartel y el navegador lo marcaba con un borde amarillo).
+  // En el último paso el botón "Seguir" se reemplaza por "Abrir el mapa". Con teclado
+  // el foco se lleva ahí; con el dedo o el mouse queda en el cartel, que ya no se marca
+  // (antes el navegador le dibujaba un borde amarillo).
   const finalCtaRef = useRef<HTMLAnchorElement>(null)
+  const keyboardNavRef = useRef(false)
   useEffect(() => {
-    if (open && step === STEPS.length - 1) finalCtaRef.current?.focus({ preventScroll: true })
+    if (open && step === STEPS.length - 1 && keyboardNavRef.current) {
+      finalCtaRef.current?.focus({ preventScroll: true })
+    }
   }, [open, step])
 
-  const goNext = () => {
+  const goNext = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    // detail === 0: el clic vino del teclado (Enter / Espacio).
+    keyboardNavRef.current = event?.detail === 0
     setDirection("forward")
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
@@ -444,14 +450,14 @@ export function OnboardingModal() {
               ref={finalCtaRef}
               href="/mapa"
               onClick={finish}
-              className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#B84420] text-base font-extrabold text-white shadow-[0_8px_18px_-10px_rgba(184,68,32,0.5)] hover:bg-[#9A3A1B]"
+              className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#B84420] text-base font-extrabold text-white shadow-[0_8px_18px_-10px_rgba(184,68,32,0.5)] hover:bg-[#9A3A1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
             >
               <MapPin className="h-4 w-4" />
               Abrir el mapa
             </Link>
           </div>
         ) : (
-          <div className="flex items-center justify-between border-t border-[#E8E1D6] px-5 py-4">
+          <div className="flex items-center justify-between border-t border-[#E8E1D6] px-5 py-5">
             <button
               type="button"
               onClick={goBack}
