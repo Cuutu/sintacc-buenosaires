@@ -44,7 +44,7 @@ export function ContaminationReportForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!session) {
-      router.push("/login")
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)
       return
     }
     setLoading(true)
@@ -141,7 +141,7 @@ export function ContaminationReportForm({
         ) : (
           <div className="py-4 text-center">
             <p className="mb-4">Iniciá sesión para reportar una contaminación</p>
-            <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+            <Button onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)}>Iniciar sesión</Button>
           </div>
         )}
       </DialogContent>

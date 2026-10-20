@@ -51,7 +51,15 @@ const HINT_HIDDEN_PATHS = new Set(["/", "/mapa"])
  */
 const FAB_HIDDEN_MOBILE_PATHS = new Set(["/", "/mapa"])
 
+/** El saludo sale una sola vez por dispositivo: después de verlo no vuelve en cada página. */
+const HINT_VISIBLE_MS = 6000
+
 function readHintDismissed(): boolean {
+  try {
+    if (localStorage.getItem(HINT_KEY) === "1") return true
+  } catch {
+    /* almacenamiento bloqueado */
+  }
   try {
     return sessionStorage.getItem(HINT_KEY) === "1"
   } catch {
@@ -60,6 +68,11 @@ function readHintDismissed(): boolean {
 }
 
 function persistHintDismissed() {
+  try {
+    localStorage.setItem(HINT_KEY, "1")
+  } catch {
+    /* private mode */
+  }
   try {
     sessionStorage.setItem(HINT_KEY, "1")
   } catch {
@@ -118,6 +131,14 @@ export function ChatWidget() {
     }
   }, [open])
 
+  // Apenas se muestra, cuenta como visto; y se va solo a los pocos segundos.
+  useEffect(() => {
+    if (!showHint) return
+    persistHintDismissed()
+    const timer = window.setTimeout(() => dismissHintRef.current(), HINT_VISIBLE_MS)
+    return () => window.clearTimeout(timer)
+  }, [showHint])
+
   const dismissHint = () => {
     if (hintDismissed || hintLeaving) return
     persistHintDismissed()
@@ -130,6 +151,8 @@ export function ChatWidget() {
       setHintReady(false)
     }, HINT_LEAVE_MS)
   }
+  const dismissHintRef = useRef(dismissHint)
+  dismissHintRef.current = dismissHint
 
   const show = (prompt?: string) => {
     setInitialPrompt(prompt)

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { MobileBrandBar, shouldShowMobileBrandBar } from "@/components/layout/MobileBrandBar"
 import { BottomNav } from "@/components/nav/BottomNav"
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { useIsMobile } from "@/components/map-view/useMediaQuery"
@@ -92,6 +93,7 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
         )}
         data-private-list-shell={isPrivateList ? "true" : undefined}
       >
+        {!hidePublicChrome && shouldShowMobileBrandBar(pathname) ? <MobileBrandBar /> : null}
         <AppErrorBoundary resetKey={routeKey} source="page-boundary">
           <E2EBoundaryProbe target="page" />
           {children}

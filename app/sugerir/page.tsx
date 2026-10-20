@@ -223,7 +223,7 @@ export default function SugerirPage() {
             <p className="text-muted-foreground">
               Iniciá sesión para sugerir un lugar
             </p>
-            <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+            <Button onClick={() => router.push("/login?callbackUrl=%2Fsugerir")}>Iniciar sesión</Button>
           </CardContent>
         </Card>
       </div>

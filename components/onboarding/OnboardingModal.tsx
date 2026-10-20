@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -96,9 +96,18 @@ const MODE_OPTIONS = [
   },
 ] as const
 
+/** El progreso se muestra una sola vez: esta barra (antes también "1 de 4" y puntitos). */
 function StepProgress({ current, total }: { current: number; total: number }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div
+      className="flex items-center gap-1.5"
+      role="progressbar"
+      aria-label="Progreso de la bienvenida"
+      aria-valuemin={1}
+      aria-valuemax={total}
+      aria-valuenow={current + 1}
+      aria-valuetext={`Paso ${current + 1} de ${total}`}
+    >
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
@@ -233,14 +242,15 @@ function SaveVisual() {
       <div className="rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-[#2D4A34]">Bröd · Panadería</p>
-            <p className="text-[10px] text-[#5F6B63]">Palermo, CABA</p>
+            {/* Ejemplo genérico: no un local real con reseñas inventadas. */}
+            <p className="text-xs font-semibold text-[#2D4A34]">Tu panadería favorita</p>
+            <p className="text-[10px] text-[#5F6B63]">Panadería · tu barrio</p>
           </div>
           <Heart className="h-5 w-5 shrink-0 fill-[#B84420] text-[#B84420]" />
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-[#5F6B63]">
           <Shield className="h-3 w-3 text-[#1F4D35]" />
-          100% sin TACC · 12 reseñas
+          100% sin TACC
         </div>
       </div>
       <p className="mt-2 text-center text-[10px] text-[#5F6B63]">Guardado en tus favoritos</p>
@@ -326,6 +336,13 @@ export function OnboardingModal() {
     trackEvent("safety_mode_set", { source: "onboarding", mode: next ? "only100" : "all" })
   }
 
+  // En el último paso el botón "Seguir" se reemplaza por "Abrir el mapa": el foco se
+  // lleva ahí (si no, caía en el cartel y el navegador lo marcaba con un borde amarillo).
+  const finalCtaRef = useRef<HTMLAnchorElement>(null)
+  useEffect(() => {
+    if (open && step === STEPS.length - 1) finalCtaRef.current?.focus({ preventScroll: true })
+  }, [open, step])
+
   const goNext = () => {
     setDirection("forward")
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
@@ -341,10 +358,7 @@ export function OnboardingModal() {
   const current = STEPS[step]
   const isFirst = step === 0
   const isLast = step === STEPS.length - 1
-  const tips =
-    current.id === "welcome"
-      ? [placesTip, ...current.tips.slice(1)]
-      : current.tips
+  const skipMode = current.id === "mode" && only100 === null
 
   const handleOpenChange = (next: boolean) => {
     if (!next) finish()
@@ -353,68 +367,81 @@ export function OnboardingModal() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[400px] gap-0 overflow-y-auto overflow-x-hidden rounded-[24px] border-[#E8E1D6] bg-[#F7F3EB] p-0 text-[#2D4A34] shadow-[0_24px_48px_-24px_rgba(31,77,53,0.35)] sm:rounded-[24px]">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[400px] gap-0 outline-none focus:outline-none focus-visible:outline-none overflow-y-auto overflow-x-hidden rounded-[24px] border-[#E8E1D6] bg-[#F7F3EB] p-0 text-[#2D4A34] shadow-[0_24px_48px_-24px_rgba(31,77,53,0.35)] sm:rounded-[24px]">
         <DialogTitle className="sr-only">Bienvenido a CeliMap</DialogTitle>
 
         <div className="px-5 pb-1 pt-5 pr-12">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#B84420]">
-              {current.label}
-            </p>
-            <p className="text-xs text-[#5F6B63]">
-              {step + 1} de {STEPS.length}
-            </p>
-          </div>
+          <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#B84420]">
+            {current.label}
+          </p>
           <StepProgress current={step} total={STEPS.length} />
         </div>
 
-        <div
-          key={current.id}
-          className={cn(
-            "px-5 pb-5 pt-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300",
-            direction === "forward"
-              ? "motion-safe:slide-in-from-right-4"
-              : "motion-safe:slide-in-from-left-4"
-          )}
-        >
-          {current.id === "welcome" ? (
-            <div className="mb-5">
-              <WelcomeVisual />
-            </div>
-          ) : current.id === "location" ? (
-            <div className="mb-5">
-              <LocationVisual />
-            </div>
-          ) : current.id === "save" ? (
-            <div className="mb-5">
-              <SaveVisual />
-            </div>
-          ) : null}
+        {/* Todos los pasos ocupan la misma celda: el cartel toma el alto del más largo y
+            no salta entre pasos. Los que no se ven quedan invisibles (sin foco ni lector). */}
+        <div className="grid">
+          {STEPS.map((stepDef, index) => {
+            const active = index === step
+            const stepTips =
+              stepDef.id === "welcome" ? [placesTip, ...stepDef.tips.slice(1)] : stepDef.tips
+            return (
+              <div
+                key={active ? `${stepDef.id}-active` : stepDef.id}
+                aria-hidden={!active}
+                className={cn(
+                  "[grid-area:1/1] px-5 pb-5 pt-4",
+                  active
+                    ? cn(
+                        "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300",
+                        direction === "forward"
+                          ? "motion-safe:slide-in-from-right-4"
+                          : "motion-safe:slide-in-from-left-4"
+                      )
+                    : "invisible"
+                )}
+              >
+                {stepDef.id === "welcome" ? (
+                  <div className="mb-5">
+                    <WelcomeVisual />
+                  </div>
+                ) : stepDef.id === "location" ? (
+                  <div className="mb-5">
+                    <LocationVisual />
+                  </div>
+                ) : stepDef.id === "save" ? (
+                  <div className="mb-5">
+                    <SaveVisual />
+                  </div>
+                ) : null}
 
-          {current.id === "welcome" ? null : (
-            <h3 className="mb-2 font-display text-[22px] font-extrabold leading-tight tracking-[-0.02em] text-[#1F4D35]">
-              {current.title}
-            </h3>
-          )}
-          <p className="mb-4 text-sm leading-relaxed text-[#5F6B63]">{current.description}</p>
+                {stepDef.id === "welcome" ? null : (
+                  <h3 className="mb-2 font-display text-[22px] font-extrabold leading-tight tracking-[-0.02em] text-[#1F4D35]">
+                    {stepDef.title}
+                  </h3>
+                )}
+                <p className="mb-4 text-sm leading-relaxed text-[#5F6B63]">{stepDef.description}</p>
 
-          {current.id === "mode" ? (
-            <ModePicker value={only100} onChange={chooseMode} />
-          ) : (
-            <ul className="space-y-2 rounded-[16px] border border-[#E8E1D6] bg-[#FDFBF7] p-3">
-              {tips.map((tip) => (
-                <li key={tip} className="flex items-start gap-2 text-xs text-[#2D4A34]">
-                  <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B84420]" />
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+                {stepDef.id === "mode" ? (
+                  <ModePicker value={only100} onChange={chooseMode} />
+                ) : (
+                  <ul className="space-y-2 rounded-[16px] border border-[#E8E1D6] bg-[#FDFBF7] p-3">
+                    {stepTips.map((tip) => (
+                      <li key={tip} className="flex items-start gap-2 text-xs text-[#2D4A34]">
+                        <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B84420]" />
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {isLast ? (
           <div className="border-t border-[#E8E1D6] p-4">
             <Link
+              ref={finalCtaRef}
               href="/mapa"
               onClick={finish}
               className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#B84420] text-base font-extrabold text-white shadow-[0_8px_18px_-10px_rgba(184,68,32,0.5)] hover:bg-[#9A3A1B]"
@@ -440,24 +467,18 @@ export function OnboardingModal() {
               <ChevronLeft className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-1.5">
-              {STEPS.map((s, i) => (
-                <span
-                  key={s.id}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-300",
-                    i === step ? "w-5 bg-[#B84420]" : "w-1.5 bg-[#E8E1D6]"
-                  )}
-                />
-              ))}
-            </div>
-
+            {/* Sin elegir modo, "Saltear" es secundario: el botón fuerte es elegir. */}
             <button
               type="button"
               onClick={goNext}
-              className="flex h-11 items-center justify-center gap-1 rounded-full bg-[#B84420] pl-5 pr-4 text-sm font-extrabold text-white transition-colors hover:bg-[#9A3A1B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]"
+              className={cn(
+                "flex h-11 items-center justify-center gap-1 rounded-full pl-5 pr-4 text-sm font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
+                skipMode
+                  ? "border border-[#E8E1D6] bg-[#FDFBF7] text-[#2D4A34] hover:border-[#2D4A34]/25"
+                  : "bg-[#B84420] text-white hover:bg-[#9A3A1B]"
+              )}
             >
-              {current.id === "mode" && only100 === null ? "Saltear" : "Seguir"}
+              {skipMode ? "Saltear" : "Seguir"}
               <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
             </button>
           </div>

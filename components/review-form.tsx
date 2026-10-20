@@ -34,7 +34,7 @@ export function ReviewForm({ placeId, onSuccess }: ReviewFormProps) {
       <Card>
         <CardContent className="py-8 text-center">
           <p className="mb-4">Debes iniciar sesión para escribir una reseña</p>
-          <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+          <Button onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)}>Iniciar sesión</Button>
         </CardContent>
       </Card>
     )

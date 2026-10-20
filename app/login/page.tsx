@@ -16,6 +16,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { trackEvent } from "@/lib/analytics"
 
+/** Por qué se llegó al login, según a dónde vuelve: antes /favoritos mandaba acá sin decir nada. */
+function loginReason(callbackUrl: string): string | null {
+  if (callbackUrl.startsWith("/favoritos")) return "Para ver tus favoritos, iniciá sesión."
+  if (callbackUrl.startsWith("/listas")) return "Para ver y armar tus listas, iniciá sesión."
+  if (callbackUrl.startsWith("/sugerir")) return "Para sugerir un lugar, iniciá sesión."
+  if (callbackUrl.startsWith("/lugar/"))
+    return "Para guardar lugares o dejar una reseña, iniciá sesión."
+  if (callbackUrl.startsWith("/emprendimientos/")) return "Para dejar una reseña, iniciá sesión."
+  return null
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<LoginLoadingState />}>
@@ -44,6 +55,7 @@ function LoginContent() {
 
     return "/perfil"
   }, [searchParams])
+  const reason = loginReason(callbackUrl)
 
   useEffect(() => {
     let cancelled = false
@@ -146,6 +158,14 @@ function LoginContent() {
           <CardTitle className="text-center">Iniciar sesión</CardTitle>
         </CardHeader>
         <CardContent>
+          {reason ? (
+            <p
+              data-testid="login-reason"
+              className="mb-4 rounded-[14px] border border-[#E6DFD2] bg-[#F7F3EB] px-3 py-2.5 text-center text-sm font-semibold text-[#2D4A34]"
+            >
+              {reason}
+            </p>
+          ) : null}
           <p className="mb-6 text-center text-muted-foreground">
             {showApple
               ? "Iniciá sesión con Apple o Google para acceder a favoritos, listas y reseñas"
@@ -167,10 +187,11 @@ function LoginContent() {
             <Button
               type="button"
               onClick={() => void handleGoogleSignIn()}
-              className="login-oauth-btn h-12 min-h-[48px] w-full rounded-lg"
+              // Blanco con borde, como piden las guías de Google (antes era terracota).
+              className="login-oauth-btn h-12 min-h-[48px] w-full rounded-lg border border-[#DADCE0] bg-white font-semibold text-[#1F1F1F] hover:bg-[#F8F9FA]"
               disabled={busy}
               size="lg"
-              variant={showApple ? "outline" : "default"}
+              variant="outline"
               aria-label="Continuar con Google"
               data-testid="google-signin-button"
               data-provider="google"

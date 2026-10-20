@@ -132,7 +132,7 @@ export default function FavoritosPage() {
     if (authView.kind === "unauthenticated") {
       if (redirectedRef.current) return
       redirectedRef.current = true
-      router.replace("/login")
+      router.replace("/login?callbackUrl=%2Ffavoritos")
       return
     }
     if (authView.kind === "ready") {

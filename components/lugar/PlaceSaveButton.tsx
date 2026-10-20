@@ -25,7 +25,7 @@ export function PlaceSaveButton({ placeId, variant, className }: PlaceSaveButton
 
   const toggle = async () => {
     if (!session) {
-      router.push("/login")
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)
       return
     }
     if (!features.favorites) return
