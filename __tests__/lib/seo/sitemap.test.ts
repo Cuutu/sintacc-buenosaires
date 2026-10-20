@@ -91,6 +91,17 @@ describe("sitemap static pages", () => {
     expect(staticBlock).toContain("${base}/guias")
     expect(staticBlock).not.toContain("/explorar")
   })
+
+  it("no lista las variantes de /mapa (su canónica es /mapa)", () => {
+    const staticBlock = sitemapSrc.slice(
+      sitemapSrc.indexOf("export function buildSitemapStaticPages"),
+      sitemapSrc.indexOf("function entry")
+    )
+    expect(staticBlock).toContain("${base}/mapa`")
+    for (const variant of ["mapa-sin-tacc", "mapa-celiaco", "mapa-para-celiacos"]) {
+      expect(staticBlock).not.toContain(`\${base}/${variant}\``)
+    }
+  })
 })
 
 describe("getPublishedGuides slugs", () => {

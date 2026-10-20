@@ -33,21 +33,8 @@ export function buildSitemapStaticPages(
       changeFrequency: "daily",
       priority: 0.95,
     }),
-    entry(`${base}/mapa-sin-tacc`, {
-      lastModified: staticPageLastModified("/mapa-sin-tacc"),
-      changeFrequency: "weekly",
-      priority: 0.92,
-    }),
-    entry(`${base}/mapa-celiaco`, {
-      lastModified: staticPageLastModified("/mapa-celiaco"),
-      changeFrequency: "weekly",
-      priority: 0.92,
-    }),
-    entry(`${base}/mapa-para-celiacos`, {
-      lastModified: staticPageLastModified("/mapa-para-celiacos"),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    }),
+    // /mapa-sin-tacc, /mapa-celiaco y /mapa-para-celiacos no van: su canónica es /mapa
+    // (__tests__/lib/seo/mapa-canonical.test.ts) y el sitemap solo lleva canónicas.
     entry(`${base}/sugerir`, {
       lastModified: staticPageLastModified("/sugerir"),
       changeFrequency: "monthly",
