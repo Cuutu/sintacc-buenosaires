@@ -3,6 +3,7 @@ import {
   argentinaPlaceMongoFilter,
   AR_PROVINCE_SLUGS,
   buildNationalCategoryMongoQuery,
+  isOutsideArgentina,
 } from "@/lib/seo/argentina-place"
 import { PROVINCES } from "@/lib/seo/provinces"
 import { buildSeoPages, type SitemapPlace } from "@/lib/seo/sitemap-pages"
@@ -159,5 +160,33 @@ describe("buildSeoPages categorías nacionales solo AR", () => {
     expect(src).not.toMatch(/B[uú]zios/)
     expect(src).not.toMatch(/Salvador/)
     expect(src).not.toMatch(/Brasil/)
+  })
+})
+
+describe("isOutsideArgentina (sitemap de fichas)", () => {
+  it("saca Nueva York, Cabo Frío y Búzios sin provincia argentina", () => {
+    expect(isOutsideArgentina({ province: null, location: { lat: 40.7128, lng: -74.006 } })).toBe(true)
+    expect(isOutsideArgentina({ province: "", location: { lat: -22.8794, lng: -42.0186 } })).toBe(true)
+    expect(isOutsideArgentina({ province: "rio-de-janeiro", location: { lat: -22.7469, lng: -41.8817 } })).toBe(true)
+  })
+
+  it("una ficha argentina sin provincia cargada no sale", () => {
+    expect(isOutsideArgentina({ province: null, location: { lat: -34.6037, lng: -58.3816 } })).toBe(false)
+    expect(isOutsideArgentina({ province: undefined, location: { lat: -54.8019, lng: -68.303 } })).toBe(false)
+  })
+
+  it("con provincia argentina no sale aunque las coordenadas estén mal", () => {
+    expect(isOutsideArgentina({ province: "caba", location: { lat: 40.7, lng: -74 } })).toBe(false)
+  })
+
+  it("sin coordenadas no se puede saber: no sale", () => {
+    expect(isOutsideArgentina({ province: null })).toBe(false)
+    expect(isOutsideArgentina({ province: null, location: { lat: null, lng: null } })).toBe(false)
+  })
+
+  it("app/sitemap.ts filtra las fichas con isOutsideArgentina y pide location", () => {
+    const src = readFileSync(path.join(__dirname, "../../../app/sitemap.ts"), "utf8")
+    expect(src).toMatch(/isIndexablePlaceSlug\(p\.slug\) && !isOutsideArgentina\(p\)/)
+    expect(src).toMatch(/locality: 1, location: 1/)
   })
 })

@@ -18,6 +18,7 @@ export interface SitemapPlace {
   neighborhood?: string
   province?: string
   locality?: string
+  location?: { lat?: number; lng?: number }
   updatedAt?: Date
 }
 

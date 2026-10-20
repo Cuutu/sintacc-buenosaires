@@ -32,3 +32,25 @@ export function buildNationalCategoryMongoQuery(type: string) {
     ...argentinaPlaceMongoFilter(),
   }
 }
+
+/** Caja aproximada de Argentina (de La Quiaca a Ushuaia, de los Andes al Atlántico). */
+const AR_BBOX = { minLat: -55.2, maxLat: -21.7, minLng: -73.7, maxLng: -53.5 } as const
+
+/**
+ * Sitemap de fichas: afuera solo lo que seguro no es de Argentina (Nueva York,
+ * Cabo Frío, Búzios): provincia que no está en PROVINCES y coordenadas fuera
+ * de la caja. Una ficha argentina sin provincia cargada sigue adentro; no se
+ * pierde por un dato incompleto. La ficha sigue publicada: solo sale del sitemap.
+ */
+export function isOutsideArgentina(place: {
+  province?: string | null
+  location?: { lat?: number | null; lng?: number | null } | null
+}): boolean {
+  if (isArgentinaPlace(place)) return false
+  const lat = place.location?.lat
+  const lng = place.location?.lng
+  if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return false
+  }
+  return lat < AR_BBOX.minLat || lat > AR_BBOX.maxLat || lng < AR_BBOX.minLng || lng > AR_BBOX.maxLng
+}

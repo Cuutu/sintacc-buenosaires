@@ -5,6 +5,7 @@ import { List } from "@/models/List"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath, isIndexablePlaceSlug } from "@/lib/place-url"
 import { buildSeoPages, dedupeUrls, type SitemapPlace } from "@/lib/seo/sitemap-pages"
+import { isOutsideArgentina } from "@/lib/seo/argentina-place"
 import {
   VENTURE_CATEGORY_LANDINGS,
 } from "@/lib/venture-seo"
@@ -163,11 +164,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const places = await Place.find(
       { status: "approved" },
-      { _id: 1, slug: 1, type: 1, types: 1, neighborhood: 1, province: 1, locality: 1, updatedAt: 1 }
+      { _id: 1, slug: 1, type: 1, types: 1, neighborhood: 1, province: 1, locality: 1, location: 1, updatedAt: 1 }
     ).lean()
     seoPages = dedupeUrls(buildSeoPages(base, places as SitemapPlace[]))
     placeUrls = (places as SitemapPlace[])
-      .filter((p) => isIndexablePlaceSlug(p.slug))
+      // Fichas fuera de Argentina (Nueva York, Cabo Frío) siguen publicadas pero no van al sitemap.
+      .filter((p) => isIndexablePlaceSlug(p.slug) && !isOutsideArgentina(p))
       .map((p) =>
         entry(`${base}${getPlacePath(p)}`, {
           lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
