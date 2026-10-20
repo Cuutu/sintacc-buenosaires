@@ -43,12 +43,14 @@ function HomeVentureCard({ venture, className }: { venture: HomeVenture; classNa
         <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-3">
           <h3 className="line-clamp-2 text-base font-extrabold leading-snug text-olive">{venture.name}</h3>
           {venture.sells ? (
-            <p className="mt-0.5 line-clamp-1 text-sm text-[#4D6554]">{venture.sells}</p>
+            <p className="mt-0.5 line-clamp-2 text-sm text-[#4D6554]">{venture.sells}</p>
           ) : null}
           {venture.zone ? (
             <p className="mt-auto flex min-w-0 items-center gap-1 pt-2 text-xs font-bold text-[#5E6A60]">
               <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-              <span className="truncate">{venture.zone}</span>
+              <span className="truncate" title={venture.zone}>
+                {venture.zone}
+              </span>
             </p>
           ) : null}
         </div>
@@ -107,7 +109,7 @@ export function EmprendimientosSection({ ventures = [] }: { ventures?: HomeVentu
       )}
 
       <div className="mt-5 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-6">
-        <Link href="/emprendimientos" className={cn(homeBtn.secondary, "w-full sm:w-[240px]")}>
+        <Link href="/emprendimientos" className={cn(homeBtn.secondary, "w-full sm:w-auto sm:min-w-[240px]")}>
           Ver emprendimientos
           <ArrowRight className="h-4 w-4" strokeWidth={2.2} aria-hidden />
         </Link>

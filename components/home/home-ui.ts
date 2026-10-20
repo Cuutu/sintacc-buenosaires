@@ -15,7 +15,7 @@
  * - link: texto subrayado con zona de toque de 44 px.
  */
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-[16px] px-6 font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[16px] px-6 font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
 
 export const homeBtn = {
   primary: `${base} h-12 bg-[#B84420] text-base text-white hover:bg-[#9A3A1B] focus-visible:ring-[#B84420]/40 focus-visible:ring-offset-[#F7F3EB]`,

@@ -57,11 +57,11 @@ export function CommunityBand({ stats, children }: { stats?: StatsApi | null; ch
         ) : null}
 
         <div className="mx-auto mt-8 flex max-w-xs flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row">
-          <Link href="/sugerir" className={cn(homeBtn.primary, "focus-visible:ring-offset-[#2D4A34] sm:w-[240px]")}>
+          <Link href="/sugerir" className={cn(homeBtn.primary, "focus-visible:ring-offset-[#2D4A34] sm:min-w-[240px]")}>
             <Plus className="h-4 w-4" strokeWidth={2.4} aria-hidden />
             Sugerir un lugar
           </Link>
-          <Link href="/mapa" className={cn(homeBtn.secondaryOnDark, "sm:w-[240px]")}>
+          <Link href="/mapa" className={cn(homeBtn.secondaryOnDark, "sm:min-w-[240px]")}>
             Ver el mapa
           </Link>
         </div>

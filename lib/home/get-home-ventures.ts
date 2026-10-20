@@ -20,9 +20,11 @@ export type HomeVenture = {
   category: string
   /** Qué venden: "Pastelería · Panificados". */
   sells: string
-  /** Zona tal como la cargaron ("CABA", "Zona norte, envíos a todo el país"). */
+  /** Zona corta: hasta dos partes, sin la provincia ni el país al final. */
   zone: string
   photo: string | null
+  /** false si solo cargaron formas de venta (ferias, envíos) y no qué productos hacen. */
+  knownProducts: boolean
 }
 
 type VentureRow = {
@@ -40,6 +42,23 @@ export const HOME_VENTURES_SHOW = 4
 const CANDIDATES = 40
 const TTL_MS = 60 * 60 * 1000
 
+/** La provincia o el país al final no aportan en una tarjeta chica. */
+const ZONE_TAIL = /^(provincia de )?(buenos aires|bs\.? ?as\.?|argentina)$/i
+
+/**
+ * Zona corta para la tarjeta: "Villa Ballester, San Martín, Provincia de Buenos Aires"
+ * → "Villa Ballester, San Martín". Sin el punto final que a veces cargan.
+ */
+export function shortVentureZone(zone: string | null | undefined): string {
+  const parts = formatVentureZone(zone)
+    .replace(/\.+$/, "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+  while (parts.length > 1 && ZONE_TAIL.test(parts[parts.length - 1])) parts.pop()
+  return parts.slice(0, 2).join(", ")
+}
+
 /** Son formas de venta, no productos: no van en "qué venden". */
 const NOT_PRODUCTS = new Set(["envios_domicilio", "ferias_retiro"])
 
@@ -56,20 +75,26 @@ export function toHomeVenture(row: VentureRow): HomeVenture {
     name: row.name.trim(),
     category: categories[0] ?? "panificados",
     sells,
-    zone: formatVentureZone(row.zone),
+    zone: shortVentureZone(row.zone),
     photo: getVentureCoverPhoto(row.photos),
+    knownProducts: products.length > 0,
   }
 }
 
 /**
- * Elige los de la home: primero los que tienen foto y, dentro de cada grupo, uno por
- * categoría antes de repetir (para que no salgan cuatro pastelerías). Respeta el orden
- * de entrada (los más nuevos primero).
+ * Elige los de la home: primero los que tienen foto y dicen qué hacen; dentro de cada
+ * grupo, uno por categoría antes de repetir (para que no salgan cuatro pastelerías).
+ * Respeta el orden de entrada (los más nuevos primero).
  */
 export function pickHomeVentures(ventures: HomeVenture[], max = HOME_VENTURES_SHOW): HomeVenture[] {
   const picked: HomeVenture[] = []
   const usedCategories = new Set<string>()
-  const groups = [ventures.filter((v) => v.photo), ventures.filter((v) => !v.photo)]
+  const groups = [
+    ventures.filter((v) => v.photo && v.knownProducts),
+    ventures.filter((v) => v.photo && !v.knownProducts),
+    ventures.filter((v) => !v.photo && v.knownProducts),
+    ventures.filter((v) => !v.photo && !v.knownProducts),
+  ]
 
   for (const group of groups) {
     for (const venture of group) {

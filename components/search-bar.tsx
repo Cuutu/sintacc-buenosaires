@@ -34,7 +34,7 @@ export function SearchBar({ className }: { className?: string }) {
       <Search className="h-5 w-5 shrink-0 text-olive" strokeWidth={2.1} aria-hidden />
       <input
         type="text"
-        placeholder="Buscá un lugar o una ciudad"
+        placeholder="Buscá un lugar o ciudad"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="min-w-0 flex-1 bg-transparent text-base font-bold text-olive outline-none placeholder:font-bold placeholder:text-olive/45"
