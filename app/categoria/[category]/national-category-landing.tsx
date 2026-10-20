@@ -6,6 +6,7 @@ import { getCategoryTitle, getCategoryDescription, getCategoryH1, getCategoryInt
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { Pagination } from "@/components/seo/Pagination"
+import { paginatedPath, paginatedTitle } from "@/lib/seo/pagination"
 import { CATEGORIES, isValidCategorySlug } from "@/lib/seo/cities"
 
 import { getBaseUrl } from "@/lib/base-url"
@@ -23,10 +24,11 @@ export async function nationalCategoryMetadata(
 
   const { total, pages } = await getPlacesByCategory(category, page)
 
-  const canonical = page === 1 ? `${BASE_URL}/${category}-sin-gluten` : `${BASE_URL}/${category}-sin-gluten?page=${page}`
+  const canonical = paginatedPath(`${BASE_URL}/${category}-sin-gluten`, page)
+  const title = paginatedTitle(getCategoryTitle(null, category), page)
 
   return {
-    title: getCategoryTitle(null, category),
+    title,
     description: getCategoryDescription(null, category, total),
     ...(total === 0 || (pages > 0 && page > pages) || (variant && page === 1)
       ? { robots: { index: false, follow: true } }
@@ -35,9 +37,9 @@ export async function nationalCategoryMetadata(
       canonical,
     },
     openGraph: {
-      title: getCategoryTitle(null, category),
+      title,
       description: getCategoryDescription(null, category, total),
-      url: page === 1 ? `${BASE_URL}/${category}-sin-gluten` : canonical,
+      url: canonical,
       type: "website",
       images: [OG_IMAGE],
     },

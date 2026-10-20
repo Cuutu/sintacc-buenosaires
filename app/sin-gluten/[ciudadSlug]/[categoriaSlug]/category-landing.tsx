@@ -15,6 +15,7 @@ import { SEOTextBlock } from "@/components/seo/SEOTextBlock"
 import { PlaceListWithFilters } from "@/components/seo/PlaceListWithFilters"
 import { CityPageJsonLd } from "@/components/seo/CityPageJsonLd"
 import { Pagination } from "@/components/seo/Pagination"
+import { paginatedPath, paginatedTitle } from "@/lib/seo/pagination"
 import { CATEGORIES } from "@/lib/seo/cities"
 import { getCityPageStats } from "@/lib/seo/places"
 
@@ -24,7 +25,7 @@ import { OG_IMAGE } from "@/lib/seo/og"
 
 const BASE_URL = getBaseUrl()
 
-/** Metadata de ciudad + categoría. `variant` = la ruta /filtrado (?page=): nunca indexable. */
+/** Metadata de ciudad + categoría. `variant` = la ruta /filtrado (?page=): ?page=N (N > 1) indexable con canónica propia. */
 export async function categoryLandingMetadata(
   ciudadSlug: string,
   categoriaSlug: string,
@@ -37,26 +38,28 @@ export async function categoryLandingMetadata(
   const { total, pages } = await getPlacesByCityAndCategory(ciudadSlug, categoriaSlug, page)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}/${categoriaSlug}`
-  const canonical = baseCanonical
+  // ?page=N tiene canónica propia (lib/seo/pagination.ts).
+  const canonical = paginatedPath(baseCanonical, page)
+  const title = paginatedTitle(getCategoryTitle(city, categoriaSlug), page)
 
   const decision = decideCityCategoryIndexing(total, ciudadSlug)
   const robots =
     decisionToRobots(decision) ||
     (pages > 0 && page > pages ? { index: false, follow: true } : undefined) ||
-    (page > 1 ? { index: false, follow: true } : undefined) ||
-    (variant ? { index: false, follow: true } : undefined)
+    // ?page=1 (o ?page=abc) es la misma página que la limpia.
+    (variant && page === 1 ? { index: false, follow: true } : undefined)
 
   return {
-    title: getCategoryTitle(city, categoriaSlug),
+    title,
     description: getCategoryDescription(city, categoriaSlug, total),
     ...(robots ? { robots } : {}),
     alternates: {
       canonical,
     },
     openGraph: {
-      title: getCategoryTitle(city, categoriaSlug),
+      title,
       description: getCategoryDescription(city, categoriaSlug, total),
-      url: baseCanonical,
+      url: canonical,
       type: "website",
       images: [OG_IMAGE],
     },

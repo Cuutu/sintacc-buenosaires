@@ -37,7 +37,9 @@ describe("landings SEO estáticas", () => {
     expect(src).toContain("searchParams")
   })
 
-  it("las variantes nunca son indexables", () => {
+  // Las variantes avisan que son /filtrado (variant = true): ?page=1 y ?barrio= quedan en
+  // noindex; ?page=N (N > 1) es indexable con canónica propia (ver pagination.test.ts).
+  it("las variantes pasan variant = true a la metadata", () => {
     expect(read("app/sin-gluten/[ciudadSlug]/filtrado/page.tsx")).toMatch(/cityLandingMetadata\([\s\S]*?,\s*true\)/)
     expect(read("app/sin-gluten/[ciudadSlug]/[categoriaSlug]/filtrado/page.tsx")).toMatch(
       /categoryLandingMetadata\([\s\S]*?,\s*true\)/

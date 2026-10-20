@@ -26,6 +26,7 @@ import { CityMapEmbed } from "@/components/seo/CityMapEmbed"
 import { EmptyCityPage } from "@/components/seo/EmptyCityPage"
 import { CityPageExtras } from "@/components/seo/CityPageExtras"
 import { Pagination } from "@/components/seo/Pagination"
+import { paginatedPath, paginatedTitle } from "@/lib/seo/pagination"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import {
   decideCityPageIndexing,
@@ -137,7 +138,8 @@ async function getRelatedPublicLists(citySlug: string) {
 
 /**
  * Metadata de la landing de ciudad. `variant` = la ruta /filtrado, que atiende
- * ?page= y ?barrio= (ver rewrites en next.config.js): nunca indexable.
+ * ?page= y ?barrio= (ver rewrites en next.config.js). ?page=N (N > 1) es
+ * indexable con canónica propia (lib/seo/pagination.ts); ?barrio= y ?page=1 no.
  */
 export async function cityLandingMetadata(
   ciudadSlug: string,
@@ -150,20 +152,20 @@ export async function cityLandingMetadata(
 
   const { total, pages } = await getPlacesByCity(ciudadSlug, page, barrio)
   const stats = await getCityPageStatsCached(ciudadSlug)
-  const title = getCityTitle(city, stats)
+  const title = paginatedTitle(getCityTitle(city, stats), page)
   const description = getCityDescription(city, stats)
 
   const baseCanonical = `${BASE_URL}/sin-gluten/${ciudadSlug}`
-  // Canonical limpio: page>1 y filtros barrio no crean canónicos indexables distintos
-  const canonical = page === 1 && !barrio ? baseCanonical : baseCanonical
+  // ?page=N tiene canónica propia; ?barrio= sigue con la limpia.
+  const canonical = barrio ? baseCanonical : paginatedPath(baseCanonical, page)
 
   const decision = decideCityPageIndexing(total, ciudadSlug)
   const robots =
     decisionToRobots(decision) ||
     (pages > 0 && page > pages ? { index: false, follow: true } : undefined) ||
     (barrio ? { index: false, follow: true } : undefined) ||
-    (page > 1 ? { index: false, follow: true } : undefined) ||
-    (variant ? { index: false, follow: true } : undefined)
+    // ?page=1 (o ?page=abc) es la misma página que la limpia.
+    (variant && page === 1 ? { index: false, follow: true } : undefined)
 
   return {
     title,
@@ -173,7 +175,7 @@ export async function cityLandingMetadata(
     openGraph: {
       title,
       description,
-      url: baseCanonical,
+      url: canonical,
       type: "website",
       images: [OG_IMAGE],
     },
