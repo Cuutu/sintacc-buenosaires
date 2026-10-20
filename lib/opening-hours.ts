@@ -275,7 +275,14 @@ export function splitOpeningHoursLines(raw: string): string[] {
   if (!text) return []
   const byPunct = text.split(/[,;|\n]+/).map((part) => part.trim()).filter(Boolean)
   if (byPunct.length > 1) return byPunct
-  const byDay = text.split(DAY_LINE_SPLIT).map((part) => part.trim()).filter(Boolean)
+  const byDay: string[] = []
+  for (const part of text.split(DAY_LINE_SPLIT).map((p) => p.trim()).filter(Boolean)) {
+    const prev = byDay[byDay.length - 1]
+    // "Domingo a domingo", "lunes a viernes", "sábado y domingo": el segundo día sigue
+    // siendo parte del rango, no una línea nueva (antes quedaba "Domingo a" suelto).
+    if (prev && /(?:\b(?:a|al|y|hasta)|[-–—/])$/i.test(prev)) byDay[byDay.length - 1] = `${prev} ${part}`
+    else byDay.push(part)
+  }
   return byDay.length > 1 ? byDay : [text]
 }
 

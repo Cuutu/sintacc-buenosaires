@@ -78,6 +78,20 @@ describe("repairUtf8Mojibake", () => {
 })
 
 describe("splitOpeningHoursLines", () => {
+  it("no corta un rango de días en dos líneas", () => {
+    expect(splitOpeningHoursLines("Domingo a domingo: 8 am a 1 am")).toEqual([
+      "Domingo a domingo: 8 am a 1 am",
+    ])
+    expect(splitOpeningHoursLines("Lunes a viernes 9 a 18 Sábado y domingo 10 a 14")).toEqual([
+      "Lunes a viernes 9 a 18",
+      "Sábado y domingo 10 a 14",
+    ])
+    expect(splitOpeningHoursLines("Lunes - Viernes 9 a 18 Sábado 10 a 13")).toEqual([
+      "Lunes - Viernes 9 a 18",
+      "Sábado 10 a 13",
+    ])
+  })
+
   it("parte el bloque de días en líneas y repara encoding", () => {
     const raw =
       "Lunes - 8 a 20 horas Martes - 8 a 20 horas Mi\u00C3\u00A9rcoles - 8 a 20 horas Jueves - 8 a 20 horas"
