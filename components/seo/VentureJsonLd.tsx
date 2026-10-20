@@ -2,6 +2,7 @@ import { getBaseUrl } from "@/lib/base-url"
 import { getVentureSeoDescription } from "@/lib/venture-seo"
 import { normalizeInstagramUrl } from "@/lib/venture-contact"
 import type { VenturePublic } from "@/lib/ventures-server"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 type VentureJsonLdProps = {
   venture: VenturePublic
@@ -39,7 +40,7 @@ export function VentureJsonLd({ venture }: VentureJsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
     />
   )
 }

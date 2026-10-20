@@ -1,4 +1,5 @@
 import { getBaseUrl } from "@/lib/base-url"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 /**
  * JSON-LD para la landing de Argentina: ItemList con ciudades.
@@ -64,11 +65,11 @@ export function ArgentinaLandingJsonLd({ cities }: ArgentinaLandingJsonLdProps) 
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
       />
     </>
   )

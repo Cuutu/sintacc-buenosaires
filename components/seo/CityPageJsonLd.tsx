@@ -3,6 +3,7 @@ import type { PlaceSEO } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
 import { INDEXING_THRESHOLDS } from "@/lib/seo/indexing-config"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 const BASE_URL = getBaseUrl()
 
@@ -95,18 +96,18 @@ export function CityPageJsonLd({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }}
       />
       {itemListSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListSchema) }}
         />
       )}
       {faqSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
         />
       )}
     </>

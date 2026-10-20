@@ -5,6 +5,8 @@ import { getProvinceBySlug } from "@/lib/seo/provinces"
 import { getCityBySlug } from "@/lib/seo/cities"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getMapsLink, getPublicWebsite } from "@/lib/place-website"
+import { toOpeningHoursSpecification } from "@/lib/opening-hours"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -121,8 +123,11 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     }
   }
 
-  if (place.openingHours) {
-    ;(schema as any).openingHours = place.openingHours
+  // El texto libre no es válido en `openingHours`: va como OpeningHoursSpecification
+  // (mismo parser que "Abierto/Cerrado"). Si no se puede interpretar, no va.
+  const hoursSpec = toOpeningHoursSpecification(place.openingHours)
+  if (hoursSpec) {
+    ;(schema as any).openingHoursSpecification = hoursSpec
   }
 
   // BreadcrumbList: Argentina → Provincia → Ciudad → Lugar
@@ -161,11 +166,11 @@ export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }}
       />
     </>
   )

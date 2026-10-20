@@ -2,6 +2,7 @@ import type { ProvinceConfig } from "@/lib/seo/provinces"
 import type { PlaceSEO } from "@/lib/seo/places"
 import { getBaseUrl } from "@/lib/base-url"
 import { getPlacePath } from "@/lib/place-url"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 const BASE_URL = getBaseUrl()
 
@@ -46,9 +47,9 @@ export function ProvincePageJsonLd({ province, places }: ProvincePageJsonLdProps
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListSchema) }} />
     </>
   )
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/seo/indexing-rules"
 import { CELIMAP_NAME } from "@/lib/seo/brand"
 import { OG_IMAGE } from "@/lib/seo/og"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 interface ListaLayoutProps {
   params: Promise<{ id: string }>
@@ -152,11 +153,11 @@ async function PublicListJsonLd({ id }: { id: string }) {
       <>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemList) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumb) }}
         />
       </>
     )

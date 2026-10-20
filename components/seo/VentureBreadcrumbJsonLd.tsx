@@ -1,4 +1,5 @@
 import { getBaseUrl } from "@/lib/base-url"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 
 type VentureBreadcrumbJsonLdProps = {
   ventureName: string
@@ -30,7 +31,7 @@ export function VentureBreadcrumbJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
     />
   )
 }

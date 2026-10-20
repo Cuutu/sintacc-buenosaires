@@ -302,6 +302,57 @@ export function hasInterpretableOpeningHours(openingHours: string | undefined | 
   return parseWeeklyIntervals(openingHours) !== null
 }
 
+const SCHEMA_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const
+/** Orden de salida: de lunes a domingo, como se lee el horario. */
+const SCHEMA_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+export type OpeningHoursSpecification = {
+  "@type": "OpeningHoursSpecification"
+  dayOfWeek: (typeof SCHEMA_DAYS)[number][]
+  opens: string
+  closes: string
+}
+
+/**
+ * Horario → `openingHoursSpecification` de schema.org para el JSON-LD de la ficha.
+ * El texto libre ("Lun–Vie 08:00–12:30…") no es válido en `openingHours`.
+ * Usa el mismo parser que "Abierto/Cerrado", así el marcado coincide con lo que
+ * se ve. No depende de la hora actual: se puede usar en el render ISR.
+ * Null si no se puede interpretar (mejor sin horario que con uno inventado).
+ * Los días cerrados no van (schema.org los toma como cerrados); 24 h es 00:00–23:59
+ * y un cierre de madrugada va con `closes` antes que `opens`, como pide Google.
+ */
+export function toOpeningHoursSpecification(
+  openingHours: string | undefined | null
+): OpeningHoursSpecification[] | null {
+  const intervals = parseWeeklyIntervals(openingHours)
+  if (!intervals || intervals.length === 0) return null
+
+  const groups = new Map<string, Set<number>>()
+  for (const iv of intervals) {
+    const day = Math.floor(iv.start / DAY_MINUTES) % 7
+    const opens = formatClock(iv.start % DAY_MINUTES)
+    const closes = iv.end - iv.start >= DAY_MINUTES ? "23:59" : formatClock(iv.end % DAY_MINUTES)
+    const key = `${opens}|${closes}`
+    const days = groups.get(key) ?? new Set<number>()
+    days.add(day)
+    groups.set(key, days)
+  }
+
+  const firstDay = (days: Set<number>) => Math.min(...Array.from(days).map((d) => SCHEMA_DAY_ORDER.indexOf(d)))
+  return Array.from(groups.entries())
+    .sort(([a, da], [b, db]) => firstDay(da) - firstDay(db) || a.localeCompare(b))
+    .map(([key, days]) => {
+      const [opens, closes] = key.split("|")
+      return {
+        "@type": "OpeningHoursSpecification" as const,
+        dayOfWeek: SCHEMA_DAY_ORDER.filter((d) => days.has(d)).map((d) => SCHEMA_DAYS[d]),
+        opens,
+        closes,
+      }
+    })
+}
+
 /**
  * Parsea horarios comunes y retorna si está abierto.
  * Retorna null si no se puede interpretar.
