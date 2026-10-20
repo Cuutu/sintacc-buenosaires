@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import {
   getCategoryLabel,
-  getCategoryLabels,
   getModalityLabel,
   getSafetyBadge,
   getVentureCategories,
@@ -19,6 +18,7 @@ import {
 import { getCategoryLandingPath, getZoneLandingPath, VENTURE_ZONE_LANDINGS } from "@/lib/venture-seo"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
 import { isArgentinaVentureZone } from "@/lib/venture-argentina"
+import { formatVentureZone } from "@/lib/venture-zone-display"
 import { getBaseUrl } from "@/lib/base-url"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
 import { VentureShareButton } from "@/components/ventures/VentureShareButton"
@@ -73,8 +73,8 @@ type VentureProfileContentProps = {
 export function VentureProfileContent({ venture, related = [] }: VentureProfileContentProps) {
   const photo = getVentureCoverPhoto(venture.photos)
   const categoryIds = getVentureCategories(venture)
-  const categoryLabel = getCategoryLabels(categoryIds).join(" · ")
-  const { label: safetyLabel, dot: safetyDot } = getSafetyBadge("fully_gf")
+  const { label: safetyLabel } = getSafetyBadge("fully_gf")
+  const zoneLabel = formatVentureZone(venture.zone)
   const links = parseVentureLinks({
     contact: venture.contact,
     purchaseChannels: venture.purchaseChannels,
@@ -112,13 +112,8 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               sizes="(max-width: 1024px) 100vw, 480px"
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1F4D35]/10 px-6 text-center">
-              <VentureCategoryIcon
-                category={venture.category}
-                className="mb-3 h-8 w-8 text-[#1F4D35]/50"
-              />
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#5F6B63]">Sin foto</p>
-              <p className="mt-2 text-sm font-medium text-[#1F4D35]/80">{categoryLabel}</p>
+            <div className="celi-trigo-crema absolute inset-0 flex items-center justify-center bg-[#2D4A34]">
+              <VentureCategoryIcon category={venture.category} className="h-10 w-10 text-[#F7F3EB]/80" />
             </div>
           )}
           {photo && (
@@ -133,7 +128,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                 <p className="text-sm leading-relaxed text-[#5F6B63]">
                   Este emprendimiento está fuera de Argentina (
-                  <strong className="text-[#1F4D35]">{venture.zone}</strong>, según datos cargados).
+                  <strong className="text-[#1F4D35]">{zoneLabel}</strong>, según datos cargados).
                   Lo listamos en{" "}
                   <Link
                     href="/emprendimientos#fuera-de-argentina"
@@ -146,41 +141,19 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
               </div>
             ) : null}
 
-            <div className="flex flex-wrap gap-2">
-              {categoryIds.map((id) => (
-                <Badge key={id} variant="outline" className="border-primary/30 text-primary">
-                  <Link href={getCategoryLandingPath(id)} className="hover:underline">
-                    {getCategoryLabel(id)}
-                  </Link>
-                </Badge>
-              ))}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-olive/10 bg-olive/5 px-2.5 py-0.5 text-xs font-medium">
-                <span aria-hidden>{safetyDot}</span>
-                {safetyLabel}
-              </span>
-              {venture.modalities?.map((m) => (
-                <Badge key={m} variant="secondary" className="text-xs">
-                  {getModalityLabel(m)}
-                </Badge>
-              ))}
-            </div>
-
-            <p className="text-xs leading-relaxed text-[#5F6B63]">
-              {VENTURE_CATALOG_INTRO} {VENTURE_SAFETY_DISCLAIMER}
-            </p>
-
+            {/* El nombre va primero: es lo que vino a buscar quien llega desde Google. */}
             <div>
-              <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl lg:font-serif lg:text-[46px] lg:font-medium lg:italic lg:leading-[1.0] lg:tracking-[-0.02em] lg:text-[#2D4A34]">
+              <h1 className="break-words text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] text-[#2D4A34] [text-wrap:balance] lg:font-serif lg:text-[46px] lg:font-medium lg:italic lg:leading-[1.0] lg:tracking-[-0.02em]">
                 {venture.name}
               </h1>
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground md:text-base">
                 <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
                 {zoneHref ? (
                   <Link href={zoneHref} className="hover:text-foreground hover:underline">
-                    {venture.zone}
+                    {zoneLabel}
                   </Link>
                 ) : (
-                  <span>{venture.zone}</span>
+                  <span>{zoneLabel}</span>
                 )}
               </p>
               {(venture.stats?.totalReviews ?? 0) > 0 && (
@@ -191,7 +164,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                         key={i}
                         className={`h-4 w-4 ${
                           i <= Math.round(venture.stats!.avgRating)
-                            ? "fill-amber-400 text-amber-400"
+                            ? "fill-[#C85A2E] text-[#C85A2E]"
                             : "text-muted-foreground/25"
                         }`}
                       />
@@ -205,6 +178,25 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                 </div>
               )}
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1F4D35]/15 bg-[#1F4D35]/8 px-2.5 py-0.5 text-xs font-semibold text-[#1F4D35]">
+                <span aria-hidden className="h-2 w-2 rounded-full bg-[#1F4D35]" />
+                {safetyLabel}
+              </span>
+              {categoryIds.map((id) => (
+                <Badge key={id} variant="outline" className="border-primary/30 text-primary">
+                  <Link href={getCategoryLandingPath(id)} className="hover:underline">
+                    {getCategoryLabel(id)}
+                  </Link>
+                </Badge>
+              ))}
+              {venture.modalities?.map((m) => (
+                <Badge key={m} variant="secondary" className="text-xs">
+                  {getModalityLabel(m)}
+                </Badge>
+              ))}
+            </div>
           </header>
 
           {hasBuyLinks ? (
@@ -213,7 +205,7 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                 {links.whatsapp && (
                   <Button
                     asChild
-                    className="min-h-[44px] w-full gap-2 bg-[#25D366] text-white hover:bg-[#25D366]/90 sm:w-auto"
+                    className="min-h-[44px] w-full gap-2 bg-[#1F4D35] text-[#F8F5EF] hover:bg-[#1F4D35]/90 sm:w-auto"
                   >
                     <a href={links.whatsapp} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" />
@@ -252,21 +244,6 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
             </ProfileSection>
           ) : null}
 
-          {venture.modalities && venture.modalities.length > 0 && (
-            <ProfileSection title="Modalidad">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {venture.modalities.map((m) => (
-                  <div
-                    key={m}
-                    className="rounded-lg border border-olive/10 bg-olive/5 px-3 py-2.5 text-center text-sm font-medium"
-                  >
-                    {getModalityLabel(m)}
-                  </div>
-                ))}
-              </div>
-            </ProfileSection>
-          )}
-
           {whereToBuyLines.length > 0 && !hasBuyLinks ? (
             <ProfileSection title="Dónde comprar">
               <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
@@ -282,11 +259,9 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
 
           <ProfileSection title="Según datos cargados">
             <div className="space-y-3 rounded-xl border border-olive/10 bg-olive/5 p-4 text-sm">
-              <p className="flex items-center gap-2">
-                <span aria-hidden>{safetyDot}</span>
-                <span className="text-foreground">{safetyLabel}</span>
+              <p className="text-xs leading-relaxed text-[#5F6B63]">
+                {VENTURE_CATALOG_INTRO} {VENTURE_SAFETY_DISCLAIMER}
               </p>
-              <p className="text-xs leading-relaxed text-[#5F6B63]">{VENTURE_SAFETY_DISCLAIMER}</p>
               {venture.certifiedProducts ? (
                 <p className="flex items-start gap-2 text-primary">
                   <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />

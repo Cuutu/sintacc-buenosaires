@@ -31,10 +31,11 @@ describe("catálogo /emprendimientos", () => {
     expect(read("components/ventures/VenturesEmptyState.tsx")).toContain("SuggestVentureCta")
   })
 
-  it("cards con foto densa o placeholder Sin foto", () => {
+  it("cards con foto densa o tapa verde con espigas", () => {
     const src = read("components/ventures/VentureCard.tsx")
     expect(src).toContain("getVentureCoverPhoto")
-    expect(src).toContain("Sin foto")
+    expect(src).toContain("celi-trigo-crema")
+    expect(src).not.toContain("Sin foto")
     expect(src).toContain("aspect-[4/3]")
     expect(src).toContain("getSafetyBadge")
     expect(src).toContain("rounded-[24px]")

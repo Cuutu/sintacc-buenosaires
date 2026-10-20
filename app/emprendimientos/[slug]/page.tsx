@@ -15,6 +15,7 @@ import {
   buildZoneLandingMetadata,
 } from "@/lib/venture-seo"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
+import { formatVentureZone } from "@/lib/venture-zone-display"
 import {
   getVentureBySlug as getVentureBySlugUncached,
   getVentureById as getVentureByIdUncached,
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return buildVentureMetadata({
       name: venture.name,
       category: venture.category,
-      zone: venture.zone,
+      zone: formatVentureZone(venture.zone),
       modalities: venture.modalities ?? [],
       slug: venture.slug,
       description: venture.description,
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildVentureMetadata({
     name: venture.name,
     category: venture.category,
-    zone: venture.zone,
+    zone: formatVentureZone(venture.zone),
     modalities: venture.modalities ?? [],
     slug: venture.slug,
     description: venture.description,

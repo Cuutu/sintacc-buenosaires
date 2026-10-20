@@ -13,6 +13,7 @@ import {
 } from "@/lib/venture-constants"
 import { parseVentureLinks } from "@/lib/venture-contact"
 import { getVentureCoverPhoto } from "@/lib/venture-photo"
+import { formatVentureZone } from "@/lib/venture-zone-display"
 import { VentureCategoryIcon } from "@/components/ventures/venture-category-icon"
 import { cn } from "@/lib/utils"
 
@@ -36,12 +37,10 @@ interface VentureCardProps {
   featured?: boolean
 }
 
-function safetyOverlay(level?: string): { label: string; className: string } | null {
+/** El catálogo es solo 100%: la etiqueta va chica, en una línea, debajo de la zona. */
+function safetyLine(level?: string): string | null {
   if (level === "gf_options") return null
-  return {
-    label: getSafetyBadge("fully_gf").label,
-    className: "bg-[#1F4D35] text-[#F8F5EF]",
-  }
+  return getSafetyBadge("fully_gf").label
 }
 
 function CategoryPill({
@@ -69,7 +68,7 @@ function CategoryPill({
 export function VentureCard({ venture, featured = false }: VentureCardProps) {
   const href = `/emprendimientos/${venture.slug ?? venture._id}`
   const photo = getVentureCoverPhoto(venture.photos)
-  const safety = safetyOverlay(venture.safetyLevel)
+  const safety = safetyLine(venture.safetyLevel)
   const categoryLabels = getCategoryLabels(getVentureCategories(venture))
   const category = categoryLabels[0] ?? getCategoryLabel(venture.category)
   const extraCategories = categoryLabels.length - 1
@@ -112,33 +111,16 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
               sizes={featured ? "320px" : "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"}
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#1F4D35]/8">
-              <VentureCategoryIcon
-                category={venture.category}
-                className="h-7 w-7 text-[#1F4D35]/55"
-              />
-              <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B63]">
-                Sin foto
-              </span>
+            // Si no hay imagen: la misma tapa verde con espigas que las tarjetas de lugares 100%.
+            <div className="celi-trigo-crema absolute inset-0 flex items-center justify-center bg-[#2D4A34]">
+              <VentureCategoryIcon category={venture.category} className="h-8 w-8 text-[#F7F3EB]/80" />
             </div>
           )}
-          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-            {safety ? (
-              <span
-                className={cn(
-                  "inline-flex max-w-[75%] rounded-full px-2.5 py-1 text-[11px] font-semibold leading-tight",
-                  safety.className
-                )}
-              >
-                {safety.label}
-              </span>
-            ) : (
-              <span />
-            )}
+          <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-2 p-3">
             <CategoryPill
               label={extraCategories > 0 ? `${category} +${extraCategories}` : category}
               title={extraCategories > 0 ? categoryLabels.join(" · ") : undefined}
-              onPhoto={Boolean(photo)}
+              onPhoto
             />
           </div>
         </div>
@@ -148,7 +130,13 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
             <h3 className="min-h-[2.5rem] font-display text-lg font-bold leading-snug text-[#1F4D35] line-clamp-2">
               {venture.name}
             </h3>
-            <p className="mt-1 truncate text-sm text-[#5F6B63]">{venture.zone}</p>
+            <p className="mt-1 truncate text-sm text-[#5F6B63]">{formatVentureZone(venture.zone)}</p>
+            {safety ? (
+              <p className="mt-1 flex items-center gap-1.5 truncate text-xs font-medium text-[#1F4D35]">
+                <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1F4D35]" />
+                {safety}
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-3 flex min-h-[28px] flex-wrap content-start gap-1.5">
@@ -189,7 +177,7 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
                 </a>
               ) : null}
             </div>
-            <span className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-terracotta-strong text-sm font-bold text-[#F8F5EF]">
+            <span className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#1F4D35]/20 text-sm font-bold text-[#1F4D35] transition-colors group-hover:bg-[#1F4D35]/5">
               Ver perfil
             </span>
           </div>
@@ -209,7 +197,7 @@ export function VentureCardSkeleton() {
       <div className="flex flex-1 flex-col gap-3 px-4 py-3">
         <div className="h-5 w-3/4 animate-pulse rounded-md bg-[#1F4D35]/10" />
         <div className="h-4 w-1/2 animate-pulse rounded-md bg-[#1F4D35]/8" />
-        <div className="mt-auto h-11 animate-pulse rounded-2xl bg-[#C85A2E]/20" />
+        <div className="mt-auto h-11 animate-pulse rounded-2xl bg-[#1F4D35]/8" />
       </div>
     </div>
   )
