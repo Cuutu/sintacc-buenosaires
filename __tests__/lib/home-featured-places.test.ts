@@ -22,6 +22,8 @@ describe("destacados de la home: solo 100% sin TACC", () => {
     const loader = fs.readFileSync(path.join(root, "lib/home/get-home-featured-places.ts"), "utf8")
     const client = fs.readFileSync(path.join(root, "components/home/HomeFeatured.tsx"), "utf8")
     expect(loader).toContain("DISPLAY_DEDICATED_MATCH")
+    // Suma los más reseñados en CeliMap aunque tengan pocas reseñas en Google.
+    expect(loader).toContain("getMostReviewedPlaceIds(FEATURED_TRUST.minCelimapReviews")
     expect(client).toContain('inferSafetyLevel(place) === "dedicated_gf"')
     expect(client).toContain("loop: false")
   })
@@ -30,7 +32,7 @@ describe("destacados de la home: solo 100% sin TACC", () => {
     const root = path.join(__dirname, "../..")
     const loader = fs.readFileSync(path.join(root, "lib/home/get-home-featured-places.ts"), "utf8")
     const client = fs.readFileSync(path.join(root, "components/home/HomeFeatured.tsx"), "utf8")
-    expect(loader).toContain("uniqueByBrand(ranked)")
-    expect(client).toContain("uniqueByBrand(")
+    expect(loader).toContain("uniqueByBrand(rankFeaturedCandidates(withStats))")
+    expect(client).toContain("uniqueByBrand(rankFeaturedCandidates(")
   })
 })

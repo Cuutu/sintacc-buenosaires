@@ -4,6 +4,7 @@ import { Check, Star } from "lucide-react"
 import { getPlacePath } from "@/lib/place-url"
 import { resolvePrimarySafety, type PlaceWithStats } from "@/components/featured/featured-utils"
 import { CategoryIcon } from "@/components/seo/CategoryIcon"
+import { shownRating } from "@/lib/home/featured-trust"
 import { cn } from "@/lib/utils"
 
 function plural(n: number, one: string, many: string) {
@@ -19,25 +20,21 @@ export function shortCount(n: number): string {
 }
 
 /**
- * Misma regla que el resto del sitio: primero las reseñas de CeliMap, después Google.
- * Con la cantidad al lado (revisión 20/10): un 5.0 solo, con 3 reseñas, parecía inflado.
+ * Puntaje con la cantidad al lado (revisión 20/10: un 5.0 solo, con 1 reseña, parecía
+ * inflado). La fuente la elige shownRating: CeliMap con 3 reseñas o más; si tiene menos,
+ * Google cuando tiene más reseñas.
  */
 export function ratingOf(place: PlaceWithStats): { score: string; detail: string; title: string } | null {
-  const local = place.stats?.avgRating
-  const localCount = place.stats?.totalReviews ?? 0
-  if (typeof local === "number" && local > 0 && localCount > 0) {
-    const score = local.toFixed(1)
-    const detail = plural(localCount, "reseña", "reseñas")
+  const rating = shownRating(place)
+  if (!rating) return null
+  const score = rating.score.toFixed(1)
+  if (rating.source === "celimap") {
+    const detail = plural(rating.count, "reseña", "reseñas")
     return { score, detail, title: `${score} de 5 en CeliMap, ${detail}` }
   }
-  const google = place.googleSnapshot?.rating
-  if (typeof google === "number" && google > 0) {
-    const score = google.toFixed(1)
-    const count = place.googleSnapshot?.userRatingCount ?? 0
-    const detail = count > 0 ? `${shortCount(count)} en Google` : "Google"
-    return { score, detail, title: `${score} de 5 en Google${count > 0 ? `, ${plural(count, "reseña", "reseñas")}` : ""}` }
-  }
-  return null
+  const count = rating.count
+  const detail = count > 0 ? `${shortCount(count)} en Google` : "Google"
+  return { score, detail, title: `${score} de 5 en Google${count > 0 ? `, ${plural(count, "reseña", "reseñas")}` : ""}` }
 }
 
 /**

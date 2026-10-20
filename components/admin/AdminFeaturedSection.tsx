@@ -7,7 +7,8 @@ import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
-import { inferSafetyLevel, type PlaceWithStats } from "@/components/featured/featured-utils"
+import { type PlaceWithStats } from "@/components/featured/featured-utils"
+import { featuredTrust, featuredTrustNote } from "@/lib/home/featured-trust"
 
 export type FeaturedPlaceItem = {
   _id: string
@@ -19,6 +20,8 @@ export type FeaturedPlaceItem = {
   featuredOrder?: number
   safetyLevel?: PlaceWithStats["safetyLevel"]
   tags?: string[]
+  stats?: PlaceWithStats["stats"]
+  googleSnapshot?: PlaceWithStats["googleSnapshot"]
 }
 
 type SearchHit = {
@@ -241,10 +244,16 @@ export function AdminFeaturedSection() {
                 <p className="mt-1 text-sm text-[#6B746C]">
                   {place.neighborhood} · {TYPES.find((t) => t.value === place.type)?.label || place.type}
                 </p>
-                {/* Recién agregado desde el buscador no trae tags: se sabe al guardar. */}
-                {place.tags !== undefined && inferSafetyLevel(place) !== "dedicated_gf" ? (
-                  <p className="mt-2 rounded-xl bg-[#FBEFE6] px-2.5 py-1.5 text-xs font-semibold text-[#9A3A1B]">
-                    No es 100% sin TACC: no aparece en la home.
+                {/* Recién agregado desde el buscador no trae tags ni reseñas: se sabe al guardar. */}
+                {place.tags !== undefined && featuredTrustNote(place) ? (
+                  <p
+                    className={
+                      ["not_dedicated", "reports"].includes(featuredTrust(place))
+                        ? "mt-2 rounded-xl bg-[#FBEFE6] px-2.5 py-1.5 text-xs font-semibold text-[#9A3A1B]"
+                        : "mt-2 rounded-xl bg-[#F6EFD9] px-2.5 py-1.5 text-xs font-semibold text-[#6B5420]"
+                    }
+                  >
+                    {featuredTrustNote(place)}
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">

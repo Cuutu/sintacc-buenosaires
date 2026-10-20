@@ -7,6 +7,48 @@ import { requireAdmin } from "@/lib/middleware"
 import { invalidateApiCache } from "@/lib/api-cache"
 import { logApiError } from "@/lib/logger"
 import { MAX_FEATURED_PLACES } from "@/lib/featured-places"
+import { getReviewStatsFor } from "@/lib/review-stats-index"
+
+const ADMIN_FEATURED_SELECT =
+  "name neighborhood type photos featuredOrder slug googlePlaceId safetyLevel tags googleSnapshot.rating googleSnapshot.userRatingCount"
+
+type AdminFeaturedDoc = {
+  _id: { toString(): string }
+  name: string
+  neighborhood?: string
+  type?: string
+  photos?: string[]
+  slug?: string
+  googlePlaceId?: string
+  safetyLevel?: string
+  tags?: string[]
+  featuredOrder?: number
+  googleSnapshot?: { rating?: number; userRatingCount?: number } | null
+}
+
+/**
+ * Con reseñas y reportes: el admin muestra si cada destacado sale primero en la home,
+ * después (pocas reseñas) o no sale (no es 100% o tiene reportes).
+ */
+async function toAdminFeatured(places: AdminFeaturedDoc[]) {
+  const stats = await getReviewStatsFor(places.map((p) => p._id))
+  return places.map((p, index) => ({
+    _id: p._id.toString(),
+    name: p.name,
+    neighborhood: p.neighborhood,
+    type: p.type,
+    photos: p.photos ?? [],
+    slug: p.slug,
+    googlePlaceId: p.googlePlaceId,
+    safetyLevel: p.safetyLevel,
+    tags: p.tags ?? [],
+    featuredOrder: p.featuredOrder ?? index,
+    stats: stats.get(p._id.toString()),
+    googleSnapshot: p.googleSnapshot
+      ? { rating: p.googleSnapshot.rating, userRatingCount: p.googleSnapshot.userRatingCount }
+      : null,
+  }))
+}
 
 const putSchema = z.object({
   placeIds: z.array(z.string().min(1)).max(MAX_FEATURED_PLACES),
@@ -23,24 +65,13 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    const places = await Place.find({ featured: true, status: "approved" })
-      .select("name neighborhood type photos featuredOrder slug googlePlaceId safetyLevel tags")
+    const places = (await Place.find({ featured: true, status: "approved" })
+      .select(ADMIN_FEATURED_SELECT)
       .sort({ featuredOrder: 1, createdAt: -1 })
-      .lean()
+      .lean()) as unknown as AdminFeaturedDoc[]
 
     return NextResponse.json({
-      places: places.map((p, index) => ({
-        _id: p._id.toString(),
-        name: p.name,
-        neighborhood: p.neighborhood,
-        type: p.type,
-        photos: p.photos ?? [],
-        slug: p.slug,
-        googlePlaceId: p.googlePlaceId,
-        safetyLevel: p.safetyLevel,
-        tags: p.tags ?? [],
-        featuredOrder: p.featuredOrder ?? index,
-      })),
+      places: await toAdminFeatured(places),
       max: MAX_FEATURED_PLACES,
     })
   } catch (error) {
@@ -109,24 +140,14 @@ export async function PUT(request: NextRequest) {
 
     invalidateApiCache(["public:places:"])
 
-    const places = await Place.find({ featured: true, status: "approved" })
-      .select("name neighborhood type photos featuredOrder slug safetyLevel tags")
+    const places = (await Place.find({ featured: true, status: "approved" })
+      .select(ADMIN_FEATURED_SELECT)
       .sort({ featuredOrder: 1 })
-      .lean()
+      .lean()) as unknown as AdminFeaturedDoc[]
 
     return NextResponse.json({
       ok: true,
-      places: places.map((p, index) => ({
-        _id: p._id.toString(),
-        name: p.name,
-        neighborhood: p.neighborhood,
-        type: p.type,
-        photos: p.photos ?? [],
-        slug: p.slug,
-        featuredOrder: p.featuredOrder ?? index,
-        safetyLevel: p.safetyLevel,
-        tags: p.tags ?? [],
-      })),
+      places: await toAdminFeatured(places),
       max: MAX_FEATURED_PLACES,
     })
   } catch (error) {

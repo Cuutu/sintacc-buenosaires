@@ -73,3 +73,17 @@ export async function getReviewStatsFor(placeIds: { toString(): string }[]): Pro
   }
   return out
 }
+
+/**
+ * Ids de los lugares con más reseñas visibles (al menos `min`), de mayor a menor. Para
+ * sumar a los destacados de la home lugares con respaldo de la comunidad aunque tengan
+ * pocas reseñas en Google.
+ */
+export async function getMostReviewedPlaceIds(min: number, limit: number): Promise<string[]> {
+  const index = await loadCachedIndex()
+  return Object.entries(index)
+    .filter(([, row]) => row[1] >= min)
+    .sort((a, b) => b[1][1] - a[1][1])
+    .slice(0, limit)
+    .map(([id]) => id)
+}

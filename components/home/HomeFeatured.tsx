@@ -13,6 +13,7 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { fetchApi } from "@/lib/fetchApi"
 import { MAX_FEATURED_PLACES } from "@/lib/featured-places"
 import { uniqueByBrand } from "@/lib/place-brand"
+import { rankFeaturedCandidates } from "@/lib/home/featured-trust"
 import type { PlaceWithStats } from "@/components/featured/featured-utils"
 import { HomeSectionHeader } from "@/components/home/HomeSectionHeader"
 import { HomeFeaturedCard } from "@/components/home/HomeFeaturedCard"
@@ -20,9 +21,15 @@ import { FeaturedSkeleton } from "@/components/featured/FeaturedSkeleton"
 
 const SHOW = 6
 
-/** Solo 100% sin TACC y una sucursal por marca (el servidor ya lo hace; esto cubre el respaldo del cliente). */
+/**
+ * Mismo orden que el servidor (esto cubre el respaldo del cliente): solo 100% sin TACC,
+ * primero los que tienen más reseñas, sin reportes y una sucursal por marca.
+ */
 const onlyDedicated = (list: PlaceWithStats[]) =>
-  uniqueByBrand(list.filter((place) => inferSafetyLevel(place) === "dedicated_gf")).slice(0, SHOW)
+  uniqueByBrand(rankFeaturedCandidates(list.filter((place) => inferSafetyLevel(place) === "dedicated_gf"))).slice(
+    0,
+    SHOW
+  )
 
 const navBtn =
   "flex h-11 w-11 items-center justify-center rounded-full border border-[#E6DFD2] bg-white text-olive transition-colors hover:border-olive/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive/30 disabled:cursor-default disabled:opacity-35 disabled:hover:border-[#E6DFD2]"
