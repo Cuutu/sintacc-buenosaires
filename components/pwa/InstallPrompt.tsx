@@ -144,7 +144,7 @@ export function InstallPrompt() {
               href={storeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-[#C85A2E] px-4 text-sm font-semibold text-white hover:bg-[#BE552C]"
+              className="flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-terracotta-strong px-4 text-sm font-semibold text-white hover:bg-terracotta-hover"
               onClick={() => setOpen(false)}
             >
               {ios ? "Descargar en App Store" : "Descargar en Google Play"}
@@ -152,7 +152,7 @@ export function InstallPrompt() {
           ) : (
             <button
               type="button"
-              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#C85A2E] px-4 text-sm font-semibold text-white hover:bg-[#BE552C]"
+              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-terracotta-strong px-4 text-sm font-semibold text-white hover:bg-terracotta-hover"
               onClick={() => {
                 void installPwa()
               }}

@@ -75,7 +75,7 @@ export function StoreAppBanner() {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-[44px] shrink-0 items-center rounded-xl bg-[#C85A2E] px-3.5 text-sm font-semibold text-white hover:bg-[#BE552C]"
+          className="flex min-h-[44px] shrink-0 items-center rounded-xl bg-terracotta-strong px-3.5 text-sm font-semibold text-white hover:bg-terracotta-hover"
           onClick={() => {
             if (!debugBanner) trackEvent("store_banner_clicked", { store, browser })
           }}

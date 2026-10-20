@@ -11,7 +11,7 @@ export const placeSecondaryBtnClass =
   "inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#1F4D35] bg-transparent text-base font-semibold text-[#1F4D35] transition-colors hover:bg-[#1F4D35]/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F4D35]/40"
 
 export const placePrimaryBtnClass =
-  "inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#C85A2E] text-base font-bold text-[#F8F5EF] shadow-[0_8px_20px_-10px_rgba(200,90,46,0.55)] transition-colors hover:bg-[#B44F27] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
+  "inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-terracotta-strong text-base font-bold text-[#F8F5EF] shadow-[0_8px_20px_-10px_rgba(184,68,32,0.55)] transition-colors hover:bg-terracotta-hover active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C85A2E]/50"
 
 export function formatNearbyDistance(distance?: number): string | null {
   if (distance == null || !Number.isFinite(distance)) return null
@@ -35,7 +35,7 @@ export function heroSafetyCopy(level?: string): { label: string; className: stri
   if (level === "gf_options") {
     return {
       label: "Con opciones",
-      className: "bg-[#C85A2E] text-[#F8F5EF]",
+      className: "bg-terracotta-strong text-[#F8F5EF]",
     }
   }
   if (level === "cross_contamination_risk") {

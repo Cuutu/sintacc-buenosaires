@@ -109,7 +109,7 @@ export function Navbar() {
                 <Button
                   onClick={() => signInWithGoogle()}
                   className={cn(
-                    "rounded-full bg-[#C85A2E] px-4 text-white shadow-none hover:bg-[#A84A26]",
+                    "rounded-full bg-terracotta-strong px-4 text-white shadow-none hover:bg-terracotta-hover",
                     compact ? "h-9 min-h-[36px] px-3.5 text-sm" : "h-10 min-h-[40px] px-5"
                   )}
                 >

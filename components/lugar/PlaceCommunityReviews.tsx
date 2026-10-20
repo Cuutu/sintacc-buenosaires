@@ -102,7 +102,7 @@ export function PlaceCommunityReviews({
             onPointerEnter={preloadReviewForm}
             onPointerDown={preloadReviewForm}
             onFocus={preloadReviewForm}
-            className="mt-4 inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#C85A2E] px-6 text-base font-bold text-[#F8F5EF]"
+            className="mt-4 inline-flex h-[52px] items-center justify-center rounded-2xl bg-terracotta-strong px-6 text-base font-bold text-[#F8F5EF] hover:bg-terracotta-hover"
           >
             Sé el primero en opinar
           </button>

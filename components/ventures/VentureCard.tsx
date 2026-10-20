@@ -189,7 +189,7 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
                 </a>
               ) : null}
             </div>
-            <span className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[#C85A2E] text-sm font-bold text-[#F8F5EF]">
+            <span className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-terracotta-strong text-sm font-bold text-[#F8F5EF]">
               Ver perfil
             </span>
           </div>
