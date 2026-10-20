@@ -3,10 +3,11 @@ import { Place } from "@/models/Place"
 import { inferSafetyLevel, type PlaceWithStats } from "@/components/featured/featured-utils"
 import { DISPLAY_DEDICATED_MATCH } from "@/lib/safety-match"
 import { getReviewStatsFor } from "@/lib/review-stats-index"
+import { uniqueByBrand } from "@/lib/place-brand"
 
 const SHOW = 6
-/** Se piden más para poder priorizar los que tienen foto. */
-const CANDIDATES = 18
+/** Se piden más para poder priorizar los que tienen foto y saltear sucursales. */
+const CANDIDATES = 24
 
 function serialize(doc: {
   _id: { toString(): string }
@@ -45,7 +46,8 @@ function serialize(doc: {
 /**
  * Hasta 6 lugares para el carrusel de home. Solo 100% sin TACC: al lado de "con
  * confianza" no se recomiendan lugares con opciones (decisión de Cutu, 20/10). Primero
- * los destacados por el admin, en su orden; después los que tienen foto. [] si Mongo falla.
+ * los destacados por el admin, en su orden; después los que tienen foto. Una sola
+ * sucursal por marca. [] si Mongo falla.
  */
 export async function getHomeFeaturedPlaces(): Promise<PlaceWithStats[]> {
   try {
@@ -58,12 +60,13 @@ export async function getHomeFeaturedPlaces(): Promise<PlaceWithStats[]> {
       .limit(CANDIDATES)
       .lean()) as (Parameters<typeof serialize>[0] & { featured?: boolean })[]
 
-    const picked = docs
+    const ranked = docs
       .filter((doc) => isHomeFeaturable(doc))
       .map((doc, index) => ({ doc, index }))
       .sort((a, b) => featuredRank(a.doc) - featuredRank(b.doc) || a.index - b.index)
-      .slice(0, SHOW)
       .map(({ doc }) => doc)
+    // Una sucursal por marca: dos Churros El Topo seguidos parecían un error.
+    const picked = uniqueByBrand(ranked).slice(0, SHOW)
 
     const stats = await getReviewStatsFor(picked.map((doc) => doc._id))
     return picked.map((doc) => ({

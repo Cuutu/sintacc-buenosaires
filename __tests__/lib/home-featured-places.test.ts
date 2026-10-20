@@ -25,4 +25,12 @@ describe("destacados de la home: solo 100% sin TACC", () => {
     expect(client).toContain('inferSafetyLevel(place) === "dedicated_gf"')
     expect(client).toContain("loop: false")
   })
+
+  it("una sucursal por marca, en el servidor y en el respaldo del cliente", () => {
+    const root = path.join(__dirname, "../..")
+    const loader = fs.readFileSync(path.join(root, "lib/home/get-home-featured-places.ts"), "utf8")
+    const client = fs.readFileSync(path.join(root, "components/home/HomeFeatured.tsx"), "utf8")
+    expect(loader).toContain("uniqueByBrand(ranked)")
+    expect(client).toContain("uniqueByBrand(")
+  })
 })

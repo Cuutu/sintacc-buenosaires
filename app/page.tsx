@@ -2,6 +2,7 @@ import { getBaseUrl } from "@/lib/base-url"
 import { getPublicStatsSafe } from "@/lib/stats/get-public-stats"
 import { getHomeFeaturedPlaces } from "@/lib/home/get-home-featured-places"
 import { getHomeCityCountsSafe } from "@/lib/home/get-home-city-counts"
+import { getHomeVenturesSafe } from "@/lib/home/get-home-ventures"
 import { getTop10CitySlugs } from "@/lib/seo/cities"
 import type { Metadata } from "next"
 import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME } from "@/lib/seo/brand"
@@ -49,10 +50,11 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [initialStats, featuredPlaces, cityCounts] = await Promise.all([
+  const [initialStats, featuredPlaces, cityCounts, ventures] = await Promise.all([
     getPublicStatsSafe(),
     getHomeFeaturedPlaces(),
     getHomeCityCountsSafe(getTop10CitySlugs()),
+    getHomeVenturesSafe(),
   ])
 
   const placesFloor = floorDisplayCount(initialStats?.placesCount)
@@ -152,7 +154,7 @@ export default async function HomePage() {
 
       <section className={homeSection}>
         <div className="container mx-auto max-w-5xl px-0">
-          <EmprendimientosSection />
+          <EmprendimientosSection ventures={ventures} />
         </div>
       </section>
 
