@@ -17,8 +17,7 @@ const HERO_PINS = [
 ] as const
 
 // Escritorio: los pines van en la mitad derecha (donde se ve el mapa), lejos del
-// texto y por debajo de la barra flotante. Posiciones en % de esa zona. Desde 1280 px
-// ese lugar lo ocupa el celular dibujado (HeroPhoneMockup).
+// texto y por debajo de la barra flotante. Posiciones en % de esa zona.
 const HERO_PINS_DESKTOP = [
   { src: "/brand/hero/pin-opciones.png", left: "10%", top: "10%", w: 26 },
   { src: "/brand/hero/pin-100-crema.png", left: "44%", top: "4%", w: 28 },
@@ -52,7 +51,7 @@ export function HeroPins() {
       <div
         aria-hidden
         data-hero-pins="desktop"
-        className="pointer-events-none absolute bottom-24 right-[4%] top-[calc(var(--desktop-nav-clearance)+2.5rem)] hidden w-[min(40%,620px)] lg:block xl:hidden"
+        className="pointer-events-none absolute bottom-24 right-[4%] top-[calc(var(--desktop-nav-clearance)+2.5rem)] hidden w-[min(40%,620px)] lg:block"
       >
         {HERO_PINS_DESKTOP.map((pin, i) => (
           <Image

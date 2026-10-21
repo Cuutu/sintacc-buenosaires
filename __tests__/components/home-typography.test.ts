@@ -23,7 +23,6 @@ const FILES = [
   "components/home/HomeGuides.tsx",
   "components/home/HomeSectionHeader.tsx",
   "components/home/HowItWorks.tsx",
-  "components/home/HeroPhoneMockup.tsx",
   "components/home/NearMeButton.tsx",
   "components/home/SafetyModeSwitch.tsx",
   "components/home/TakeCeliMapWithYou.tsx",

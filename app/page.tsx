@@ -13,7 +13,6 @@ import { ArrowRight, MapPin } from "lucide-react"
 import { SearchBar } from "@/components/search-bar"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroPins } from "@/components/home/HeroPins"
-import { HeroPhoneMockup } from "@/components/home/HeroPhoneMockup"
 import { floorDisplayCount, formatFlooredPrefix } from "@/lib/stats/floor-display-count"
 import { HomeGuides } from "@/components/home/HomeGuides"
 import { SafetyModeSwitch } from "@/components/home/SafetyModeSwitch"
@@ -98,10 +97,7 @@ export default async function HomePage() {
 
           <div className="h-[96px] md:h-[150px]" aria-hidden />
 
-          {/* Compu ancha: el celular con el mapa a la derecha (sin imágenes, ver el componente). */}
-          <HeroPhoneMockup place={featuredPlaces[0]} />
-
-          <div className="max-w-[680px] xl:max-w-[600px]">
+          <div className="max-w-[680px]">
             <p className="text-xs font-extrabold tracking-[0.16em] text-[#F7F3EB]/[0.72]">
               MAPA SIN TACC · ARGENTINA
             </p>
