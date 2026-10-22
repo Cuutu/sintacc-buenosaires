@@ -484,7 +484,9 @@ function parseDayRangeForEditor(token: string): number[] {
   }
   
   const days: number[] = []
-  const parts = s.split(/\s*(?:[-–—]|a|al)\s*/)
+  // "a"/"al" solo como palabra ("Lun a Vie"): sin \b, "Mar" se partía en "m" y "r"
+  // y el martes quedaba sin cargar (y "Mar cerrado" no contaba como cerrado).
+  const parts = s.split(/\s*(?:[-–—]|\ba\b|\bal\b)\s*/)
   
   if (parts.length === 2) {
     const start = WEEK_DAYS.find((d) => d.aliases.some((a) => parts[0].startsWith(a)))

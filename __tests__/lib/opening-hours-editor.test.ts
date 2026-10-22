@@ -118,8 +118,18 @@ describe("round-trip: parse then format", () => {
   it("normalizes consecutive individual days to range", () => {
     const week = parseOpeningHours("Lun 09:00–17:00; Mar 09:00–17:00; Mié 09:00–17:00")
     const formatted = formatOpeningHours(week)
-    // Tuesday is missing, so should not be grouped
-    expect(formatted).not.toBe("Lun–Mié 09:00–17:00")
+    // Antes "Mar" se partía en "m"/"r" (por la "a") y el martes se perdía; ahora se agrupa.
+    expect(week.mar).toEqual({ ranges: [{ open: "09:00", close: "17:00" }], closed: false, explicit: true })
+    expect(formatted).toBe("Lun–Mié 09:00–17:00")
+  })
+
+  it("lee el martes y los rangos con 'a' ('Lun a Vie')", () => {
+    expect(parseOpeningHours("Mar cerrado").mar).toEqual({ ranges: [], closed: true, explicit: true })
+    const week = parseOpeningHours("Lun a Vie 10:00–18:00; Sáb al Dom cerrado")
+    expect(week.mar.closed).toBe(false)
+    expect(week.vie.ranges).toEqual([{ open: "10:00", close: "18:00" }])
+    expect(week.sab.explicit && week.sab.closed).toBe(true)
+    expect(week.dom.explicit && week.dom.closed).toBe(true)
   })
 
   it("preserves split shifts through round-trip", () => {
