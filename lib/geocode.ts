@@ -2,6 +2,7 @@ import { LOCALITIES } from "./constants"
 import { mapboxProximityParam } from "./geo-search-region"
 import { normalizeGoogleMapsUrl } from "./place-research/resolve-maps-url"
 import { parseFormCoords } from "./place-research/maps-location"
+import { formatCoordinate } from "./admin-format"
 
 export interface GeocodeResult {
   address: string
@@ -173,8 +174,8 @@ export function applyGeoToForm<T extends {
     !prev.neighborhood.trim() || /a completar/i.test(prev.neighborhood)
   return {
     ...prev,
-    lat: String(geo.lat),
-    lng: String(geo.lng),
+    lat: formatCoordinate(geo.lat),
+    lng: formatCoordinate(geo.lng),
     address: addressIncomplete ? geo.address : prev.address,
     neighborhood: neighborhoodIncomplete
       ? geo.neighborhood || prev.neighborhood || "Otro"

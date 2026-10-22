@@ -55,7 +55,7 @@ function Delta({ metric }: { metric: InsightsMetric }) {
   }
   const up = metric.deltaPct >= 0
   return (
-    <p className={cn("mt-2 text-xs font-medium", up ? "text-[#2F6B45]" : "text-[#A84A26]")}>
+    <p className={cn("mt-2 text-xs font-medium", up ? "text-[#2F6B45]" : "text-[#9A3A1B]")}>
       {up ? "+" : ""}
       {metric.deltaPct}% vs período anterior
     </p>
@@ -283,7 +283,7 @@ function RankList({
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className={`${adminUi.card} flex flex-wrap items-center justify-between gap-3 p-5`}>
-      <p className="text-sm text-[#A84A26]">{message}</p>
+      <p className="text-sm text-[#9A3A1B]">{message}</p>
       <button type="button" className={adminUi.btnGhost} onClick={onRetry}>
         Reintentar
       </button>
@@ -527,7 +527,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
           ) : (
             <div className="space-y-4">
               {data.behavior.zeroSearches.length > 0 ? (
-                <article className={`${adminUi.card} border-[#C85A2E]/25 p-5`}>
+                <article className={`${adminUi.card} border-[#B84420]/25 p-5`}>
                   <h3 className={adminUi.label}>Búsquedas sin resultados</h3>
                   <p className="mt-2 text-sm text-[#6B746C]">
                     Huecos de cobertura. Si se repite una ciudad o un tipo de lugar, conviene cargarlo.
@@ -536,7 +536,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
                     {data.behavior.zeroSearches.map((row) => (
                       <li key={row.query} className="flex items-baseline justify-between gap-3">
                         <p className="text-sm font-medium text-[#234A33]">“{row.query}”</p>
-                        <p className="text-sm tabular-nums text-[#A84A26]">
+                        <p className="text-sm tabular-nums text-[#9A3A1B]">
                           {formatNumber(row.count)} sin resultados
                         </p>
                       </li>

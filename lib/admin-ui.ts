@@ -9,7 +9,7 @@ export const adminUi = {
   muted: "text-[#6B746C]",
   border: "border-[#E8E1D6]",
   btnPrimary:
-    "inline-flex h-11 items-center justify-center rounded-2xl bg-[#C85A2E] px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#A84A26]",
+    "inline-flex h-11 items-center justify-center rounded-2xl bg-[#B84420] px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#9A3A1B]",
   btnGhost:
     "inline-flex h-11 items-center justify-center rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-4 text-sm font-semibold text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]",
   chip:

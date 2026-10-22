@@ -235,7 +235,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
+      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
         <div className="flex h-full min-h-0 flex-col">
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E1D6] px-5 py-4">
             <div className="min-w-0">
@@ -374,7 +374,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         ))}
                       </div>
                       {formData.safetyLevel === "gf_options" ? (
-                        <p className="mt-2 text-xs text-[#C85A2E]">
+                        <p className="mt-2 text-xs text-[#B84420]">
                           Con “opciones” no aparece en el catálogo público (solo 100% sin gluten).
                         </p>
                       ) : null}
@@ -521,7 +521,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                   </div>
                 ) : null}
 
-                {error ? <p className="rounded-2xl bg-[#C85A2E]/10 p-3 text-sm text-[#C85A2E]">{error}</p> : null}
+                {error ? <p className="rounded-2xl bg-[#B84420]/10 p-3 text-sm text-[#B84420]">{error}</p> : null}
               </div>
 
               <aside className="space-y-4">
@@ -574,7 +574,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                     {quality.map((row) => (
                       <li key={row.id} className="flex items-center justify-between text-sm">
                         <span className="text-[#6B746C]">{row.label}</span>
-                        <span className={row.ok ? "text-[#2D6A4F]" : "text-[#D4A017]"}>{row.ok ? "Listo" : "Falta"}</span>
+                        <span className={row.ok ? "text-[#2D6A4F]" : "text-[#8A5A00]"}>{row.ok ? "Listo" : "Falta"}</span>
                       </li>
                     ))}
                   </ul>

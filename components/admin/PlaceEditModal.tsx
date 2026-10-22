@@ -32,6 +32,7 @@ import {
 import { adminUi } from "@/lib/admin-ui"
 import { normalizeArWhatsapp } from "@/lib/ar-whatsapp"
 import { cn } from "@/lib/utils"
+import { formatCoordinate } from "@/lib/admin-format"
 
 const EDIT_TABS = ["General", "Ubicación", "Contacto", "Operación", "SEO"] as const
 
@@ -202,8 +203,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
           neighborhood: place.neighborhood || "",
           locality: place.locality || "",
           slug: place.slug || "",
-          lat: loc ? String(loc.lat) : "",
-          lng: loc ? String(loc.lng) : "",
+          lat: loc ? formatCoordinate(loc.lat) : "",
+          lng: loc ? formatCoordinate(loc.lng) : "",
           locationPrecision: place.locationPrecision || "exact",
           openingHours: place.openingHours || "",
           delivery: {
@@ -373,8 +374,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
           slug: data.slug || prev.slug,
           address: geo.address,
           neighborhood: geo.neighborhood || prev.neighborhood,
-          lat: String(geo.lat),
-          lng: String(geo.lng),
+          lat: formatCoordinate(geo.lat),
+          lng: formatCoordinate(geo.lng),
         }))
         if (data.editLog) setEditLog(data.editLog)
         if (!silent) {
@@ -450,7 +451,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
+      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
         <div className="flex h-full min-h-0 flex-col">
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E1D6] px-5 py-4">
             <div className="min-w-0">
@@ -641,8 +642,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           onSelect={(r) =>
                             patchForm({
                               address: r.address,
-                              lat: String(r.lat),
-                              lng: String(r.lng),
+                              lat: formatCoordinate(r.lat),
+                              lng: formatCoordinate(r.lng),
                               neighborhood: r.neighborhood || "Otro",
                               locationPrecision: "exact",
                             })
@@ -698,8 +699,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           patchForm((prev) => ({
                             ...prev,
                             address: result.addressText || result.address,
-                            lat: String(result.lat),
-                            lng: String(result.lng),
+                            lat: formatCoordinate(result.lat),
+                            lng: formatCoordinate(result.lng),
                             neighborhood: result.neighborhood || prev.neighborhood || "Otro",
                             locationPrecision: result.locationPrecision || "exact",
                           }))
@@ -979,7 +980,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   ) : null}
 
                   {error ? (
-                    <p className="rounded-2xl bg-[#C85A2E]/10 p-3 text-sm text-[#C85A2E]">{error}</p>
+                    <p className="rounded-2xl bg-[#B84420]/10 p-3 text-sm text-[#B84420]">{error}</p>
                   ) : null}
                 </div>
 
@@ -1025,7 +1026,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                       {quality.map((row) => (
                         <li key={row.id} className="flex items-center justify-between text-sm">
                           <span className="text-[#6B746C]">{row.label}</span>
-                          <span className={row.ok ? "text-[#2D6A4F]" : "text-[#D4A017]"}>
+                          <span className={row.ok ? "text-[#2D6A4F]" : "text-[#8A5A00]"}>
                             {row.ok ? "Listo" : "Falta"}
                           </span>
                         </li>

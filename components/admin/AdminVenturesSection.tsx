@@ -113,13 +113,13 @@ export function AdminVenturesSection({
                   href={`/emprendimientos/${v.slug ?? v._id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={adminUi.chip}
+                  className={adminUi.btnGhost}
                 >
                   Ver
                 </a>
                 <button
                   type="button"
-                  className="inline-flex h-9 items-center rounded-full border border-[#C85A2E]/30 px-3 text-sm text-[#C85A2E]"
+                  className="inline-flex h-11 items-center rounded-2xl border border-[#B84420]/30 px-4 text-sm font-semibold text-[#B84420] transition-colors duration-150 hover:bg-[#B84420]/8"
                   onClick={() => handleDelete(v._id, v.name)}
                 >
                   Eliminar

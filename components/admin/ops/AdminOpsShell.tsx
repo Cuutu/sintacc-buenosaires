@@ -118,7 +118,7 @@ export function AdminOpsShell({
                   {count > 0 ? ` (${count})` : ""}
                 </span>
                 {count > 0 ? (
-                  <span className="rounded-full bg-[#C85A2E] px-2 py-0.5 text-[11px] font-bold text-white">
+                  <span className="rounded-full bg-[#B84420] px-2 py-0.5 text-[11px] font-bold text-white">
                     {count}
                   </span>
                 ) : null}
@@ -161,7 +161,7 @@ export function AdminOpsShell({
             <button
               type="button"
               onClick={() => router.push("/sugerir")}
-              className="hidden h-11 items-center gap-2 rounded-2xl bg-[#C85A2E] px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#A84A26] sm:inline-flex"
+              className="hidden h-11 items-center gap-2 rounded-2xl bg-[#B84420] px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#9A3A1B] sm:inline-flex"
             >
               <Plus className="h-4 w-4" />
               Lugar
@@ -190,7 +190,7 @@ export function AdminOpsShell({
             className={cn("relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px]", pathname === href ? "bg-[#234A33] text-white" : "text-[#234A33]")}>
             <Icon className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate">{label}</span>
-            {count > 0 && <span className="absolute right-1 top-0 rounded-full bg-[#C85A2E] px-1 text-[10px] text-white" aria-label={`${count} pendientes`}>{count > 99 ? "99+" : count}</span>}
+            {count > 0 && <span className="absolute right-1 top-0 rounded-full bg-[#B84420] px-1 text-[10px] text-white" aria-label={`${count} pendientes`}>{count > 99 ? "99+" : count}</span>}
           </Link>)}
           <DialogTrigger asChild><button type="button" className="flex min-h-16 flex-col items-center justify-center gap-1 text-xs"><MoreHorizontal className="h-5 w-5" aria-hidden />Más</button></DialogTrigger>
         </nav>

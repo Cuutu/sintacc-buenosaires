@@ -82,19 +82,42 @@ function isCabaLocality(slug?: string | null): boolean {
   )
 }
 
+/** Palabras que van en minúscula en un nombre de lugar ("Concepción del Uruguay"). */
+const LOWERCASE_WORDS = new Set(["de", "del", "la", "las", "los", "el", "y"])
+
 function humanizeSlug(slug: string): string {
   return slug
     .split("-")
     .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word, i) =>
+      i > 0 && LOWERCASE_WORDS.has(word.toLowerCase())
+        ? word.toLowerCase()
+        : word.charAt(0).toUpperCase() + word.slice(1)
+    )
     .join(" ")
 }
 
-function localityDisplay(slug?: string | null): string {
-  if (!slug?.trim()) return ""
-  const city = getCityBySlug(slug.trim())
+/**
+ * Nombre para mostrar de una localidad guardada como slug ("tres-arroyos") o
+ * como nombre ("Tandil" / "tandil"): siempre el nombre, nunca el slug.
+ */
+export function formatLocalityName(value?: string | null): string {
+  return localityDisplay(value)
+}
+
+function localityDisplay(raw?: string | null): string {
+  const value = raw?.trim()
+  if (!value) return ""
+  const asSlug = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+  const city = getCityBySlug(value) ?? getCityBySlug(asSlug)
   if (city?.name) return city.name
-  return humanizeSlug(slug.trim())
+  // Ya viene como nombre ("Tandil", "San Carlos de Bariloche"): tal cual.
+  if (/[A-ZÁÉÍÓÚÑÜ]/.test(value)) return value
+  return humanizeSlug(value.replace(/\s+/g, "-"))
 }
 
 function splitParts(raw: string): string[] {

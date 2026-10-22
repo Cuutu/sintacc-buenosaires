@@ -18,6 +18,7 @@ import { applyGeoToForm, geocodeAddress, resolveFormLocation } from "@/lib/geoco
 import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
 import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
+import { formatCoordinate } from "@/lib/admin-format"
 
 type PlaceDraft = {
   name?: string
@@ -77,8 +78,8 @@ export function SuggestionEditModal({
         types: placeDraft.types || (placeDraft.type ? [placeDraft.type] : ["other"]),
         address: placeDraft.address || "",
         neighborhood: placeDraft.neighborhood || "",
-        lat: loc ? String(loc.lat) : "",
-        lng: loc ? String(loc.lng) : "",
+        lat: loc ? formatCoordinate(loc.lat) : "",
+        lng: loc ? formatCoordinate(loc.lng) : "",
         openingHours: placeDraft.openingHours || "",
         delivery: {
           available: placeDraft.delivery?.available ?? false,
@@ -290,8 +291,8 @@ export function SuggestionEditModal({
                 setFormData({
                   ...formData,
                   address: r.address,
-                  lat: String(r.lat),
-                  lng: String(r.lng),
+                  lat: formatCoordinate(r.lat),
+                  lng: formatCoordinate(r.lng),
                   neighborhood: r.neighborhood || "Otro",
                 })
               }
@@ -334,8 +335,8 @@ export function SuggestionEditModal({
                 setFormData((prev) => ({
                   ...prev,
                   address: result.address,
-                  lat: String(result.lat),
-                  lng: String(result.lng),
+                  lat: formatCoordinate(result.lat),
+                  lng: formatCoordinate(result.lng),
                   neighborhood: result.neighborhood || prev.neighborhood || "Otro",
                 }))
               }

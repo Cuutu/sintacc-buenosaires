@@ -49,7 +49,7 @@ const MIN_SAMPLES = 20
 const RATING_STYLE: Record<WebVitalRating, string> = {
   good: "bg-[#2F6B45]/10 text-[#2F6B45]",
   "needs-improvement": "bg-[#B7791F]/12 text-[#8A5A12]",
-  poor: "bg-[#A84A26]/10 text-[#A84A26]",
+  poor: "bg-[#9A3A1B]/10 text-[#9A3A1B]",
 }
 
 function formatValue(metric: WebVitalMetric, value: number): string {
@@ -138,7 +138,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
       </div>
 
       {error ? (
-        <div className={`${adminUi.card} p-5 text-sm text-[#A84A26]`}>
+        <div className={`${adminUi.card} p-5 text-sm text-[#9A3A1B]`}>
           {error}{" "}
           <button type="button" className="underline" onClick={() => void load(range)}>
             Reintentar

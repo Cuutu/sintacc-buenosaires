@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react"
 import { TYPES } from "@/lib/constants"
@@ -10,8 +9,15 @@ import { AdminPlaceReviewTools } from "@/components/admin/AdminPlaceReviewTools"
 import type { PlaceItem } from "@/components/admin/types"
 import { getPlacePath } from "@/lib/place-url"
 import { placeCompleteness } from "@/lib/place-completeness"
-import { formatShortPlaceAddress } from "@/lib/place-location-display"
+import { formatLocalityName, formatShortPlaceAddress } from "@/lib/place-location-display"
 import { PlaceCompleteness } from "@/components/admin/PlaceCompleteness"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
 
@@ -91,6 +97,22 @@ function placeAddressLine(place: PlaceItem) {
   return formatShortPlaceAddress(place) || place.address?.trim() || "Sin dirección"
 }
 
+/** Ciudad para la tabla: el nombre ("Tres Arroyos"), nunca el slug guardado ("tres-arroyos"). */
+function placeCityLabel(place: PlaceItem) {
+  return formatLocalityName(place.locality) || place.neighborhood?.trim() || ""
+}
+
+/**
+ * Misma grilla para el encabezado y las filas, con la columna de acciones de
+ * ancho fijo: con `auto` cada fila la medía distinto que el encabezado y los
+ * títulos quedaban corridos ~100 px.
+ */
+const PLACES_TABLE_GRID = "lg:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_11rem]"
+
+/** Editar (botón) y Ver (link) con el mismo alto: antes uno medía 44 px y el otro 36. */
+const ROW_ACTION =
+  "inline-flex h-11 items-center justify-center rounded-full border border-[#E8E1D6] px-3 text-sm font-medium text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
+
 export function AdminPlacesSection(props: AdminPlacesSectionProps) {
   const {
     places,
@@ -155,8 +177,6 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
     setPlacesPage,
   } = props
 
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
-
   const apply = (status?: string) => {
     setPlacesPage(1)
     fetchPlaces(status ?? placeFilter, 1)
@@ -197,7 +217,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                   p.name,
                   placeAddressLine(p),
                   p.status,
-                  p.neighborhood,
+                  placeCityLabel(p),
                   String(placeCompleteness(p)),
                 ]),
               ]
@@ -416,7 +436,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               </button>
               <button
                 type="button"
-                className="inline-flex h-9 items-center rounded-full border border-[#C85A2E]/30 px-3 text-sm text-[#C85A2E]"
+                className="inline-flex h-9 items-center rounded-full border border-[#B84420]/30 px-3 text-sm text-[#B84420]"
                 onClick={() => handleBulkAction("delete")}
               >
                 Eliminar
@@ -450,7 +470,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                     <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs">{place.status === "approved" ? "Publicado" : "Pendiente"}</span>
                   </div>
                   <p className="mt-2 text-sm text-[#234A33]">{placeAddressLine(place)}</p>
-                  <p className="mt-1 text-xs text-[#6B746C]">{[place.locality || place.neighborhood, place.province].filter(Boolean).join(" · ") || "Sin ciudad"}</p>
+                  <p className="mt-1 text-xs text-[#6B746C]">{[placeCityLabel(place), place.province].filter(Boolean).join(" · ") || "Sin ciudad"}</p>
                   <p className="mt-4 text-xs">Completitud: {completeness}%</p>
                   <div role="progressbar" aria-label={`Completitud de ${place.name}`} aria-valuenow={completeness} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E1D6]">
                     <div className="h-full rounded-full bg-[#234A33]" style={{ width: `${completeness}%` }} />
@@ -462,7 +482,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                 </article>
               })}
             </div>
-            <div className="hidden items-center gap-3 border-b border-[#E8E1D6] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B746C] lg:grid lg:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_auto]">
+            <div className={`hidden items-center gap-3 border-b border-[#E8E1D6] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B746C] lg:grid ${PLACES_TABLE_GRID}`}>
               <input
                 type="checkbox"
                 checked={selectedPlaceIds.size === places.length && places.length > 0}
@@ -484,7 +504,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                 const initials = place.name.slice(0, 2).toUpperCase()
                 return (
                   <div key={place._id} className="px-5 py-4">
-                    <div className="grid items-center gap-3 md:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_auto]">
+                    <div className={`grid items-center gap-3 ${PLACES_TABLE_GRID}`}>
                       <input
                         type="checkbox"
                         checked={selectedPlaceIds.has(place._id)}
@@ -514,54 +534,46 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                       <span className="text-sm text-[#234A33]">
                         {place.status === "approved" ? "Publicado" : "Pendiente"}
                       </span>
-                      <span className="truncate text-sm text-[#6B746C]">
-                        {place.locality || place.neighborhood || "—"}
+                      <span className="truncate text-sm text-[#6B746C]" title={placeCityLabel(place) || undefined}>
+                        {placeCityLabel(place) || "—"}
                       </span>
                       <PlaceCompleteness place={place} />
                       <span className="text-sm text-[#6B746C]">{formatEdit(place.updatedAt)}</span>
-                      <div className="relative flex flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className={adminUi.chip}
+                          className={ROW_ACTION}
                           onClick={() => setEditingPlaceId(place._id)}
                         >
                           Editar
                         </button>
-                        <Link href={getPlacePath(place)} target="_blank" className={adminUi.chip}>
+                        <Link href={getPlacePath(place)} target="_blank" className={ROW_ACTION}>
                           Ver
                         </Link>
-                        <button
-                          type="button"
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E8E1D6] text-[#234A33]"
-                          onClick={() => setOpenMenu(openMenu === place._id ? null : place._id)}
-                          aria-label="Más acciones"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                        {openMenu === place._id ? (
-                          <div className="absolute right-0 top-11 z-10 min-w-[10rem] rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] p-1 shadow-[0_8px_28px_-18px_rgba(35,74,51,0.28)]">
+                        {/* Menú de Radix: se cierra con Escape, con un clic afuera y al abrir el modal. */}
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="flex h-10 w-full items-center rounded-xl px-3 text-sm text-[#234A33]"
-                              onClick={() => {
-                                setOpenMenu(null)
-                                handleDuplicatePlace(place)
-                              }}
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E8E1D6] text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
+                              aria-label={`Más acciones para ${place.name}`}
                             >
-                              Duplicar
+                              <MoreHorizontal className="h-4 w-4" />
                             </button>
-                            <button
-                              type="button"
-                              className="flex h-10 w-full items-center rounded-xl px-3 text-sm text-[#C85A2E]"
-                              onClick={() => {
-                                setOpenMenu(null)
-                                handleDeletePlace(place._id, place.name)
-                              }}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-[10rem]">
+                            <DropdownMenuItem onSelect={() => handleDuplicatePlace(place)}>
+                              Duplicar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-[#B84420] focus:text-[#B84420]"
+                              onSelect={() => handleDeletePlace(place._id, place.name)}
                             >
                               Eliminar
-                            </button>
-                          </div>
-                        ) : null}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>

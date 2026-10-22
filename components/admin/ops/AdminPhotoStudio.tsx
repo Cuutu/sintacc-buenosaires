@@ -77,7 +77,7 @@ export function AdminPhotoStudio({
           <button
             type="button"
             onClick={() => onChange(photos.slice(1))}
-            className="inline-flex h-11 items-center rounded-2xl border border-[#E8E1D6] px-4 text-sm font-semibold text-[#C85A2E]"
+            className="inline-flex h-11 items-center rounded-2xl border border-[#E8E1D6] px-4 text-sm font-semibold text-[#B84420]"
           >
             Eliminar
           </button>
