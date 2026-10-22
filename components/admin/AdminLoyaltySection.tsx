@@ -523,7 +523,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       {editing ? (
         <ProgramFields values={values} onChange={setValues} mainPlaceId={program.placeId} team={false} />
       ) : (
-        <LoyaltyTeamEditor program={program} onChanged={onChanged} />
+        <LoyaltyTeamEditor program={program} endpoint={`/api/admin/wallet/programs/${program.id}`} onChanged={onChanged} />
       )}
 
       <MonthlyStamps months={program.monthly} />

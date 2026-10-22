@@ -8,6 +8,7 @@ const mockSession = jest.fn()
 jest.mock("next-auth", () => ({ getServerSession: () => mockSession() }))
 jest.mock("@/lib/auth", () => ({ authOptions: {} }))
 jest.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: jest.fn() }),
   redirect: (url: string) => {
     throw new Error(`redirect:${url}`)
   },
@@ -92,6 +93,7 @@ describe("/local", () => {
     const html = renderToStaticMarkup(await LocalPage())
     expect(html).toContain("Polvorín")
     expect(html).toContain("Activa")
+    expect(html).toContain("Agregar persona")
     // Volvieron sobre los clientes que vinieron (4 de 5), no sobre las tarjetas creadas.
     expect(html).toContain("80%")
     expect(html).toContain("Tienen tu tarjeta")
@@ -131,6 +133,7 @@ describe("/local", () => {
     expect(html).not.toContain("Mandá un aviso a tus clientes")
     expect(html).not.toContain("Sellos y premio")
     expect(html).toContain("las promos y el premio los maneja el encargado")
+    expect(html).not.toContain("Agregar persona")
   })
 
   it("after a change, the shop sees until when it has to wait", async () => {

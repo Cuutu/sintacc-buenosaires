@@ -21,6 +21,7 @@ import { RewardForm } from "@/components/wallet/RewardForm"
 import { nextRewardChangeAt } from "@/lib/wallet/reward-change"
 import { ShareCardLink } from "@/components/wallet/ShareCardLink"
 import { VisitsChart } from "@/components/wallet/VisitsChart"
+import { LocalTeamBlock } from "@/components/wallet/LocalTeamBlock"
 
 export const dynamic = "force-dynamic"
 
@@ -212,6 +213,19 @@ export default async function LocalPage() {
                           : null
                       }
                       initialReferral={Boolean(program.referralEnabled)}
+                    />
+                    <LocalTeamBlock
+                      programId={id}
+                      program={{
+                        placeName: place?.name ?? name,
+                        staffEmails: program.staffEmails ?? [],
+                        employeeEmails: program.employeeEmails ?? [],
+                        branches: (program.branches ?? []).map((b) => ({
+                          placeId: b.placeId.toString(),
+                          name: placeById.get(b.placeId.toString())?.name ?? "Sucursal",
+                          staffEmails: b.staffEmails ?? [],
+                        })),
+                      }}
                     />
                     <RewardForm
                       programId={id}

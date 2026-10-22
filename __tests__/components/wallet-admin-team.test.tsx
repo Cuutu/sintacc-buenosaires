@@ -36,7 +36,7 @@ async function mount(p: AdminProgramRow) {
   document.body.appendChild(el)
   const root = createRoot(el)
   await act(async () => {
-    root.render(<LoyaltyTeamEditor program={p} onChanged={onChanged} />)
+    root.render(<LoyaltyTeamEditor program={p} endpoint="/api/admin/wallet/programs/prog1" onChanged={onChanged} />)
   })
   return el
 }

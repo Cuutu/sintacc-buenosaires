@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react"
 import { X } from "lucide-react"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
-import type { AdminProgramRow } from "@/lib/wallet/loyalty-admin"
 import {
   addToTeam,
   isTeamEmail,
@@ -26,7 +25,14 @@ export const mailKeyboard = {
   autoComplete: "off",
 } as const
 
-const teamOf = (p: AdminProgramRow): TeamLists => ({
+export type TeamEditorProgram = {
+  placeName: string
+  staffEmails: string[]
+  employeeEmails: string[]
+  branches: Array<{ placeId: string; name: string; staffEmails: string[] }>
+}
+
+const teamOf = (p: TeamEditorProgram): TeamLists => ({
   staffEmails: p.staffEmails,
   employeeEmails: p.employeeEmails,
   branches: p.branches.map((b) => ({ placeId: b.placeId, staffEmails: b.staffEmails })),
@@ -45,10 +51,15 @@ const ROLES: Array<{ value: Role; label: string; hint: string }> = [
  */
 export function LoyaltyTeamEditor({
   program,
+  endpoint,
+  method = "PATCH",
   onChanged,
 }: {
-  program: AdminProgramRow
-  onChanged: () => Promise<void>
+  program: TeamEditorProgram
+  /** Admin: /api/admin/wallet/programs/<id> (PATCH). Panel del local: /api/local/programas/<id>/equipo (PUT). */
+  endpoint: string
+  method?: "PATCH" | "PUT"
+  onChanged: () => Promise<void> | void
 }) {
   const team = teamOf(program)
   const hasBranches = program.branches.length > 0
@@ -78,8 +89,8 @@ export function LoyaltyTeamEditor({
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/wallet/programs/${program.id}`, {
-        method: "PATCH",
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
