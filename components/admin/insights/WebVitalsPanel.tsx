@@ -47,9 +47,9 @@ const AUDIENCES: WebVitalAudience[] = ["web_mobile", "app", "web_desktop"]
 const MIN_SAMPLES = 20
 
 const RATING_STYLE: Record<WebVitalRating, string> = {
-  good: "bg-[#2F6B45]/10 text-[#2F6B45]",
-  "needs-improvement": "bg-[#B7791F]/12 text-[#8A5A12]",
-  poor: "bg-[#9A3A1B]/10 text-[#9A3A1B]",
+  good: "bg-success-soft text-success",
+  "needs-improvement": "bg-warning-soft text-warning",
+  poor: "bg-terracotta/10 text-terracotta-hover",
 }
 
 function formatValue(metric: WebVitalMetric, value: number): string {
@@ -64,7 +64,7 @@ function thresholdHint(metric: WebVitalMetric): string {
 }
 
 function Cell({ metric, cell }: { metric: WebVitalMetric; cell?: WebVitalCell }) {
-  if (!cell) return <span className="text-[#6B746C]">—</span>
+  if (!cell) return <span className="text-ink-muted">—</span>
   const few = cell.samples < MIN_SAMPLES
   return (
     <span
@@ -118,7 +118,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <h2 className={adminUi.label}>Velocidad con usuarios reales</h2>
-          <p className="mt-2 text-sm text-[#6B746C]">
+          <p className="mt-2 text-sm text-ink-muted">
             Cada número es el p75: 3 de cada 4 visitas cargaron igual o más rápido. Verde es bueno para
             Google, ámbar mejorable, rojo malo. Las celdas pálidas tienen menos de {MIN_SAMPLES} mediciones.
           </p>
@@ -138,7 +138,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
       </div>
 
       {error ? (
-        <div className={`${adminUi.card} p-5 text-sm text-[#9A3A1B]`}>
+        <div className={`${adminUi.card} p-5 text-sm text-terracotta-hover`}>
           {error}{" "}
           <button type="button" className="underline" onClick={() => void load(range)}>
             Reintentar
@@ -148,8 +148,8 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
         <div className={`${adminUi.card} h-48 animate-pulse`} />
       ) : rows.length === 0 ? (
         <div className={`${adminUi.card} p-6`}>
-          <p className="font-semibold text-[#234A33]">Todavía no hay mediciones para este grupo</p>
-          <p className="mt-2 text-sm text-[#6B746C]">
+          <p className="font-semibold text-olive">Todavía no hay mediciones para este grupo</p>
+          <p className="mt-2 text-sm text-ink-muted">
             Se llenan solas a medida que la gente abre CeliMap. Con unos días de tráfico ya hay p75 confiables.
           </p>
         </div>
@@ -157,7 +157,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
         <div className={`${adminUi.card} overflow-x-auto`}>
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
-              <tr className="border-b border-[#E8E1D6]">
+              <tr className="border-b border-line">
                 <th className={`px-5 py-3 ${adminUi.label}`}>Página</th>
                 {COLUMNS.map((col) => (
                   <th key={col.metric} className={`px-3 py-3 ${adminUi.label}`} title={`${col.hint}. ${thresholdHint(col.metric)}`}>
@@ -171,15 +171,15 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
               {rows.map((row) => (
                 <tr
                   key={`${row.audience}-${row.route}`}
-                  className={cn("border-b border-[#E8E1D6] last:border-0", row.route === "todas" && "bg-[#F8F5EF]")}
+                  className={cn("border-b border-line last:border-0", row.route === "todas" && "bg-cream")}
                 >
-                  <td className="px-5 py-3 font-medium text-[#234A33]">{ROUTE_LABELS[row.route] ?? row.route}</td>
+                  <td className="px-5 py-3 font-medium text-olive">{ROUTE_LABELS[row.route] ?? row.route}</td>
                   {COLUMNS.map((col) => (
                     <td key={col.metric} className="px-3 py-3">
                       <Cell metric={col.metric} cell={row.metrics[col.metric]} />
                     </td>
                   ))}
-                  <td className="px-5 py-3 text-right tabular-nums text-[#6B746C]">
+                  <td className="px-5 py-3 text-right tabular-nums text-ink-muted">
                     {webVitalRowSamples(row.metrics).toLocaleString("es-AR")}
                   </td>
                 </tr>
@@ -188,7 +188,7 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
           </table>
         </div>
       )}
-      <p className="text-xs text-[#6B746C]">
+      <p className="text-xs text-ink-muted">
         Se mide la carga por la que entró cada visita (la primera página), agrupada por tipo de página.
         {data?.truncated ? " Se leyeron las 50.000 mediciones más recientes." : ""}
       </p>

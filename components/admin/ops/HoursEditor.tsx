@@ -78,7 +78,7 @@ export function HoursEditor({
         <button
           type="button"
           onClick={copyFromFirstOpen}
-          className="h-9 rounded-full border border-[#E8E1D6] px-3 text-sm font-medium text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
+          className="h-9 rounded-full border border-line px-3 text-sm font-medium text-olive transition-colors duration-150 hover:bg-cream"
         >
           Copiar horarios
         </button>
@@ -88,8 +88,8 @@ export function HoursEditor({
         return (
           <div key={day.key} className="space-y-2">
             <div className="grid grid-cols-[7rem_1fr] items-start gap-3 sm:grid-cols-[8rem_auto]">
-              <p className="mt-2.5 text-sm font-medium text-[#234A33]">{day.label}</p>
-              <label className="flex h-11 items-center gap-2 text-sm text-[#6B746C]">
+              <p className="mt-2.5 text-sm font-medium text-olive">{day.label}</p>
+              <label className="flex h-11 items-center gap-2 text-sm text-ink-muted">
                 <input
                   type="checkbox"
                   checked={row.closed}
@@ -104,7 +104,7 @@ export function HoursEditor({
                       },
                     })
                   }
-                  className="rounded border-[#E8E1D6]"
+                  className="rounded border-line"
                 />
                 Cerrado
               </label>
@@ -122,20 +122,20 @@ export function HoursEditor({
                       value={range.open}
                       aria-label={`${day.label} rango ${rangeIdx + 1} abrir`}
                       onChange={(e) => updateRange(day.key, rangeIdx, "open", e.target.value)}
-                      className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+                      className="h-11 rounded-2xl border border-line bg-cream-card px-3 text-sm text-olive"
                     />
                     <input
                       type="time"
                       value={range.close}
                       aria-label={`${day.label} rango ${rangeIdx + 1} cerrar`}
                       onChange={(e) => updateRange(day.key, rangeIdx, "close", e.target.value)}
-                      className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+                      className="h-11 rounded-2xl border border-line bg-cream-card px-3 text-sm text-olive"
                     />
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => addRange(day.key)}
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-line bg-cream-card text-olive transition-colors duration-150 hover:bg-cream"
                         aria-label={`Agregar rango a ${day.label}`}
                       >
                         <Plus className="h-5 w-5" />
@@ -144,7 +144,7 @@ export function HoursEditor({
                         <button
                           type="button"
                           onClick={() => removeRange(day.key, rangeIdx)}
-                          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] text-[#8B5A3C] transition-colors duration-150 hover:bg-[#FEF3EF]"
+                          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-line bg-cream-card text-terracotta-hover transition-colors duration-150 hover:bg-terracotta/8"
                           aria-label={`Quitar rango ${rangeIdx + 1} de ${day.label}`}
                         >
                           <X className="h-5 w-5" />

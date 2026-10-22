@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Copy, Search, Trash2 } from "lucide-react"
 import { TYPES } from "@/lib/constants"
 import { inferSafetyLevel, getSafetyBadge } from "@/components/featured/featured-utils"
 import { PlaceEditModal } from "@/components/admin/PlaceEditModal"
@@ -11,15 +11,13 @@ import { getPlacePath } from "@/lib/place-url"
 import { placeCompleteness } from "@/lib/place-completeness"
 import { formatLocalityName, formatShortPlaceAddress } from "@/lib/place-location-display"
 import { PlaceCompleteness } from "@/components/admin/PlaceCompleteness"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { ActionMenu } from "@/components/admin/ui/action-menu"
+import { adminButtonClass } from "@/components/admin/ui/button"
+import { PublishStatusBadge } from "@/components/admin/ui/status-badge"
+import { AdminEmptyState, AdminListSkeleton } from "@/components/admin/ui/states"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
+import { formatAdminDate } from "@/lib/admin-format"
 
 export type AdminPlacesSectionProps = {
   places: PlaceItem[]
@@ -88,10 +86,6 @@ export type AdminPlacesSectionProps = {
   setPlaceReviewMode: (mode: "duplicates" | "incomplete" | "google" | null) => void
 }
 
-function formatEdit(iso?: string) {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleDateString("es-AR", { day: "numeric", month: "short" })
-}
 
 function placeAddressLine(place: PlaceItem) {
   return formatShortPlaceAddress(place) || place.address?.trim() || "Sin dirección"
@@ -110,8 +104,7 @@ function placeCityLabel(place: PlaceItem) {
 const PLACES_TABLE_GRID = "lg:grid-cols-[auto_minmax(0,1.6fr)_7rem_8rem_9rem_7rem_11rem]"
 
 /** Editar (botón) y Ver (link) con el mismo alto: antes uno medía 44 px y el otro 36. */
-const ROW_ACTION =
-  "inline-flex h-11 items-center justify-center rounded-full border border-[#E8E1D6] px-3 text-sm font-medium text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
+const ROW_ACTION = adminButtonClass({ variant: "secondary", className: "px-3" })
 
 export function AdminPlacesSection(props: AdminPlacesSectionProps) {
   const {
@@ -193,7 +186,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
       <div className={cn(adminUi.card, "p-5")}>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[180px] flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B746C]" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input
               placeholder="Buscar por nombre, dirección, barrio o ciudad."
               value={placeSearch}
@@ -201,7 +194,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") apply()
               }}
-              className="h-11 w-full rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] pl-9 pr-3 text-sm text-[#234A33] outline-none"
+              className={cn(adminUi.input, "pl-9")}
             />
           </div>
           <button type="button" className={adminUi.btnGhost} onClick={() => apply()}>
@@ -307,7 +300,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="inline-flex h-11 items-center rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] px-3 text-sm text-[#6B746C]">
+          <span className="inline-flex h-11 items-center rounded-2xl border border-line bg-cream px-3 text-sm text-ink-muted">
             País: Argentina
           </span>
           <select
@@ -316,7 +309,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               setPlaceProvinceFilter(e.target.value)
               setTimeout(() => apply(), 0)
             }}
-            className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+            className={adminUi.select}
           >
             <option value="">Provincia</option>
             {provinces.map((n) => (
@@ -331,7 +324,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               setPlaceLocalityFilter(e.target.value)
               setTimeout(() => apply(), 0)
             }}
-            className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+            className={adminUi.select}
           >
             <option value="">Ciudad</option>
             {localities.map((n) => (
@@ -346,7 +339,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               setPlaceNeighborhoodFilter(e.target.value)
               setTimeout(() => apply(), 0)
             }}
-            className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+            className={adminUi.select}
           >
             <option value="">Barrio</option>
             {neighborhoods.map((n) => (
@@ -361,7 +354,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               setPlaceTypeFilter(e.target.value)
               setTimeout(() => apply(), 0)
             }}
-            className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+            className={adminUi.select}
           >
             <option value="">Categoría</option>
             {TYPES.map((t) => (
@@ -376,7 +369,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               setPlaceSort(e.target.value)
               setTimeout(() => apply(), 0)
             }}
-            className="h-11 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#234A33]"
+            className={adminUi.select}
           >
             <option value="recent">Más recientes</option>
             <option value="oldest">Más antiguos</option>
@@ -387,23 +380,23 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
         </div>
 
         {selectedPlaceIds.size > 0 ? (
-          <div className="mt-4 rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] p-3">
-            <p className="mb-2 text-sm font-semibold text-[#234A33]">
+          <div className="mt-4 rounded-2xl border border-line bg-cream p-3" role="region" aria-label="Acciones para los lugares seleccionados">
+            <p className="mb-2 text-sm font-semibold text-olive">
               {selectedPlaceIds.size} seleccionados
             </p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("approve")}>
+              <button type="button" className={adminUi.btnGhost} onClick={() => handleBulkAction("approve")}>
                 Publicar
               </button>
-              <button type="button" className={adminUi.chip} onClick={() => handleBulkResearch()}>
+              <button type="button" className={adminUi.btnGhost} onClick={() => handleBulkResearch()}>
                 Investigar con IA
               </button>
-              <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("unpublish")}>
+              <button type="button" className={adminUi.btnGhost} onClick={() => handleBulkAction("unpublish")}>
                 Despublicar
               </button>
               <button
                 type="button"
-                className={adminUi.chip}
+                className={adminUi.btnGhost}
                 onClick={() => {
                   if (selectedPlaceIds.size !== 1) return
                   setEditingPlaceId(Array.from(selectedPlaceIds)[0])
@@ -415,7 +408,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               </button>
               <button
                 type="button"
-                className={adminUi.chip}
+                className={adminUi.btnGhost}
                 onClick={() => {
                   if (selectedPlaceIds.size !== 1) return
                   setEditingPlaceId(Array.from(selectedPlaceIds)[0])
@@ -425,18 +418,18 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               >
                 Completar información
               </button>
-              <Link href="/admin/destacados" className={adminUi.chip} title="Los destacados se gestionan en su módulo">
+              <Link href="/admin/destacados" className={adminUi.btnGhost} title="Los destacados se gestionan en su módulo">
                 Destacados
               </Link>
-              <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}>
+              <button type="button" className={adminUi.btnGhost} onClick={() => handleBulkAction("set_safety_level", "dedicated_gf")}>
                 100% sin TACC
               </button>
-              <button type="button" className={adminUi.chip} onClick={() => handleBulkAction("set_safety_level", "gf_options")}>
+              <button type="button" className={adminUi.btnGhost} onClick={() => handleBulkAction("set_safety_level", "gf_options")}>
                 Con opciones
               </button>
               <button
                 type="button"
-                className="inline-flex h-9 items-center rounded-full border border-[#B84420]/30 px-3 text-sm text-[#B84420]"
+                className={adminUi.btnDanger}
                 onClick={() => handleBulkAction("delete")}
               >
                 Eliminar
@@ -456,33 +449,33 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
 
       <div className={adminUi.card}>
         {placesLoading ? (
-          <p className="px-5 py-10 text-center text-sm text-[#6B746C]">Cargando lugares...</p>
+          <AdminListSkeleton rows={6} label="Cargando lugares…" />
         ) : places.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-[#6B746C]">No hay lugares</p>
+          <AdminEmptyState title="No hay lugares con estos filtros" hint="Probá sacando alguno." />
         ) : (
           <>
             <div className="lg:hidden space-y-3 p-3">
               {places.map(place => {
                 const completeness = placeCompleteness(place)
-                return <article key={place._id} className="rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] p-4">
+                return <article key={place._id} className="rounded-2xl border border-line bg-cream p-4">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="min-w-0 break-words font-semibold">{place.name}</h3>
-                    <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs">{place.status === "approved" ? "Publicado" : "Pendiente"}</span>
+                    <PublishStatusBadge status={place.status} />
                   </div>
-                  <p className="mt-2 text-sm text-[#234A33]">{placeAddressLine(place)}</p>
-                  <p className="mt-1 text-xs text-[#6B746C]">{[placeCityLabel(place), place.province].filter(Boolean).join(" · ") || "Sin ciudad"}</p>
+                  <p className="mt-2 text-sm text-olive">{placeAddressLine(place)}</p>
+                  <p className="mt-1 text-xs text-ink-muted">{[placeCityLabel(place), place.province].filter(Boolean).join(" · ") || "Sin ciudad"}</p>
                   <p className="mt-4 text-xs">Completitud: {completeness}%</p>
-                  <div role="progressbar" aria-label={`Completitud de ${place.name}`} aria-valuenow={completeness} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E1D6]">
-                    <div className="h-full rounded-full bg-[#234A33]" style={{ width: `${completeness}%` }} />
+                  <div role="progressbar" aria-label={`Completitud de ${place.name}`} aria-valuenow={completeness} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-2 overflow-hidden rounded-full bg-line">
+                    <div className="h-full rounded-full bg-olive" style={{ width: `${completeness}%` }} />
                   </div>
                   <div className="mt-4 flex items-center gap-3">
                     <label className="flex min-h-11 items-center gap-2 text-xs"><input type="checkbox" checked={selectedPlaceIds.has(place._id)} onChange={() => togglePlaceSelection(place._id)} aria-label={`Seleccionar ${place.name}`} />Seleccionar</label>
-                    <button type="button" className={cn(adminUi.btnPrimary, "min-h-12 flex-1")} onClick={() => setEditingPlaceId(place._id)}>Editar</button>
+                    <button type="button" className={cn(adminUi.btnGhost, "flex-1")} onClick={() => setEditingPlaceId(place._id)}>Editar</button>
                   </div>
                 </article>
               })}
             </div>
-            <div className={`hidden items-center gap-3 border-b border-[#E8E1D6] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B746C] lg:grid ${PLACES_TABLE_GRID}`}>
+            <div className={`hidden items-center gap-3 border-b border-line px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted lg:grid ${PLACES_TABLE_GRID}`}>
               <input
                 type="checkbox"
                 checked={selectedPlaceIds.size === places.length && places.length > 0}
@@ -497,7 +490,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
               <span>Acciones</span>
             </div>
 
-            <div className="hidden divide-y divide-[#E8E1D6] lg:block">
+            <div className="hidden divide-y divide-line lg:block">
               {places.map((place) => {
                 const level = inferSafetyLevel(place)
                 const cfg = getSafetyBadge(level)
@@ -512,33 +505,33 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                         aria-label={`Seleccionar ${place.name}`}
                       />
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-[#E8E1D6]">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-line">
                           {place.photos?.[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={place.photos[0]} alt="" className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center font-display text-sm font-bold text-[#234A33]">
+                            <div className="flex h-full w-full items-center justify-center font-display text-sm font-bold text-olive">
                               {initials}
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#234A33]">{place.name}</p>
-                          <p className="truncate text-xs text-[#234A33]">{placeAddressLine(place)}</p>
-                          <p className="truncate text-xs text-[#6B746C]">
+                          <p className="truncate text-sm font-semibold text-olive">{place.name}</p>
+                          <p className="truncate text-xs text-olive">{placeAddressLine(place)}</p>
+                          <p className="truncate text-xs text-ink-muted">
                             {TYPES.find((t) => t.value === place.type)?.label || place.type}
                             {level && level !== "unknown" ? ` · ${cfg.label}` : ""}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm text-[#234A33]">
-                        {place.status === "approved" ? "Publicado" : "Pendiente"}
+                      <span>
+                        <PublishStatusBadge status={place.status} />
                       </span>
-                      <span className="truncate text-sm text-[#6B746C]" title={placeCityLabel(place) || undefined}>
+                      <span className="truncate text-sm text-ink-muted" title={placeCityLabel(place) || undefined}>
                         {placeCityLabel(place) || "—"}
                       </span>
                       <PlaceCompleteness place={place} />
-                      <span className="text-sm text-[#6B746C]">{formatEdit(place.updatedAt)}</span>
+                      <span className="text-sm text-ink-muted">{formatAdminDate(place.updatedAt)}</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -550,30 +543,22 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                         <Link href={getPlacePath(place)} target="_blank" className={ROW_ACTION}>
                           Ver
                         </Link>
-                        {/* Menú de Radix: se cierra con Escape, con un clic afuera y al abrir el modal. */}
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E8E1D6] text-[#234A33] transition-colors duration-150 hover:bg-[#F8F5EF]"
-                              aria-label={`Más acciones para ${place.name}`}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="min-w-[10rem]">
-                            <DropdownMenuItem onSelect={() => handleDuplicatePlace(place)}>
-                              Duplicar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-[#B84420] focus:text-[#B84420]"
-                              onSelect={() => handleDeletePlace(place._id, place.name)}
-                            >
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ActionMenu
+                          label={`Más acciones para ${place.name}`}
+                          items={[
+                            {
+                              label: "Duplicar",
+                              icon: <Copy className="h-4 w-4" aria-hidden />,
+                              onSelect: () => handleDuplicatePlace(place),
+                            },
+                            {
+                              label: "Eliminar",
+                              icon: <Trash2 className="h-4 w-4" aria-hidden />,
+                              danger: true,
+                              onSelect: () => handleDeletePlace(place._id, place.name),
+                            },
+                          ]}
+                        />
                       </div>
                     </div>
                   </div>
@@ -582,7 +567,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
             </div>
 
             {placesPagination && placesPagination.pages > 1 ? (
-              <div className="flex items-center justify-center gap-2 border-t border-[#E8E1D6] py-4">
+              <div className="flex items-center justify-center gap-2 border-t border-line py-4">
                 <button
                   type="button"
                   className={adminUi.btnGhost}
@@ -592,7 +577,7 @@ export function AdminPlacesSection(props: AdminPlacesSectionProps) {
                   <ChevronLeft className="mr-1 h-4 w-4" />
                   Anterior
                 </button>
-                <span className="px-2 text-xs text-[#6B746C]">
+                <span className="px-2 text-xs text-ink-muted">
                   Página {placesPagination.page} de {placesPagination.pages}
                 </span>
                 <button

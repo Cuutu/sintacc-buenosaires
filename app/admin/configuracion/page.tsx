@@ -6,7 +6,13 @@ export default async function AdminConfigPage() {
   const counts = await getAdminCounts()
   return (
     <Suspense>
-      <AdminModulePage title="Configuración" counts={counts} defaultSection="social" tabs={[]} />
+      <AdminModulePage
+        title="Redes sociales"
+        subtitle="Armá el texto y la imagen de una historia o un posteo a partir de los lugares."
+        counts={counts}
+        defaultSection="social"
+        tabs={[]}
+      />
     </Suspense>
   )
 }

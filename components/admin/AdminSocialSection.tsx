@@ -236,13 +236,13 @@ export function AdminSocialSection() {
     : imagePrompt
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-card">
+    <div className="rounded-xl border border-line overflow-hidden">
+      <div className="px-4 py-3 border-b border-line bg-cream-card">
         <h2 className="text-sm font-bold flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Sparkles className="h-4 w-4 text-olive" />
           Redes sociales
         </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-ink-muted mt-0.5">
           Generá imágenes desde acá: listados con plantilla A+D (texto exacto) o CTA/hitos con
           OpenRouter. Máx {IMAGE_PROMPT_MAX_ITEMS} ítems por historia.
         </p>
@@ -257,19 +257,19 @@ export function AdminSocialSection() {
               onClick={() => setActivePreset(preset.id)}
               className={`text-left p-3 rounded-xl border transition-colors ${
                 activePreset === preset.id
-                  ? "border-primary/40 bg-primary/8"
-                  : "border-border bg-card hover:border-border/80"
+                  ? "border-olive/40 bg-olive/8"
+                  : "border-line bg-cream-card hover:border-line"
               }`}
             >
               <p className="text-sm font-semibold">{preset.label}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{preset.desc}</p>
+              <p className="text-[10px] text-ink-muted mt-0.5">{preset.desc}</p>
             </button>
           ))}
         </div>
 
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+            <p className="text-[10px] font-semibold text-ink-muted mb-1 uppercase tracking-wide">
               Plataforma
             </p>
             <div className="flex gap-1">
@@ -280,8 +280,8 @@ export function AdminSocialSection() {
                   onClick={() => setPlatform(p)}
                   className={`text-xs px-3 py-1.5 rounded-lg border ${
                     platform === p
-                      ? "border-primary/30 bg-primary/8 text-primary"
-                      : "border-border text-muted-foreground"
+                      ? "border-olive/30 bg-olive/8 text-olive"
+                      : "border-line text-ink-muted"
                   }`}
                 >
                   {p === "instagram" ? "Instagram" : "TikTok"}
@@ -291,7 +291,7 @@ export function AdminSocialSection() {
           </div>
 
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+            <p className="text-[10px] font-semibold text-ink-muted mb-1 uppercase tracking-wide">
               Formato imagen
             </p>
             <div className="flex gap-1">
@@ -300,8 +300,8 @@ export function AdminSocialSection() {
                 onClick={() => setImageFormat("story")}
                 className={`text-xs px-3 py-1.5 rounded-lg border ${
                   imageFormat === "story"
-                    ? "border-primary/30 bg-primary/8 text-primary"
-                    : "border-border text-muted-foreground"
+                    ? "border-olive/30 bg-olive/8 text-olive"
+                    : "border-line text-ink-muted"
                 }`}
               >
                 Historia 9:16
@@ -311,8 +311,8 @@ export function AdminSocialSection() {
                 onClick={() => setImageFormat("feed")}
                 className={`text-xs px-3 py-1.5 rounded-lg border ${
                   imageFormat === "feed"
-                    ? "border-primary/30 bg-primary/8 text-primary"
-                    : "border-border text-muted-foreground"
+                    ? "border-olive/30 bg-olive/8 text-olive"
+                    : "border-line text-ink-muted"
                 }`}
               >
                 Feed 1:1
@@ -321,7 +321,7 @@ export function AdminSocialSection() {
           </div>
 
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground mb-1">Cantidad</p>
+            <p className="text-[10px] font-semibold text-ink-muted mb-1">Cantidad</p>
             <Input
               type="number"
               min={1}
@@ -332,13 +332,13 @@ export function AdminSocialSection() {
               }
               className="h-8 w-20 text-sm"
             />
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-ink-muted mt-0.5">
               Prompt usa max {IMAGE_PROMPT_MAX_ITEMS}
             </p>
           </div>
 
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground mb-1">Días</p>
+            <p className="text-[10px] font-semibold text-ink-muted mb-1">Días</p>
             <Input
               type="number"
               min={0}
@@ -349,7 +349,7 @@ export function AdminSocialSection() {
             />
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-muted-foreground pb-1">
+          <label className="flex items-center gap-2 text-xs text-ink-muted pb-1">
             <input
               type="checkbox"
               checked={includeLogo}
@@ -359,7 +359,7 @@ export function AdminSocialSection() {
             Adjuntar logo Celimap
           </label>
 
-          <label className="flex items-center gap-2 text-xs text-muted-foreground pb-1">
+          <label className="flex items-center gap-2 text-xs text-ink-muted pb-1">
             <input
               type="checkbox"
               checked={includePhotos}
@@ -373,7 +373,7 @@ export function AdminSocialSection() {
             activePreset !== "milestone" &&
             activePreset !== "cta_suggest" &&
             activePreset !== "latest_ventures" && (
-              <label className="flex items-center gap-2 text-xs text-muted-foreground pb-1">
+              <label className="flex items-center gap-2 text-xs text-ink-muted pb-1">
                 <input
                   type="checkbox"
                   checked={communityOnly}
@@ -386,7 +386,7 @@ export function AdminSocialSection() {
 
           {selectedPreset.needsNeighborhood && (
             <div className="min-w-[140px]">
-              <p className="text-[10px] font-semibold text-muted-foreground mb-1">Barrio</p>
+              <p className="text-[10px] font-semibold text-ink-muted mb-1">Barrio</p>
               <select
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
@@ -411,7 +411,7 @@ export function AdminSocialSection() {
             <p className="text-xs font-semibold mb-2">
               Ítems incluidos ({includedItems.length}/{items.length})
               {includedItems.length > IMAGE_PROMPT_MAX_ITEMS && (
-                <span className="font-normal text-amber-500/90">
+                <span className="font-normal text-warning">
                   {" "}
                   · solo los primeros {IMAGE_PROMPT_MAX_ITEMS} van al prompt imagen
                 </span>
@@ -424,7 +424,7 @@ export function AdminSocialSection() {
                   <div
                     key={item.id}
                     className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                      excluded ? "opacity-45 border-border/50" : "border-border bg-card/50"
+                      excluded ? "opacity-45 border-line" : "border-line bg-cream-card"
                     }`}
                   >
                     <input
@@ -438,7 +438,7 @@ export function AdminSocialSection() {
                         href={item.photoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-border"
+                        className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-line"
                         title="Descargar / adjuntar en ChatGPT"
                       >
                         <img
@@ -448,7 +448,7 @@ export function AdminSocialSection() {
                         />
                       </a>
                     ) : (
-                      <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-lg shrink-0">
+                      <div className="w-10 h-10 rounded-md bg-olive/6 flex items-center justify-center text-lg shrink-0">
                         {item.typeEmoji}
                       </div>
                     )}
@@ -456,7 +456,7 @@ export function AdminSocialSection() {
                       <p className="text-sm font-medium truncate">
                         {item.safetyDot} {item.name}
                       </p>
-                      <p className="text-[10px] text-muted-foreground truncate">
+                      <p className="text-[10px] text-ink-muted truncate">
                         {item.subtitle} · {item.typeLabel}
                         {item.ratingLine ? ` · ${item.ratingLine}` : ""}
                       </p>
@@ -465,7 +465,7 @@ export function AdminSocialSection() {
                       href={item.celimapUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary shrink-0"
+                      className="text-ink-muted hover:text-olive shrink-0"
                       title="Abrir ficha"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -481,7 +481,7 @@ export function AdminSocialSection() {
           activePreset !== "milestone" &&
           activePreset !== "cta_suggest" &&
           !loadingItems && (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-sm text-ink-muted text-center py-4">
               No hay ítems recientes con estos filtros.
             </p>
           )}
@@ -516,29 +516,29 @@ export function AdminSocialSection() {
             )}
             Solo caption + prompt
           </Button>
-          <span className="text-[10px] text-muted-foreground self-center">
+          <span className="text-[10px] text-ink-muted self-center">
             Motor: {usesTemplate ? "Plantilla" : "OpenRouter"}
           </span>
         </div>
 
         {imageResult && (
-          <div className="space-y-3 pt-2 border-t border-border">
+          <div className="space-y-3 pt-2 border-t border-line">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${
                   imageResult.engine === "template"
-                    ? "border-primary/30 text-primary bg-primary/10"
-                    : "border-amber-500/30 text-amber-400 bg-amber-500/10"
+                    ? "border-olive/30 text-olive bg-olive/8"
+                    : "border-warning-bar text-warning bg-warning-soft"
                 }`}
               >
                 {imageResult.engine === "template" ? "Plantilla A+D" : "OpenRouter"}
                 {imageResult.cost != null ? ` · $${imageResult.cost.toFixed(2)}` : ""}
               </span>
               {imageResult.model && (
-                <span className="text-[10px] text-muted-foreground">{imageResult.model}</span>
+                <span className="text-[10px] text-ink-muted">{imageResult.model}</span>
               )}
             </div>
-            <div className="flex justify-center rounded-xl border border-border bg-black/40 p-4">
+            <div className="flex justify-center rounded-xl border border-line bg-black/40 p-4">
               <a href={imageResult.imageUrl} target="_blank" rel="noopener noreferrer">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -598,7 +598,7 @@ export function AdminSocialSection() {
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 text-xs text-ink-muted hover:text-olive"
             >
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
@@ -606,8 +606,8 @@ export function AdminSocialSection() {
               Prompt manual (fallback ChatGPT)
             </button>
             {showAdvanced && (
-              <div className="space-y-4 pl-1 border-l-2 border-border ml-1">
-                <div className="rounded-lg border border-border/60 bg-card/50 p-3 text-xs text-muted-foreground">
+              <div className="space-y-4 pl-1 border-l-2 border-line ml-1">
+                <div className="rounded-lg border border-line bg-cream-card p-3 text-xs text-ink-muted">
                   {imageResult
                     ? "Solo si querés editar en ChatGPT. La imagen de arriba ya se generó desde Celimap."
                     : "Copiá el prompt y usalo en ChatGPT si preferís generar la imagen afuera."}
@@ -658,10 +658,10 @@ export function AdminSocialSection() {
         )}
 
         {preview && !imageResult && (
-          <div className="space-y-4 pt-2 border-t border-border">
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground space-y-1.5">
-              <p className="font-semibold text-foreground flex items-center gap-1.5">
-                <ImageIcon className="h-3.5 w-3.5 text-primary" />
+          <div className="space-y-4 pt-2 border-t border-line">
+            <div className="rounded-lg border border-olive/20 bg-olive/8 p-3 text-xs text-ink-muted space-y-1.5">
+              <p className="font-semibold text-olive flex items-center gap-1.5">
+                <ImageIcon className="h-3.5 w-3.5 text-olive" />
                 Cómo usar con ChatGPT
               </p>
               <ol className="list-decimal list-inside space-y-0.5 pl-0.5">

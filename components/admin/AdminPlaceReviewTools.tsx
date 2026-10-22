@@ -447,11 +447,11 @@ export function AdminPlaceReviewTools({
         : "Sincroniza rating y reseñas de Google. Celimap sigue siendo la fuente principal."
 
   return (
-    <div className="border-b border-border bg-card/60 px-4 py-3 space-y-3">
+    <div className="border-b border-line bg-cream-card px-4 py-3 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold">{title}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          <p className="text-xs text-ink-muted mt-0.5">{subtitle}</p>
         </div>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -459,14 +459,14 @@ export function AdminPlaceReviewTools({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+        <div className="flex items-center gap-2 text-xs text-ink-muted py-6 justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
           Analizando…
         </div>
       ) : mode === "duplicates" ? (
         <div className="space-y-2">
           {duplicateMeta ? (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[11px] text-ink-muted">
               Escaneados {duplicateMeta.scanned} lugares · {duplicateMeta.exactCount} exactos ·{" "}
               {duplicateMeta.likelyCount} probables · {duplicatePairs.length} total
             </p>
@@ -493,7 +493,7 @@ export function AdminPlaceReviewTools({
 
           <div className="space-y-2 max-h-80 overflow-y-auto">
           {duplicatePairs.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">
+            <p className="text-xs text-ink-muted py-4 text-center">
               No hay duplicados para revisar.
             </p>
           ) : (
@@ -504,34 +504,34 @@ export function AdminPlaceReviewTools({
                 key={`${pair.placeA.id}-${pair.placeB.id}-${index}`}
                 className={
                   isExact
-                    ? "rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs"
-                    : "rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs"
+                    ? "rounded-lg border border-danger bg-danger-soft px-3 py-2 text-xs"
+                    : "rounded-lg border border-warning-bar bg-warning-soft px-3 py-2 text-xs"
                 }
               >
                 <div
                   className={
                     isExact
-                      ? "flex items-center gap-1 font-semibold mb-2 text-red-200"
-                      : "flex items-center gap-1 font-semibold mb-2 text-amber-200"
+                      ? "flex items-center gap-1 font-semibold mb-2 text-danger"
+                      : "flex items-center gap-1 font-semibold mb-2 text-warning"
                   }
                 >
                   <AlertTriangle
                     className={
-                      isExact ? "h-3.5 w-3.5 text-red-400" : "h-3.5 w-3.5 text-amber-400"
+                      isExact ? "h-3.5 w-3.5 text-danger" : "h-3.5 w-3.5 text-warning"
                     }
                   />
                   {isExact ? "Duplicado exacto" : "Duplicado probable"} · score {pair.score}
                 </div>
                 {pair.reasons?.length ? (
-                  <p className="mb-2 text-[10px] text-muted-foreground">
+                  <p className="mb-2 text-[10px] text-ink-muted">
                     {pair.reasons.join(" · ")}
                   </p>
                 ) : null}
-                <div className="space-y-2 text-foreground/90">
+                <div className="space-y-2 text-olive/90">
                   {([pair.placeA, pair.placeB] as const).map((place) => (
                     <label
                       key={place.id}
-                      className="flex items-start gap-2 rounded border border-border/50 bg-background/30 px-2 py-1.5 cursor-pointer"
+                      className="flex items-start gap-2 rounded border border-line bg-background/30 px-2 py-1.5 cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -550,7 +550,7 @@ export function AdminPlaceReviewTools({
                         >
                           {place.name}
                         </button>
-                        <span className="text-muted-foreground block">
+                        <span className="text-ink-muted block">
                           {typeLabel(place.type)} · {place.address}
                           {place.neighborhood ? ` · ${place.neighborhood}` : ""}
                         </span>
@@ -567,18 +567,18 @@ export function AdminPlaceReviewTools({
       ) : mode === "incomplete" ? (
         <div className="space-y-3">
           {queueStats ? (
-            <div className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
-              <span>En cola: <strong className="text-foreground">{queueStats.queued}</strong></span>
-              <span>Procesando: <strong className="text-foreground">{queueStats.running}</strong></span>
-              <span>Listos: <strong className="text-primary">{queueStats.done}</strong></span>
-              <span>Fallidos: <strong className="text-red-400">{queueStats.failed}</strong></span>
+            <div className="rounded-lg border border-line bg-background/40 px-3 py-2 text-[11px] text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
+              <span>En cola: <strong className="text-olive">{queueStats.queued}</strong></span>
+              <span>Procesando: <strong className="text-olive">{queueStats.running}</strong></span>
+              <span>Listos: <strong className="text-olive">{queueStats.done}</strong></span>
+              <span>Fallidos: <strong className="text-danger">{queueStats.failed}</strong></span>
               {queueStats.workerActive ? (
-                <span className="text-primary flex items-center gap-1">
+                <span className="text-olive flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Procesando…
                 </span>
               ) : queueStats.stalled ? (
-                <span className="text-amber-400">Cola pausada</span>
+                <span className="text-warning">Cola pausada</span>
               ) : null}
             </div>
           ) : null}
@@ -626,7 +626,7 @@ export function AdminPlaceReviewTools({
               </Button>
             ) : null}
             {batchRemaining != null ? (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[11px] text-ink-muted">
                 {batchRemaining} para revisar
                 {incompleteOnlyCount != null && incompleteOnlyCount !== batchRemaining
                   ? ` · ${incompleteOnlyCount} ficha mínima`
@@ -650,8 +650,8 @@ export function AdminPlaceReviewTools({
                 onClick={() => setReviewFilter(filter.id)}
                 className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
                   reviewFilter === filter.id
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-border/80"
+                    ? "border-olive/40 bg-olive/8 text-olive"
+                    : "border-line text-ink-muted hover:border-line"
                 }`}
               >
                 {filter.label} ({filter.count})
@@ -661,14 +661,14 @@ export function AdminPlaceReviewTools({
 
           <div className="space-y-3 max-h-[32rem] overflow-y-auto">
             {filteredIncompletePlaces.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">
+              <p className="text-xs text-ink-muted py-4 text-center">
                 No hay lugares en este filtro.
               </p>
             ) : (
               filteredIncompletePlaces.map((place) => (
                 <div
                   key={place._id}
-                  className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-xs"
+                  className="rounded-lg border border-line bg-background/40 px-3 py-2 text-xs"
                 >
                   <div className="min-w-0">
                     {catalog === "pending" ? (
@@ -683,11 +683,11 @@ export function AdminPlaceReviewTools({
                     ) : (
                       <p className="font-semibold">{place.name}</p>
                     )}
-                    <p className="text-muted-foreground truncate">
+                    <p className="text-ink-muted truncate">
                       {place.address}
                       {place.neighborhood ? ` · ${place.neighborhood}` : ""}
                     </p>
-                    <p className="text-[10px] text-amber-400 mt-1">
+                    <p className="text-[10px] text-warning mt-1">
                       {place.missing.length > 0
                         ? `Falta: ${place.missing.join(", ")}`
                         : "Ficha completa — revisá informe IA"}
@@ -711,38 +711,38 @@ export function AdminPlaceReviewTools({
       ) : (
         <div className="space-y-3">
           {googleStats ? (
-            <div className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
+            <div className="rounded-lg border border-line bg-background/40 px-3 py-2 text-[11px] text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
               <span>
                 Cobertura:{" "}
-                <strong className="text-foreground">
+                <strong className="text-olive">
                   {googleStats.coveragePct}% ({googleStats.withSnapshot}/{googleStats.approvedTotal})
                 </strong>
               </span>
               <span>
-                Pendientes: <strong className="text-foreground">{googleStats.needsSync}</strong>
+                Pendientes: <strong className="text-olive">{googleStats.needsSync}</strong>
               </span>
               <span>
-                En cola: <strong className="text-foreground">{googleStats.queued}</strong>
+                En cola: <strong className="text-olive">{googleStats.queued}</strong>
               </span>
               <span>
-                Procesando: <strong className="text-foreground">{googleStats.running}</strong>
+                Procesando: <strong className="text-olive">{googleStats.running}</strong>
               </span>
               <span>
-                Listos: <strong className="text-primary">{googleStats.done}</strong>
+                Listos: <strong className="text-olive">{googleStats.done}</strong>
               </span>
               <span>
-                Fallidos: <strong className="text-red-400">{googleStats.failed}</strong>
+                Fallidos: <strong className="text-danger">{googleStats.failed}</strong>
               </span>
               {googleStats.workerActive ? (
-                <span className="text-primary flex items-center gap-1">
+                <span className="text-olive flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Sync…
                 </span>
               ) : googleStats.stalled ? (
-                <span className="text-amber-400">Cola pausada</span>
+                <span className="text-warning">Cola pausada</span>
               ) : null}
               {googleStats.configured === false ? (
-                <span className="text-red-400">API Google no configurada</span>
+                <span className="text-danger">API Google no configurada</span>
               ) : null}
             </div>
           ) : null}
@@ -806,8 +806,8 @@ export function AdminPlaceReviewTools({
                 onClick={() => setGoogleFilter(filter.id)}
                 className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
                   googleFilter === filter.id
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-border/80"
+                    ? "border-olive/40 bg-olive/8 text-olive"
+                    : "border-line text-ink-muted hover:border-line"
                 }`}
               >
                 {filter.label} ({filter.count})
@@ -817,14 +817,14 @@ export function AdminPlaceReviewTools({
 
           <div className="space-y-2 max-h-[32rem] overflow-y-auto">
             {filteredGooglePlaces.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">
+              <p className="text-xs text-ink-muted py-4 text-center">
                 No hay lugares en este filtro. Encolá para sincronizar.
               </p>
             ) : (
               filteredGooglePlaces.map((place) => (
                 <div
                   key={place._id}
-                  className="rounded-lg border border-border/80 bg-background/40 px-3 py-2 text-xs"
+                  className="rounded-lg border border-line bg-background/40 px-3 py-2 text-xs"
                 >
                   <button
                     type="button"
@@ -833,19 +833,19 @@ export function AdminPlaceReviewTools({
                   >
                     {place.name}
                   </button>
-                  <p className="text-muted-foreground truncate">
+                  <p className="text-ink-muted truncate">
                     {place.address}
                     {place.neighborhood ? ` · ${place.neighborhood}` : ""}
                   </p>
-                  <p className="text-[10px] mt-1 text-muted-foreground">
+                  <p className="text-[10px] mt-1 text-ink-muted">
                     Estado:{" "}
                     <span
                       className={
                         place.syncStatus === "done"
-                          ? "text-primary"
+                          ? "text-olive"
                           : place.syncStatus === "failed"
-                            ? "text-red-400"
-                            : "text-amber-400"
+                            ? "text-danger"
+                            : "text-warning"
                       }
                     >
                       {place.syncStatus ?? "—"}
@@ -864,7 +864,7 @@ export function AdminPlaceReviewTools({
                       : null}
                   </p>
                   {place.syncError ? (
-                    <p className="text-[10px] text-red-400 mt-0.5">{place.syncError}</p>
+                    <p className="text-[10px] text-danger mt-0.5">{place.syncError}</p>
                   ) : null}
                 </div>
               ))

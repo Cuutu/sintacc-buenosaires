@@ -22,13 +22,13 @@ export function OpsDashboard({ initial }: { initial: AdminOpsSnapshot }) {
   return <div className="mx-auto max-w-5xl space-y-6">
     <header>
       <h1 className={adminUi.title}>Centro de operaciones</h1>
-      <p className="mt-2 text-[#6B746C]">Todo lo que necesitás para mantener CeliMap completo, actualizado y útil.</p>
+      <p className="mt-2 text-ink-muted">Todo lo que necesitás para mantener CeliMap completo, actualizado y útil.</p>
     </header>
     <section className="grid gap-4 lg:grid-cols-3" aria-label="Resumen">
       <div className={`${adminUi.card} p-6`}>
         <h2 className="text-sm font-semibold">Calidad CeliMap</h2>
-        <p className="my-3 text-4xl font-bold text-[#234A33]">{data.qualityScore == null ? "—" : `${data.qualityScore}/100`}</p>
-        <p className="text-sm text-[#6B746C]">{data.qualityExplain}</p>
+        <p className="my-3 text-4xl font-bold text-olive">{data.qualityScore == null ? "—" : `${data.qualityScore}/100`}</p>
+        <p className="text-sm text-ink-muted">{data.qualityExplain}</p>
       </div>
       <Link href="/admin/mensajes?estado=pendiente" className={`${adminUi.card} p-6 focus-visible:ring-2`}>
         <h2>Mensajes pendientes</h2><p className="mt-3 text-4xl font-bold">{data.counts.contactsPending}</p>

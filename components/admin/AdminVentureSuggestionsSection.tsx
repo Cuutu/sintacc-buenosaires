@@ -1,13 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { VentureSuggestionEditModal } from "@/components/admin/VentureSuggestionEditModal"
 import { getCategoryLabels, getSafetyBadge, getVentureCategories } from "@/lib/venture-constants"
 import type { AdminCounts, VentureSuggestionItem } from "@/components/admin/types"
+import { AdminButton } from "@/components/admin/ui/button"
+import { AdminSectionTitle } from "@/components/admin/ui/page-header"
+import { StatusBadge, Tag } from "@/components/admin/ui/status-badge"
+import { AdminEmptyState, AdminListSkeleton } from "@/components/admin/ui/states"
+import { adminUi } from "@/lib/admin-ui"
+import { cn } from "@/lib/utils"
 
 export type AdminVentureSuggestionsSectionProps = {
   counts: AdminCounts | null
@@ -36,76 +40,61 @@ export function AdminVentureSuggestionsSection(props: AdminVentureSuggestionsSec
   const [rejectingSuggestion, setRejectingSuggestion] = useState<VentureSuggestionItem | null>(null)
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-card">
-        <h2 className="text-sm font-bold flex items-center gap-2">
+    <div className={cn(adminUi.card, "overflow-hidden")}>
+      <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <AdminSectionTitle hint="Emprendimientos sin local abierto al público. Si tiene local, va al mapa como lugar.">
           Emprendimientos sugeridos
-          {(counts?.ventureSuggestionsPending ?? 0) > 0 && (
-            <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-full">
-              {counts?.ventureSuggestionsPending} pendientes
-            </span>
-          )}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Emprendimientos sin local físico. Si tiene local abierto, debe ir al mapa.
-        </p>
+        </AdminSectionTitle>
+        {(counts?.ventureSuggestionsPending ?? 0) > 0 ? (
+          <StatusBadge tone="warning">{counts?.ventureSuggestionsPending} pendientes</StatusBadge>
+        ) : null}
       </div>
 
-      <div className="px-4 py-2 border-b border-border bg-card/50">
+      <div className="border-b border-line px-5 py-4">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre o zona..."
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+          <input
+            placeholder="Buscar por nombre o zona…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-8 text-sm"
+            className={cn(adminUi.input, "pl-9")}
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-muted-foreground text-sm">Cargando...</div>
+        <AdminListSkeleton rows={3} label="Cargando sugerencias…" />
       ) : suggestions.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground text-sm">
-          No hay sugerencias de emprendimientos pendientes
-        </div>
+        <AdminEmptyState title="No hay emprendimientos sugeridos pendientes" />
       ) : (
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-line">
           {suggestions.map((s) => {
             const d = s.ventureDraft
             const safety = getSafetyBadge(d.safetyLevel)
             return (
-              <div key={s._id} className="p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold">{d.name || "Sin nombre"}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+              <div key={s._id} className="px-5 py-4">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-olive">{d.name || "Sin nombre"}</h3>
+                    <p className="mt-1 text-sm text-ink-muted">
                       {getCategoryLabels(getVentureCategories(d)).join(", ")} · {d.zone}
                       {s.suggestedByUserId?.name && ` · por ${s.suggestedByUserId.name}`}
                     </p>
-                    <p className="text-xs mt-1">
-                      {safety.dot} {safety.label}
-                    </p>
+                    <div className="mt-2">
+                      <Tag>{safety.label}</Tag>
+                    </div>
                     {s.suggesterComment && (
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                        {s.suggesterComment}
-                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{s.suggesterComment}</p>
                     )}
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button size="sm" onClick={() => handleAction(s._id, "approve")}>
-                      Aprobar
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditing(s)}>
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setRejectingSuggestion(s)}
-                    >
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <AdminButton variant="primary" onClick={() => handleAction(s._id, "approve")}>
+                      Publicar
+                    </AdminButton>
+                    <AdminButton onClick={() => setEditing(s)}>Revisar y editar</AdminButton>
+                    <AdminButton variant="danger" onClick={() => setRejectingSuggestion(s)}>
                       Rechazar
-                    </Button>
+                    </AdminButton>
                   </div>
                 </div>
               </div>

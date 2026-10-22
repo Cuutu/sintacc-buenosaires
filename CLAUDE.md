@@ -116,7 +116,8 @@ Modelo: `models/Place.ts`. Validación de entrada: `placeSchema` en `lib/validat
 - La marca visible es **CeliMap** (no "Celimap") en landings y templates SEO. "Celimap" sólo como nombre de app en stores / alternateName.
 - Tono: cálido, editorial, comunitario. Nada clínico, corporativo ni "dashboard de IA".
 - **Tokens:** `app/globals.css` + `tailwind.config.ts`. Oliva `#2D4A34` (texto/marca), crema `#F7F3EB` (fondo), terracota `#D4633A` (acento), terracota strong `#B84420` (botón primario, por contraste AA). Tipos: Nunito (UI) y Fraunces itálica (taglines). Detalle en `REBRANDING.md`.
-- Algunas pantallas (ficha de lugar, admin ops) usan hex directos (`#1F4D35`, `#F8F5EF`, `#E8E1D6`). Respetá lo que ya usa cada área; no mezcles sistemas en un mismo componente.
+- **Admin:** usa tokens, no hex: `olive`, `cream`, `cream-card`, `line` (bordes), `ink-muted` (texto secundario), `terracotta-strong` (solo la acción principal), `success` / `warning` / `danger` (con `-soft` para fondos). Componentes en `components/admin/ui` (AdminButton, FilterChip, StatusBadge, Tag, SegmentedControl, AdminPageHeader, ActionMenu, AdminListSkeleton, StatTile) y fechas con `formatAdminDate` (`lib/admin-format.ts`). `__tests__/components/admin-ui-kit.test.tsx` falla si vuelve un hex suelto o una clase del tema oscuro. Esos tokens de estado son hex en variables: no aceptan `/opacidad` (usá la variante `-soft`).
+- La ficha de lugar todavía usa hex directos (`#1F4D35`, `#F8F5EF`, `#E8E1D6`). Respetá lo que ya usa cada área; no mezcles sistemas en un mismo componente.
 - Reusá `components/ui/*` (shadcn/Radix), `components/brand/*` y `lucide-react` (ya está optimizado en `optimizePackageImports`). No agregues librerías de UI.
 
 ---

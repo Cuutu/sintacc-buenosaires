@@ -19,10 +19,10 @@ type Props = {
 }
 
 function confidenceColor(n?: number): string {
-  if (n == null) return "bg-muted"
-  if (n >= 70) return "bg-primary"
-  if (n >= 40) return "bg-amber-500"
-  return "bg-red-500"
+  if (n == null) return "bg-olive/6"
+  if (n >= 70) return "bg-success"
+  if (n >= 40) return "bg-warning-bar"
+  return "bg-danger"
 }
 
 function statusLabel(ai?: AiResearchItem): string {
@@ -135,17 +135,17 @@ export function SuggestionResearchPanel({
   const running = aiResearch?.status === "running" && !staleRunning
 
   return (
-    <div className="mb-3 rounded-lg border border-border/80 bg-card/40">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/60">
+    <div className="mb-3 rounded-lg border border-line bg-cream-card">
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-line">
         <span
           className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border ${
             aiResearch?.status === "done"
-              ? "border-primary/30 text-primary bg-primary/10"
+              ? "border-olive/30 text-olive bg-olive/8"
               : aiResearch?.status === "failed"
-                ? "border-red-500/30 text-red-400 bg-red-500/10"
+                ? "border-danger text-danger bg-danger-soft"
                 : staleRunning
-                  ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
-                  : "border-border text-muted-foreground"
+                  ? "border-warning-bar text-warning bg-warning-soft"
+                  : "border-line text-ink-muted"
           }`}
         >
           IA ·{" "}
@@ -174,13 +174,13 @@ export function SuggestionResearchPanel({
       </div>
 
       {staleRunning ? (
-        <p className="px-3 py-2 text-xs text-amber-400">
+        <p className="px-3 py-2 text-xs text-warning">
           La investigación no terminó (común en deploy Vercel). Tocá reintentar.
         </p>
       ) : null}
 
       {aiResearch?.status === "failed" && aiResearch.error ? (
-        <p className="px-3 py-2 text-xs text-red-400">{aiResearch.error}</p>
+        <p className="px-3 py-2 text-xs text-danger">{aiResearch.error}</p>
       ) : null}
 
       {aiResearch?.status === "done" && aiResearch.duplicateWarnings?.length ? (
@@ -194,7 +194,7 @@ export function SuggestionResearchPanel({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex w-full items-center gap-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
+            className="flex w-full items-center gap-1 px-3 py-2 text-xs text-ink-muted hover:text-olive"
           >
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
@@ -206,12 +206,12 @@ export function SuggestionResearchPanel({
           </button>
           {open ? (
             <div className="px-3 pb-3 space-y-3 text-xs">
-              <p className="text-foreground/90 leading-relaxed">{aiResearch.summary}</p>
+              <p className="text-olive/90 leading-relaxed">{aiResearch.summary}</p>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-1">Match Google</p>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <p className="text-[10px] text-ink-muted mb-1">Match Google</p>
+                  <div className="h-1.5 rounded-full bg-olive/6 overflow-hidden">
                     <div
                       className={`h-full ${confidenceColor(aiResearch.matchConfidence)}`}
                       style={{ width: `${aiResearch.matchConfidence ?? 0}%` }}
@@ -219,8 +219,8 @@ export function SuggestionResearchPanel({
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-1">Evidencia GF</p>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <p className="text-[10px] text-ink-muted mb-1">Evidencia GF</p>
+                  <div className="h-1.5 rounded-full bg-olive/6 overflow-hidden">
                     <div
                       className={`h-full ${confidenceColor(aiResearch.gfConfidence)}`}
                       style={{ width: `${aiResearch.gfConfidence ?? 0}%` }}
@@ -230,33 +230,33 @@ export function SuggestionResearchPanel({
               </div>
 
               <p>
-                <span className="text-muted-foreground">Recomendación: </span>
+                <span className="text-ink-muted">Recomendación: </span>
                 <span className="font-semibold">
                   {safetyLabel(aiResearch.recommendedSafetyLevel)}
                 </span>
                 {aiResearch.needsAdmin ? (
-                  <span className="text-amber-400 ml-1">· requiere revisión</span>
+                  <span className="text-warning ml-1">· requiere revisión</span>
                 ) : null}
               </p>
 
               {aiResearch.evidence?.length ? (
                 <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                  <p className="text-[10px] font-semibold text-ink-muted uppercase">
                     Evidencias
                   </p>
                   {aiResearch.evidence.map((ev, i) => (
                     <div
                       key={i}
-                      className="rounded border border-border/60 bg-background/40 px-2 py-1.5"
+                      className="rounded border border-line bg-background/40 px-2 py-1.5"
                     >
-                      <p className="text-[10px] text-primary uppercase">{ev.source}</p>
-                      <p className="text-foreground/80 italic">&ldquo;{ev.quote}&rdquo;</p>
+                      <p className="text-[10px] text-olive uppercase">{ev.source}</p>
+                      <p className="text-olive/80 italic">&ldquo;{ev.quote}&rdquo;</p>
                       {ev.url ? (
                         <a
                           href={ev.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] text-primary hover:underline break-all"
+                          className="text-[10px] text-olive hover:underline break-all"
                         >
                           {ev.url}
                         </a>
@@ -267,7 +267,7 @@ export function SuggestionResearchPanel({
               ) : null}
 
               {aiResearch.draftAutoFilled ? (
-                <p className="text-[10px] text-primary">
+                <p className="text-[10px] text-olive">
                   Borrador actualizado automáticamente (nombre, dirección, etc.).
                 </p>
               ) : null}
@@ -280,7 +280,7 @@ export function SuggestionResearchPanel({
                 </Button>
               ) : null}
 
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-ink-muted">
                 La IA no publica sola. Vos decidís aprobar o rechazar.
               </p>
             </div>

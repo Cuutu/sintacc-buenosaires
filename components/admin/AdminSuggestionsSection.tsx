@@ -1,14 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { AlertTriangle, Search } from "lucide-react"
-import { TYPES } from "@/lib/constants"
+import { AlertTriangle, Check, MapPin, PencilLine, Search, X } from "lucide-react"
 import { RejectionReasonDialog } from "@/components/admin/RejectionReasonDialog"
 import { SuggestionEditModal } from "@/components/admin/SuggestionEditModal"
 import { SuggestionResearchPanel } from "@/components/admin/SuggestionResearchPanel"
 import type { AdminCounts, SuggestionItem } from "@/components/admin/types"
+import { AdminButton } from "@/components/admin/ui/button"
+import { FilterChip } from "@/components/admin/ui/filter-chip"
+import { AdminSectionTitle } from "@/components/admin/ui/page-header"
+import { StatusBadge } from "@/components/admin/ui/status-badge"
+import { AdminEmptyState, AdminListSkeleton } from "@/components/admin/ui/states"
+import { adminUi } from "@/lib/admin-ui"
+import { cn } from "@/lib/utils"
 
 export type AdminSuggestionsSectionProps = {
   counts: AdminCounts | null
@@ -44,36 +48,27 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
     null
   )
   return (
-  <div className="rounded-xl border border-border overflow-hidden">
-    <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
-      <div>
-        <h2 className="text-sm font-bold flex items-center gap-2">
-          📩 Lugares sugeridos
-          {counts?.suggestionsPending != null && counts.suggestionsPending > 0 && (
-            <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-full">
-              {counts.suggestionsPending} pendientes
-            </span>
-          )}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Revisá cada lugar antes de publicarlo. La IA investiga Google y web pública; vos decidís
-          aprobar o rechazar.
-        </p>
-      </div>
+  <div className={cn(adminUi.card, "overflow-hidden")}>
+    <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+      <AdminSectionTitle hint="Revisá cada lugar antes de publicarlo. La IA investiga Google y la web pública; vos decidís si se publica.">
+        Lugares sugeridos
+      </AdminSectionTitle>
+      {counts?.suggestionsPending ? (
+        <StatusBadge tone="warning">{counts.suggestionsPending} pendientes</StatusBadge>
+      ) : null}
     </div>
 
-    {/* Buscador */}
-    <div className="px-4 py-2 border-b border-border bg-card/50 space-y-2">
+    <div className="space-y-3 border-b border-line px-5 py-4">
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre, dirección, barrio..."
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+        <input
+          placeholder="Buscar por nombre, dirección, barrio…"
           value={suggestionSearch}
           onChange={(e) => setSuggestionSearch(e.target.value)}
-          className="pl-9 h-8 text-sm"
+          className={cn(adminUi.input, "pl-9")}
         />
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-2">
         {(
           [
             ["all", "Todas"],
@@ -81,32 +76,19 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
             ["needs_admin", "Revisión manual"],
           ] as const
         ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setResearchFilter(id)}
-            className={`text-[10px] px-2 py-1 rounded-md border ${
-              researchFilter === id
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border text-muted-foreground"
-            }`}
-          >
+          <FilterChip key={id} selected={researchFilter === id} onClick={() => setResearchFilter(id)}>
             {label}
-          </button>
+          </FilterChip>
         ))}
       </div>
     </div>
 
     {loading ? (
-      <div className="text-center py-10 text-muted-foreground text-sm">Cargando...</div>
+      <AdminListSkeleton rows={3} label="Cargando sugerencias…" />
     ) : suggestions.length === 0 ? (
-      <div className="text-center py-10 text-muted-foreground">
-        <div className="text-3xl mb-2">🎉</div>
-        <p className="text-sm font-medium">¡No hay sugerencias pendientes!</p>
-        <p className="text-xs mt-1">Cuando alguien sugiera un lugar aparecerá acá.</p>
-      </div>
+      <AdminEmptyState title="No hay sugerencias pendientes" hint="Cuando alguien sugiera un lugar, aparece acá." />
     ) : (
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-line">
         {suggestions
           .filter((s) => {
             if (researchFilter === "needs_research") {
@@ -128,33 +110,33 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
             )
           })
           .map((suggestion, idx) => (
-            <div key={suggestion._id} className="p-4 flex gap-3 items-start">
-              {/* Número */}
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs font-bold font-mono flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div key={suggestion._id} className="flex items-start gap-3 px-5 py-4">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-olive/8 text-xs font-bold tabular-nums text-olive">
                 {idx + 1}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm mb-1">{suggestion.placeDraft.name}</p>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <span>{TYPES.find((t) => t.value === (suggestion.placeDraft.types?.[0] ?? suggestion.placeDraft.type))?.emoji} {getTypeLabel(suggestion.placeDraft.types?.[0] ?? suggestion.placeDraft.type)}</span>
-                  <span>·</span>
-                  <span>📍 {suggestion.placeDraft.neighborhood}</span>
-                  <span>·</span>
-                  <span className="truncate max-w-[200px]">{suggestion.placeDraft.address}</span>
+              <div className="min-w-0 flex-1">
+                <p className="mb-1 font-semibold text-olive">{suggestion.placeDraft.name}</p>
+                <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-muted">
+                  <span>{getTypeLabel(suggestion.placeDraft.types?.[0] ?? suggestion.placeDraft.type)}</span>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden />
+                    {suggestion.placeDraft.neighborhood}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span className="max-w-[260px] truncate">{suggestion.placeDraft.address}</span>
                 </div>
                 {suggestion.suggestedByUserId?.name && (
-                  <p className="text-xs text-muted-foreground/60 italic mb-3">
-                    Sugerido por {suggestion.suggestedByUserId.name}
-                  </p>
+                  <p className="mb-3 text-xs text-ink-muted">Sugerido por {suggestion.suggestedByUserId.name}</p>
                 )}
                 {suggestion.duplicateCandidates?.length ? (
                   <div
-                    className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+                    className={`mb-3 rounded-2xl border px-3 py-2 text-xs ${
                       suggestion.duplicateCandidates.some(
                         (candidate) => candidate.matchLevel === "exact"
                       )
-                        ? "border-red-500/40 bg-red-500/10"
-                        : "border-amber-500/30 bg-amber-500/10"
+                        ? "border-danger bg-danger-soft"
+                        : "border-warning-bar bg-warning-soft"
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -163,8 +145,8 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                           suggestion.duplicateCandidates.some(
                             (candidate) => candidate.matchLevel === "exact"
                           )
-                            ? "text-red-400"
-                            : "text-amber-400"
+                            ? "text-danger"
+                            : "text-warning"
                         }`}
                       />
                       <div className="min-w-0 space-y-1.5">
@@ -173,8 +155,8 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                             suggestion.duplicateCandidates.some(
                               (candidate) => candidate.matchLevel === "exact"
                             )
-                              ? "text-red-200"
-                              : "text-amber-200"
+                              ? "text-danger"
+                              : "text-warning"
                           }`}
                         >
                           {suggestion.duplicateCandidates.some(
@@ -185,28 +167,28 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                         </p>
                         <div className="space-y-1">
                           {suggestion.duplicateCandidates.map((candidate) => (
-                            <div key={`${candidate.kind}-${candidate.id}`} className="text-foreground/90">
+                            <div key={`${candidate.kind}-${candidate.id}`} className="text-olive">
                               <span className="font-medium">{candidate.name}</span>
-                              <span className="text-muted-foreground">
+                              <span className="text-ink-muted">
                                 {" "}({candidate.kind === "place" ? "ya publicado" : "otra sugerencia pendiente"})
                               </span>
                               {candidate.address ? (
-                                <span className="text-muted-foreground"> · {candidate.address}</span>
+                                <span className="text-ink-muted"> · {candidate.address}</span>
                               ) : null}
                               {candidate.type ? (
-                                <span className="text-muted-foreground">
+                                <span className="text-ink-muted">
                                   {" "}· {getTypeLabel(candidate.type)}
                                 </span>
                               ) : null}
                               {candidate.neighborhood && (
-                                <span className="text-muted-foreground"> · {candidate.neighborhood}</span>
+                                <span className="text-ink-muted"> · {candidate.neighborhood}</span>
                               )}
                               {candidate.distanceMeters != null && (
-                                <span className="text-muted-foreground">
+                                <span className="text-ink-muted">
                                   {" "}· {formatDistance(candidate.distanceMeters)}
                                 </span>
                               )}
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="text-[11px] text-ink-muted">
                                 {candidate.matchLevel === "exact"
                                   ? "Coincidencia exacta: nombre, dirección y tipo"
                                   : `Coincidencias: ${candidate.reasons.join(", ")} · score ${candidate.score}`}
@@ -228,29 +210,18 @@ const [rejectingSuggestion, setRejectingSuggestion] = useState<SuggestionItem | 
                   }}
                 />
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1.5 bg-primary text-primary-foreground"
-                    onClick={() => handleSuggestionAction(suggestion._id, "approve")}
-                  >
-                    ✅ Publicar lugar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5"
-                    onClick={() => setEditingSuggestion(suggestion)}
-                  >
-                    ✏️ Revisar y editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1.5 text-muted-foreground hover:text-destructive"
-                    onClick={() => setRejectingSuggestion(suggestion)}
-                  >
-                    ❌ Rechazar
-                  </Button>
+                  <AdminButton variant="primary" onClick={() => handleSuggestionAction(suggestion._id, "approve")}>
+                    <Check className="h-4 w-4" aria-hidden />
+                    Publicar lugar
+                  </AdminButton>
+                  <AdminButton onClick={() => setEditingSuggestion(suggestion)}>
+                    <PencilLine className="h-4 w-4" aria-hidden />
+                    Revisar y editar
+                  </AdminButton>
+                  <AdminButton variant="danger" onClick={() => setRejectingSuggestion(suggestion)}>
+                    <X className="h-4 w-4" aria-hidden />
+                    Rechazar
+                  </AdminButton>
                 </div>
               </div>
             </div>

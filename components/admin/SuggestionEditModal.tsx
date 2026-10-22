@@ -308,12 +308,12 @@ export function SuggestionEditModal({
                 />
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-ink-muted mt-1">
               ¿No aparece?{" "}
               <button
                 type="button"
                 onClick={() => setMapPickerOpen(true)}
-                className="text-primary hover:underline"
+                className="text-olive hover:underline"
               >
                 Ubicar en el mapa
               </button>
@@ -483,7 +483,7 @@ export function SuggestionEditModal({
             </div>
           </div>
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</p>
+            <p className="text-sm text-danger bg-danger-soft p-2 rounded">{error}</p>
           )}
         </div>
         <DialogFooter>

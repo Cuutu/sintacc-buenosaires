@@ -11,6 +11,8 @@ import { daysSince } from "@/lib/admin-quality"
 import { adminUi } from "@/lib/admin-ui"
 import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
 import { decodeStoredText } from "@/lib/stored-text"
+import { formatAdminDate } from "@/lib/admin-format"
+import { AdminListSkeleton } from "@/components/admin/ui/states"
 
 export type AdminReviewsSectionProps = {
   estadoFilter: string
@@ -38,17 +40,17 @@ const {
 } = props
   return (
   <div className={adminUi.card}>
-    <div className="border-b border-[#E8E1D6] px-5 py-4">
-      <h2 className="text-sm font-semibold text-[#234A33]">Reseñas</h2>
-      <p className="mt-0.5 text-xs text-[#6B746C]">
+    <div className="border-b border-line px-5 py-4">
+      <h2 className="text-sm font-semibold text-olive">Reseñas</h2>
+      <p className="mt-0.5 text-xs text-ink-muted">
         Ocultá reseñas inapropiadas, destacá las útiles o respondé como CeliMap
       </p>
     </div>
 
     <AdminEstadoFilter value={props.estadoFilter} onChange={props.onEstadoFilter} />
-    <div className="flex flex-wrap items-center gap-2 border-b border-[#E8E1D6] px-5 py-3">
+    <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
       <div className="relative flex-1 min-w-[180px] max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
         <Input
           placeholder="Buscar por lugar o comentario..."
           value={reviewSearch}
@@ -76,11 +78,11 @@ const {
     </div>
 
     {reviewsLoading ? (
-      <div className="text-center py-10 text-muted-foreground text-sm">Cargando reseñas...</div>
+      <AdminListSkeleton rows={4} label="Cargando reseñas…" />
     ) : reviews.length === 0 ? (
-      <div className="text-center py-10 text-muted-foreground text-sm">No hay reseñas</div>
+      <div className="text-center py-10 text-ink-muted text-sm">No hay reseñas</div>
     ) : (
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-line">
         {reviews.map((review) => {
           // placeId puede ser null si el lugar fue eliminado
           const placeId = review.placeId as any
@@ -95,25 +97,25 @@ const {
                     <Link
                       href={`/lugar/${placeMongoId}`}
                       target="_blank"
-                      className="text-sm font-bold text-primary hover:underline"
+                      className="text-sm font-bold text-olive hover:underline"
                     >
                       {placeName}
                     </Link>
                   ) : (
-                    <span className="text-sm font-bold text-muted-foreground">
+                    <span className="text-sm font-bold text-ink-muted">
                       {placeName}
                     </span>
                   )}
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-ink-muted flex-wrap">
                     <span>{review.userId?.name || "Usuario anónimo"}</span>
                     <span>·</span>
-                    <span className="text-amber-400">
+                    <span className="text-warning">
                       {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
                     </span>
                     <span>·</span>
-                    <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
+                    <span>{formatAdminDate(review.createdAt)}</span>
                     {(review.estado ?? "pendiente") === "pendiente" && daysSince(review.createdAt) != null && daysSince(review.createdAt)! >= 2 ? (
-                      <span className="font-medium text-[#B84420]">
+                      <span className="font-medium text-terracotta-strong">
                         · {daysSince(review.createdAt)} días sin resolver
                       </span>
                     ) : null}
@@ -121,13 +123,13 @@ const {
                 </div>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${
                   review.status === "visible"
-                    ? "bg-primary/8 text-primary border-primary/20"
-                    : "bg-destructive/8 text-destructive border-destructive/20"
+                    ? "bg-olive/8 text-olive border-olive/20"
+                    : "bg-danger-soft text-danger border-danger"
                 }`}>
                   {review.status === "visible" ? "✓ visible" : "✕ oculta"}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
+              <p className="text-sm text-ink-muted leading-relaxed mb-3 line-clamp-3">
                 {decodeStoredText(review.comment)}
               </p>
               {review.adminReply && (
@@ -160,13 +162,13 @@ const {
                 )}
                 {review.status === "visible" ? (
                   <Button size="sm" variant="outline"
-                    className="h-7 text-xs gap-1 text-amber-500 border-amber-500/30 hover:bg-amber-500/8"
+                    className="h-7 text-xs gap-1 text-warning border-warning-bar hover:bg-warning-soft"
                     onClick={() => handleReviewAction(review._id, "hide")}>
                     🙈 Ocultar
                   </Button>
                 ) : (
                   <Button size="sm" variant="outline"
-                    className="h-7 text-xs gap-1 text-primary border-primary/30"
+                    className="h-7 text-xs gap-1 text-olive border-olive/30"
                     onClick={() => handleReviewAction(review._id, "unhide")}>
                     ✅ Mostrar
                   </Button>

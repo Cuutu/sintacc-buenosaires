@@ -82,16 +82,16 @@ export function AdminOpsShell({
   }
 
   return (
-    <div className={cn("admin-ops min-h-screen text-[#234A33] [&_button]:min-h-11 [&_input:not([type=checkbox])]:min-h-11 [&_select]:min-h-11", adminUi.bg)}>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[240px] border-r border-[#E8E1D6] bg-[#F8F5EF] lg:flex lg:flex-col">
+    <div className={cn("admin-ops min-h-screen text-olive [&_button]:min-h-11 [&_input:not([type=checkbox])]:min-h-11 [&_select]:min-h-11", adminUi.bg)}>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[240px] border-r border-line bg-cream lg:flex lg:flex-col">
         <div className="px-5 pb-4 pt-6">
           <Link href="/" className="flex items-center gap-2" aria-label="Volver a CeliMap">
             <BrandLogo markOnly size="xs" />
             <div>
-              <p className="font-display text-sm font-extrabold tracking-[-0.03em] text-[#234A33]">
+              <p className="font-display text-sm font-extrabold tracking-[-0.03em] text-olive">
                 CeliMap
               </p>
-              <p className="text-[11px] font-medium text-[#6B746C]">Operaciones</p>
+              <p className="text-[11px] font-medium text-ink-muted">Operaciones</p>
             </div>
           </Link>
         </div>
@@ -109,8 +109,8 @@ export function AdminOpsShell({
                 className={cn(
                   "flex h-11 items-center justify-between rounded-2xl px-3 text-sm transition-colors duration-150",
                   active
-                    ? "bg-[#FCFBF8] font-semibold text-[#234A33] shadow-[0_8px_28px_-18px_rgba(35,74,51,0.16)]"
-                    : "text-[#6B746C] hover:bg-[#FCFBF8] hover:text-[#234A33]"
+                    ? "bg-cream-card font-semibold text-olive shadow-[0_8px_28px_-18px_rgba(35,74,51,0.16)]"
+                    : "text-ink-muted hover:bg-cream-card hover:text-olive"
                 )}
               >
                 <span>
@@ -118,7 +118,7 @@ export function AdminOpsShell({
                   {count > 0 ? ` (${count})` : ""}
                 </span>
                 {count > 0 ? (
-                  <span className="rounded-full bg-[#B84420] px-2 py-0.5 text-[11px] font-bold text-white">
+                  <span className="rounded-full bg-terracotta-strong px-2 py-0.5 text-[11px] font-bold text-white">
                     {count}
                   </span>
                 ) : null}
@@ -126,10 +126,10 @@ export function AdminOpsShell({
             )
           })}
         </nav>
-        <div className="border-t border-[#E8E1D6] p-3">
+        <div className="border-t border-line p-3">
           <Link
             href="/"
-            className="flex h-11 items-center gap-2 rounded-2xl px-3 text-sm font-medium text-[#234A33] hover:bg-[#FCFBF8]"
+            className="flex h-11 items-center gap-2 rounded-2xl px-3 text-sm font-medium text-olive hover:bg-cream-card"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver a CeliMap
@@ -138,10 +138,10 @@ export function AdminOpsShell({
       </aside>
 
       <div className="lg:pl-[240px]">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[#E8E1D6] bg-[#F8F5EF]/92 px-4 backdrop-blur-md md:px-8">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-line bg-cream/92 px-4 backdrop-blur-md md:px-8">
           <Link
             href="/"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#E8E1D6] text-[#234A33] hover:bg-[#FCFBF8] lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-line text-olive hover:bg-cream-card lg:hidden"
             aria-label="Volver a CeliMap"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -149,11 +149,11 @@ export function AdminOpsShell({
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 text-sm text-[#6B746C] lg:max-w-md"
+            className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-line bg-cream-card px-3 text-sm text-ink-muted lg:max-w-md"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span className="truncate">Buscar lugares, emprendimientos, mensajes…</span>
-            <kbd className="ml-auto hidden rounded-md border border-[#E8E1D6] px-1.5 text-[10px] text-[#6B746C] sm:inline">
+            <kbd className="ml-auto hidden rounded-md border border-line px-1.5 text-[10px] text-ink-muted sm:inline">
               ⌘K
             </kbd>
           </button>
@@ -161,7 +161,7 @@ export function AdminOpsShell({
             <button
               type="button"
               onClick={() => router.push("/sugerir")}
-              className="hidden h-11 items-center gap-2 rounded-2xl bg-[#B84420] px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#9A3A1B] sm:inline-flex"
+              className="hidden h-11 items-center gap-2 rounded-2xl bg-terracotta-strong px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-terracotta-hover sm:inline-flex"
             >
               <Plus className="h-4 w-4" />
               Lugar
@@ -169,7 +169,7 @@ export function AdminOpsShell({
             <button
               type="button"
               onClick={() => router.push("/sugerir-emprendimiento")}
-              className="hidden h-11 items-center rounded-2xl border border-[#E8E1D6] px-3 text-sm font-semibold text-[#234A33] transition-colors duration-150 hover:bg-[#FCFBF8] md:inline-flex"
+              className="hidden h-11 items-center rounded-2xl border border-line px-3 text-sm font-semibold text-olive transition-colors duration-150 hover:bg-cream-card md:inline-flex"
             >
               Emprendimiento
             </button>
@@ -179,7 +179,7 @@ export function AdminOpsShell({
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <nav aria-label="Navegación móvil del admin" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-[#E8E1D6] bg-[#FCFBF8] px-1 pt-1 pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <nav aria-label="Navegación móvil del admin" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-cream-card px-1 pt-1 pb-[env(safe-area-inset-bottom)] lg:hidden">
           {[
             { href: "/admin/lugares", label: "Lugares", icon: MapPin, count: counts.suggestionsPending },
             { href: "/admin/emprendimientos", label: "Emprendimientos", icon: Store, count: counts.ventureSuggestionsPending },
@@ -187,14 +187,14 @@ export function AdminOpsShell({
             { href: "/admin/resenas", label: "Reseñas", icon: Star, count: counts.reviewsPending },
           ].map(({ href, label, icon: Icon, count }) => <Link key={href} href={href}
             aria-current={pathname === href ? "page" : undefined}
-            className={cn("relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px]", pathname === href ? "bg-[#234A33] text-white" : "text-[#234A33]")}>
+            className={cn("relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px]", pathname === href ? "bg-olive text-white" : "text-olive")}>
             <Icon className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate">{label}</span>
-            {count > 0 && <span className="absolute right-1 top-0 rounded-full bg-[#B84420] px-1 text-[10px] text-white" aria-label={`${count} pendientes`}>{count > 99 ? "99+" : count}</span>}
+            {count > 0 && <span className="absolute right-1 top-0 rounded-full bg-terracotta-strong px-1 text-[10px] text-white" aria-label={`${count} pendientes`}>{count > 99 ? "99+" : count}</span>}
           </Link>)}
           <DialogTrigger asChild><button type="button" className="flex min-h-16 flex-col items-center justify-center gap-1 text-xs"><MoreHorizontal className="h-5 w-5" aria-hidden />Más</button></DialogTrigger>
         </nav>
-        <DialogContent className="w-[calc(100%-2rem)] rounded-3xl bg-[#FCFBF8] [&>button]:min-h-11 [&>button]:min-w-11">
+        <DialogContent className="w-[calc(100%-2rem)] rounded-3xl bg-cream-card [&>button]:min-h-11 [&>button]:min-w-11">
           <DialogTitle>Más herramientas</DialogTitle>
           <DialogDescription>Accesos del administrador de CeliMap</DialogDescription>
           <nav className="grid gap-2" aria-label="Más herramientas">

@@ -29,20 +29,20 @@ export function AdminPhotoStudio({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-[24px] border border-[#E8E1D6] bg-[#F8F5EF]">
+      <div className="overflow-hidden rounded-[24px] border border-line bg-cream">
         <div className={cn("relative w-full overflow-hidden", compact ? "h-[240px]" : "aspect-[3/2]")}>
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt="Portada del lugar" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-1 bg-[linear-gradient(160deg,#F8F5EF,#E8E1D6)]">
-              <p className="font-display text-2xl font-extrabold text-[#234A33]">CeliMap</p>
-              <p className="text-sm text-[#6B746C]">Todavía no hay foto</p>
+            <div className="flex h-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-cream to-line">
+              <p className="font-display text-2xl font-extrabold text-olive">CeliMap</p>
+              <p className="text-sm text-ink-muted">Todavía no hay foto</p>
             </div>
           )}
         </div>
       </div>
-      <p className="text-sm text-[#6B746C]">
+      <p className="text-sm text-ink-muted">
         Esta imagen se usa en tarjetas, el mapa y los destacados. Hasta 3 fotos.
       </p>
       {photos.length > 0 ? (
@@ -62,7 +62,7 @@ export function AdminPhotoStudio({
               onClick={() => move(index, 0)}
               className={cn(
                 "h-16 w-[5.3rem] overflow-hidden rounded-2xl border transition-colors duration-150",
-                index === 0 ? "border-[#234A33]" : "border-[#E8E1D6]"
+                index === 0 ? "border-olive" : "border-line"
               )}
               aria-label={index === 0 ? "Foto de portada" : "Usar como portada"}
             >
@@ -77,7 +77,7 @@ export function AdminPhotoStudio({
           <button
             type="button"
             onClick={() => onChange(photos.slice(1))}
-            className="inline-flex h-11 items-center rounded-2xl border border-[#E8E1D6] px-4 text-sm font-semibold text-[#B84420]"
+            className="inline-flex h-11 items-center rounded-2xl border border-line px-4 text-sm font-semibold text-terracotta-strong"
           >
             Eliminar
           </button>
@@ -86,7 +86,7 @@ export function AdminPhotoStudio({
           <button
             type="button"
             onClick={() => move(0, 1)}
-            className="inline-flex h-11 items-center rounded-2xl border border-[#E8E1D6] px-4 text-sm font-semibold text-[#234A33]"
+            className="inline-flex h-11 items-center rounded-2xl border border-line px-4 text-sm font-semibold text-olive"
           >
             Reordenar
           </button>

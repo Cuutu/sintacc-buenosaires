@@ -13,7 +13,7 @@ describe("place completeness", () => {
       })
     ).toBe(100)
     expect(placeCompleteness({ name: "X" })).toBe(0)
-    expect(completenessTone(92)).toContain("#2D6A4F")
+    expect(completenessTone(92)).toContain("text-success")
     expect(placeQualityChecks({ photos: ["https://img"] }).find((c) => c.id === "photo")?.ok).toBe(true)
   })
 })
@@ -49,6 +49,6 @@ describe("horarios con todos los días cerrados", () => {
   })
 
   it("el ámbar de completitud media se lee sobre crema", () => {
-    expect(completenessTone(67)).toContain("#8A5A00")
+    expect(completenessTone(67)).toContain("text-warning")
   })
 })

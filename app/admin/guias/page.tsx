@@ -13,8 +13,8 @@ export default function AdminGuiasPage() {
           : `${published} guía${published === 1 ? "" : "s"} publicada${published === 1 ? "" : "s"} en /guias.`}
       </p>
       <article className={`${adminUi.card} mt-6 p-5`}>
-        <p className="text-sm font-medium text-[#234A33]">Editor de orden</p>
-        <p className="mt-1 text-sm text-[#6B746C]">
+        <p className="text-sm font-medium text-olive">Editor de orden</p>
+        <p className="mt-1 text-sm text-ink-muted">
           No disponible todavía. Las guías se editan en el código de contenido, no hay panel de orden o fechas.
         </p>
       </article>

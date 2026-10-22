@@ -51,11 +51,11 @@ function formatNumber(value: number): string {
 
 function Delta({ metric }: { metric: InsightsMetric }) {
   if (metric.deltaPct == null) {
-    return <p className="mt-2 text-xs text-[#6B746C]">Sin período anterior comparable</p>
+    return <p className="mt-2 text-xs text-ink-muted">Sin período anterior comparable</p>
   }
   const up = metric.deltaPct >= 0
   return (
-    <p className={cn("mt-2 text-xs font-medium", up ? "text-[#2F6B45]" : "text-[#9A3A1B]")}>
+    <p className={cn("mt-2 text-xs font-medium", up ? "text-success" : "text-terracotta-hover")}>
       {up ? "+" : ""}
       {metric.deltaPct}% vs período anterior
     </p>
@@ -76,21 +76,21 @@ function MetricCard({
   const isEmpty = metric.value === 0 && metric.previous === 0
   return (
     <article className={`${adminUi.card} p-5`}>
-      <p className="text-sm text-[#6B746C]">{label}</p>
+      <p className="text-sm text-ink-muted">{label}</p>
       {isEmpty ? (
         <>
-          <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]/35">—</p>
-          <p className="mt-2 text-xs text-[#6B746C]">{empty || "Todavía no hay datos en este período."}</p>
+          <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive/35">—</p>
+          <p className="mt-2 text-xs text-ink-muted">{empty || "Todavía no hay datos en este período."}</p>
         </>
       ) : (
         <>
-          <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+          <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
             {formatNumber(metric.value)}
           </p>
           <Delta metric={metric} />
         </>
       )}
-      {hint ? <p className="mt-2 text-xs text-[#6B746C]">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-xs text-ink-muted">{hint}</p> : null}
     </article>
   )
 }
@@ -100,9 +100,9 @@ function SkeletonGrid({ count = 6 }: { count?: number }) {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className={`${adminUi.card} h-[132px] animate-pulse p-5`}>
-          <div className="h-3 w-24 rounded bg-[#E8E1D6]" />
-          <div className="mt-4 h-8 w-16 rounded bg-[#E8E1D6]" />
-          <div className="mt-3 h-3 w-40 rounded bg-[#E8E1D6]" />
+          <div className="h-3 w-24 rounded bg-line" />
+          <div className="mt-4 h-8 w-16 rounded bg-line" />
+          <div className="mt-3 h-3 w-40 rounded bg-line" />
         </div>
       ))}
     </div>
@@ -112,8 +112,8 @@ function SkeletonGrid({ count = 6 }: { count?: number }) {
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className={`${adminUi.card} p-8`}>
-      <p className="font-medium text-[#234A33]">{title}</p>
-      <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#6B746C]">{body}</p>
+      <p className="font-medium text-olive">{title}</p>
+      <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">{body}</p>
     </div>
   )
 }
@@ -165,10 +165,10 @@ function ActivityRecentTable({
 
   return (
     <article className={`${adminUi.card} overflow-hidden p-0`}>
-      <div className="flex flex-col gap-3 border-b border-[#E8E1D6] px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className={adminUi.label}>Actividad reciente</h2>
-          <p className="mt-1 text-sm text-[#6B746C]">
+          <p className="mt-1 text-sm text-ink-muted">
             {rangeLabel} · {activity.android} Android · {activity.activeNow} activos ahora
           </p>
         </div>
@@ -187,7 +187,7 @@ function ActivityRecentTable({
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-sm text-[#6B746C]">
+        <p className="px-5 py-8 text-sm text-ink-muted">
           {filter === "android"
             ? "Nadie usó la app Android en este período. Cuando un tester abra el APK/AAB contra producción, aparece acá."
             : "Sin sesiones para este filtro."}
@@ -196,7 +196,7 @@ function ActivityRecentTable({
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[#E8E1D6] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B746C]">
+              <tr className="border-b border-line text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
                 <th className="px-5 py-3 font-semibold">Dispositivo</th>
                 <th className="px-5 py-3 font-semibold">Última actividad</th>
                 <th className="px-5 py-3 font-semibold">Plataforma</th>
@@ -209,15 +209,15 @@ function ActivityRecentTable({
                 const last = new Date(row.lastTs).getTime()
                 const active = now - last <= ACTIVITY_ACTIVE_MS
                 return (
-                  <tr key={`${row.id}-${row.lastTs}`} className="border-b border-[#E8E1D6] last:border-0">
-                    <td className="px-5 py-3 font-medium tabular-nums text-[#234A33]">
+                  <tr key={`${row.id}-${row.lastTs}`} className="border-b border-line last:border-0">
+                    <td className="px-5 py-3 font-medium tabular-nums text-olive">
                       {platformActivityLabel(row.platform, row.device).split(" / ")[0]} {row.id}
                     </td>
-                    <td className="px-5 py-3 text-[#6B746C]">{formatRelativeActivity(last, now)}</td>
-                    <td className="px-5 py-3 text-[#234A33]">
+                    <td className="px-5 py-3 text-ink-muted">{formatRelativeActivity(last, now)}</td>
+                    <td className="px-5 py-3 text-olive">
                       {platformActivityLabel(row.platform, row.device)}
                     </td>
-                    <td className="px-5 py-3 font-mono text-[13px] text-[#6B746C]">
+                    <td className="px-5 py-3 font-mono text-[13px] text-ink-muted">
                       {row.appVersion || "—"}
                     </td>
                     <td className="px-5 py-3">
@@ -225,8 +225,8 @@ function ActivityRecentTable({
                         className={cn(
                           "inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold",
                           active
-                            ? "bg-[#234A33]/10 text-[#234A33]"
-                            : "bg-[#E8E1D6] text-[#6B746C]"
+                            ? "bg-olive/10 text-olive"
+                            : "bg-line text-ink-muted"
                         )}
                       >
                         {active ? "Activo" : "Inactivo"}
@@ -257,18 +257,18 @@ function RankList({
     <article className={`${adminUi.card} p-5`}>
       <h3 className={adminUi.label}>{title}</h3>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-[#6B746C]">{empty}</p>
+        <p className="mt-4 text-sm text-ink-muted">{empty}</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {rows.map((row) => (
             <li key={row.key}>
               <div className="flex items-baseline justify-between gap-3">
-                <p className="truncate text-sm font-medium text-[#234A33]">{row.label}</p>
-                <p className="shrink-0 text-sm tabular-nums text-[#6B746C]">{formatNumber(row.count)}</p>
+                <p className="truncate text-sm font-medium text-olive">{row.label}</p>
+                <p className="shrink-0 text-sm tabular-nums text-ink-muted">{formatNumber(row.count)}</p>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#E8E1D6]">
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line">
                 <div
-                  className="h-full rounded-full bg-[#234A33]"
+                  className="h-full rounded-full bg-olive"
                   style={{ width: max ? `${Math.max(8, (row.count / max) * 100)}%` : "0%" }}
                 />
               </div>
@@ -283,7 +283,7 @@ function RankList({
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className={`${adminUi.card} flex flex-wrap items-center justify-between gap-3 p-5`}>
-      <p className="text-sm text-[#9A3A1B]">{message}</p>
+      <p className="text-sm text-terracotta-hover">{message}</p>
       <button type="button" className={adminUi.btnGhost} onClick={onRetry}>
         Reintentar
       </button>
@@ -345,7 +345,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
     <div className="mx-auto max-w-[1280px]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className={adminUi.title}>Insights</h1>
+          <h1 className={adminUi.title}>Analytics</h1>
           <p className={`mt-2 max-w-2xl ${adminUi.subtitle}`}>
             Números para decidir qué ciudades y tipos de lugar conviene sumar. Cuentas, reseñas y
             favoritos salen de la base. El resto, de eventos anónimos.
@@ -389,11 +389,11 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {catalogRows.map((row) => (
                 <article key={row.label} className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">{row.label}</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">{row.label}</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(row.value)}
                   </p>
-                  <p className="mt-2 text-xs text-[#6B746C]">{row.note}</p>
+                  <p className="mt-2 text-xs text-ink-muted">{row.note}</p>
                 </article>
               ))}
             </div>
@@ -468,7 +468,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             />
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-[#6B746C]">{data.acquisition.note}</p>
+              <p className="text-sm text-ink-muted">{data.acquisition.note}</p>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <RankList
                   title="Fuente"
@@ -527,16 +527,16 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
           ) : (
             <div className="space-y-4">
               {data.behavior.zeroSearches.length > 0 ? (
-                <article className={`${adminUi.card} border-[#B84420]/25 p-5`}>
+                <article className={`${adminUi.card} border-terracotta/25 p-5`}>
                   <h3 className={adminUi.label}>Búsquedas sin resultados</h3>
-                  <p className="mt-2 text-sm text-[#6B746C]">
+                  <p className="mt-2 text-sm text-ink-muted">
                     Huecos de cobertura. Si se repite una ciudad o un tipo de lugar, conviene cargarlo.
                   </p>
                   <ul className="mt-4 space-y-3">
                     {data.behavior.zeroSearches.map((row) => (
                       <li key={row.query} className="flex items-baseline justify-between gap-3">
-                        <p className="text-sm font-medium text-[#234A33]">“{row.query}”</p>
-                        <p className="text-sm tabular-nums text-[#9A3A1B]">
+                        <p className="text-sm font-medium text-olive">“{row.query}”</p>
+                        <p className="text-sm tabular-nums text-terracotta-hover">
                           {formatNumber(row.count)} sin resultados
                         </p>
                       </li>
@@ -597,17 +597,17 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             />
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-[#6B746C]">{data.retention.note}</p>
+              <p className="text-sm text-ink-muted">{data.retention.note}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <article className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">Dispositivos nuevos</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">Dispositivos nuevos</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(data.retention.newDevices)}
                   </p>
                 </article>
                 <article className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">Recurrentes</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">Recurrentes</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(data.retention.returning)}
                   </p>
                 </article>
@@ -617,12 +617,12 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
                   { label: "Retención 30 días", value: data.retention.d30 },
                 ].map((row) => (
                   <article key={row.label} className={`${adminUi.card} p-5`}>
-                    <p className="text-sm text-[#6B746C]">{row.label}</p>
-                    <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                    <p className="text-sm text-ink-muted">{row.label}</p>
+                    <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                       {row.value == null ? "—" : `${row.value}%`}
                     </p>
                     {row.value == null ? (
-                      <p className="mt-2 text-xs text-[#6B746C]">Cohorte chica o demasiado reciente.</p>
+                      <p className="mt-2 text-xs text-ink-muted">Cohorte chica o demasiado reciente.</p>
                     ) : null}
                   </article>
                 ))}
@@ -639,20 +639,20 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <article className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">Login</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">Login</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(data.errors.login)}
                   </p>
                 </article>
                 <article className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">Mapa</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">Mapa</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(data.errors.mapLoad)}
                   </p>
                 </article>
                 <article className={`${adminUi.card} p-5`}>
-                  <p className="text-sm text-[#6B746C]">Ficha</p>
-                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-[#234A33]">
+                  <p className="text-sm text-ink-muted">Ficha</p>
+                  <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-olive">
                     {formatNumber(data.errors.placeLoad)}
                   </p>
                 </article>
@@ -663,10 +663,10 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
                 <h3 className={adminUi.label}>Últimos</h3>
                 <ul className="mt-4 space-y-3">
                   {data.errors.recent.map((row, index) => (
-                    <li key={`${row.ts}-${index}`} className="text-sm text-[#234A33]">
+                    <li key={`${row.ts}-${index}`} className="text-sm text-olive">
                       <span className="font-medium">{row.name}</span>
-                      {row.reason ? <span className="text-[#6B746C]"> · {row.reason}</span> : null}
-                      {row.platform ? <span className="text-[#6B746C]"> · {row.platform}</span> : null}
+                      {row.reason ? <span className="text-ink-muted"> · {row.reason}</span> : null}
+                      {row.platform ? <span className="text-ink-muted"> · {row.platform}</span> : null}
                     </li>
                   ))}
                 </ul>

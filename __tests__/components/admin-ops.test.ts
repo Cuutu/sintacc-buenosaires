@@ -21,7 +21,9 @@ describe("admin centro de operaciones", () => {
     expect(shell).toContain("w-[240px]")
     expect(nav).toContain("suggestionsPending")
     expect(shell).toContain("⌘K")
-    expect(shell).toContain("#F8F5EF")
+    // Paleta de la marca por tokens (bg-cream, text-olive…), sin hex sueltos ni el tema oscuro viejo.
+    expect(shell).toContain("bg-cream")
+    expect(shell).not.toMatch(/\[#[0-9a-f]{6}\]/i)
     expect(shell).not.toContain("#0B0B0D")
     expect(shell).toContain('href="/"')
     expect(shell).toContain("Volver a CeliMap")
@@ -45,8 +47,8 @@ describe("admin centro de operaciones", () => {
     expect(dash).toContain("Reseñas pendientes")
     expect(dash).toContain("Ver lugares")
     expect(dash).toContain("Completar lugares")
-    expect(dash).toContain("#234A33")
-    expect(read("lib/admin-ui.ts")).toContain("#F8F5EF")
+    expect(dash).not.toMatch(/\[#[0-9a-f]{6}\]/i)
+    expect(read("lib/admin-ui.ts")).toContain("bg-cream")
   })
 
   it("lugares es CRM con completitud y modal por tabs", () => {

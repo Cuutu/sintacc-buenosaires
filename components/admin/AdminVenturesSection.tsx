@@ -1,6 +1,6 @@
 "use client"
 
-import { Search } from "lucide-react"
+import { Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { VentureEditModal } from "./VentureEditModal"
 import { getCategoryLabels, getVentureCategories } from "@/lib/venture-constants"
@@ -8,6 +8,10 @@ import type { VentureItem } from "@/components/admin/types"
 import { toast } from "sonner"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
+import { ActionMenu } from "@/components/admin/ui/action-menu"
+import { AdminButton, AdminLinkButton } from "@/components/admin/ui/button"
+import { Tag } from "@/components/admin/ui/status-badge"
+import { AdminEmptyState, AdminListSkeleton } from "@/components/admin/ui/states"
 
 export type AdminVenturesSectionProps = {
   ventures: VentureItem[]
@@ -58,72 +62,71 @@ export function AdminVenturesSection({
     <div className="space-y-4">
       <div className={cn(adminUi.card, "p-5")}>
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B746C]" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
           <input
             placeholder="Buscar emprendimiento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] pl-9 pr-3 text-sm text-[#234A33] outline-none"
+            className={cn(adminUi.input, "pl-9")}
           />
         </div>
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[#6B746C]">Cargando...</p>
+        <div className={adminUi.card}>
+          <AdminListSkeleton rows={4} label="Cargando emprendimientos…" />
+        </div>
       ) : filtered.length === 0 ? (
-        <p className={cn(adminUi.card, "px-5 py-10 text-center text-sm text-[#6B746C]")}>
-          No hay emprendimientos publicados
-        </p>
+        <div className={adminUi.card}>
+          <AdminEmptyState title={search.trim() ? "Ningún emprendimiento coincide con la búsqueda" : "No hay emprendimientos publicados"} />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {filtered.map((v) => (
             <article key={v._id} className={cn(adminUi.card, "p-5")}>
               <div className="flex items-start gap-3">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[#E8E1D6]">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-line">
                   {v.photos?.[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={v.photos[0]} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center font-display text-sm font-bold text-[#234A33]">
+                    <div className="flex h-full w-full items-center justify-center font-display text-sm font-bold text-olive">
                       {v.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#234A33]">{v.name}</p>
-                  <p className="mt-1 text-sm text-[#6B746C]">
+                  <p className="truncate font-semibold text-olive">{v.name}</p>
+                  <p className="mt-1 text-sm text-ink-muted">
                     {getCategoryLabels(getVentureCategories(v)).join(", ")} · {v.zone || "Sin zona"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {hasModality(v, "delivery") ? <span className={adminUi.chip}>Delivery</span> : null}
-                    {hasModality(v, "retiro") ? <span className={adminUi.chip}>Retiro</span> : null}
+                    {hasModality(v, "delivery") ? <Tag>Delivery</Tag> : null}
+                    {hasModality(v, "retiro") ? <Tag>Retiro</Tag> : null}
                     {hasModality(v, "envio") || hasModality(v, "envío") ? (
-                      <span className={adminUi.chip}>Envíos</span>
+                      <Tag>Envíos</Tag>
                     ) : null}
-                    {v.contact?.instagram ? <span className={adminUi.chip}>Instagram</span> : null}
-                    {v.contact?.whatsapp ? <span className={adminUi.chip}>WhatsApp</span> : null}
+                    {v.contact?.instagram ? <Tag>Instagram</Tag> : null}
+                    {v.contact?.whatsapp ? <Tag>WhatsApp</Tag> : null}
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" className={adminUi.btnPrimary} onClick={() => setEditing(v)}>
-                  Editar
-                </button>
-                <a
-                  href={`/emprendimientos/${v.slug ?? v._id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={adminUi.btnGhost}
-                >
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <AdminButton onClick={() => setEditing(v)}>Editar</AdminButton>
+                <AdminLinkButton href={`/emprendimientos/${v.slug ?? v._id}`} external>
                   Ver
-                </a>
-                <button
-                  type="button"
-                  className="inline-flex h-11 items-center rounded-2xl border border-[#B84420]/30 px-4 text-sm font-semibold text-[#B84420] transition-colors duration-150 hover:bg-[#B84420]/8"
-                  onClick={() => handleDelete(v._id, v.name)}
-                >
-                  Eliminar
-                </button>
+                </AdminLinkButton>
+                <ActionMenu
+                  label={`Más acciones para ${v.name}`}
+                  items={[
+                    {
+                      label: "Eliminar",
+                      icon: <Trash2 className="h-4 w-4" aria-hidden />,
+                      danger: true,
+                      onSelect: () => handleDelete(v._id, v.name),
+                    },
+                  ]}
+                />
               </div>
             </article>
           ))}

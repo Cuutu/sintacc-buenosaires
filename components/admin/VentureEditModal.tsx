@@ -25,6 +25,7 @@ import { normalizeArWhatsapp } from "@/lib/ar-whatsapp"
 import { completenessBarTone, completenessTone } from "@/lib/place-completeness"
 import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
+import { formatAdminDateTime } from "@/lib/admin-format"
 
 /** Mismo esqueleto que PlaceEditModal: pestañas, autoguardado, Ctrl+S, vista previa. */
 const EDIT_TABS = ["General", "Zona y venta", "Contacto", "SEO"] as const
@@ -229,31 +230,31 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
     cn(
       "h-9 rounded-full border px-3 text-sm font-medium transition-colors",
       active
-        ? "border-[#234A33] bg-[#234A33] text-[#F8F5EF]"
-        : "border-[#E8E1D6] bg-[#FCFBF8] text-[#234A33] hover:border-[#234A33]/40"
+        ? "border-olive bg-olive text-cream"
+        : "border-line bg-cream-card text-olive hover:border-olive/40"
     )
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
+      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-line bg-cream p-0 text-olive sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
         <div className="flex h-full min-h-0 flex-col">
-          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E1D6] px-5 py-4">
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
             <div className="min-w-0">
-              <DialogTitle className="truncate font-display text-xl font-extrabold text-[#234A33]">
+              <DialogTitle className="truncate font-display text-xl font-extrabold text-olive">
                 {formData.name || "Editar emprendimiento"}
               </DialogTitle>
-              <p className="mt-1 truncate text-sm text-[#6B746C]">
+              <p className="mt-1 truncate text-sm text-ink-muted">
                 {categoryLabel}
                 {formData.zone ? ` · ${formData.zone}` : ""}
               </p>
-              <p className="mt-1 text-xs text-[#6B746C]">
+              <p className="mt-1 text-xs text-ink-muted">
                 {saveState === "saving"
                   ? "Guardando…"
                   : saveState === "dirty"
                     ? "Cambios sin guardar"
                     : "Guardado"}
                 {updatedAt
-                  ? ` · ${new Date(updatedAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                  ? ` · ${formatAdminDateTime(updatedAt)}`
                   : ""}
               </p>
             </div>
@@ -280,7 +281,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                   onChange={(urls) => patchForm({ photos: urls.slice(0, 3) })}
                 />
                 {formData.photos.length > 0 ? (
-                  <label className="-mt-2 flex min-h-11 items-center gap-2 text-sm text-[#234A33]">
+                  <label className="-mt-2 flex min-h-11 items-center gap-2 text-sm text-olive">
                     <input
                       type="checkbox"
                       checked={formData.coverIsLogo}
@@ -288,7 +289,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                     />
                     <span>
                       La primera foto es un logo
-                      <span className="block text-xs text-[#6B746C]">
+                      <span className="block text-xs text-ink-muted">
                         Se muestra entero sobre crema, sin recortar. Mejor una foto de producto.
                       </span>
                     </span>
@@ -304,8 +305,8 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                       className={cn(
                         "h-10 shrink-0 rounded-full px-3 text-sm font-medium transition-colors duration-150",
                         tab === item
-                          ? "bg-[#234A33] text-[#F8F5EF]"
-                          : "border border-[#E8E1D6] bg-[#FCFBF8] text-[#6B746C]"
+                          ? "bg-olive text-cream"
+                          : "border border-line bg-cream-card text-ink-muted"
                       )}
                     >
                       {item}
@@ -342,7 +343,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                     </div>
                     <div>
                       <Label>Categorías</Label>
-                      <p className="text-xs text-[#6B746C]">La primera que marques es la principal (ícono y SEO).</p>
+                      <p className="text-xs text-ink-muted">La primera que marques es la principal (ícono y SEO).</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {VENTURE_CATEGORIES.map((c) => (
                           <button
@@ -374,12 +375,12 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         ))}
                       </div>
                       {formData.safetyLevel === "gf_options" ? (
-                        <p className="mt-2 text-xs text-[#B84420]">
+                        <p className="mt-2 text-xs text-terracotta-strong">
                           Con “opciones” no aparece en el catálogo público (solo 100% sin gluten).
                         </p>
                       ) : null}
                     </div>
-                    <label className="flex h-11 items-center gap-2 text-sm text-[#234A33]">
+                    <label className="flex h-11 items-center gap-2 text-sm text-olive">
                       <input
                         type="checkbox"
                         checked={formData.certifiedProducts}
@@ -394,7 +395,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         maxLength={2000}
                         onChange={(e) => patchForm({ description: e.target.value })}
                         rows={4}
-                        className="mt-1 w-full rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 py-2 text-sm text-[#234A33] outline-none"
+                        className="mt-1 w-full rounded-2xl border border-line bg-cream-card px-3 py-2 text-sm text-olive outline-none"
                         placeholder="Qué hace, qué recomiendan probar, cómo trabaja."
                       />
                     </div>
@@ -435,7 +436,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         maxLength={1000}
                         onChange={(e) => patchForm({ purchaseChannels: e.target.value })}
                         rows={3}
-                        className="mt-1 w-full rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 py-2 text-sm text-[#234A33] outline-none"
+                        className="mt-1 w-full rounded-2xl border border-line bg-cream-card px-3 py-2 text-sm text-olive outline-none"
                         placeholder="Ferias, retiro en..., links de tienda"
                       />
                     </div>
@@ -493,7 +494,7 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                     </div>
                     <div>
                       <Label>Email del responsable</Label>
-                      <p className="text-xs text-[#6B746C]">Privado: no se muestra en la ficha.</p>
+                      <p className="text-xs text-ink-muted">Privado: no se muestra en la ficha.</p>
                       <Input
                         type="email"
                         maxLength={254}
@@ -514,19 +515,19 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         maxLength={120}
                         onChange={(e) => patchForm({ slug: e.target.value })}
                       />
-                      <p className="mt-1 text-xs text-[#6B746C]">
+                      <p className="mt-1 text-xs text-ink-muted">
                         URL: /emprendimientos/{formData.slug || "…"}. Si lo cambiás, los links viejos dejan de funcionar.
                       </p>
                     </div>
                   </div>
                 ) : null}
 
-                {error ? <p className="rounded-2xl bg-[#B84420]/10 p-3 text-sm text-[#B84420]">{error}</p> : null}
+                {error ? <p className="rounded-2xl bg-terracotta/10 p-3 text-sm text-terracotta-strong">{error}</p> : null}
               </div>
 
               <aside className="space-y-4">
                 <article className={cn(adminUi.card, "overflow-hidden")}>
-                  <div className={cn("relative h-36", formData.coverIsLogo && formData.photos[0] ? "bg-[#F7F3EB]" : "bg-[#E8E1D6]")}>
+                  <div className={cn("relative h-36", formData.coverIsLogo && formData.photos[0] ? "bg-cream" : "bg-line")}>
                     {formData.photos[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -538,20 +539,20 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         )}
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center font-display text-xl font-bold text-[#234A33]">
+                      <div className="flex h-full items-center justify-center font-display text-xl font-bold text-olive">
                         {(formData.name || "CM").slice(0, 2).toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="p-4">
-                    <span className="rounded-full border border-[#E8E1D6] px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold">
                       <span aria-hidden className="mr-1">{badge.dot}</span>
                       {badge.label}
                     </span>
-                    <p className="mt-2 font-display text-lg font-extrabold text-[#234A33]">
+                    <p className="mt-2 font-display text-lg font-extrabold text-olive">
                       {formData.name || "Nombre del emprendimiento"}
                     </p>
-                    <p className="mt-1 text-sm text-[#6B746C]">
+                    <p className="mt-1 text-sm text-ink-muted">
                       {categoryLabel}
                       {formData.zone ? ` · ${formData.zone}` : ""}
                     </p>
@@ -564,17 +565,17 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
 
                 <article className={cn(adminUi.card, "p-4")}>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-[#234A33]">Calidad de la ficha</p>
+                    <p className="text-sm font-semibold text-olive">Calidad de la ficha</p>
                     <span className={cn("text-sm font-semibold tabular-nums", completenessTone(pct))}>{pct}%</span>
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-[#E8E1D6]">
+                  <div className="mt-2 h-1.5 rounded-full bg-line">
                     <div className={cn("h-full rounded-full", completenessBarTone(pct))} style={{ width: `${pct}%` }} />
                   </div>
                   <ul className="mt-3 space-y-2">
                     {quality.map((row) => (
                       <li key={row.id} className="flex items-center justify-between text-sm">
-                        <span className="text-[#6B746C]">{row.label}</span>
-                        <span className={row.ok ? "text-[#2D6A4F]" : "text-[#8A5A00]"}>{row.ok ? "Listo" : "Falta"}</span>
+                        <span className="text-ink-muted">{row.label}</span>
+                        <span className={row.ok ? "text-success" : "text-warning"}>{row.ok ? "Listo" : "Falta"}</span>
                       </li>
                     ))}
                   </ul>

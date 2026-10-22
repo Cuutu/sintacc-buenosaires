@@ -197,7 +197,7 @@ export function VentureSuggestionEditModal({
                   aria-pressed={form.categories.includes(c.id)}
                   className={cn(
                     "px-2 py-1 rounded text-xs border",
-                    form.categories.includes(c.id) ? "border-primary bg-primary/10" : "border-border"
+                    form.categories.includes(c.id) ? "border-primary bg-olive/8" : "border-line"
                   )}
                 >
                   {c.label}
@@ -216,8 +216,8 @@ export function VentureSuggestionEditModal({
                   className={cn(
                     "px-2 py-1 rounded text-xs border",
                     form.modalities.includes(m.id)
-                      ? "border-primary bg-primary/10"
-                      : "border-border"
+                      ? "border-primary bg-olive/8"
+                      : "border-line"
                   )}
                 >
                   {m.label}
@@ -235,7 +235,7 @@ export function VentureSuggestionEditModal({
                   onClick={() => setForm({ ...form, safetyLevel: s.id })}
                   className={cn(
                     "px-2 py-1 rounded text-xs border",
-                    form.safetyLevel === s.id ? "border-primary bg-primary/10" : "border-border"
+                    form.safetyLevel === s.id ? "border-primary bg-olive/8" : "border-line"
                   )}
                 >
                   {s.label}

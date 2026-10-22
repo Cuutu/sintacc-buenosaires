@@ -42,19 +42,19 @@ export function AdminCommandSearch({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[#234A33]/25 px-4 pt-[12vh]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-olive/25 px-4 pt-[12vh]">
       <button type="button" className="absolute inset-0" aria-label="Cerrar búsqueda" onClick={onClose} />
-      <div className="relative w-full max-w-xl overflow-hidden rounded-[24px] border border-[#E8E1D6] bg-[#FCFBF8] shadow-[0_8px_28px_-18px_rgba(35,74,51,0.28)]">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-[24px] border border-line bg-cream-card shadow-[0_8px_28px_-18px_rgba(35,74,51,0.28)]">
         <input
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar lugares, emprendimientos, usuarios, mensajes…"
-          className="h-14 w-full border-b border-[#E8E1D6] bg-transparent px-4 text-base text-[#234A33] outline-none placeholder:text-[#6B746C]"
+          className="h-14 w-full border-b border-line bg-transparent px-4 text-base text-olive outline-none placeholder:text-ink-muted"
         />
         <ul className="max-h-80 overflow-y-auto py-2">
           {hits.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-[#6B746C]">
+            <li className="px-4 py-3 text-sm text-ink-muted">
               {q.trim().length < 2 ? "Escribí al menos 2 letras." : "Sin resultados."}
             </li>
           ) : (
@@ -62,14 +62,14 @@ export function AdminCommandSearch({
               <li key={hit.id}>
                 <button
                   type="button"
-                  className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-[#F8F5EF]"
+                  className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-cream"
                   onClick={() => {
                     onClose()
                     router.push(hit.href)
                   }}
                 >
-                  <span className="text-sm text-[#234A33]">{hit.label}</span>
-                  <span className="text-xs text-[#6B746C]">
+                  <span className="text-sm text-olive">{hit.label}</span>
+                  <span className="text-xs text-ink-muted">
                     {hit.kind}
                     {hit.hint ? ` · ${hit.hint}` : ""}
                   </span>

@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
-import { AdminHeader } from "@/components/admin/AdminHeader"
 import { AdminSuggestionsSection } from "@/components/admin/AdminSuggestionsSection"
 import { AdminVentureSuggestionsSection } from "@/components/admin/AdminVentureSuggestionsSection"
 import { AdminVenturesSection } from "@/components/admin/AdminVenturesSection"
@@ -15,6 +14,8 @@ import { AdminPlacesSection } from "@/components/admin/AdminPlacesSection"
 import { AdminFeaturedSection } from "@/components/admin/AdminFeaturedSection"
 import { AdminContactsSection } from "@/components/admin/AdminContactsSection"
 import { AdminSocialSection } from "@/components/admin/AdminSocialSection"
+import { AdminListSkeleton } from "@/components/admin/ui/states"
+import { adminUi } from "@/lib/admin-ui"
 import type {
   AdminCounts,
   AdminSection,
@@ -556,214 +557,13 @@ export function AdminDashboard({
 
   if (status === "loading") {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 w-48 bg-muted rounded" />
-          <div className="h-64 bg-muted rounded" />
-        </div>
+      <div className={adminUi.card}>
+        <AdminListSkeleton rows={6} />
       </div>
     )
   }
   return (
-    <div className={hideLauncher ? "max-w-6xl" : "container mx-auto px-4 py-8 max-w-5xl"}>
-
-      {!hideLauncher && <AdminHeader />}
-
-      {!hideLauncher && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {/* Sugerencias pendientes — urgente si > 0 */}
-        <button
-          onClick={() => setActiveSection("suggestions")}
-          className={`rounded-xl border p-4 text-left transition-all hover:border-border ${
-            (counts?.suggestionsPending ?? 0) > 0
-              ? "border-red-500/30 bg-red-500/5"
-              : "border-border bg-card"
-          }`}
-        >
-          <div className="text-2xl mb-2">📩</div>
-          <div className={`text-2xl font-extrabold leading-none mb-1 ${
-            (counts?.suggestionsPending ?? 0) > 0 ? "text-red-400" : "text-foreground"
-          }`}>
-            {counts?.suggestionsPending ?? suggestions.length}
-          </div>
-          <div className="text-xs text-muted-foreground leading-snug">
-            Lugares sugeridos esperando revisión
-          </div>
-        </button>
-
-        {/* Contactos — urgente si > 0 */}
-        <button
-          onClick={() => { setActiveSection("contacts"); fetchContacts(); fetchCounts() }}
-          className={`rounded-xl border p-4 text-left transition-all hover:border-border ${
-            (counts?.contactsTotal ?? 0) > 0
-              ? "border-amber-500/30 bg-amber-500/5"
-              : "border-border bg-card"
-          }`}
-        >
-          <div className="text-2xl mb-2">✉️</div>
-          <div className={`text-2xl font-extrabold leading-none mb-1 ${
-            (counts?.contactsTotal ?? 0) > 0 ? "text-amber-400" : "text-foreground"
-          }`}>
-            {counts?.contactsTotal ?? contacts.length}
-          </div>
-          <div className="text-xs text-muted-foreground leading-snug">
-            Mensajes de contacto
-          </div>
-        </button>
-
-        {/* Lugares totales */}
-        <button
-          onClick={() => { setActiveSection("places"); fetchPlaces(); fetchNeighborhoods() }}
-          className="rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-border/80"
-        >
-          <div className="text-2xl mb-2">📍</div>
-          <div className="text-2xl font-extrabold leading-none mb-1">
-            {placesPagination?.total ?? counts?.placesTotal ?? 0}
-          </div>
-          <div className="text-xs text-muted-foreground leading-snug">
-            Lugares publicados en el mapa
-          </div>
-        </button>
-
-        {/* Reseñas */}
-        <button
-          onClick={() => { setActiveSection("reviews"); fetchReviews() }}
-          className="rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-border/80"
-        >
-          <div className="text-2xl mb-2">⭐</div>
-          <div className="text-2xl font-extrabold leading-none mb-1">
-            {reviews.length > 0 ? reviews.length : "—"}
-          </div>
-          <div className="text-xs text-muted-foreground leading-snug">
-            Reseñas de usuarios
-          </div>
-        </button>
-      </div>}
-
-      {!hideLauncher && <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-        {[
-          {
-            key: "suggestions",
-            icon: "📩",
-            label: "Lugares sugeridos",
-            desc: "Revisá y publicá sugerencias de la comunidad",
-            badge: counts?.suggestionsPending ?? suggestions.length,
-            urgent: (counts?.suggestionsPending ?? 0) > 0,
-            onClick: () => setActiveSection("suggestions"),
-          },
-          {
-            key: "ventureSuggestions",
-            icon: "🧁",
-            label: "Emprend. sugeridos",
-            desc: "Emprendimientos sin local físico",
-            badge: counts?.ventureSuggestionsPending ?? ventureSuggestions.length,
-            urgent: (counts?.ventureSuggestionsPending ?? 0) > 0,
-            onClick: () => {
-              setActiveSection("ventureSuggestions")
-              fetchVentureSuggestions()
-            },
-          },
-          {
-            key: "ventures",
-            icon: "🏪",
-            label: "Emprendimientos",
-            desc: "Publicados en el listado",
-            badge: ventures.length || null,
-            urgent: false,
-            onClick: () => {
-              setActiveSection("ventures")
-              fetchVentures()
-            },
-          },
-          {
-            key: "reviews",
-            icon: "⭐",
-            label: "Reseñas lugares",
-            desc: "Mapa y locales",
-            badge: null,
-            urgent: false,
-            onClick: () => { setActiveSection("reviews"); fetchReviews() },
-          },
-          {
-            key: "ventureReviews",
-            icon: "💬",
-            label: "Reseñas emprend.",
-            desc: "Opiniones de emprendimientos",
-            badge: ventureReviews.length || null,
-            urgent: false,
-            onClick: () => {
-              setActiveSection("ventureReviews")
-              fetchVentureReviews()
-            },
-          },
-          {
-            key: "places",
-            icon: "📍",
-            label: "Lugares",
-            desc: "Editá o eliminá lugares del mapa",
-            badge: placesPagination?.total ?? counts?.placesTotal ?? null,
-            urgent: false,
-            onClick: () => { setActiveSection("places"); fetchPlaces(); fetchNeighborhoods() },
-          },
-          {
-            key: "featured",
-            icon: "⭐",
-            label: "Destacados",
-            desc: "Elegí los lugares del carrusel home",
-            badge: null,
-            urgent: false,
-            onClick: () => setActiveSection("featured"),
-          },
-          {
-            key: "contacts",
-            icon: "✉️",
-            label: "Mensajes",
-            desc: "Leé y respondé mensajes de usuarios",
-            badge: counts?.contactsTotal ?? null,
-            urgent: (counts?.contactsTotal ?? 0) > 0,
-            onClick: () => { setActiveSection("contacts"); fetchContacts(); fetchCounts() },
-          },
-          {
-            key: "social",
-            icon: "📱",
-            label: "Redes",
-            desc: "Caption + prompt ChatGPT para historia IG",
-            badge: null,
-            urgent: false,
-            onClick: () => setActiveSection("social"),
-          },
-        ].map((item) => (
-          <button
-            key={item.key}
-            onClick={item.onClick}
-            className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-              activeSection === item.key
-                ? "border-primary/40 bg-primary/8"
-                : "border-border bg-card hover:border-border/80"
-            }`}
-          >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${
-              item.urgent ? "bg-red-500/10" : "bg-muted"
-            }`}>
-              {item.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold flex items-center gap-2">
-                {item.label}
-                {item.badge != null && item.badge > 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                    item.urgent
-                      ? "bg-red-500 text-white"
-                      : "bg-muted text-muted-foreground border border-border"
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.desc}</div>
-            </div>
-          </button>
-        ))}
-      </div>}
+    <div className="max-w-6xl">
 
       {activeSection === "suggestions" && (
         <AdminSuggestionsSection

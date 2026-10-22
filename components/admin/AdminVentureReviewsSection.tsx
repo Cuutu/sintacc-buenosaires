@@ -7,6 +7,7 @@ import { Search } from "lucide-react"
 import type { VentureReviewItem } from "@/components/admin/types"
 import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
 import { decodeStoredText } from "@/lib/stored-text"
+import { AdminListSkeleton } from "@/components/admin/ui/states"
 
 export type AdminVentureReviewsSectionProps = {
   estadoFilter: string
@@ -34,18 +35,18 @@ export function AdminVentureReviewsSection({
   handleAction,
 }: AdminVentureReviewsSectionProps) {
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-card">
+    <div className="rounded-xl border border-line overflow-hidden">
+      <div className="px-4 py-3 border-b border-line bg-cream-card">
         <h2 className="text-sm font-bold">Reseñas de emprendimientos</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-ink-muted mt-0.5">
           Moderá opiniones de la comunidad sobre emprendimientos y proyectos
         </p>
       </div>
 
       <AdminEstadoFilter value={estadoFilter} onChange={onEstadoFilter} />
-      <div className="px-4 py-2 border-b border-border bg-card/50 flex flex-wrap gap-2 items-center">
+      <div className="px-4 py-2 border-b border-line bg-cream-card flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[180px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
           <Input
             placeholder="Buscar emprendimiento o comentario..."
             value={search}
@@ -68,8 +69,8 @@ export function AdminVentureReviewsSection({
             }}
             className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
               filter === f.value
-                ? "border-primary/40 bg-primary/8 text-primary"
-                : "border-border text-muted-foreground"
+                ? "border-olive/40 bg-olive/8 text-olive"
+                : "border-line text-ink-muted"
             }`}
           >
             {f.label}
@@ -81,11 +82,11 @@ export function AdminVentureReviewsSection({
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">Cargando...</div>
+        <AdminListSkeleton rows={4} label="Cargando reseñas…" />
       ) : reviews.length === 0 ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">No hay reseñas</div>
+        <div className="py-10 text-center text-sm text-ink-muted">No hay reseñas</div>
       ) : (
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-line">
           {reviews.map((review) => {
             const venture = review.ventureId as {
               _id?: string
@@ -102,14 +103,14 @@ export function AdminVentureReviewsSection({
                       <Link
                         href={`/emprendimientos/${venturePath}`}
                         target="_blank"
-                        className="text-sm font-bold text-primary hover:underline"
+                        className="text-sm font-bold text-olive hover:underline"
                       >
                         {venture?.name ?? "Emprendimiento"}
                       </Link>
                     ) : (
                       <span className="text-sm font-bold">{venture?.name ?? "—"}</span>
                     )}
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-ink-muted mt-0.5">
                       {review.userId?.name ?? "Usuario"} · {"★".repeat(review.rating)}
                       {"☆".repeat(5 - review.rating)}
                     </p>
@@ -118,7 +119,7 @@ export function AdminVentureReviewsSection({
                     {review.status}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{decodeStoredText(review.comment)}</p>
+                <p className="text-sm text-ink-muted mb-3 line-clamp-3">{decodeStoredText(review.comment)}</p>
                 <AdminEstadoActions endpoint={`/api/admin/venture-reviews/${review._id}`} estado={review.estado} onSaved={() => fetchReviews()} />
                 <div className="flex flex-wrap gap-2">
                   {review.status === "visible" ? (

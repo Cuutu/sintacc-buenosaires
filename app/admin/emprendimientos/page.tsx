@@ -13,8 +13,8 @@ export default async function AdminEmprendimientosPage() {
         counts={counts}
         defaultSection="ventures"
         tabs={[
-          { id: "ventures", label: "Publicadas" },
-          { id: "ventureSuggestions", label: "Cola", query: "cola=1" },
+          { id: "ventures", label: "Catálogo" },
+          { id: "ventureSuggestions", label: "Cola", query: "cola=1", count: counts.ventureSuggestionsPending },
         ]}
         actions={
           <Link href="/sugerir-emprendimiento" className={adminUi.btnPrimary}>

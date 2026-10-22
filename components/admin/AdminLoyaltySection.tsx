@@ -206,7 +206,7 @@ function PlaceSearch({
             <li key={r.id}>
               <button
                 type="button"
-                className={`w-full px-3 py-2 text-left hover:bg-[#F8F5EF] ${adminUi.text}`}
+                className={`w-full px-3 py-2 text-left hover:bg-cream ${adminUi.text}`}
                 onClick={() => {
                   onPick(r)
                   setQuery("")
@@ -295,12 +295,12 @@ function ProgramFields({
           </label>
         )}
         {values.branches.map((b, i) => (
-          <div key={b.placeId} className="grid gap-2 rounded-xl bg-[#F8F5EF] p-3">
+          <div key={b.placeId} className="grid gap-2 rounded-xl bg-cream p-3">
             <div className="flex items-center justify-between gap-2">
               <strong className={adminUi.text}>{b.name}</strong>
               <button
                 type="button"
-                className={cn(adminUi.chip, "text-[#B84420]")}
+                className={cn(adminUi.chip, "text-terracotta-strong")}
                 onClick={() => onChange({ ...values, branches: values.branches.filter((_, j) => j !== i) })}
               >
                 Quitar
@@ -368,7 +368,7 @@ function NewProgramForm({ onCancel, onCreated }: { onCancel: () => void; onCreat
         />
       )}
       <ProgramFields values={values} onChange={setValues} mainPlaceId={place?.id} />
-      {error && <p className="text-sm text-[#B84420]">{error}</p>}
+      {error && <p className="text-sm text-terracotta-strong">{error}</p>}
       <div className="flex gap-2">
         <button type="button" className={adminUi.btnPrimary} disabled={busy} onClick={save}>
           Crear
@@ -465,7 +465,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           ["Canjes", stats.redeems],
           ...(program.referralEnabled || stats.invitedCards > 0 ? [["Invitados", stats.invitedCards]] : []),
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-[#F8F5EF] p-3">
+          <div key={label} className="rounded-xl bg-cream p-3">
             <dt className={adminUi.label}>{label}</dt>
             <dd className={`text-2xl font-bold ${adminUi.text}`}>{value}</dd>
           </div>
@@ -498,7 +498,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       )}
       {program.doubleStamp && <p className={`text-sm ${adminUi.muted}`}>{program.doubleStamp}</p>}
       {program.referralEnabled && <p className={`text-sm ${adminUi.muted}`}>Traé un amigo: activo.</p>}
-      {error && <p className="text-sm text-[#B84420]">{error}</p>}
+      {error && <p className="text-sm text-terracotta-strong">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         {editing ? (
@@ -534,7 +534,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
             <button
               type="button"
               disabled={busy}
-              className={cn(adminUi.btnGhost, program.active && "text-[#B84420]")}
+              className={cn(adminUi.btnGhost, program.active && "text-terracotta-strong")}
               onClick={() => patch({ active: !program.active })}
             >
               {program.active ? "Pausar" : "Reactivar"}
@@ -543,7 +543,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
               <button
                 type="button"
                 disabled={busy}
-                className={cn(adminUi.btnGhost, "text-[#B84420]")}
+                className={cn(adminUi.btnGhost, "text-terracotta-strong")}
                 onClick={() => {
                   setConfirmingDelete(true)
                   setDeleteText("")
@@ -558,7 +558,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
       </div>
 
       {confirmingDelete && !editing && (
-        <div className="grid gap-3 rounded-xl border border-[#B84420]/40 bg-[#FBE9E2] p-4">
+        <div className="grid gap-3 rounded-xl border border-terracotta/40 bg-danger-soft p-4">
           <p className={`text-sm ${adminUi.text}`}>
             Se borran el programa, sus {stats.cards === 1 ? "1 tarjeta" : `${stats.cards} tarjetas`} y todos los
             sellos. No se puede deshacer. Las tarjetas que ya están en los celulares quedan ahí pero no suman más
@@ -577,7 +577,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
             <button
               type="button"
               disabled={busy || deleteText.trim() !== DELETE_WORD}
-              className={cn(adminUi.btnPrimary, "bg-[#B84420] hover:bg-[#B84420]/90")}
+              className={cn(adminUi.btnPrimary, "bg-terracotta-strong hover:bg-terracotta-hover")}
               onClick={remove}
             >
               Borrar {title}

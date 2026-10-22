@@ -32,7 +32,7 @@ import {
 import { adminUi } from "@/lib/admin-ui"
 import { normalizeArWhatsapp } from "@/lib/ar-whatsapp"
 import { cn } from "@/lib/utils"
-import { formatCoordinate } from "@/lib/admin-format"
+import { formatAdminDate, formatAdminDateTime, formatCoordinate } from "@/lib/admin-format"
 
 const EDIT_TABS = ["General", "Ubicación", "Contacto", "Operación", "SEO"] as const
 
@@ -451,25 +451,25 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-[#E8E1D6] bg-[#F8F5EF] p-0 text-[#234A33] sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
+      <DialogContent hideClose className="h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[980px] gap-0 overflow-hidden rounded-none border-line bg-cream p-0 text-olive sm:h-[90vh] sm:max-h-[90vh] sm:rounded-[24px]">
         <div className="flex h-full min-h-0 flex-col">
-          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E1D6] px-5 py-4">
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
             <div className="min-w-0">
-              <DialogTitle className="truncate font-display text-xl font-extrabold text-[#234A33]">
+              <DialogTitle className="truncate font-display text-xl font-extrabold text-olive">
                 {formData.name || "Editar ficha"}
               </DialogTitle>
-              <p className="mt-1 truncate text-sm text-[#6B746C]">
+              <p className="mt-1 truncate text-sm text-ink-muted">
                 {typeLabel}
                 {formData.neighborhood ? ` · ${formData.neighborhood}` : ""}
               </p>
-              <p className="mt-1 text-xs text-[#6B746C]">
+              <p className="mt-1 text-xs text-ink-muted">
                 {saveState === "saving"
                   ? "Guardando…"
                   : saveState === "dirty"
                     ? "Cambios sin guardar"
                     : "Guardado"}
                 {updatedAt
-                  ? ` · ${new Date(updatedAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                  ? ` · ${formatAdminDateTime(updatedAt)}`
                   : ""}
               </p>
             </div>
@@ -488,7 +488,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             {fetching ? (
-              <p className="py-10 text-center text-sm text-[#6B746C]">Cargando ficha…</p>
+              <p className="py-10 text-center text-sm text-ink-muted">Cargando ficha…</p>
             ) : (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <div className="min-w-0 space-y-5">
@@ -501,14 +501,14 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                     <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold", badge.className)}>
                       {badge.label}
                     </span>
-                    <span className="text-sm text-[#6B746C]">{typeLabel}</span>
-                    <span className="text-sm text-[#6B746C]">{formData.neighborhood}</span>
+                    <span className="text-sm text-ink-muted">{typeLabel}</span>
+                    <span className="text-sm text-ink-muted">{formData.neighborhood}</span>
                   </div>
 
                   {dupes.length > 0 ? (
-                    <div className="rounded-[20px] border border-[#D4A017]/40 bg-[#D4A017]/10 p-4">
-                      <p className="text-sm font-semibold text-[#234A33]">Posible duplicado</p>
-                      <p className="mt-1 text-sm text-[#6B746C]">
+                    <div className="rounded-[20px] border border-warning-bar bg-warning-soft p-4">
+                      <p className="text-sm font-semibold text-olive">Posible duplicado</p>
+                      <p className="mt-1 text-sm text-ink-muted">
                         {dupes[0].name} · {dupes[0].reasons.slice(0, 2).join(" · ")}
                       </p>
                       <Link href={`/lugar/${dupes[0].id}`} target="_blank" className={cn(adminUi.chip, "mt-3")}>
@@ -538,8 +538,8 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         className={cn(
                           "h-10 shrink-0 rounded-full px-3 text-sm font-medium transition-colors duration-150",
                           tab === item
-                            ? "bg-[#234A33] text-[#F8F5EF]"
-                            : "border border-[#E8E1D6] bg-[#FCFBF8] text-[#6B746C]"
+                            ? "bg-olive text-cream"
+                            : "border border-line bg-cream-card text-ink-muted"
                         )}
                       >
                         {item}
@@ -625,7 +625,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           value={formData.description}
                           onChange={(e) => patchForm({ description: e.target.value })}
                           rows={4}
-                          className="mt-1 w-full rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 py-2 text-sm text-[#234A33] outline-none"
+                          className="mt-1 w-full rounded-2xl border border-line bg-cream-card px-3 py-2 text-sm text-olive outline-none"
                           placeholder="Cómo se ve y se come este lugar."
                         />
                       </div>
@@ -651,7 +651,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           placeholder="Buscar en Google Maps"
                         />
                       </div>
-                      <div className="overflow-hidden rounded-[24px] border border-[#E8E1D6]">
+                      <div className="overflow-hidden rounded-[24px] border border-line">
                         {Number.isFinite(Number(formData.lat)) && Number.isFinite(Number(formData.lng)) ? (
                           <LocationPinPreview
                             lat={Number(formData.lat)}
@@ -660,7 +660,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             onAdjust={() => setMapPickerOpen(true)}
                           />
                         ) : (
-                          <div className="flex h-56 items-center justify-center text-sm text-[#6B746C]">
+                          <div className="flex h-56 items-center justify-center text-sm text-ink-muted">
                             Todavía no hay pin
                           </div>
                         )}
@@ -721,7 +721,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                       </div>
                       <div>
                         <Label>Coordenadas</Label>
-                        <p className="mt-1 text-sm text-[#6B746C]">
+                        <p className="mt-1 text-sm text-ink-muted">
                           {formData.lat && formData.lng ? `${formData.lat}, ${formData.lng}` : "Sin pin"}
                         </p>
                       </div>
@@ -838,7 +838,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           }}
                         />
                         {isMapsLink(formData.contact.url) ? (
-                          <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+                          <p className="mt-1.5 text-xs leading-snug text-ink-muted">
                             Es un link de Google Maps: sirve para ubicar el lugar, pero en la ficha
                             no se muestra como sitio web. Si tiene web propia, pegala acá.
                           </p>
@@ -881,7 +881,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           />
                         </div>
                       </div>
-                      <label className="flex h-11 items-center gap-2 text-sm text-[#234A33]">
+                      <label className="flex h-11 items-center gap-2 text-sm text-olive">
                         <input
                           type="checkbox"
                           checked={formData.delivery.available}
@@ -894,7 +894,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         />
                         Delivery
                       </label>
-                      <label className="flex h-11 items-center gap-2 text-sm text-[#234A33]">
+                      <label className="flex h-11 items-center gap-2 text-sm text-olive">
                         <input
                           type="checkbox"
                           checked={formData.pickup}
@@ -960,7 +960,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             }))
                           }
                           rows={3}
-                          className="mt-1 w-full rounded-2xl border border-[#E8E1D6] bg-[#FCFBF8] px-3 py-2 text-sm text-[#234A33] outline-none"
+                          className="mt-1 w-full rounded-2xl border border-line bg-cream-card px-3 py-2 text-sm text-olive outline-none"
                         />
                       </div>
                       <div>
@@ -980,18 +980,18 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   ) : null}
 
                   {error ? (
-                    <p className="rounded-2xl bg-[#B84420]/10 p-3 text-sm text-[#B84420]">{error}</p>
+                    <p className="rounded-2xl bg-terracotta/10 p-3 text-sm text-terracotta-strong">{error}</p>
                   ) : null}
                 </div>
 
                 <aside className="space-y-4">
                   <article className={cn(adminUi.card, "overflow-hidden")}>
-                    <div className="relative h-36 bg-[#E8E1D6]">
+                    <div className="relative h-36 bg-line">
                       {formData.photos[0] ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={formData.photos[0]} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full items-center justify-center font-display text-xl font-bold text-[#234A33]">
+                        <div className="flex h-full items-center justify-center font-display text-xl font-bold text-olive">
                           {(formData.name || "CM").slice(0, 2).toUpperCase()}
                         </div>
                       )}
@@ -1000,10 +1000,10 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                       <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-semibold", badge.className)}>
                         {badge.label}
                       </span>
-                      <p className="mt-2 font-display text-lg font-extrabold text-[#234A33]">
+                      <p className="mt-2 font-display text-lg font-extrabold text-olive">
                         {formData.name || "Nombre del lugar"}
                       </p>
-                      <p className="mt-1 text-sm text-[#6B746C]">
+                      <p className="mt-1 text-sm text-ink-muted">
                         {typeLabel}
                         {formData.neighborhood ? ` · ${formData.neighborhood}` : ""}
                       </p>
@@ -1016,17 +1016,17 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
 
                   <article className={cn(adminUi.card, "p-4")}>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-[#234A33]">Calidad de la ficha</p>
+                      <p className="text-sm font-semibold text-olive">Calidad de la ficha</p>
                       <span className={cn("text-sm font-semibold tabular-nums", completenessTone(pct))}>{pct}%</span>
                     </div>
-                    <div className="mt-2 h-1.5 rounded-full bg-[#E8E1D6]">
+                    <div className="mt-2 h-1.5 rounded-full bg-line">
                       <div className={cn("h-full rounded-full", completenessBarTone(pct))} style={{ width: `${pct}%` }} />
                     </div>
                     <ul className="mt-3 space-y-2">
                       {quality.map((row) => (
                         <li key={row.id} className="flex items-center justify-between text-sm">
-                          <span className="text-[#6B746C]">{row.label}</span>
-                          <span className={row.ok ? "text-[#2D6A4F]" : "text-[#8A5A00]"}>
+                          <span className="text-ink-muted">{row.label}</span>
+                          <span className={row.ok ? "text-success" : "text-warning"}>
                             {row.ok ? "Listo" : "Falta"}
                           </span>
                         </li>
@@ -1035,26 +1035,21 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                   </article>
 
                   <article className={cn(adminUi.card, "p-4")}>
-                    <p className="text-sm font-semibold text-[#234A33]">Últimas modificaciones</p>
+                    <p className="text-sm font-semibold text-olive">Últimas modificaciones</p>
                     {editLog.length === 0 ? (
-                      <p className="mt-2 text-sm text-[#6B746C]">
+                      <p className="mt-2 text-sm text-ink-muted">
                         {updatedAt
-                          ? `Última edición ${new Date(updatedAt).toLocaleDateString("es-AR")}`
+                          ? `Última edición ${formatAdminDate(updatedAt)}`
                           : "Todavía no hay historial."}
                       </p>
                     ) : (
                       <ul className="mt-2 space-y-2">
                         {(historyOpen ? editLog : editLog.slice(0, 3)).map((item, i) => (
                           <li key={`${item.at}-${i}`} className="text-sm">
-                            <p className="text-[#234A33]">{item.by || "Admin"}</p>
-                            <p className="text-[#6B746C]">
+                            <p className="text-olive">{item.by || "Admin"}</p>
+                            <p className="text-ink-muted">
                               {item.at
-                                ? new Date(item.at).toLocaleString("es-AR", {
-                                    day: "numeric",
-                                    month: "short",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
+                                ? formatAdminDateTime(item.at)
                                 : ""}
                               {item.fields?.length ? ` · ${item.fields.slice(0, 3).join(", ")}` : ""}
                             </p>

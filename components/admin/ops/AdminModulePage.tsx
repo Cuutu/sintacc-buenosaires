@@ -4,10 +4,10 @@ import type { ReactNode } from "react"
 import { useSearchParams } from "next/navigation"
 import { AdminDashboard } from "@/components/admin/AdminDashboard"
 import type { AdminCounts, AdminSection } from "@/components/admin/types"
-import { adminUi } from "@/lib/admin-ui"
-import { cn } from "@/lib/utils"
+import { AdminPageHeader } from "@/components/admin/ui/page-header"
+import { SegmentedControl } from "@/components/admin/ui/segmented-control"
 
-type Tab = { id: AdminSection; label: string; query?: string }
+type Tab = { id: AdminSection; label: string; query?: string; count?: number | null }
 
 export function AdminModulePage({
   title,
@@ -52,36 +52,32 @@ export function AdminModulePage({
 
   return (
     <div className="mx-auto max-w-[1280px]">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className={adminUi.title}>{title}</h1>
-          {subtitle ? <p className={cn("mt-2", adminUi.subtitle)}>{subtitle}</p> : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {tabs.length > 1 ? (
-            <div className="flex gap-1 rounded-[24px] border border-[#E8E1D6] bg-[#FCFBF8] p-1">
-              {tabs.map((tab) => (
-                <a
-                  key={tab.id}
-                  href={(() => {
+      <AdminPageHeader
+        title={title}
+        description={subtitle}
+        actions={
+          <>
+            {tabs.length > 1 ? (
+              <SegmentedControl
+                ariaLabel={`Secciones de ${title}`}
+                value={section}
+                options={tabs.map((tab) => ({
+                  value: tab.id,
+                  label: tab.label,
+                  count: tab.count,
+                  href: (() => {
                     const query = new URLSearchParams(tab.query || "")
                     if (params.get("estado")) query.set("estado", params.get("estado")!)
                     if (tab.id === "ventureReviews") query.set("seccion", "ventureReviews")
                     return `?${query}`
-                  })()}
-                  className={cn(
-                    "inline-flex min-h-11 items-center rounded-2xl px-3 text-sm font-medium transition-colors duration-150",
-                    section === tab.id ? "bg-[#234A33] text-[#F8F5EF]" : "text-[#6B746C]"
-                  )}
-                >
-                  {tab.label}
-                </a>
-              ))}
-            </div>
-          ) : null}
-          {actions}
-        </div>
-      </div>
+                  })(),
+                }))}
+              />
+            ) : null}
+            {actions}
+          </>
+        }
+      />
       <AdminDashboard
         key={`${section}:${params.toString()}`}
         initialCounts={counts}

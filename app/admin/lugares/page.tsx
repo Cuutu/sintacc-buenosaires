@@ -14,8 +14,8 @@ export default async function AdminLugaresPage() {
         counts={counts}
         defaultSection="places"
         tabs={[
-          { id: "places", label: "Catálogo" },
-          { id: "suggestions", label: "Cola", query: "cola=1" },
+          { id: "places", label: "Catálogo", count: counts.placesTotal },
+          { id: "suggestions", label: "Cola", query: "cola=1", count: counts.suggestionsPending },
         ]}
         actions={
           <>

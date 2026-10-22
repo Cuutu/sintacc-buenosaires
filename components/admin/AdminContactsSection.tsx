@@ -8,6 +8,7 @@ import { adminUi } from "@/lib/admin-ui"
 import { cn } from "@/lib/utils"
 import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
 import { contactReplyUrl } from "@/lib/admin-estado"
+import { AdminListSkeleton } from "@/components/admin/ui/states"
 
 export type AdminContactsSectionProps = {
   estadoFilter: string
@@ -30,16 +31,16 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div className={adminUi.card}>
-        <div className="border-b border-[#E8E1D6] p-4">
+        <div className="border-b border-line p-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B746C]" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
               <input
                 placeholder="Buscar por nombre, email, mensaje..."
                 value={contactSearch}
                 onChange={(e) => setContactSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchContacts()}
-                className="h-11 w-full rounded-2xl border border-[#E8E1D6] bg-[#F8F5EF] pl-9 pr-3 text-sm text-[#234A33] outline-none"
+                className="h-11 w-full rounded-2xl border border-line bg-cream pl-9 pr-3 text-sm text-olive outline-none"
               />
             </div>
             <button type="button" className={adminUi.btnGhost} onClick={() => fetchContacts()}>
@@ -49,23 +50,23 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
           <AdminEstadoFilter value={props.estadoFilter} onChange={props.onEstadoFilter} />
         </div>
         {contactsLoading ? (
-          <p className="px-5 py-10 text-center text-sm text-[#6B746C]">Cargando mensajes...</p>
+          <AdminListSkeleton rows={4} label="Cargando mensajes…" />
         ) : visible.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-[#6B746C]">No hay mensajes</p>
+          <p className="px-5 py-10 text-center text-sm text-ink-muted">No hay mensajes</p>
         ) : (
           <ul>
             {visible.map((c) => (
-              <li key={c._id} className="border-b border-[#E8E1D6] last:border-0">
+              <li key={c._id} className="border-b border-line last:border-0">
                 <button
                   type="button"
                   onClick={() => setSelectedId(c._id)}
                   className={cn(
                     "flex w-full flex-col items-start px-5 py-4 text-left transition-colors duration-150",
-                    selected?._id === c._id ? "bg-[#F8F5EF]" : "hover:bg-[#F8F5EF]"
+                    selected?._id === c._id ? "bg-cream" : "hover:bg-cream"
                   )}
                 >
-                  <span className="text-sm font-semibold text-[#234A33]">{c.subject}</span>
-                  <span className="mt-1 text-xs text-[#6B746C]">
+                  <span className="text-sm font-semibold text-olive">{c.subject}</span>
+                  <span className="mt-1 text-xs text-ink-muted">
                     {c.name} · {c.estado ?? "pendiente"}
                     {(c.estado ?? "pendiente") === "pendiente" && daysSince(c.createdAt) != null && daysSince(c.createdAt)! >= 2
                       ? ` · ${daysSince(c.createdAt)} días sin resolver`
@@ -81,11 +82,11 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
       <aside className={cn(adminUi.card, "p-5")}>
         {selected ? (
           <>
-            <p className="font-display text-xl font-extrabold text-[#234A33]">{selected.subject}</p>
-            <p className="mt-1 text-sm text-[#6B746C]">
+            <p className="font-display text-xl font-extrabold text-olive">{selected.subject}</p>
+            <p className="mt-1 text-sm text-ink-muted">
               {selected.name} · {selected.email}
             </p>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[#234A33]">
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-olive">
               {selected.message}
             </p>
             <AdminEstadoActions key={selected._id} endpoint={`/api/admin/contacts/${selected._id}`} estado={selected.estado} onSaved={fetchContacts} />
@@ -99,7 +100,7 @@ export function AdminContactsSection(props: AdminContactsSectionProps) {
             </a> : <button disabled title="Sin datos de contacto" className={adminUi.btnGhost}>Responder</button>}
           </>
         ) : (
-          <p className="text-sm text-[#6B746C]">Elegí un mensaje para responder.</p>
+          <p className="text-sm text-ink-muted">Elegí un mensaje para responder.</p>
         )}
       </aside>
     </div>

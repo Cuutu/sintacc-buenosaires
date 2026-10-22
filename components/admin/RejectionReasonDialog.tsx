@@ -63,14 +63,14 @@ export function RejectionReasonDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/25 bg-amber-500/10">
-            <AlertTriangle className="h-5 w-5 text-amber-400" />
+          <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-warning-bar bg-warning-soft">
+            <AlertTriangle className="h-5 w-5 text-warning" />
           </div>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {description}
             {itemName ? (
-              <span className="mt-1 block font-medium text-foreground">{itemName}</span>
+              <span className="mt-1 block font-medium text-olive">{itemName}</span>
             ) : null}
           </DialogDescription>
         </DialogHeader>
@@ -97,7 +97,7 @@ export function RejectionReasonDialog({
             className="min-h-28 resize-none"
             maxLength={700}
           />
-          <p className="text-right text-xs text-muted-foreground">{reason.length}/700</p>
+          <p className="text-right text-xs text-ink-muted">{reason.length}/700</p>
         </div>
 
         <DialogFooter>

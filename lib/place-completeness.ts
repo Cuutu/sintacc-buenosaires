@@ -81,14 +81,14 @@ export function placeCompleteness(place: PlaceCompletenessInput): number {
 }
 
 export function completenessTone(pct: number): string {
-  if (pct >= 85) return "text-[#2D6A4F]"
+  if (pct >= 85) return "text-success"
   // Ámbar oscuro para texto: #D4A017 sobre crema da 2,3:1 (ilegible); este da 5,7:1.
-  if (pct >= 60) return "text-[#8A5A00]"
-  return "text-[#B84420]"
+  if (pct >= 60) return "text-warning"
+  return "text-terracotta-strong"
 }
 
 export function completenessBarTone(pct: number): string {
-  if (pct >= 85) return "bg-[#2D6A4F]"
-  if (pct >= 60) return "bg-[#D4A017]"
-  return "bg-[#B84420]"
+  if (pct >= 85) return "bg-success"
+  if (pct >= 60) return "bg-warning-bar"
+  return "bg-terracotta-strong"
 }

@@ -26,7 +26,8 @@ describe("tabla de Lugares", () => {
   })
 
   it("el menú ⋯ es un DropdownMenu (cierra con Escape y clic afuera)", () => {
-    expect(src).toContain("DropdownMenuTrigger")
+    // Directo o a través de ActionMenu (components/admin/ui), que lo usa por dentro.
+    expect(src).toMatch(/DropdownMenuTrigger|<ActionMenu/)
     expect(src).not.toContain("openMenu")
   })
 
