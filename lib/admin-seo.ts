@@ -12,6 +12,10 @@ export type SeoMetric = {
   id: string
   label: string
   value: number | null
+  /** Sobre cuántos se mide (para mostrar cobertura en %). Sin total, es un número suelto. */
+  total?: number
+  /** El número cuenta lo que falta (ej. "sin foto"): más bajo es mejor. */
+  lowerIsBetter?: boolean
   href?: string
   state: SeoMetricState
   note: string
@@ -89,7 +93,8 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "slugs",
-      label: "Lugares con slug",
+      total: counts.placesApproved,
+      label: "Fichas con slug",
       value: withSlug,
       href: "/admin/lugares?status=approved",
       state: "ready",
@@ -97,6 +102,7 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "titles",
+      total: counts.placesApproved,
       label: "Fichas con meta title",
       value: withTitle,
       href: "/admin/lugares",
@@ -105,6 +111,7 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "descriptions",
+      total: counts.placesApproved,
       label: "Fichas con meta description",
       value: withDescription,
       href: "/admin/lugares",
@@ -113,6 +120,7 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "canonical",
+      total: counts.placesApproved,
       label: "Fichas con canonical",
       value: withCanonical,
       href: "/admin/lugares",
@@ -121,14 +129,16 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "cities-indexable",
+      total: CITIES.length,
       label: "Ciudades indexables",
       value: indexableCities,
       href: "/admin/lugares",
       state: "ready",
-      note: "Ciudades que pasan las reglas reales de indexación.",
+      note: "Ciudades del listado que pasan las reglas reales de indexación.",
     },
     {
       id: "provinces-indexable",
+      total: PROVINCES.length,
       label: "Provincias indexables",
       value: indexableProvinces,
       href: "/admin/lugares",
@@ -144,6 +154,7 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "geo-provinces",
+      total: PROVINCES.length,
       label: "Provincias con al menos un lugar",
       value: provincesWithPlaces,
       state: "ready",
@@ -159,11 +170,13 @@ export async function getAdminSeoSnapshot(): Promise<AdminSeoSnapshot> {
     },
     {
       id: "no-photo",
+      total: counts.placesApproved,
+      lowerIsBetter: true,
       label: "Lugares sin foto",
       value: counts.placesNoPhoto,
       href: "/admin/lugares?missing=photo&status=approved",
       state: "ready",
-      note: "Afecta rich results y CTR orgánico. Es calidad de ficha, no un ranking SEO.",
+      note: "Afecta los resultados enriquecidos y los clics. Es calidad de ficha, no un puesto en Google.",
     },
   ]
 

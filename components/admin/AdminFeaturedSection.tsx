@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { ArrowDown, ArrowUp, Loader2, Search, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Loader2, Plus, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import { adminUi } from "@/lib/admin-ui"
@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils"
 import { type PlaceWithStats } from "@/components/featured/featured-utils"
 import { featuredTrust, featuredTrustNote } from "@/lib/home/featured-trust"
 import { AdminListSkeleton } from "@/components/admin/ui/states"
+import { AdminButton } from "@/components/admin/ui/button"
+import { StatusBadge } from "@/components/admin/ui/status-badge"
+import { formatCount } from "@/lib/admin-format"
 
 export type FeaturedPlaceItem = {
   _id: string
@@ -36,6 +39,16 @@ type SearchHit = {
 
 const MAX_HINT = 6
 
+/** "5 de 6": cuántos lugares del carrusel están ocupados. */
+export function featuredSlotsLabel(count: number, max: number): string {
+  return `${formatCount(count)} de ${formatCount(max)}`
+}
+
+/** Posiciones libres (1-based) que se muestran como "Lugar libre" hasta llegar al máximo. */
+export function emptyFeaturedPositions(count: number, max: number): number[] {
+  return Array.from({ length: Math.max(0, max - count) }, (_, i) => count + i + 1)
+}
+
 export function AdminFeaturedSection() {
   const [places, setPlaces] = useState<FeaturedPlaceItem[]>([])
   const [max, setMax] = useState(MAX_HINT)
@@ -46,6 +59,7 @@ export function AdminFeaturedSection() {
   const [hits, setHits] = useState<SearchHit[]>([])
   const [searching, setSearching] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const fetchFeatured = useCallback(async () => {
     setLoading(true)
@@ -158,27 +172,33 @@ export function AdminFeaturedSection() {
     <div className="space-y-6">
       <div className={cn(adminUi.card, "p-5")}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-ink-muted">
-            Hasta {max} lugares. El orden es el del carrusel home. En la home solo se muestran los
-            100% sin TACC; si faltan, se completa con otros 100% con foto.
-          </p>
-          <div className="flex gap-2">
-            <button type="button" className={adminUi.btnGhost} onClick={fetchFeatured} disabled={loading || saving}>
+          <div className="min-w-0 space-y-2">
+            <StatusBadge tone={places.length >= max ? "success" : "neutral"}>
+              {featuredSlotsLabel(places.length, max)} lugares
+            </StatusBadge>
+            <p className="text-sm text-ink-muted">
+              El orden es el del carrusel de la home. En la home solo se muestran los 100% sin TACC; si
+              faltan, se completa con otros 100% con foto.
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <AdminButton onClick={fetchFeatured} disabled={loading || saving}>
               Recargar
-            </button>
-            <button type="button" className={adminUi.btnPrimary} onClick={handleSave} disabled={!dirty || saving || loading}>
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            </AdminButton>
+            <AdminButton variant="primary" onClick={handleSave} disabled={!dirty || saving || loading}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
               Guardar
-            </button>
+            </AdminButton>
           </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
           <input
+            ref={searchRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar lugar aprobado para destacar..."
-            className="h-11 w-full rounded-2xl border border-line bg-cream pl-9 pr-3 text-sm text-olive outline-none"
+            className={cn(adminUi.input, "pl-9")}
             aria-label="Buscar lugar para destacar"
           />
           {(searching || hits.length > 0) && (
@@ -190,7 +210,7 @@ export function AdminFeaturedSection() {
                     key={hit._id}
                     type="button"
                     onClick={() => addPlace(hit)}
-                    className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-cream"
+                    className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-cream"
                   >
                     <Cover photos={hit.photos} name={hit.name} />
                     <span className="min-w-0 flex-1">
@@ -206,10 +226,6 @@ export function AdminFeaturedSection() {
 
       {loading ? (
         <AdminListSkeleton rows={3} label="Cargando destacados…" />
-      ) : places.length === 0 ? (
-        <p className={cn(adminUi.card, "px-5 py-10 text-center text-sm text-ink-muted")}>
-          Todavía no hay destacados. Buscá un lugar arriba.
-        </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {places.map((place, index) => (
@@ -239,6 +255,7 @@ export function AdminFeaturedSection() {
                     {place.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}
+                <SlotNumber position={index + 1} />
               </div>
               <div className="p-4">
                 <p className="truncate font-semibold text-olive">{place.name}</p>
@@ -258,33 +275,51 @@ export function AdminFeaturedSection() {
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" className={adminUi.chip} onClick={() => move(index, -1)} disabled={index === 0}>
-                    <ArrowUp className="mr-1 h-3.5 w-3.5" />
-                    Arriba
-                  </button>
-                  <button
-                    type="button"
-                    className={adminUi.chip}
+                  <AdminButton
+                    size="icon"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Subir ${place.name}`}
+                    title="Subir"
+                  >
+                    <ArrowUp className="h-4 w-4" aria-hidden />
+                  </AdminButton>
+                  <AdminButton
+                    size="icon"
                     onClick={() => move(index, 1)}
                     disabled={index === places.length - 1}
+                    aria-label={`Bajar ${place.name}`}
+                    title="Bajar"
                   >
-                    <ArrowDown className="mr-1 h-3.5 w-3.5" />
-                    Abajo
-                  </button>
-                  <button type="button" className={adminUi.chip} onClick={() => removePlace(place._id)}>
-                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    <ArrowDown className="h-4 w-4" aria-hidden />
+                  </AdminButton>
+                  <AdminButton variant="danger" onClick={() => removePlace(place._id)}>
+                    <Trash2 className="h-4 w-4" aria-hidden />
                     Quitar
-                  </button>
+                  </AdminButton>
                 </div>
               </div>
             </article>
+          ))}
+          {emptyFeaturedPositions(places.length, max).map((position) => (
+            <button
+              key={`libre-${position}`}
+              type="button"
+              onClick={() => searchRef.current?.focus()}
+              className="group relative flex min-h-[14rem] flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-line bg-transparent p-4 text-center transition-colors duration-150 hover:bg-cream-card"
+            >
+              <SlotNumber position={position} muted />
+              <Plus className="h-6 w-6 text-ink-muted" aria-hidden />
+              <span className="font-semibold text-olive">Lugar libre</span>
+              <span className="text-sm text-ink-muted">Buscá un lugar arriba para sumarlo.</span>
+            </button>
           ))}
         </div>
       )}
 
       {places.length > 0 ? (
         <section>
-          <h2 className={cn("mb-3", adminUi.label)}>Vista previa del carrusel</h2>
+          <h2 className="mb-3 text-base font-bold text-olive">Vista previa del carrusel</h2>
           <div
             className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2"
             data-overflow-allowed="admin-ops-quick"
@@ -303,6 +338,21 @@ export function AdminFeaturedSection() {
         </section>
       ) : null}
     </div>
+  )
+}
+
+/** Número de posición en el carrusel (1 = el primero). */
+function SlotNumber({ position, muted = false }: { position: number; muted?: boolean }) {
+  return (
+    <span
+      aria-label={`Posición ${position}`}
+      className={cn(
+        "absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold tabular-nums",
+        muted ? "border border-line bg-cream text-ink-muted" : "bg-olive text-cream shadow-sm"
+      )}
+    >
+      {position}
+    </span>
   )
 }
 

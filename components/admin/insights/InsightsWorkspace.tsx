@@ -17,6 +17,13 @@ import {
   platformActivityLabel,
 } from "@/lib/format-relative-activity"
 import { WebVitalsPanel } from "@/components/admin/insights/WebVitalsPanel"
+import { AdminButton } from "@/components/admin/ui/button"
+import { FilterChip } from "@/components/admin/ui/filter-chip"
+import { AdminPageHeader, AdminSectionTitle } from "@/components/admin/ui/page-header"
+import { SegmentedControl } from "@/components/admin/ui/segmented-control"
+import { StatusBadge } from "@/components/admin/ui/status-badge"
+import { StatTile } from "@/components/admin/ui/states"
+import { formatCount } from "@/lib/admin-format"
 
 type TabId =
   | "resumen"
@@ -46,7 +53,98 @@ const RANGES: Array<{ id: InsightsRangeKey; label: string }> = [
 ]
 
 function formatNumber(value: number): string {
-  return value.toLocaleString("es-AR")
+  return formatCount(value)
+}
+
+export type DeviceGroup = {
+  key: string
+  platform: string
+  version: string
+  devices: number
+  activeNow: number
+  lastTs: number
+}
+
+/**
+ * Resume la lista de dispositivos por plataforma y versión (antes el Resumen
+ * mostraba ~40 filas, casi todas "Inactivo", que no decían nada).
+ * Ordena por cantidad de dispositivos y, a igualdad, por la actividad más reciente.
+ */
+export function summarizeDevices(rows: InsightsActivityRow[], now: number): DeviceGroup[] {
+  const groups = new Map<string, DeviceGroup>()
+  for (const row of rows) {
+    const platform = platformActivityLabel(row.platform, row.device)
+    const version = row.appVersion || "Sin versión"
+    const key = `${platform}|${version}`
+    const last = new Date(row.lastTs).getTime()
+    const g = groups.get(key) ?? { key, platform, version, devices: 0, activeNow: 0, lastTs: 0 }
+    g.devices += 1
+    if (now - last <= ACTIVITY_ACTIVE_MS) g.activeNow += 1
+    if (last > g.lastTs) g.lastTs = last
+    groups.set(key, g)
+  }
+  return Array.from(groups.values()).sort((a, b) => b.devices - a.devices || b.lastTs - a.lastTs)
+}
+
+function DevicesSummary({
+  data,
+  rangeLabel,
+  now,
+  onShowAll,
+}: {
+  data: AdminInsightsPayload
+  rangeLabel: string
+  now: number
+  onShowAll: () => void
+}) {
+  const activity = data.activity
+  if (!activity?.available || activity.rows.length === 0) return null
+  const groups = summarizeDevices(activity.rows, now)
+  return (
+    <article className={`${adminUi.card} p-5`} aria-label="Dispositivos">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <AdminSectionTitle hint={`${rangeLabel} · dispositivos anónimos, sin nombres ni emails`}>Dispositivos</AdminSectionTitle>
+        <AdminButton onClick={onShowAll}>Ver dispositivos</AdminButton>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatTile label="Android" value={formatNumber(activity.android)} className="bg-cream" />
+        <StatTile label="iOS" value={formatNumber(activity.ios)} className="bg-cream" />
+        <StatTile label="Web" value={formatNumber(activity.web)} className="bg-cream" />
+        <StatTile label="Activos ahora" value={formatNumber(activity.activeNow)} className="bg-cream" />
+      </div>
+      <div className="mt-5 overflow-x-auto">
+        <table className="min-w-full text-left text-sm">
+          <caption className="pb-2 text-left text-sm text-ink-muted">
+            Por plataforma y versión, entre los últimos {formatNumber(activity.rows.length)} dispositivos con actividad.
+          </caption>
+          <thead>
+            <tr className="border-b border-line text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              <th className="py-2 pr-4 font-semibold">Plataforma</th>
+              <th className="py-2 pr-4 font-semibold">Versión</th>
+              <th className="py-2 pr-4 text-right font-semibold">Dispositivos</th>
+              <th className="py-2 text-right font-semibold">Última actividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g) => (
+              <tr key={g.key} className="border-b border-line last:border-0">
+                <td className="py-2.5 pr-4 font-medium text-olive">{g.platform}</td>
+                <td className="py-2.5 pr-4 font-mono text-[13px] text-ink-muted">{g.version}</td>
+                <td className="py-2.5 pr-4 text-right tabular-nums text-olive">{formatNumber(g.devices)}</td>
+                <td className="py-2.5 text-right text-ink-muted">
+                  {g.activeNow > 0 ? (
+                    <StatusBadge tone="success">{g.activeNow === 1 ? "1 activo ahora" : `${g.activeNow} activos ahora`}</StatusBadge>
+                  ) : (
+                    formatRelativeActivity(g.lastTs, now)
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  )
 }
 
 function Delta({ metric }: { metric: InsightsMetric }) {
@@ -167,22 +265,16 @@ function ActivityRecentTable({
     <article className={`${adminUi.card} overflow-hidden p-0`}>
       <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className={adminUi.label}>Actividad reciente</h2>
+          <h2 className="text-base font-bold text-olive">Actividad reciente</h2>
           <p className="mt-1 text-sm text-ink-muted">
             {rangeLabel} · {activity.android} Android · {activity.activeNow} activos ahora
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {filters.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setFilter(item.id)}
-              className={item.id === filter ? adminUi.chipActive : adminUi.chip}
-            >
+            <FilterChip key={item.id} selected={item.id === filter} count={item.count} onClick={() => setFilter(item.id)}>
               {item.label}
-              <span className="ml-1.5 tabular-nums opacity-70">{item.count}</span>
-            </button>
+            </FilterChip>
           ))}
         </div>
       </div>
@@ -221,16 +313,11 @@ function ActivityRecentTable({
                       {row.appVersion || "—"}
                     </td>
                     <td className="px-5 py-3">
-                      <span
-                        className={cn(
-                          "inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold",
-                          active
-                            ? "bg-olive/10 text-olive"
-                            : "bg-line text-ink-muted"
-                        )}
-                      >
-                        {active ? "Activo" : "Inactivo"}
-                      </span>
+                      {active ? (
+                        <StatusBadge tone="success">Activo</StatusBadge>
+                      ) : (
+                        <StatusBadge tone="neutral">Inactivo</StatusBadge>
+                      )}
                     </td>
                   </tr>
                 )
@@ -255,7 +342,7 @@ function RankList({
   const max = rows[0]?.count ?? 0
   return (
     <article className={`${adminUi.card} p-5`}>
-      <h3 className={adminUi.label}>{title}</h3>
+      <h3 className="text-base font-bold text-olive">{title}</h3>
       {rows.length === 0 ? (
         <p className="mt-4 text-sm text-ink-muted">{empty}</p>
       ) : (
@@ -283,10 +370,8 @@ function RankList({
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className={`${adminUi.card} flex flex-wrap items-center justify-between gap-3 p-5`}>
-      <p className="text-sm text-terracotta-hover">{message}</p>
-      <button type="button" className={adminUi.btnGhost} onClick={onRetry}>
-        Reintentar
-      </button>
+      <p className="text-sm text-danger">{message}</p>
+      <AdminButton onClick={onRetry}>Reintentar</AdminButton>
     </div>
   )
 }
@@ -343,49 +428,34 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
 
   return (
     <div className="mx-auto max-w-[1280px]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className={adminUi.title}>Analytics</h1>
-          <p className={`mt-2 max-w-2xl ${adminUi.subtitle}`}>
-            Números para decidir qué ciudades y tipos de lugar conviene sumar. Cuentas, reseñas y
-            favoritos salen de la base. El resto, de eventos anónimos.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {RANGES.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setRange(item.id)}
-              className={item.id === range ? adminUi.chipActive : adminUi.chip}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Analytics"
+        description="Números para decidir qué ciudades y tipos de lugar conviene sumar. Cuentas, reseñas y favoritos salen de la base; el resto, de eventos anónimos."
+        actions={
+          <SegmentedControl
+            ariaLabel="Período"
+            value={range}
+            onChange={setRange}
+            options={RANGES.map((item) => ({ value: item.id, label: item.label }))}
+          />
+        }
+      />
 
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={item.id === tab ? adminUi.chipActive : adminUi.chip}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        ariaLabel="Secciones de Analytics"
+        value={tab}
+        onChange={setTab}
+        options={TABS.map((item) => ({ value: item.id, label: item.label }))}
+      />
 
-      <div className="mt-8">
+      <div className="mt-6">
         {error ? <ErrorBanner message={error} onRetry={() => void load(range)} /> : null}
 
         {tab === "velocidad" ? (
           <WebVitalsPanel range={range} />
         ) : tab === "catalogo" ? (
           <section>
-            <h2 className={adminUi.label}>Inventario actual</h2>
+            <AdminSectionTitle>Inventario actual</AdminSectionTitle>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {catalogRows.map((row) => (
                 <article key={row.label} className={`${adminUi.card} p-5`}>
@@ -402,56 +472,52 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
           <SkeletonGrid />
         ) : tab === "resumen" ? (
           <section className="space-y-6">
-            <ActivityRecentTable
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard
+                label="Activos en el período"
+                metric={data.overview.activeRange}
+                hint="Dispositivos anónimos con al menos un evento."
+                empty="Cuando haya uso real, acá ves cuánta gente abre CeliMap."
+              />
+              <MetricCard label="Activos hoy" metric={data.overview.activeToday} empty="Nadie activo todavía hoy." />
+              <MetricCard
+                label="Cuentas nuevas"
+                metric={data.overview.newAccounts}
+                hint="Altas reales en la base (Google / Apple)."
+              />
+              <MetricCard label="Fichas vistas" metric={data.overview.placeViews} />
+            </div>
+
+            <DevicesSummary
               data={data}
-              rangeLabel={range === "1d" ? "hoy" : `últimos ${range === "7d" ? "7" : "30"} días`}
+              rangeLabel={range === "1d" ? "Hoy" : `Últimos ${range === "7d" ? "7" : "30"} días`}
               now={now}
+              onShowAll={() => setTab("actividad")}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard
-              label="Activos en el período"
-              metric={data.overview.activeRange}
-              hint="Dispositivos anónimos con al menos un evento."
-              empty="Cuando haya uso real, acá ves cuánta gente abre CeliMap."
-            />
-            <MetricCard
-              label="Activos hoy"
-              metric={data.overview.activeToday}
-              empty="Nadie activo todavía hoy."
-            />
-            <MetricCard
-              label="Cuentas nuevas"
-              metric={data.overview.newAccounts}
-              hint="Altas reales en Mongo (Google / Apple)."
-            />
-            <MetricCard
-              label="Dispositivos nuevos"
-              metric={data.overview.newDevices}
-              hint="first_open. No es lo mismo que una cuenta."
-            />
-            <MetricCard
-              label="Recurrentes"
-              metric={data.overview.returning}
-              hint="Activos menos dispositivos nuevos del período."
-            />
-            <MetricCard label="Fichas vistas" metric={data.overview.placeViews} />
-            <MetricCard label="Búsquedas" metric={data.overview.searches} />
-            <MetricCard
-              label="Reseñas creadas"
-              metric={data.overview.reviews}
-              hint="Desde la base, no desde el evento."
-            />
-            <MetricCard
-              label="Favoritos nuevos"
-              metric={data.overview.favorites}
-              hint="Desde la base."
-            />
-            <MetricCard
-              label="Lugares sugeridos"
-              metric={data.overview.suggestions}
-              hint="Sugerencias enviadas, no el click del CTA."
-            />
-            <MetricCard label="Clics en cómo llegar" metric={data.overview.directions} />
+
+            <div>
+              <AdminSectionTitle className="mb-3">Más números del período</AdminSectionTitle>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <MetricCard
+                  label="Dispositivos nuevos"
+                  metric={data.overview.newDevices}
+                  hint="Primera apertura. No es lo mismo que una cuenta."
+                />
+                <MetricCard
+                  label="Recurrentes"
+                  metric={data.overview.returning}
+                  hint="Activos menos dispositivos nuevos del período."
+                />
+                <MetricCard label="Búsquedas" metric={data.overview.searches} />
+                <MetricCard label="Reseñas creadas" metric={data.overview.reviews} hint="Desde la base, no desde el evento." />
+                <MetricCard label="Favoritos nuevos" metric={data.overview.favorites} hint="Desde la base." />
+                <MetricCard
+                  label="Lugares sugeridos"
+                  metric={data.overview.suggestions}
+                  hint="Sugerencias enviadas, no el clic del botón."
+                />
+                <MetricCard label="Clics en cómo llegar" metric={data.overview.directions} />
+              </div>
             </div>
           </section>
         ) : tab === "actividad" ? (
@@ -528,7 +594,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             <div className="space-y-4">
               {data.behavior.zeroSearches.length > 0 ? (
                 <article className={`${adminUi.card} border-terracotta/25 p-5`}>
-                  <h3 className={adminUi.label}>Búsquedas sin resultados</h3>
+                  <h3 className="text-base font-bold text-olive">Búsquedas sin resultados</h3>
                   <p className="mt-2 text-sm text-ink-muted">
                     Huecos de cobertura. Si se repite una ciudad o un tipo de lugar, conviene cargarlo.
                   </p>
@@ -660,7 +726,7 @@ export function InsightsWorkspace({ catalog }: { catalog: AdminCounts }) {
             )}
             {data.errors.recent.length > 0 ? (
               <article className={`${adminUi.card} p-5`}>
-                <h3 className={adminUi.label}>Últimos</h3>
+                <h3 className="text-base font-bold text-olive">Últimos</h3>
                 <ul className="mt-4 space-y-3">
                   {data.errors.recent.map((row, index) => (
                     <li key={`${row.ts}-${index}`} className="text-sm text-olive">

@@ -13,6 +13,8 @@ import {
   type WebVitalRating,
 } from "@/lib/web-vitals"
 import type { WebVitalCell, WebVitalsSummary } from "@/lib/web-vitals-server"
+import { AdminButton } from "@/components/admin/ui/button"
+import { SegmentedControl } from "@/components/admin/ui/segmented-control"
 
 const ROUTE_LABELS: Record<string, string> = {
   todas: "Todas las páginas",
@@ -49,7 +51,7 @@ const MIN_SAMPLES = 20
 const RATING_STYLE: Record<WebVitalRating, string> = {
   good: "bg-success-soft text-success",
   "needs-improvement": "bg-warning-soft text-warning",
-  poor: "bg-terracotta/10 text-terracotta-hover",
+  poor: "bg-danger-soft text-danger",
 }
 
 function formatValue(metric: WebVitalMetric, value: number): string {
@@ -117,32 +119,24 @@ export function WebVitalsPanel({ range }: { range: InsightsRangeKey }) {
     <section className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <h2 className={adminUi.label}>Velocidad con usuarios reales</h2>
+          <h2 className="text-base font-bold text-olive">Velocidad con usuarios reales</h2>
           <p className="mt-2 text-sm text-ink-muted">
             Cada número es el p75: 3 de cada 4 visitas cargaron igual o más rápido. Verde es bueno para
             Google, ámbar mejorable, rojo malo. Las celdas pálidas tienen menos de {MIN_SAMPLES} mediciones.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {AUDIENCES.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setAudience(item)}
-              className={item === audience ? adminUi.chipActive : adminUi.chip}
-            >
-              {WEB_VITAL_AUDIENCE_LABELS[item]}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          ariaLabel="Dónde se midió"
+          value={audience}
+          onChange={setAudience}
+          options={AUDIENCES.map((item) => ({ value: item, label: WEB_VITAL_AUDIENCE_LABELS[item] }))}
+        />
       </div>
 
       {error ? (
-        <div className={`${adminUi.card} p-5 text-sm text-terracotta-hover`}>
-          {error}{" "}
-          <button type="button" className="underline" onClick={() => void load(range)}>
-            Reintentar
-          </button>
+        <div className={`${adminUi.card} flex flex-wrap items-center justify-between gap-3 p-5`}>
+          <p className="text-sm text-danger">{error}</p>
+          <AdminButton onClick={() => void load(range)}>Reintentar</AdminButton>
         </div>
       ) : loading || !data ? (
         <div className={`${adminUi.card} h-48 animate-pulse`} />
