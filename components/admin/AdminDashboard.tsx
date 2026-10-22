@@ -281,9 +281,20 @@ export function AdminDashboard({
     }
   }
 
+  // Los filtros de Lugares cambian el estado y piden la lista en un setTimeout. Si
+  // llaman a fetchPlaces directo, usan la versión del render anterior (con los
+  // filtros viejos) y el chip recién se aplicaba en el clic siguiente. Con la ref,
+  // el pedido siempre usa los filtros del último render.
+  const fetchPlacesRef = useRef(fetchPlaces)
+  fetchPlacesRef.current = fetchPlaces
+  const fetchPlacesLatest = useCallback(
+    (status?: string, page?: number) => fetchPlacesRef.current(status, page),
+    []
+  )
+
   const goToPlacesPage = (p: number) => {
     setPlacesPage(p)
-    setTimeout(() => fetchPlaces(undefined, p), 0)
+    setTimeout(() => fetchPlacesLatest(undefined, p), 0)
   }
 
   const fetchNeighborhoods = async () => {
@@ -657,8 +668,9 @@ export function AdminDashboard({
           selectedPlaceIds={selectedPlaceIds}
           togglePlaceSelection={togglePlaceSelection}
           toggleAllPlaces={toggleAllPlaces}
-          fetchPlaces={fetchPlaces}
+          fetchPlaces={fetchPlacesLatest}
           goToPlacesPage={goToPlacesPage}
+          counts={counts}
           handleBulkAction={handleBulkAction}
           handleBulkResearch={handleBulkResearch}
           handleDeletePlace={handleDeletePlace}

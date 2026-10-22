@@ -84,11 +84,12 @@ export function completenessTone(pct: number): string {
   if (pct >= 85) return "text-success"
   // Ámbar oscuro para texto: #D4A017 sobre crema da 2,3:1 (ilegible); este da 5,7:1.
   if (pct >= 60) return "text-warning"
-  return "text-terracotta-strong"
+  // Rojo de estado, no terracota: el terracota queda para la acción principal.
+  return "text-danger"
 }
 
 export function completenessBarTone(pct: number): string {
   if (pct >= 85) return "bg-success"
   if (pct >= 60) return "bg-warning-bar"
-  return "bg-terracotta-strong"
+  return "bg-danger"
 }
