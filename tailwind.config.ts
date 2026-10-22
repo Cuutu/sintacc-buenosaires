@@ -7,6 +7,10 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    // Clases del admin que viven en lib (antes no se escaneaban y dependían de que
+    // alguien más usara la misma clase en components/).
+    './lib/admin-ui.ts',
+    './lib/place-completeness.ts',
 	],
   prefix: "",
   theme: {
@@ -50,6 +54,24 @@ const config = {
         cream: {
           DEFAULT: "hsl(var(--cream))",
           card: "var(--color-cream-card)",
+        },
+        // Interfaz de trabajo (admin): ver app/globals.css. Sin modificador de opacidad (son hex).
+        line: "var(--color-line)",
+        ink: {
+          muted: "var(--color-ink-muted)",
+        },
+        success: {
+          DEFAULT: "var(--color-success)",
+          soft: "var(--color-success-soft)",
+        },
+        warning: {
+          DEFAULT: "var(--color-warning)",
+          soft: "var(--color-warning-soft)",
+          bar: "var(--color-warning-bar)",
+        },
+        danger: {
+          DEFAULT: "var(--color-danger)",
+          soft: "var(--color-danger-soft)",
         },
         terracotta: {
           DEFAULT: "hsl(var(--terracotta))",

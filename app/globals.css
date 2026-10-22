@@ -14,6 +14,19 @@
     --color-cream-card: #fdfbf7;
     --color-olive-muted: #4d6554;
 
+    /* —— Interfaz de trabajo (admin, panel del local): bordes, texto secundario y estados —— */
+    --color-line: #e8e1d6;
+    /* Texto secundario: #6b746c daba 4,4:1 sobre crema; este da 5,2:1 */
+    --color-ink-muted: #5f685f;
+    --color-success: #2d6a4f;
+    --color-success-soft: #e4efe7;
+    /* Ámbar para texto (5,4:1); el ámbar claro #d4a017 queda solo para barras */
+    --color-warning: #8a5a00;
+    --color-warning-soft: #fbf0d9;
+    --color-warning-bar: #d4a017;
+    --color-danger: #b42318;
+    --color-danger-soft: #fce9e6;
+
     --radius-lg: 16px;
     --radius-xl: 24px;
     --shadow-soft: 0 8px 28px -18px rgba(45, 74, 52, 0.28);
@@ -544,5 +557,13 @@ html[data-app-shell] [data-get-app] {
 @media (display-mode: standalone) {
   [data-get-app] {
     display: none;
+  }
+}
+
+@layer base {
+  /* Casilleros y opciones con el oliva de la marca, no el azul del navegador. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-olive);
   }
 }

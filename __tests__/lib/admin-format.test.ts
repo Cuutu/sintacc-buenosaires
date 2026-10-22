@@ -1,4 +1,4 @@
-import { formatCoordinate } from "@/lib/admin-format"
+import { formatAdminDate, formatAdminDateTime, formatCoordinate, formatCount } from "@/lib/admin-format"
 import { formatLocalityName } from "@/lib/place-location-display"
 
 describe("formatCoordinate", () => {
@@ -26,5 +26,29 @@ describe("formatLocalityName", () => {
     expect(formatLocalityName("San Carlos de Bariloche")).toBe("San Carlos de Bariloche")
     expect(formatLocalityName("")).toBe("")
     expect(formatLocalityName(undefined)).toBe("")
+  })
+})
+
+describe("formatCount", () => {
+  it("usa punto de miles", () => {
+    expect(formatCount(2451)).toBe("2.451")
+    expect(formatCount(1830)).toBe("1.830")
+    expect(formatCount(5)).toBe("5")
+    expect(formatCount(1234567)).toBe("1.234.567")
+  })
+})
+
+describe("formatAdminDate", () => {
+  const now = new Date("2026-10-21T15:00:00Z")
+  it("un solo formato: día y mes, con año si no es este", () => {
+    expect(formatAdminDate("2026-10-11T15:00:00Z", now)).toMatch(/^11 oct$/)
+    expect(formatAdminDate("2025-10-11T15:00:00Z", now)).toMatch(/^11 oct 2025$/)
+    expect(formatAdminDate(undefined, now)).toBe("—")
+    expect(formatAdminDate("no es fecha", now)).toBe("—")
+  })
+
+  it("en hora de Argentina (00:30 UTC del 12 es el 11 a la noche)", () => {
+    expect(formatAdminDate("2026-10-12T00:30:00Z", now)).toMatch(/^11 oct$/)
+    expect(formatAdminDateTime("2026-10-12T00:30:00Z", now)).toMatch(/^11 oct, 21:30$/)
   })
 })
