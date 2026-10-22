@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import type { VentureReviewItem } from "@/components/admin/types"
 import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
+import { decodeStoredText } from "@/lib/stored-text"
 
 export type AdminVentureReviewsSectionProps = {
   estadoFilter: string
@@ -117,7 +118,7 @@ export function AdminVentureReviewsSection({
                     {review.status}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{review.comment}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{decodeStoredText(review.comment)}</p>
                 <AdminEstadoActions endpoint={`/api/admin/venture-reviews/${review._id}`} estado={review.estado} onSaved={() => fetchReviews()} />
                 <div className="flex flex-wrap gap-2">
                   {review.status === "visible" ? (

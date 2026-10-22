@@ -6,6 +6,7 @@ import type { CityPageStats, CityRecentReview } from "@/lib/seo/places"
 import type { Guide } from "@/lib/seo/guides"
 import { CELIMAP_SAFETY_DISCLAIMER } from "@/lib/seo/brand"
 import { TrackAnalyticsClick } from "@/components/analytics/TrackAnalyticsClick"
+import { decodeStoredText } from "@/lib/stored-text"
 
 type RelatedList = {
   id: string
@@ -128,7 +129,7 @@ export function CityPageExtras({
                   · {r.rating}/5
                 </p>
                 {r.comment ? (
-                  <p className="mt-1 line-clamp-3 text-muted-foreground">{r.comment}</p>
+                  <p className="mt-1 line-clamp-3 text-muted-foreground">{decodeStoredText(r.comment)}</p>
                 ) : null}
               </li>
             ))}

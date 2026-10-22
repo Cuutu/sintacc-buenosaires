@@ -8,6 +8,7 @@ import { ReviewAdminReply } from "@/components/review-admin-reply"
 import { LazyReviewAdminReplyForm, LazyReviewForm, preloadReviewForm } from "./place-lazy-forms"
 import { placeCardClass } from "./place-detail-ui"
 import type { IReview } from "@/models/Review"
+import { decodeStoredText } from "@/lib/stored-text"
 
 type ReviewItem = IReview & {
   userId?: { name?: string; image?: string }
@@ -161,7 +162,7 @@ export function PlaceCommunityReviews({
                 </p>
               </div>
             </div>
-            <p className="text-base leading-relaxed text-[#1F4D35]">{review.comment}</p>
+            <p className="text-base leading-relaxed text-[#1F4D35]">{decodeStoredText(review.comment)}</p>
             {review.evidencePhotos && review.evidencePhotos.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {review.evidencePhotos.map((url) => (

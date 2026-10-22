@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ADMIN_REPLY_DISPLAY_NAME } from "@/lib/constants"
 import { toast } from "sonner"
+import { decodeStoredText } from "@/lib/stored-text"
 
 type ReviewAdminReplyFormProps = {
   reviewId: string
@@ -20,7 +21,7 @@ export function ReviewAdminReplyForm({
   compact = false,
 }: ReviewAdminReplyFormProps) {
   const [open, setOpen] = useState(false)
-  const [reply, setReply] = useState(existingReply || "")
+  const [reply, setReply] = useState(decodeStoredText(existingReply))
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
@@ -79,7 +80,7 @@ export function ReviewAdminReplyForm({
         size="sm"
         className={`gap-1.5 text-xs ${compact ? "h-7" : "h-8"} border-primary/25 text-primary hover:bg-primary/8`}
         onClick={() => {
-          setReply(existingReply || "")
+          setReply(decodeStoredText(existingReply))
           setOpen(true)
         }}
       >
@@ -127,7 +128,7 @@ export function ReviewAdminReplyForm({
           variant="ghost"
           disabled={loading}
           onClick={() => {
-            setReply(existingReply || "")
+            setReply(decodeStoredText(existingReply))
             setOpen(false)
           }}
         >

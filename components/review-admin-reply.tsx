@@ -2,6 +2,7 @@
 
 import { MessageCircleReply } from "lucide-react"
 import { ADMIN_REPLY_DISPLAY_NAME } from "@/lib/constants"
+import { decodeStoredText } from "@/lib/stored-text"
 
 type ReviewAdminReplyProps = {
   reply: string
@@ -33,7 +34,7 @@ export function ReviewAdminReply({ reply, repliedAt, repliedBy }: ReviewAdminRep
             )}
           </div>
           <p className="text-xs text-foreground/90 leading-relaxed mt-1.5 whitespace-pre-wrap">
-            {reply}
+            {decodeStoredText(reply)}
           </p>
         </div>
       </div>

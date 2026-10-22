@@ -10,6 +10,7 @@ import type { ReviewItem } from "@/components/admin/types"
 import { daysSince } from "@/lib/admin-quality"
 import { adminUi } from "@/lib/admin-ui"
 import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
+import { decodeStoredText } from "@/lib/stored-text"
 
 export type AdminReviewsSectionProps = {
   estadoFilter: string
@@ -112,7 +113,7 @@ const {
                     <span>·</span>
                     <span>{new Date(review.createdAt).toLocaleDateString("es-AR")}</span>
                     {(review.estado ?? "pendiente") === "pendiente" && daysSince(review.createdAt) != null && daysSince(review.createdAt)! >= 2 ? (
-                      <span className="font-medium text-[#C85A2E]">
+                      <span className="font-medium text-[#B84420]">
                         · {daysSince(review.createdAt)} días sin resolver
                       </span>
                     ) : null}
@@ -127,7 +128,7 @@ const {
                 </span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
-                {review.comment}
+                {decodeStoredText(review.comment)}
               </p>
               {review.adminReply && (
                 <div className="mb-3">

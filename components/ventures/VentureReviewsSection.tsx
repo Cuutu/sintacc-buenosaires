@@ -7,6 +7,7 @@ import { VentureReviewForm } from "@/components/ventures/VentureReviewForm"
 import { fetchApi } from "@/lib/fetchApi"
 import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import { Star } from "lucide-react"
+import { decodeStoredText } from "@/lib/stored-text"
 
 type ReviewUser = { name?: string; image?: string }
 type VentureReviewItem = {
@@ -234,7 +235,7 @@ export function VentureReviewsSection({
                 </p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{decodeStoredText(review.comment)}</p>
           </div>
         ))}
 
