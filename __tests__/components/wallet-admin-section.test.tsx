@@ -54,7 +54,30 @@ describe("AdminLoyaltySection", () => {
         ]}
       />
     )
-    expect(html).toContain("Encargados</span> duenio@polvorin.com")
-    expect(html).toContain("Empleados</span> caja@polvorin.com")
+    const managers = html.indexOf("Encargados")
+    const employees = html.indexOf("Empleados")
+    expect(managers).toBeGreaterThan(-1)
+    expect(html.indexOf("duenio@polvorin.com")).toBeGreaterThan(managers)
+    expect(html.indexOf("duenio@polvorin.com")).toBeLessThan(employees)
+    expect(html.indexOf("caja@polvorin.com")).toBeGreaterThan(employees)
+    expect(html).toContain("Agregar persona")
+  })
+
+  it("lists the employees of each branch in their own group", () => {
+    const html = renderToStaticMarkup(
+      <AdminLoyaltySection
+        initialPrograms={[
+          {
+            ...row("a", "Polvorín Palermo", 6, 5),
+            brandName: "Polvorín",
+            employeeEmails: ["caja@polvorin.com"],
+            branches: [{ placeId: "s1", name: "Polvorín Belgrano", staffEmails: ["mozo@polvorin.com"] }],
+          },
+        ]}
+      />
+    )
+    expect(html).toContain("Empleados de Polvorín Palermo")
+    expect(html).toContain("Empleados de Polvorín Belgrano")
+    expect(html.indexOf("mozo@polvorin.com")).toBeGreaterThan(html.indexOf("Empleados de Polvorín Belgrano"))
   })
 })

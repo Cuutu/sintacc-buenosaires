@@ -9,7 +9,13 @@ jest.mock("@/lib/middleware", () => ({
 }))
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 const mockPlaceExists = jest.fn()
-jest.mock("@/models/Place", () => ({ Place: { exists: (...a: unknown[]) => mockPlaceExists(...a) } }))
+const mockPlaceCount = jest.fn()
+jest.mock("@/models/Place", () => ({
+  Place: {
+    exists: (...a: unknown[]) => mockPlaceExists(...a),
+    countDocuments: (...a: unknown[]) => mockPlaceCount(...a),
+  },
+}))
 const mockProgramExists = jest.fn()
 const mockProgramFindById = jest.fn()
 const mockProgramDelete = jest.fn()
@@ -154,6 +160,65 @@ describe("admin loyalty programs API", () => {
       { $set: { employeeEmails: ["caja@local.com"] } },
       expect.anything()
     )
+  })
+
+  describe("team and branches", () => {
+    const BRANCH_ID = "507f1f77bcf86cd799439013"
+    const OTHER_BRANCH_ID = "507f1f77bcf86cd799439014"
+    const params = { params: { id: PROGRAM_ID } }
+
+    beforeEach(() => {
+      mockPlaceCount.mockImplementation(async (q: { _id: { $in: string[] } }) => q._id.$in.length)
+      mockProgramFindById.mockResolvedValue({
+        _id: PROGRAM_ID,
+        placeId: PLACE_ID,
+        stampsForReward: 5,
+        reward: "Un café de regalo",
+        brandName: "Polvorín",
+        branches: [{ placeId: BRANCH_ID }],
+      })
+    })
+
+    it("adding someone to a branch saves it without touching the customers' cards", async () => {
+      const res = await PATCH(patch({ branches: [{ placeId: BRANCH_ID, staffEmails: ["Mozo@Local.com"] }] }), params)
+      expect(res.status).toBe(200)
+      expect(mockUpdate).toHaveBeenCalledWith(
+        PROGRAM_ID,
+        { $set: { branches: [{ placeId: BRANCH_ID, staffEmails: ["mozo@local.com"] }] } },
+        expect.anything()
+      )
+      expect(mockRefresh).not.toHaveBeenCalled()
+      expect(mockNotifyReward).not.toHaveBeenCalled()
+    })
+
+    it("adding or removing a branch updates the cards (where they work)", async () => {
+      await PATCH(
+        patch({
+          branches: [
+            { placeId: BRANCH_ID, staffEmails: [] },
+            { placeId: OTHER_BRANCH_ID, staffEmails: [] },
+          ],
+        }),
+        params
+      )
+      expect(mockRefresh).toHaveBeenCalledTimes(1)
+      mockRefresh.mockClear()
+      await PATCH(patch({ branches: [] }), params)
+      expect(mockRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it("renaming the brand updates the cards; saving the same name does not", async () => {
+      await PATCH(patch({ brandName: "Polvorín" }), params)
+      expect(mockRefresh).not.toHaveBeenCalled()
+      await PATCH(patch({ brandName: "Polvorín Café" }), params)
+      expect(mockRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it("managers and employees of the main place never touch the cards", async () => {
+      await PATCH(patch({ staffEmails: ["duenio@local.com"], employeeEmails: ["caja@local.com"] }), params)
+      expect(mockRefresh).not.toHaveBeenCalled()
+      expect(mockNotifyReward).not.toHaveBeenCalled()
+    })
   })
 
   it("pauses a program (it does not delete it)", async () => {

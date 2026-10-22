@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { AdminProgramRow } from "@/lib/wallet/loyalty-admin"
 import { MonthlyStamps } from "@/components/wallet/MonthlyStamps"
 import { monthChange } from "@/lib/wallet/month-stats"
+import { LoyaltyTeamEditor, mailKeyboard } from "@/components/admin/LoyaltyTeamEditor"
 
 // Igual que DELETE_CONFIRMATION de loyalty-admin (ese archivo usa Mongo y no entra al navegador).
 const DELETE_WORD = "BORRAR"
@@ -32,7 +33,7 @@ const EMPTY_VALUES: FormValues = {
   branches: [],
 }
 
-/** Lo que se manda a la API (mails separados, sucursales sin el nombre). */
+/** Lo que se manda a la API al crear (mails separados, sucursales sin el nombre). */
 const programBody = (values: FormValues) => ({
   stampsForReward: values.stampsForReward,
   reward: values.reward,
@@ -40,6 +41,26 @@ const programBody = (values: FormValues) => ({
   employeeEmails: parseEmails(values.employeeEmails),
   brandName: values.brandName.trim(),
   branches: values.branches.map((b) => ({ placeId: b.placeId, staffEmails: parseEmails(b.staffEmails) })),
+})
+
+/**
+ * Al editar: sellos, premio, nombre y sucursales. El equipo (encargados y empleados) se
+ * edita aparte, de a una persona, y no se manda acá para no pisarlo.
+ */
+const editBody = (values: FormValues) => ({
+  stampsForReward: values.stampsForReward,
+  reward: values.reward,
+  brandName: values.brandName.trim(),
+  branches: values.branches.map((b) => ({ placeId: b.placeId, staffEmails: parseEmails(b.staffEmails) })),
+})
+
+const fromProgram = (program: AdminProgramRow): FormValues => ({
+  stampsForReward: program.stampsForReward,
+  reward: program.reward,
+  staffEmails: program.staffEmails.join(", "),
+  employeeEmails: program.employeeEmails.join(", "),
+  brandName: program.brandName,
+  branches: program.branches.map((b) => ({ placeId: b.placeId, name: b.name, staffEmails: b.staffEmails.join(", ") })),
 })
 
 const parseEmails = (raw: string) =>
@@ -240,11 +261,14 @@ function ProgramFields({
   values,
   onChange,
   mainPlaceId,
+  team = true,
 }: {
   values: FormValues
   onChange: (v: FormValues) => void
   /** Para no ofrecer el local principal como sucursal. */
   mainPlaceId?: string
+  /** Mostrar los mails del equipo (al crear). Al editar, el equipo va en su propio bloque. */
+  team?: boolean
 }) {
   const input = `h-11 w-full rounded-xl border ${adminUi.border} bg-white px-3 ${adminUi.text}`
   const setBranch = (i: number, patch: Partial<BranchDraft>) =>
@@ -272,35 +296,42 @@ function ProgramFields({
           onChange={(e) => onChange({ ...values, reward: e.target.value })}
         />
       </label>
-      <label className="grid gap-1 sm:col-span-2">
-        <span className={adminUi.label}>
-          Encargados: manejan todo (sellos, avisos, promos y premio
-          {values.branches.length > 0 ? ", en todas las sucursales" : ""}). Mails de Google, separados por coma
-        </span>
-        <input
-          className={input}
-          placeholder="duenio@gmail.com"
-          value={values.staffEmails}
-          onChange={(e) => onChange({ ...values, staffEmails: e.target.value })}
-        />
-      </label>
-      <label className="grid gap-1 sm:col-span-2">
-        <span className={adminUi.label}>
-          Empleados{values.branches.length > 0 ? " del local principal" : ""}: sólo suman sellos. Separados por coma
-        </span>
-        <input
-          className={input}
-          placeholder="caja@gmail.com (opcional)"
-          value={values.employeeEmails}
-          onChange={(e) => onChange({ ...values, employeeEmails: e.target.value })}
-        />
-      </label>
+      {team && (
+        <>
+          <label className="grid gap-1 sm:col-span-2">
+            <span className={adminUi.label}>
+              Encargados: manejan todo (sellos, avisos, promos y premio
+              {values.branches.length > 0 ? ", en todas las sucursales" : ""}). Mails de Google, separados por coma
+            </span>
+            <input
+              {...mailKeyboard}
+              className={input}
+              placeholder="duenio@gmail.com"
+              value={values.staffEmails}
+              onChange={(e) => onChange({ ...values, staffEmails: e.target.value })}
+            />
+          </label>
+          <label className="grid gap-1 sm:col-span-2">
+            <span className={adminUi.label}>
+              Empleados{values.branches.length > 0 ? " del local principal" : ""}: sólo suman sellos. Separados por coma
+            </span>
+            <input
+              {...mailKeyboard}
+              className={input}
+              placeholder="caja@gmail.com (opcional)"
+              value={values.employeeEmails}
+              onChange={(e) => onChange({ ...values, employeeEmails: e.target.value })}
+            />
+          </label>
+        </>
+      )}
 
       <fieldset className={`grid gap-3 rounded-xl border ${adminUi.border} p-3 sm:col-span-2`}>
         <legend className={`px-1 ${adminUi.label}`}>Sucursales</legend>
         <p className={`text-sm ${adminUi.muted}`}>
-          Una sola tarjeta que vale en todas. Cada sucursal puede tener sus empleados: sólo suman sellos ahí; los
-          encargados de arriba manejan todo.
+          {team
+            ? "Una sola tarjeta que vale en todas. Cada sucursal puede tener sus empleados: sólo suman sellos ahí; los encargados de arriba manejan todo."
+            : "Una sola tarjeta que vale en todas. Los empleados de cada sucursal se agregan en Equipo."}
         </p>
         {values.branches.length > 0 && (
           <label className="grid gap-1">
@@ -326,13 +357,16 @@ function ProgramFields({
                 Quitar
               </button>
             </div>
-            <input
-              className={input}
-              aria-label={`Empleados de ${b.name}`}
-              placeholder="Empleados de esta sucursal: sólo suman sellos (opcional)"
-              value={b.staffEmails}
-              onChange={(e) => setBranch(i, { staffEmails: e.target.value })}
-            />
+            {team && (
+              <input
+                {...mailKeyboard}
+                className={input}
+                aria-label={`Empleados de ${b.name}`}
+                placeholder="Empleados de esta sucursal: sólo suman sellos (opcional)"
+                value={b.staffEmails}
+                onChange={(e) => setBranch(i, { staffEmails: e.target.value })}
+              />
+            )}
           </div>
         ))}
         <PlaceSearch
@@ -403,14 +437,7 @@ function NewProgramForm({ onCancel, onCreated }: { onCancel: () => void; onCreat
 
 function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChanged: () => Promise<void> }) {
   const [editing, setEditing] = useState(false)
-  const [values, setValues] = useState<FormValues>({
-    stampsForReward: program.stampsForReward,
-    reward: program.reward,
-    staffEmails: program.staffEmails.join(", "),
-    employeeEmails: program.employeeEmails.join(", "),
-    brandName: program.brandName,
-    branches: program.branches.map((b) => ({ placeId: b.placeId, name: b.name, staffEmails: b.staffEmails.join(", ") })),
-  })
+  const [values, setValues] = useState<FormValues>(() => fromProgram(program))
   const title = program.brandName || program.placeName
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -493,32 +520,13 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
         ))}
       </dl>
 
-      <MonthlyStamps months={program.monthly} />
-
       {editing ? (
-        <ProgramFields values={values} onChange={setValues} mainPlaceId={program.placeId} />
+        <ProgramFields values={values} onChange={setValues} mainPlaceId={program.placeId} team={false} />
       ) : (
-        <>
-          <p className={`text-sm ${adminUi.muted}`}>
-            <span className={adminUi.chipActive}>Encargados</span>{" "}
-            {program.staffEmails.length > 0 ? program.staffEmails.join(", ") : "sin mails cargados"}
-          </p>
-          <p className={`text-sm ${adminUi.muted}`}>
-            <span className={adminUi.chip}>Empleados</span>{" "}
-            {program.employeeEmails.length > 0
-              ? `${program.employeeEmails.join(", ")}${program.branches.length > 0 ? ` (${program.placeName})` : ""}`
-              : "ninguno"}
-          </p>
-          {program.branches.length > 0 && (
-            <p className={`text-sm ${adminUi.muted}`}>
-              Sucursales: {program.placeName} (principal)
-              {program.branches.map(
-                (b) => `, ${b.name}${b.staffEmails.length ? ` (empleados: ${b.staffEmails.join(", ")})` : ""}`
-              )}
-            </p>
-          )}
-        </>
+        <LoyaltyTeamEditor program={program} onChanged={onChanged} />
       )}
+
+      <MonthlyStamps months={program.monthly} />
       {program.notice && (
         <p className={`text-sm ${adminUi.muted}`}>
           Último aviso ({program.notice.sentAt}, {program.notice.byEmail}):{" "}
@@ -536,9 +544,7 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
               type="button"
               className={adminUi.btnPrimary}
               disabled={busy}
-              onClick={() =>
-                patch(programBody(values))
-              }
+              onClick={() => patch(editBody(values))}
             >
               Guardar
             </button>
@@ -548,8 +554,17 @@ function ProgramCard({ program, onChanged }: { program: AdminProgramRow; onChang
           </>
         ) : (
           <>
-            <button type="button" className={adminUi.btnGhost} onClick={() => setEditing(true)}>
-              Editar
+            <button
+              type="button"
+              className={adminUi.btnGhost}
+              onClick={() => {
+                // Siempre desde lo guardado: el equipo pudo cambiar desde que se abrió la página.
+                setValues(fromProgram(program))
+                setError(null)
+                setEditing(true)
+              }}
+            >
+              Editar tarjeta
             </button>
             <a href={`/local/cartel/${program.id}`} className={adminUi.btnGhost}>
               Imprimir cartel

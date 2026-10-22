@@ -40,13 +40,26 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await connectDB()
     const { branches, brandName } = parsed.data
     const current = await LoyaltyProgram.findById(params.id)
-      .select("placeId stampsForReward reward")
-      .lean<{ placeId: mongoose.Types.ObjectId; stampsForReward: number; reward: string }>()
+      .select("placeId stampsForReward reward brandName branches.placeId")
+      .lean<{
+        placeId: mongoose.Types.ObjectId
+        stampsForReward: number
+        reward: string
+        brandName?: string
+        branches?: Array<{ placeId: mongoose.Types.ObjectId }>
+      }>()
     if (!current) return NextResponse.json({ error: "No existe ese programa" }, { status: 404 })
     // Cambiaron los sellos o el premio: las tarjetas guardadas lo muestran como novedad.
     const rewardChanged =
       (parsed.data.stampsForReward !== undefined && parsed.data.stampsForReward !== current.stampsForReward) ||
       (parsed.data.reward !== undefined && parsed.data.reward !== current.reward)
+    // Cambiaron las sucursales (dónde vale) o el nombre: hay que rehacer las tarjetas.
+    // Cambiar sólo quién sella en cada sucursal no toca las tarjetas de los clientes.
+    const placesChanged =
+      branches !== undefined &&
+      branches.map((b) => b.placeId).join(",") !==
+        (current.branches ?? []).map((b) => b.placeId.toString()).join(",")
+    const brandChanged = brandName !== undefined && brandName !== (current.brandName ?? "")
     if (branches) {
       const ids = branches.map((b) => b.placeId)
       if (ids.includes(current.placeId.toString())) {
@@ -71,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       // Sellos o premio nuevos: se actualizan todas las tarjetas y les llega el aviso.
       const data = await getProgramWithPlace(params.id)
       if (data) void notifyRewardChanged(data)
-    } else if (branches || brandName !== undefined) {
+    } else if (placesChanged || brandChanged) {
       // Sucursales o nombre nuevos: cambian las ubicaciones y el nombre de las tarjetas (sin aviso).
       const data = await getProgramWithPlace(params.id)
       if (data) void refreshProgramCards(data)
