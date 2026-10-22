@@ -3,9 +3,17 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { ArrowLeft, Plus, Search, MapPin, Store, Mail, Star, MoreHorizontal } from "lucide-react"
+import { ArrowLeft, ChevronDown, MoreHorizontal, Plus, Search } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
-import { ADMIN_NAV } from "./admin-nav"
+import { ADMIN_MOBILE_PRIMARY, ADMIN_NAV, ADMIN_NAV_GROUPS, isAdminNavActive, type AdminNavItem } from "./admin-nav"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { adminButtonClass } from "@/components/admin/ui/button"
+import { formatCount } from "@/lib/admin-format"
 import { AdminCommandSearch } from "./AdminCommandSearch"
 import type { AdminCounts } from "@/lib/admin-ops"
 import { adminUi } from "@/lib/admin-ui"
@@ -81,6 +89,24 @@ export function AdminOpsShell({
     return Number(counts[key] ?? 0)
   }
 
+  /** Contador de pendientes: oliva (no terracota, que queda para la acción principal). */
+  const navCount = (item: AdminNavItem, active: boolean, compact = false) => {
+    const count = badgeFor(item.badge)
+    if (count <= 0) return null
+    return (
+      <span
+        className={cn(
+          "inline-flex min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums",
+          compact ? "h-5" : "h-6",
+          active ? "bg-cream text-olive" : "bg-olive text-cream"
+        )}
+      >
+        {count > 99 ? "99+" : formatCount(count)}
+        <span className="sr-only"> {item.badgeLabel ?? "pendientes"}</span>
+      </span>
+    )
+  }
+
   return (
     <div className={cn("admin-ops min-h-screen text-olive [&_button]:min-h-11 [&_input:not([type=checkbox])]:min-h-11 [&_select]:min-h-11", adminUi.bg)}>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[240px] border-r border-line bg-cream lg:flex lg:flex-col">
@@ -95,36 +121,36 @@ export function AdminOpsShell({
             </div>
           </Link>
         </div>
-        <nav className="flex-1 space-y-0.5 px-3" aria-label="Admin">
-          {ADMIN_NAV.map((item) => {
-            const active =
-              "match" in item && item.match === "exact"
-                ? pathname === item.href
-                : pathname === item.href || pathname.startsWith(`${item.href}/`)
-            const count = "badge" in item ? badgeFor(item.badge) : 0
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex h-11 items-center justify-between rounded-2xl px-3 text-sm transition-colors duration-150",
-                  active
-                    ? "bg-cream-card font-semibold text-olive shadow-[0_8px_28px_-18px_rgba(35,74,51,0.16)]"
-                    : "text-ink-muted hover:bg-cream-card hover:text-olive"
-                )}
-              >
-                <span>
-                  {item.label}
-                  {count > 0 ? ` (${count})` : ""}
-                </span>
-                {count > 0 ? (
-                  <span className="rounded-full bg-terracotta-strong px-2 py-0.5 text-[11px] font-bold text-white">
-                    {count}
-                  </span>
-                ) : null}
-              </Link>
-            )
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-4" aria-label="Admin">
+          {ADMIN_NAV_GROUPS.map((group) => (
+            <div key={group.label ?? "inicio"}>
+              {group.label ? (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">{group.label}</p>
+              ) : null}
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = isAdminNavActive(item, pathname)
+                  const Icon = item.icon
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex h-11 items-center gap-3 rounded-2xl px-3 text-sm transition-colors duration-150",
+                          active ? "bg-olive font-semibold text-cream" : "text-olive hover:bg-olive/8"
+                        )}
+                      >
+                        <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-cream" : "text-ink-muted")} aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {navCount(item, active)}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
         <div className="border-t border-line p-3">
           <Link
@@ -157,49 +183,76 @@ export function AdminOpsShell({
               ⌘K
             </kbd>
           </button>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/sugerir")}
-              className="hidden h-11 items-center gap-2 rounded-2xl bg-terracotta-strong px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-terracotta-hover sm:inline-flex"
-            >
-              <Plus className="h-4 w-4" />
-              Lugar
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/sugerir-emprendimiento")}
-              className="hidden h-11 items-center rounded-2xl border border-line px-3 text-sm font-semibold text-olive transition-colors duration-150 hover:bg-cream-card md:inline-flex"
-            >
-              Emprendimiento
-            </button>
-          </div>
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className={adminButtonClass({ variant: "secondary", className: "px-3" })}>
+                <Plus className="h-4 w-4" aria-hidden />
+                <span className="hidden sm:inline">Agregar</span>
+                <ChevronDown className="hidden h-4 w-4 text-ink-muted sm:block" aria-hidden />
+                <span className="sr-only sm:hidden">Agregar</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[12rem]">
+              <DropdownMenuItem className="min-h-10" onSelect={() => router.push("/sugerir")}>
+                Lugar
+              </DropdownMenuItem>
+              <DropdownMenuItem className="min-h-10" onSelect={() => router.push("/sugerir-emprendimiento")}>
+                Emprendimiento
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         <div className="min-w-0 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 lg:py-8">{children}</div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <nav aria-label="Navegación móvil del admin" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-cream-card px-1 pt-1 pb-[env(safe-area-inset-bottom)] lg:hidden">
-          {[
-            { href: "/admin/lugares", label: "Lugares", icon: MapPin, count: counts.suggestionsPending },
-            { href: "/admin/emprendimientos", label: "Emprendimientos", icon: Store, count: counts.ventureSuggestionsPending },
-            { href: "/admin/mensajes", label: "Mensajes", icon: Mail, count: counts.contactsPending },
-            { href: "/admin/resenas", label: "Reseñas", icon: Star, count: counts.reviewsPending },
-          ].map(({ href, label, icon: Icon, count }) => <Link key={href} href={href}
-            aria-current={pathname === href ? "page" : undefined}
-            className={cn("relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px]", pathname === href ? "bg-olive text-white" : "text-olive")}>
-            <Icon className="h-5 w-5" aria-hidden />
-            <span className="max-w-full truncate">{label}</span>
-            {count > 0 && <span className="absolute right-1 top-0 rounded-full bg-terracotta-strong px-1 text-[10px] text-white" aria-label={`${count} pendientes`}>{count > 99 ? "99+" : count}</span>}
-          </Link>)}
-          <DialogTrigger asChild><button type="button" className="flex min-h-16 flex-col items-center justify-center gap-1 text-xs"><MoreHorizontal className="h-5 w-5" aria-hidden />Más</button></DialogTrigger>
+          {ADMIN_MOBILE_PRIMARY.map((href) => ADMIN_NAV.find((item) => item.href === href)!).map((item) => {
+            const active = isAdminNavActive(item, pathname)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px]",
+                  active ? "bg-olive text-cream" : "text-olive"
+                )}
+              >
+                <Icon className="h-5 w-5" aria-hidden />
+                <span className="max-w-full truncate">{item.label}</span>
+                <span className="absolute right-1 top-1">
+                  {navCount(item, active, true)}
+                </span>
+              </Link>
+            )
+          })}
+          <DialogTrigger asChild><button type="button" className="flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] text-olive"><MoreHorizontal className="h-5 w-5" aria-hidden />Más</button></DialogTrigger>
         </nav>
         <DialogContent className="w-[calc(100%-2rem)] rounded-3xl bg-cream-card [&>button]:min-h-11 [&>button]:min-w-11">
           <DialogTitle>Más herramientas</DialogTitle>
           <DialogDescription>Accesos del administrador de CeliMap</DialogDescription>
-          <nav className="grid gap-2" aria-label="Más herramientas">
-            {ADMIN_NAV.filter(item => !["/admin/lugares", "/admin/emprendimientos", "/admin/mensajes", "/admin/resenas"].includes(item.href)).map(item =>
-              <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={adminUi.btnGhost}>{item.label}</Link>)}
+          <nav className="grid gap-1" aria-label="Más herramientas">
+            {ADMIN_NAV.filter((item) => !ADMIN_MOBILE_PRIMARY.includes(item.href)).map((item) => {
+              const Icon = item.icon
+              const active = isAdminNavActive(item, pathname)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-medium",
+                    active ? "bg-olive text-cream" : "text-olive hover:bg-olive/8"
+                  )}
+                >
+                  <Icon className="h-[18px] w-[18px]" aria-hidden />
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
         </DialogContent>
       </Dialog>

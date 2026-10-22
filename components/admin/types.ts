@@ -163,6 +163,7 @@ export type AdminCounts = {
   contactsPending?: number
   placesTotal: number
   placesApproved?: number
+  placesNewWeek?: number
   placesNoPhoto?: number
   placesNoHours?: number
   placesNoInstagram?: number

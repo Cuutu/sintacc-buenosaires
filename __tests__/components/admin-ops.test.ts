@@ -11,7 +11,12 @@ describe("admin centro de operaciones", () => {
   it("sidebar fija con secciones y contadores", () => {
     const nav = read("components/admin/ops/admin-nav.ts")
     const shell = read("components/admin/ops/AdminOpsShell.tsx")
-    expect(nav).toContain("Dashboard")
+    expect(nav).toContain("Inicio")
+    // Agrupado, con íconos y contadores en pastilla (sin repetir "Lugares (5)").
+    expect(nav).toContain("Contenido")
+    expect(nav).toContain("Comunidad")
+    expect(nav).toContain("Crecimiento")
+    expect(shell).not.toMatch(/\{count > 0 \? ` \(\$\{count\}\)`/)
     expect(nav).toContain("Lugares")
     expect(nav).toContain("Emprendimientos")
     expect(nav).toContain("reviewsPending")
@@ -38,9 +43,11 @@ describe("admin centro de operaciones", () => {
 
   it("dashboard es inbox, no grilla de botones", () => {
     const dash = read("components/admin/ops/OpsDashboard.tsx")
-    expect(dash).toContain("Centro de operaciones")
+    expect(dash).toContain('title="Inicio"')
     expect(dash).toContain("Todo lo que necesitás para mantener CeliMap completo, actualizado y útil.")
     expect(dash).toContain("Calidad CeliMap")
+    expect(dash).toContain("Nuevos esta semana")
+    expect(dash).toContain("placesNewWeek")
     expect(dash).not.toContain("Necesita atención")
     expect(dash).not.toContain("Qué debería resolver primero")
     expect(dash).toContain("Mensajes pendientes")

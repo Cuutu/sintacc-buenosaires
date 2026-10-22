@@ -18,14 +18,9 @@ export default async function AdminLugaresPage() {
           { id: "suggestions", label: "Cola", query: "cola=1", count: counts.suggestionsPending },
         ]}
         actions={
-          <>
-            <Link href="/sugerir" className={adminUi.btnPrimary}>
-              Agregar lugar
-            </Link>
-            <Link href="/admin/lugares?google=1" className={adminUi.btnGhost}>
-              Importar Google
-            </Link>
-          </>
+          <Link href="/admin/lugares?google=1" className={adminUi.btnGhost}>
+            Importar de Google
+          </Link>
         }
       />
     </Suspense>

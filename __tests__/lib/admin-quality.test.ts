@@ -14,6 +14,7 @@ const base: AdminCounts = {
   contactsPending: 0,
   placesTotal: 100,
   placesApproved: 100,
+  placesNewWeek: 0,
   placesNoPhoto: 0,
   placesNoHours: 0,
   placesNoInstagram: 0,

@@ -33,6 +33,8 @@ export type AdminCounts = {
   contactsPending: number
   placesTotal: number
   placesApproved: number
+  /** Lugares creados en los últimos 7 días (publicados o no). */
+  placesNewWeek: number
   placesNoPhoto: number
   placesNoHours: number
   placesNoInstagram: number
@@ -53,6 +55,7 @@ export const EMPTY_ADMIN_COUNTS: AdminCounts = {
   contactsPending: 0,
   placesTotal: 0,
   placesApproved: 0,
+  placesNewWeek: 0,
   placesNoPhoto: 0,
   placesNoHours: 0,
   placesNoInstagram: 0,
@@ -107,6 +110,7 @@ async function loadAdminCountsFromDb(): Promise<AdminCounts> {
   const started = Date.now()
   await connectDB()
   const pendingEstado = estadoQuery("pendiente")
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const [
     suggestionsPending,
     ventureSuggestionsPending,
@@ -128,6 +132,7 @@ async function loadAdminCountsFromDb(): Promise<AdminCounts> {
     Place.aggregate<{
       placesTotal: Array<{ n: number }>
       placesApproved: Array<{ n: number }>
+      placesNewWeek: Array<{ n: number }>
       placesNoPhoto: Array<{ n: number }>
       placesNoHours: Array<{ n: number }>
       placesNoInstagram: Array<{ n: number }>
@@ -142,6 +147,7 @@ async function loadAdminCountsFromDb(): Promise<AdminCounts> {
         $facet: {
           placesTotal: [{ $count: "n" }],
           placesApproved: [{ $match: { status: "approved" } }, { $count: "n" }],
+          placesNewWeek: [{ $match: { createdAt: { $gte: weekAgo } } }, { $count: "n" }],
           placesNoPhoto: [{ $match: { status: "approved", ...MISSING_PHOTO } }, { $count: "n" }],
           placesNoHours: [{ $match: { status: "approved", ...MISSING_HOURS } }, { $count: "n" }],
           placesNoInstagram: [
@@ -188,6 +194,7 @@ async function loadAdminCountsFromDb(): Promise<AdminCounts> {
     contactsPending: facetN(contacts?.pending),
     placesTotal: facetN(places?.placesTotal),
     placesApproved: facetN(places?.placesApproved),
+    placesNewWeek: facetN(places?.placesNewWeek),
     placesNoPhoto: facetN(places?.placesNoPhoto),
     placesNoHours: facetN(places?.placesNoHours),
     placesNoInstagram: facetN(places?.placesNoInstagram),
