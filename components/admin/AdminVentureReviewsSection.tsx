@@ -1,13 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { CheckCheck, RotateCcw } from "lucide-react"
 import type { VentureReviewItem } from "@/components/admin/types"
-import { AdminEstadoActions, AdminEstadoFilter } from "./AdminEstadoControls"
+import type { AdminEstado } from "@/lib/admin-estado"
+import { adminUi } from "@/lib/admin-ui"
 import { decodeStoredText } from "@/lib/stored-text"
-import { AdminListSkeleton } from "@/components/admin/ui/states"
+import { cn } from "@/lib/utils"
+import { ActionMenu } from "@/components/admin/ui/action-menu"
+import { AdminButton } from "@/components/admin/ui/button"
+import { AdminEmptyState, AdminListSkeleton } from "@/components/admin/ui/states"
+import { estadoActionLabel, updateAdminEstado } from "./AdminEstadoControls"
+import { ReviewHeader, ReviewsToolbar, reviewMenuItems } from "./AdminReviewsSection"
 
 export type AdminVentureReviewsSectionProps = {
   estadoFilter: string
@@ -22,6 +27,11 @@ export type AdminVentureReviewsSectionProps = {
   handleAction: (id: string, action: "hide" | "unhide" | "pin" | "unpin") => void
 }
 
+/**
+ * Mismo patrón que las reseñas de lugares. Los emprendimientos no tienen
+ * respuesta pública, así que la acción a la vista es la de gestión
+ * (Marcar como respondido / Reabrir) y el resto va al ⋯.
+ */
 export function AdminVentureReviewsSection({
   estadoFilter,
   onEstadoFilter,
@@ -34,115 +44,93 @@ export function AdminVentureReviewsSection({
   fetchReviews,
   handleAction,
 }: AdminVentureReviewsSectionProps) {
-  return (
-    <div className="rounded-xl border border-line overflow-hidden">
-      <div className="px-4 py-3 border-b border-line bg-cream-card">
-        <h2 className="text-sm font-bold">Reseñas de emprendimientos</h2>
-        <p className="text-xs text-ink-muted mt-0.5">
-          Moderá opiniones de la comunidad sobre emprendimientos y proyectos
-        </p>
-      </div>
+  const [busyId, setBusyId] = useState<string | null>(null)
 
-      <AdminEstadoFilter value={estadoFilter} onChange={onEstadoFilter} />
-      <div className="px-4 py-2 border-b border-line bg-cream-card flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[180px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
-          <Input
-            placeholder="Buscar emprendimiento o comentario..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchReviews()}
-            className="pl-8 h-8 text-sm"
-          />
-        </div>
-        {[
-          { label: "Todas", value: "" },
-          { label: "Visibles", value: "visible" },
-          { label: "Ocultas", value: "hidden" },
-        ].map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => {
-              setFilter(f.value)
-              fetchReviews(f.value)
-            }}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              filter === f.value
-                ? "border-olive/40 bg-olive/8 text-olive"
-                : "border-line text-ink-muted"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-        <Button size="sm" variant="secondary" className="h-8" onClick={() => fetchReviews()}>
-          Buscar
-        </Button>
-      </div>
+  async function changeEstado(id: string, next: AdminEstado) {
+    setBusyId(id)
+    const ok = await updateAdminEstado(`/api/admin/venture-reviews/${id}`, next)
+    setBusyId(null)
+    if (ok) fetchReviews()
+  }
+
+  return (
+    <div className={cn(adminUi.card, "overflow-hidden")}>
+      <ReviewsToolbar
+        search={search}
+        onSearch={setSearch}
+        runSearch={() => fetchReviews()}
+        searchPlaceholder="Buscar por emprendimiento o comentario"
+        estado={estadoFilter}
+        onEstado={onEstadoFilter}
+        visibility={filter}
+        onVisibility={(value) => {
+          setFilter(value)
+          fetchReviews(value)
+        }}
+      />
 
       {loading ? (
         <AdminListSkeleton rows={4} label="Cargando reseñas…" />
       ) : reviews.length === 0 ? (
-        <div className="py-10 text-center text-sm text-ink-muted">No hay reseñas</div>
+        <AdminEmptyState title="No hay reseñas con estos filtros" hint="Probá con Todos o Todas." />
       ) : (
-        <div className="divide-y divide-line">
+        <ul className="divide-y divide-line">
           {reviews.map((review) => {
-            const venture = review.ventureId as {
-              _id?: string
-              name?: string
-              slug?: string
-            } | undefined
+            const venture = review.ventureId as { _id?: string; name?: string; slug?: string } | undefined
             const ventureId = venture?._id?.toString?.() ?? null
             const venturePath = venture?.slug ?? ventureId
+            const name = venture?.name ?? "Emprendimiento"
+            const estado = review.estado ?? "pendiente"
+            const mainNext: AdminEstado = estado === "pendiente" ? "respondido" : "pendiente"
             return (
-              <div key={review._id} className="p-4">
-                <div className="flex justify-between gap-3 mb-2">
-                  <div className="min-w-0">
-                    {venturePath ? (
-                      <Link
-                        href={`/emprendimientos/${venturePath}`}
-                        target="_blank"
-                        className="text-sm font-bold text-olive hover:underline"
-                      >
-                        {venture?.name ?? "Emprendimiento"}
-                      </Link>
-                    ) : (
-                      <span className="text-sm font-bold">{venture?.name ?? "—"}</span>
-                    )}
-                    <p className="text-xs text-ink-muted mt-0.5">
-                      {review.userId?.name ?? "Usuario"} · {"★".repeat(review.rating)}
-                      {"☆".repeat(5 - review.rating)}
-                    </p>
+              <li key={review._id} className="px-5 py-4">
+                <article aria-label={`Reseña de ${review.userId?.name || "alguien"} sobre ${name}`}>
+                  <ReviewHeader
+                    target={
+                      venturePath ? (
+                        <Link href={`/emprendimientos/${venturePath}`} target="_blank" className="hover:underline">
+                          {name}
+                        </Link>
+                      ) : (
+                        <span className="text-ink-muted">{name}</span>
+                      )
+                    }
+                    author={review.userId?.name || "Sin nombre"}
+                    rating={review.rating}
+                    createdAt={review.createdAt}
+                    estado={review.estado}
+                    status={review.status}
+                    pinned={review.pinned}
+                  />
+                  <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-olive">
+                    {decodeStoredText(review.comment)}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <AdminButton disabled={busyId === review._id} onClick={() => changeEstado(review._id, mainNext)}>
+                      {mainNext === "respondido" ? (
+                        <CheckCheck className="h-4 w-4" aria-hidden />
+                      ) : (
+                        <RotateCcw className="h-4 w-4" aria-hidden />
+                      )}
+                      {estadoActionLabel(mainNext)}
+                    </AdminButton>
+                    <ActionMenu
+                      label={`Más acciones para la reseña sobre ${name}`}
+                      align="start"
+                      items={reviewMenuItems({
+                        pinned: review.pinned,
+                        status: review.status,
+                        estado: review.estado,
+                        onAction: (action) => handleAction(review._id, action),
+                        onEstado: (next) => changeEstado(review._id, next),
+                      }).filter((item) => item.label !== estadoActionLabel(mainNext))}
+                    />
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border shrink-0">
-                    {review.status}
-                  </span>
-                </div>
-                <p className="text-sm text-ink-muted mb-3 line-clamp-3">{decodeStoredText(review.comment)}</p>
-                <AdminEstadoActions endpoint={`/api/admin/venture-reviews/${review._id}`} estado={review.estado} onSaved={() => fetchReviews()} />
-                <div className="flex flex-wrap gap-2">
-                  {review.status === "visible" ? (
-                    <Button size="sm" variant="outline" onClick={() => handleAction(review._id, "hide")}>
-                      Ocultar
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => handleAction(review._id, "unhide")}>
-                      Mostrar
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleAction(review._id, review.pinned ? "unpin" : "pin")}
-                  >
-                    {review.pinned ? "Desfijar" : "Fijar"}
-                  </Button>
-                </div>
-              </div>
+                </article>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
     </div>
   )
