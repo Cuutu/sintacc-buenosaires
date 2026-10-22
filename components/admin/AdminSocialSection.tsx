@@ -1,8 +1,10 @@
 "use client"
 
+import { AdminButton, adminButtonClass } from "@/components/admin/ui/button"
+import { filterChipClass } from "@/components/admin/ui/filter-chip"
+
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { NEIGHBORHOODS } from "@/lib/constants"
@@ -257,8 +259,8 @@ export function AdminSocialSection() {
               onClick={() => setActivePreset(preset.id)}
               className={`text-left p-3 rounded-xl border transition-colors ${
                 activePreset === preset.id
-                  ? "border-olive/40 bg-olive/8"
-                  : "border-line bg-cream-card hover:border-line"
+                  ? "border-olive bg-olive/8 ring-1 ring-olive"
+                  : "border-line bg-cream-card hover:bg-cream"
               }`}
             >
               <p className="text-sm font-semibold">{preset.label}</p>
@@ -278,11 +280,7 @@ export function AdminSocialSection() {
                   key={p}
                   type="button"
                   onClick={() => setPlatform(p)}
-                  className={`text-xs px-3 py-1.5 rounded-lg border ${
-                    platform === p
-                      ? "border-olive/30 bg-olive/8 text-olive"
-                      : "border-line text-ink-muted"
-                  }`}
+                  className={filterChipClass(platform === p)}
                 >
                   {p === "instagram" ? "Instagram" : "TikTok"}
                 </button>
@@ -298,22 +296,14 @@ export function AdminSocialSection() {
               <button
                 type="button"
                 onClick={() => setImageFormat("story")}
-                className={`text-xs px-3 py-1.5 rounded-lg border ${
-                  imageFormat === "story"
-                    ? "border-olive/30 bg-olive/8 text-olive"
-                    : "border-line text-ink-muted"
-                }`}
+                className={filterChipClass(imageFormat === "story")}
               >
                 Historia 9:16
               </button>
               <button
                 type="button"
                 onClick={() => setImageFormat("feed")}
-                className={`text-xs px-3 py-1.5 rounded-lg border ${
-                  imageFormat === "feed"
-                    ? "border-olive/30 bg-olive/8 text-olive"
-                    : "border-line text-ink-muted"
-                }`}
+                className={filterChipClass(imageFormat === "feed")}
               >
                 Feed 1:1
               </button>
@@ -401,9 +391,9 @@ export function AdminSocialSection() {
             </div>
           )}
 
-          <Button size="sm" variant="outline" onClick={loadItems} disabled={loadingItems}>
+          <AdminButton  onClick={loadItems} disabled={loadingItems}>
             {loadingItems ? "Cargando..." : "Actualizar lista"}
-          </Button>
+          </AdminButton>
         </div>
 
         {items.length > 0 && (
@@ -487,7 +477,8 @@ export function AdminSocialSection() {
           )}
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button
+          <AdminButton
+            variant="primary"
             onClick={handleGenerateImage}
             disabled={generatingImage || generating}
             className="w-full sm:w-auto gap-2"
@@ -502,11 +493,11 @@ export function AdminSocialSection() {
                 ? "Renderizando plantilla…"
                 : "Generando con OpenRouter…"
               : "Generar imagen"}
-          </Button>
-          <Button
+          </AdminButton>
+          <AdminButton
             onClick={handleGenerate}
             disabled={generating || generatingImage}
-            variant="outline"
+            
             className="w-full sm:w-auto gap-2"
           >
             {generating ? (
@@ -515,7 +506,7 @@ export function AdminSocialSection() {
               <Sparkles className="h-4 w-4" />
             )}
             Solo caption + prompt
-          </Button>
+          </AdminButton>
           <span className="text-[10px] text-ink-muted self-center">
             Motor: {usesTemplate ? "Plantilla" : "OpenRouter"}
           </span>
@@ -549,40 +540,34 @@ export function AdminSocialSection() {
               </a>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" asChild>
-                <a href={imageResult.imageUrl} target="_blank" rel="noopener noreferrer">
+              <a href={imageResult.imageUrl} target="_blank" rel="noopener noreferrer" className={adminButtonClass({ variant: "secondary" })}>
                   <ExternalLink className="h-3 w-3" />
                   Abrir imagen
                 </a>
-              </Button>
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" asChild>
-                <a href={imageResult.imageUrl} download target="_blank" rel="noopener noreferrer">
+              <a href={imageResult.imageUrl} download target="_blank" rel="noopener noreferrer" className={adminButtonClass({ variant: "secondary" })}>
                   <Download className="h-3 w-3" />
                   Descargar
                 </a>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs gap-1"
+              <AdminButton
+                
+                className="gap-1"
                 onClick={handleGenerateImage}
                 disabled={generatingImage}
               >
                 Regenerar
-              </Button>
+              </AdminButton>
             </div>
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-xs font-bold">Caption para publicar</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
+                <AdminButton
+                  
+                  className="gap-1"
                   onClick={() => copyText(caption, "Caption")}
                 >
                   <Copy className="h-3 w-3" />
                   Copiar
-                </Button>
+                </AdminButton>
               </div>
               <Textarea
                 value={caption}
@@ -616,15 +601,14 @@ export function AdminSocialSection() {
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="text-xs font-bold">Adjuntos</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
+                      <AdminButton
+                        
+                        className="gap-1"
                         onClick={() => copyText(attachmentInstructions, "Adjuntos")}
                       >
                         <Copy className="h-3 w-3" />
                         Copiar
-                      </Button>
+                      </AdminButton>
                     </div>
                     <Textarea
                       value={attachmentInstructions}
@@ -636,15 +620,14 @@ export function AdminSocialSection() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <p className="text-xs font-bold">Prompt imagen</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
+                    <AdminButton
+                      
+                      className="gap-1"
                       onClick={() => copyText(combinedPrompt, "Prompt")}
                     >
                       <Copy className="h-3 w-3" />
                       Copiar
-                    </Button>
+                    </AdminButton>
                   </div>
                   <Textarea
                     value={imagePrompt}
@@ -675,15 +658,14 @@ export function AdminSocialSection() {
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-xs font-bold">Imágenes para adjuntar</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
+                <AdminButton
+                  
+                  className="gap-1"
                   onClick={() => copyText(attachmentInstructions, "Instrucciones adjuntos")}
                 >
                   <Copy className="h-3 w-3" />
                   Copiar
-                </Button>
+                </AdminButton>
               </div>
               <Textarea
                 value={attachmentInstructions}
@@ -700,23 +682,18 @@ export function AdminSocialSection() {
                   {imageFormat === "story" ? "Historia IG 9:16" : "Feed 1:1"}
                 </p>
                 <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1"
+                  <AdminButton
+                    
+                    className="gap-1"
                     onClick={() => copyText(imagePrompt, "Prompt imagen")}
                   >
                     <Copy className="h-3 w-3" />
                     Solo prompt
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => copyText(combinedPrompt, "Prompt completo")}
-                  >
+                  </AdminButton>
+                  <AdminButton onClick={() => copyText(combinedPrompt, "Prompt completo")}>
                     <Copy className="h-3 w-3" />
                     Prompt + adjuntos
-                  </Button>
+                  </AdminButton>
                 </div>
               </div>
               <Textarea
@@ -729,15 +706,14 @@ export function AdminSocialSection() {
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-xs font-bold">Caption para publicar</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
+                <AdminButton
+                  
+                  className="gap-1"
                   onClick={() => copyText(caption, "Caption")}
                 >
                   <Copy className="h-3 w-3" />
                   Copiar caption
-                </Button>
+                </AdminButton>
               </div>
               <Textarea
                 value={caption}
@@ -747,10 +723,9 @@ export function AdminSocialSection() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs gap-1"
+              <AdminButton
+                
+                className="gap-1"
                 onClick={() =>
                   copyText(
                     preview.link,
@@ -760,42 +735,39 @@ export function AdminSocialSection() {
               >
                 <Copy className="h-3 w-3" />
                 {preview.venturesLink ? "Link lugares" : "Copiar link post"}
-              </Button>
+              </AdminButton>
               {preview.venturesLink && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1"
+                <AdminButton
+                  
+                  className="gap-1"
                   onClick={() => copyText(preview.venturesLink!, "Link sugerir emprendimiento")}
                 >
                   <Copy className="h-3 w-3" />
                   Link emprendimientos
-                </Button>
+                </AdminButton>
               )}
               {includedItems.length > 0 && (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1"
+                  <AdminButton
+                    
+                    className="gap-1"
                     onClick={() =>
                       copyText(buildPhotoUrlsList(includedItems), "Links de fotos")
                     }
                   >
                     <Copy className="h-3 w-3" />
                     Copiar links fotos
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1"
+                  </AdminButton>
+                  <AdminButton
+                    
+                    className="gap-1"
                     onClick={() =>
                       copyText(buildCelimapUrlsList(includedItems), "Links fichas")
                     }
                   >
                     <Copy className="h-3 w-3" />
                     Copiar links fichas
-                  </Button>
+                  </AdminButton>
                 </>
               )}
             </div>

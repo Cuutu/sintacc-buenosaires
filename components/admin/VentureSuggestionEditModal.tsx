@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -20,6 +19,7 @@ import type { VentureModalityId, VentureSafetyLevelId, VentureCategoryId } from 
 import { getVentureCategories } from "@/lib/venture-constants"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { AdminButton } from "@/components/admin/ui/button"
 
 type VentureDraft = {
   name?: string
@@ -271,12 +271,12 @@ export function VentureSuggestionEditModal({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={saveDraft} disabled={loading}>
+          <AdminButton variant="secondary" onClick={saveDraft} disabled={loading}>
             Guardar borrador
-          </Button>
-          <Button onClick={approve} disabled={loading}>
+          </AdminButton>
+          <AdminButton variant="primary" onClick={approve} disabled={loading}>
             Aprobar y publicar
-          </Button>
+          </AdminButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
@@ -30,6 +29,8 @@ import {
   placeQualityChecks,
 } from "@/lib/place-completeness"
 import { adminUi } from "@/lib/admin-ui"
+import { AdminButton } from "@/components/admin/ui/button"
+import { FilterChip } from "@/components/admin/ui/filter-chip"
 import { normalizeArWhatsapp } from "@/lib/ar-whatsapp"
 import { cn } from "@/lib/utils"
 import { formatAdminDate, formatAdminDateTime, formatCoordinate } from "@/lib/admin-format"
@@ -477,12 +478,12 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
               <Link href={publicHref} target="_blank" className={adminUi.btnGhost}>
                 Ver ficha pública
               </Link>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              <AdminButton  onClick={() => onOpenChange(false)} disabled={loading}>
                 Cancelar
-              </Button>
-              <Button onClick={() => void handleSave(false)} disabled={loading || fetching}>
-                {loading ? "Guardando..." : "Guardar"}
-              </Button>
+              </AdminButton>
+              <AdminButton variant="primary" onClick={() => void handleSave(false)} disabled={loading || fetching}>
+                {loading ? "Guardando…" : "Guardar"}
+              </AdminButton>
             </div>
           </header>
 
@@ -552,22 +553,18 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                       <div>
                         <Label>Estado</Label>
                         <div className="mt-1 flex gap-2">
-                          <Button
-                            type="button"
-                            variant={formData.status === "approved" ? "default" : "outline"}
-                            size="sm"
+                          <FilterChip
+                            selected={formData.status === "approved"}
                             onClick={() => patchForm({ status: "approved" })}
                           >
                             Publicado
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={formData.status === "pending" ? "default" : "outline"}
-                            size="sm"
+                          </FilterChip>
+                          <FilterChip
+                            selected={formData.status === "pending"}
                             onClick={() => patchForm({ status: "pending" })}
                           >
                             Pendiente
-                          </Button>
+                          </FilterChip>
                         </div>
                       </div>
                       <div>
@@ -581,15 +578,13 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         <Label>Categoría</Label>
                         <div className="mt-1 flex flex-wrap gap-2">
                           {TYPES.map((t) => (
-                            <Button
+                            <FilterChip
                               key={t.value}
-                              type="button"
-                              variant={formData.types.includes(t.value) ? "default" : "outline"}
-                              size="sm"
+                              selected={formData.types.includes(t.value)}
                               onClick={() => toggleType(t.value)}
                             >
                               {t.label}
-                            </Button>
+                            </FilterChip>
                           ))}
                         </div>
                       </div>
@@ -601,11 +596,9 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             { id: "gf_options", label: "Opciones" },
                             { id: "", label: "Sin definir" },
                           ].map((item) => (
-                            <Button
+                            <FilterChip
                               key={item.id || "none"}
-                              type="button"
-                              variant={formData.safetyLevel === item.id ? "default" : "outline"}
-                              size="sm"
+                              selected={formData.safetyLevel === item.id}
                               onClick={() =>
                                 patchForm((prev) => ({
                                   ...prev,
@@ -615,7 +608,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                               }
                             >
                               {item.label}
-                            </Button>
+                            </FilterChip>
                           ))}
                         </div>
                       </div>
@@ -666,21 +659,19 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => setMapPickerOpen(true)}>
+                        <AdminButton type="button" onClick={() => setMapPickerOpen(true)}>
                           Ajustar pin
-                        </Button>
-                        <Button
+                        </AdminButton>
+                        <AdminButton
                           type="button"
-                          variant="outline"
-                          size="sm"
                           onClick={() => copyValue(`${formData.lat}, ${formData.lng}`, "Coordenadas")}
                           disabled={!formData.lat}
                         >
                           Copiar coordenadas
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => openValue(mapsHref)} disabled={!mapsHref}>
+                        </AdminButton>
+                        <AdminButton type="button" onClick={() => openValue(mapsHref)} disabled={!mapsHref}>
                           Ver en Maps
-                        </Button>
+                        </AdminButton>
                       </div>
                       <MapPickerModal
                         open={mapPickerOpen}
@@ -743,22 +734,20 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           placeholder="@usuario"
                         />
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Button type="button" size="sm" variant="outline" onClick={() => openValue(igHref)} disabled={!igHref}>
+                          <AdminButton type="button"  onClick={() => openValue(igHref)} disabled={!igHref}>
                             Abrir
-                          </Button>
-                          <Button
+                          </AdminButton>
+                          <AdminButton
                             type="button"
-                            size="sm"
-                            variant="outline"
+                            
                             onClick={() => copyValue(formData.contact.instagram, "Instagram")}
                             disabled={!formData.contact.instagram}
                           >
                             Copiar
-                          </Button>
-                          <Button
+                          </AdminButton>
+                          <AdminButton
                             type="button"
-                            size="sm"
-                            variant="outline"
+                            
                             onClick={() => {
                               openValue(igHref)
                               toast.message("Revisá que el perfil abra bien")
@@ -766,7 +755,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             disabled={!igHref}
                           >
                             Verificar
-                          </Button>
+                          </AdminButton>
                         </div>
                       </div>
                       <div>
@@ -782,13 +771,12 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           placeholder="+54 11 1234-5678"
                         />
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Button type="button" size="sm" variant="outline" onClick={() => openValue(waHref)} disabled={!waHref}>
+                          <AdminButton type="button"  onClick={() => openValue(waHref)} disabled={!waHref}>
                             Probar enlace
-                          </Button>
-                          <Button
+                          </AdminButton>
+                          <AdminButton
                             type="button"
-                            size="sm"
-                            variant="outline"
+                            
                             onClick={() =>
                               patchForm((prev) => ({
                                 ...prev,
@@ -801,7 +789,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                             disabled={!formData.contact.whatsapp}
                           >
                             Normalizar número
-                          </Button>
+                          </AdminButton>
                         </div>
                       </div>
                       <div>
@@ -844,24 +832,22 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                           </p>
                         ) : null}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Button
+                          <AdminButton
                             type="button"
-                            size="sm"
-                            variant="outline"
+                            
                             onClick={() => openValue(formData.contact.url)}
                             disabled={!formData.contact.url}
                           >
                             Abrir
-                          </Button>
-                          <Button
+                          </AdminButton>
+                          <AdminButton
                             type="button"
-                            size="sm"
-                            variant="outline"
+                            
                             onClick={() => copyValue(formData.contact.url, "Sitio")}
                             disabled={!formData.contact.url}
                           >
                             Copiar
-                          </Button>
+                          </AdminButton>
                         </div>
                       </div>
                     </div>
@@ -907,11 +893,9 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         <div className="mt-1 flex flex-wrap gap-2">
                           {PLACE_TAGS.filter((t) => !["sin_info", "100_gf", "opciones_sin_tacc"].includes(t.value)).map(
                             (t) => (
-                              <Button
+                              <FilterChip
                                 key={t.value}
-                                type="button"
-                                variant={formData.tags.includes(t.value) ? "default" : "outline"}
-                                size="sm"
+                                selected={formData.tags.includes(t.value)}
                                 onClick={() =>
                                   patchForm((prev) => ({
                                     ...prev,
@@ -922,7 +906,7 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                                 }
                               >
                                 {t.label}
-                              </Button>
+                              </FilterChip>
                             )
                           )}
                         </div>
@@ -1007,10 +991,9 @@ export function PlaceEditModal({ placeId, open, onOpenChange, onSaved }: Props) 
                         {typeLabel}
                         {formData.neighborhood ? ` · ${formData.neighborhood}` : ""}
                       </p>
-                      <div className="mt-3 flex gap-2">
-                        <span className={adminUi.chip}>Cómo llegar</span>
-                        <span className={adminUi.chip}>Guardar</span>
-                      </div>
+                      {/* Vista previa: los botones de la ficha pública van como texto, para que
+                          no compitan con el "Guardar" de verdad del encabezado. */}
+                      <p className="mt-3 text-xs text-ink-muted">Así se ve en la tarjeta del mapa.</p>
                     </div>
                   </article>
 

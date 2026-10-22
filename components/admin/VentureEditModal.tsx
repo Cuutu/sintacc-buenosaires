@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -24,6 +23,8 @@ import { normalizeWhatsAppUrl } from "@/lib/venture-contact"
 import { normalizeArWhatsapp } from "@/lib/ar-whatsapp"
 import { completenessBarTone, completenessTone } from "@/lib/place-completeness"
 import { adminUi } from "@/lib/admin-ui"
+import { AdminButton } from "@/components/admin/ui/button"
+import { FilterChip } from "@/components/admin/ui/filter-chip"
 import { cn } from "@/lib/utils"
 import { formatAdminDateTime } from "@/lib/admin-format"
 
@@ -262,12 +263,12 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
               <Link href={publicHref} target="_blank" className={adminUi.btnGhost}>
                 Ver ficha pública
               </Link>
-              <Button variant="outline" onClick={() => close(false)} disabled={saveState === "saving"}>
+              <AdminButton  onClick={() => close(false)} disabled={saveState === "saving"}>
                 Cerrar
-              </Button>
-              <Button onClick={() => void handleSave(false)} disabled={saveState === "saving"}>
+              </AdminButton>
+              <AdminButton variant="primary" onClick={() => void handleSave(false)} disabled={saveState === "saving"}>
                 {saveState === "saving" ? "Guardando..." : "Guardar"}
-              </Button>
+              </AdminButton>
             </div>
           </header>
 
@@ -319,22 +320,18 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                     <div>
                       <Label>Estado</Label>
                       <div className="mt-1 flex gap-2">
-                        <Button
-                          type="button"
-                          variant={formData.status === "approved" ? "default" : "outline"}
-                          size="sm"
+                        <FilterChip
+                          selected={formData.status === "approved"}
                           onClick={() => patchForm({ status: "approved" })}
                         >
                           Publicado
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={formData.status === "pending" ? "default" : "outline"}
-                          size="sm"
+                        </FilterChip>
+                        <FilterChip
+                          selected={formData.status === "pending"}
                           onClick={() => patchForm({ status: "pending" })}
                         >
                           Oculto
-                        </Button>
+                        </FilterChip>
                       </div>
                     </div>
                     <div>
@@ -454,18 +451,17 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         placeholder="@usuario"
                       />
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Button type="button" size="sm" variant="outline" onClick={() => openValue(igHref)} disabled={!igHref}>
+                        <AdminButton type="button"  onClick={() => openValue(igHref)} disabled={!igHref}>
                           Abrir
-                        </Button>
-                        <Button
+                        </AdminButton>
+                        <AdminButton
                           type="button"
-                          size="sm"
-                          variant="outline"
+                          
                           onClick={() => copyValue(formData.instagram, "Instagram")}
                           disabled={!formData.instagram}
                         >
                           Copiar
-                        </Button>
+                        </AdminButton>
                       </div>
                     </div>
                     <div>
@@ -478,18 +474,17 @@ export function VentureEditModal({ venture, open, onOpenChange, onSaved }: Props
                         placeholder="+54 9 11 1234-5678"
                       />
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Button type="button" size="sm" variant="outline" onClick={() => openValue(waHref)} disabled={!waHref}>
+                        <AdminButton type="button"  onClick={() => openValue(waHref)} disabled={!waHref}>
                           Probar enlace
-                        </Button>
-                        <Button
+                        </AdminButton>
+                        <AdminButton
                           type="button"
-                          size="sm"
-                          variant="outline"
+                          
                           onClick={() => patchForm((prev) => ({ ...prev, whatsapp: normalizeArWhatsapp(prev.whatsapp) }))}
                           disabled={!formData.whatsapp}
                         >
                           Normalizar número
-                        </Button>
+                        </AdminButton>
                       </div>
                     </div>
                     <div>

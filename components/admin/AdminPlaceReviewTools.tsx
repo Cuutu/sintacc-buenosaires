@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2, Sparkles, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
@@ -10,6 +9,7 @@ import type { AiResearchItem } from "@/components/admin/types"
 import { PlaceResearchPanel } from "@/components/admin/PlaceResearchPanel"
 import type { EnrichmentCatalog } from "@/lib/place-enrichment-eligibility"
 import { pollWhileVisible, queueHasPendingWork } from "@/lib/admin-queue-polling"
+import { AdminButton } from "@/components/admin/ui/button"
 
 type QueueStats = {
   queued: number
@@ -453,9 +453,9 @@ export function AdminPlaceReviewTools({
           <h3 className="text-sm font-bold">{title}</h3>
           <p className="text-xs text-ink-muted mt-0.5">{subtitle}</p>
         </div>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onClose}>
+        <AdminButton variant="quiet" className="p-0" onClick={onClose}>
           <X className="h-4 w-4" />
-        </Button>
+        </AdminButton>
       </div>
 
       {loading ? (
@@ -474,10 +474,9 @@ export function AdminPlaceReviewTools({
 
           {duplicatePairs.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5"
+              <AdminButton
+                variant="danger"
+                className="gap-1.5"
                 disabled={deleting || selectedDeleteIds.size === 0}
                 onClick={deleteSelectedDuplicates}
               >
@@ -487,7 +486,7 @@ export function AdminPlaceReviewTools({
                   <Trash2 className="h-3.5 w-3.5" />
                 )}
                 Eliminar seleccionados ({selectedDeleteIds.size})
-              </Button>
+              </AdminButton>
             </div>
           ) : null}
 
@@ -584,9 +583,9 @@ export function AdminPlaceReviewTools({
           ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              className="h-8 gap-1.5"
+            <AdminButton
+              variant="primary"
+              className="gap-1.5"
               onClick={runBatchEnrichment}
               disabled={enriching || incompletePlaces.length === 0}
             >
@@ -596,34 +595,30 @@ export function AdminPlaceReviewTools({
                 <Sparkles className="h-3.5 w-3.5" />
               )}
               Encolar todos y enriquecer
-            </Button>
+            </AdminButton>
             {catalog === "pending" ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
+              <AdminButton
+                variant="secondary"
                 disabled={deleting || selectedDeleteIds.size === 0}
                 onClick={() => void approveSelectedPending()}
               >
                 {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 Publicar seleccionados ({selectedDeleteIds.size})
-              </Button>
+              </AdminButton>
             ) : null}
             {queueStats && (queueStats.queued > 0 || queueStats.running > 0) ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
+              <AdminButton
+                variant="secondary"
                 disabled={enriching}
                 onClick={() => void cancelQueue()}
               >
                 Cancelar cola
-              </Button>
+              </AdminButton>
             ) : null}
             {queueStats && queueStats.stalled ? (
-              <Button size="sm" variant="outline" className="h-8 text-xs" onClick={resumeQueue}>
+              <AdminButton variant="secondary" onClick={resumeQueue}>
                 Reanudar cola
-              </Button>
+              </AdminButton>
             ) : null}
             {batchRemaining != null ? (
               <span className="text-[11px] text-ink-muted">
@@ -748,9 +743,9 @@ export function AdminPlaceReviewTools({
           ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              className="h-8 gap-1.5"
+            <AdminButton
+              variant="primary"
+              className="gap-1.5"
               onClick={() => startGoogleQueue(false)}
               disabled={enriching || googleStats?.configured === false}
             >
@@ -760,11 +755,9 @@ export function AdminPlaceReviewTools({
                 <Sparkles className="h-3.5 w-3.5" />
               )}
               Encolar y sincronizar
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
+            </AdminButton>
+            <AdminButton
+              variant="secondary"
               onClick={() => {
                 if (
                   !window.confirm(
@@ -778,16 +771,14 @@ export function AdminPlaceReviewTools({
               disabled={enriching || googleStats?.configured === false}
             >
               Re-sincronizar todos
-            </Button>
+            </AdminButton>
             {googleStats?.stalled ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
+              <AdminButton
+                variant="secondary"
                 onClick={resumeGoogleQueue}
               >
                 Reanudar cola
-              </Button>
+              </AdminButton>
             ) : null}
           </div>
 

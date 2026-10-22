@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
@@ -19,6 +18,8 @@ import { TYPES, PLACE_TAGS, LOCALITIES } from "@/lib/constants"
 import { toast } from "sonner"
 import { normalizeGoogleMapsUrl } from "@/lib/place-research/resolve-maps-url"
 import { formatCoordinate } from "@/lib/admin-format"
+import { AdminButton } from "@/components/admin/ui/button"
+import { FilterChip } from "@/components/admin/ui/filter-chip"
 
 type PlaceDraft = {
   name?: string
@@ -270,15 +271,14 @@ export function SuggestionEditModal({
             <Label>Tipo *</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {TYPES.map((t) => (
-                <Button
+                <FilterChip
                   key={t.value}
                   type="button"
-                  variant={formData.types.includes(t.value) ? "default" : "outline"}
-                  size="sm"
+                  selected={formData.types.includes(t.value)}
                   onClick={() => toggleType(t.value)}
                 >
                   {t.emoji} {t.label}
-                </Button>
+                </FilterChip>
               ))}
             </div>
           </div>
@@ -359,22 +359,20 @@ export function SuggestionEditModal({
           <div>
             <Label>Nivel sin gluten</Label>
             <div className="flex gap-2 mt-1">
-              <Button
+              <FilterChip
                 type="button"
-                variant={formData.safetyLevel === "dedicated_gf" ? "default" : "outline"}
-                size="sm"
+                selected={formData.safetyLevel === "dedicated_gf"}
                 onClick={() => setFormData({ ...formData, safetyLevel: "dedicated_gf" })}
               >
                 100% sin gluten
-              </Button>
-              <Button
+              </FilterChip>
+              <FilterChip
                 type="button"
-                variant={formData.safetyLevel === "gf_options" ? "default" : "outline"}
-                size="sm"
+                selected={formData.safetyLevel === "gf_options"}
                 onClick={() => setFormData({ ...formData, safetyLevel: "gf_options" })}
               >
                 Opciones
-              </Button>
+              </FilterChip>
             </div>
           </div>
           <div>
@@ -406,15 +404,14 @@ export function SuggestionEditModal({
             <Label>Tags</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {PLACE_TAGS.filter((t) => t.value !== "sin_info").map((t) => (
-                <Button
+                <FilterChip
                   key={t.value}
                   type="button"
-                  variant={formData.tags.includes(t.value) ? "default" : "outline"}
-                  size="sm"
+                  selected={formData.tags.includes(t.value)}
                   onClick={() => toggleTag(t.value)}
                 >
                   {t.label}
-                </Button>
+                </FilterChip>
               ))}
             </div>
           </div>
@@ -487,15 +484,15 @@ export function SuggestionEditModal({
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <AdminButton variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
             Cerrar
-          </Button>
-          <Button variant="secondary" onClick={handleSave} disabled={loading}>
+          </AdminButton>
+          <AdminButton variant="secondary" onClick={handleSave} disabled={loading}>
             {loading ? "Guardando..." : "Guardar borrador"}
-          </Button>
-          <Button onClick={handleApprove} disabled={loading}>
+          </AdminButton>
+          <AdminButton variant="primary" onClick={handleApprove} disabled={loading}>
             {loading ? "Aprobando..." : "Aprobar y crear lugar"}
-          </Button>
+          </AdminButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

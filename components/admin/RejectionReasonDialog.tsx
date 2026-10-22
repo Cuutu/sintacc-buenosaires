@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { AdminButton } from "@/components/admin/ui/button"
 
 const QUICK_REASONS = [
   "Ya existe publicado en Celimap.",
@@ -78,16 +78,15 @@ export function RejectionReasonDialog({
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             {QUICK_REASONS.map((quickReason) => (
-              <Button
+              <AdminButton
+                variant="secondary"
                 key={quickReason}
                 type="button"
-                variant="outline"
-                size="sm"
-                className="h-auto whitespace-normal py-1.5 text-left text-xs"
+                className="h-auto whitespace-normal py-1.5 text-left"
                 onClick={() => setReason(quickReason)}
               >
                 {quickReason}
-              </Button>
+              </AdminButton>
             ))}
           </div>
           <Textarea
@@ -101,22 +100,22 @@ export function RejectionReasonDialog({
         </div>
 
         <DialogFooter>
-          <Button
+          <AdminButton
+            variant="secondary"
             type="button"
-            variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
             Cancelar
-          </Button>
-          <Button
+          </AdminButton>
+          <AdminButton
+            variant="danger"
             type="button"
-            variant="destructive"
             onClick={handleConfirm}
             disabled={!trimmedReason || submitting}
           >
             {submitting ? "Rechazando..." : "Rechazar y avisar"}
-          </Button>
+          </AdminButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

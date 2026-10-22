@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { ChevronDown, Loader2, Pencil, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import type { AiResearchItem, DuplicateWarningItem } from "@/components/admin/types"
 import { DuplicateWarningsList } from "@/components/admin/ResearchPanelShared"
+import { AdminButton } from "@/components/admin/ui/button"
 
 const POLL_MS = 5000
 const STALE_MS = 90_000
@@ -178,20 +178,18 @@ export function PlaceResearchPanel({
           {staleRunning ? "Investigación colgada" : statusLabel(aiResearch)}
         </span>
         {onEditPlace ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-xs gap-1"
+          <AdminButton
+            variant="quiet"
+            className="gap-1"
             onClick={() => onEditPlace(placeId)}
           >
             <Pencil className="h-3 w-3" />
             Editar ficha
-          </Button>
+          </AdminButton>
         ) : null}
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs gap-1 ml-auto"
+        <AdminButton
+          variant="secondary"
+          className="gap-1 ml-auto"
           onClick={runResearch}
           disabled={loading || running}
         >
@@ -205,7 +203,7 @@ export function PlaceResearchPanel({
             : aiResearch?.status === "done" || aiResearch?.status === "failed"
               ? "Re-investigar"
               : "Investigar"}
-        </Button>
+        </AdminButton>
       </div>
 
       {staleRunning ? (
@@ -326,10 +324,8 @@ export function PlaceResearchPanel({
 
                   <div className="flex flex-wrap gap-2">
                     {hasPatch && !aiResearch.draftAutoFilled ? (
-                      <Button
-                        size="sm"
+                      <AdminButton
                         variant="secondary"
-                        className="h-8 text-xs"
                         disabled={applying}
                         onClick={() => applyPatch(false)}
                       >
@@ -337,18 +333,16 @@ export function PlaceResearchPanel({
                           <Loader2 className="h-3 w-3 animate-spin mr-1" />
                         ) : null}
                         Aplicar datos IA
-                      </Button>
+                      </AdminButton>
                     ) : null}
                     {canApplySafety ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
+                      <AdminButton
+                        variant="secondary"
                         disabled={applying}
                         onClick={() => applyPatch(true)}
                       >
                         Aplicar TACC recomendado
-                      </Button>
+                      </AdminButton>
                     ) : null}
                   </div>
                 </>

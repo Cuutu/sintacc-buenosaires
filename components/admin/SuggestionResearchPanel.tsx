@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { ChevronDown, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { TYPES } from "@/lib/constants"
 import type { AiResearchItem, DuplicateWarningItem } from "@/components/admin/types"
 import { DuplicateWarningsList } from "@/components/admin/ResearchPanelShared"
+import { AdminButton } from "@/components/admin/ui/button"
 
 const POLL_MS = 5000
 const STALE_MS = 90_000
@@ -153,10 +153,9 @@ export function SuggestionResearchPanel({
             ? "Investigación colgada"
             : statusLabel(aiResearch)}
         </span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs gap-1 ml-auto"
+        <AdminButton
+          variant="secondary"
+          className="gap-1 ml-auto"
           onClick={runResearch}
           disabled={loading || running}
         >
@@ -170,7 +169,7 @@ export function SuggestionResearchPanel({
             : aiResearch?.status === "done" || aiResearch?.status === "failed"
               ? "Re-investigar"
               : "Investigar con IA"}
-        </Button>
+        </AdminButton>
       </div>
 
       {staleRunning ? (
@@ -275,9 +274,9 @@ export function SuggestionResearchPanel({
               {aiResearch.suggestedDraftPatch &&
               Object.keys(aiResearch.suggestedDraftPatch).length > 0 &&
               !aiResearch.draftAutoFilled ? (
-                <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={applyPatch}>
+                <AdminButton variant="secondary" onClick={applyPatch}>
                   Aplicar sugerencias al borrador
-                </Button>
+                </AdminButton>
               ) : null}
 
               <p className="text-[10px] text-ink-muted">
