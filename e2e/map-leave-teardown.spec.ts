@@ -48,8 +48,8 @@ test.describe("Map leave teardown @hermetic @critical", () => {
       const targets = [
         { slot: "favoritos" as const, path: /\/favoritos|\/login/ },
         { slot: "perfil" as const, path: /\/perfil|\/login/ },
-        { slot: "sugerir" as const, path: /\/sugerir/ },
-        { slot: "home-map" as const, path: /\/$/ },
+        { slot: "emprendimientos" as const, path: /\/emprendimientos/ },
+        { slot: "inicio" as const, path: /\/$/ },
       ]
 
       for (const t of targets) {
@@ -60,7 +60,7 @@ test.describe("Map leave teardown @hermetic @critical", () => {
           await clickBottomNav(page, t.slot)
           await page.waitForURL(t.path, { timeout: 12_000 })
         })
-        if (t.slot !== "home-map") {
+        if (t.slot !== "inicio") {
           await clickBottomNav(page, t.slot)
           await page.waitForURL(t.path, { timeout: 12_000 })
         }

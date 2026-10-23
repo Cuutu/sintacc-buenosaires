@@ -95,7 +95,7 @@ test.describe("ChunkLoadError recovery @hermetic @critical", () => {
     await installHappyPathMocks(page, { session: E2E_SESSION_AUTH })
 
     let fails = 0
-    await page.route("**/_next/static/chunks/app/sugerir/**", async (route) => {
+    await page.route("**/_next/static/chunks/app/emprendimientos/**", async (route) => {
       if (fails < 1) {
         fails += 1
         await route.abort("failed")
@@ -107,7 +107,7 @@ test.describe("ChunkLoadError recovery @hermetic @critical", () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(page.getByTestId("bottom-nav")).toBeVisible({ timeout: 12_000 })
-    await clickBottomNav(page, "sugerir")
+    await clickBottomNav(page, "emprendimientos")
     await page.waitForTimeout(2000)
     await assertNoAppCrash(page)
     await clickBottomNav(page, "perfil")

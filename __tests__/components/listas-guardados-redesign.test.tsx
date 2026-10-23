@@ -6,6 +6,7 @@
 import fs from "fs"
 import path from "path"
 import { renderToStaticMarkup } from "react-dom/server"
+import { isBottomNavItemActive } from "@/lib/bottom-nav-perfil"
 import { OwnerListCard } from "@/components/lists/OwnerListCard"
 import { ListCard, type ListWithDetails } from "@/components/lists/ListCard"
 import { moveId, orderPlaceRows, type PlaceLite } from "@/components/lists/ListFormParts"
@@ -197,10 +198,10 @@ describe("Guardados y el detalle de una lista", () => {
   })
 
   it("barra de abajo: Guardados queda marcada en /listas y /listas/*", () => {
-    const nav = read("components/nav/BottomNav.tsx")
-    expect(nav).toContain(
-      '(hrefStr === "/favoritos" && (pathname === "/listas" || pathname.startsWith("/listas/")))'
-    )
+    expect(isBottomNavItemActive("favoritos", "/listas")).toBe(true)
+    expect(isBottomNavItemActive("favoritos", "/listas/abc")).toBe(true)
+    expect(isBottomNavItemActive("favoritos", "/favoritos")).toBe(true)
+    expect(isBottomNavItemActive("favoritos", "/listasx")).toBe(false)
   })
 
   it("CeliBot más chico en el celular", () => {

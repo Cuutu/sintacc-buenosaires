@@ -110,7 +110,7 @@ test.describe("BottomNav tab cycles @hermetic @mobile @critical", () => {
     await expect(page.getByTestId("bottom-nav")).toBeVisible({ timeout: 12_000 })
     await settle(page)
 
-    await clickBottomNav(page, "home-map")
+    await clickBottomNav(page, "mapa")
     await page.waitForURL(/\/mapa/, { timeout: 12_000 })
     await waitForMapAdapterOrFallback(page)
     await settle(page)
@@ -123,12 +123,11 @@ test.describe("BottomNav tab cycles @hermetic @mobile @critical", () => {
     await page.waitForURL(/\/perfil/, { timeout: 12_000 })
     await settle(page)
 
-    // Home desde perfil: slot home-map apunta a /mapa; usar link Home solo en mapa.
-    // Desde perfil vamos a mapa (home-map) luego Home en mapa → /
-    await clickBottomNav(page, "home-map")
+    // La barra es fija: Mapa e Inicio son pestañas distintas.
+    await clickBottomNav(page, "mapa")
     await page.waitForURL(/\/mapa/, { timeout: 12_000 })
     await settle(page)
-    await clickBottomNav(page, "home-map") // ahora es Home → /
+    await clickBottomNav(page, "inicio")
     await page.waitForURL((u) => u.pathname === "/", { timeout: 12_000 })
     await settle(page)
 
@@ -180,10 +179,10 @@ test.describe("BottomNav tab cycles @hermetic @mobile @critical", () => {
       await expect(page.getByTestId("bottom-nav")).toBeVisible({ timeout: 12_000 })
       const diagStart = await readCelimapDiag(page)
 
-      const sequence: Array<"home-map" | "favoritos" | "sugerir" | "perfil"> = [
-        "home-map",
+      const sequence: Array<"mapa" | "favoritos" | "emprendimientos" | "perfil"> = [
+        "mapa",
         "favoritos",
-        "sugerir",
+        "emprendimientos",
         "perfil",
       ]
 

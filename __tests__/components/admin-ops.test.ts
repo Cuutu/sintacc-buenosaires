@@ -99,7 +99,9 @@ describe("admin centro de operaciones", () => {
     expect(navbar).not.toContain("ADMIN_OPEN_FOR_PREVIEW")
     expect(navbar).toContain('session.user.role === "admin"')
     expect(bottom).not.toContain("ADMIN_OPEN_FOR_PREVIEW")
-    expect(bottom).toContain('session?.user?.role === "admin"')
+    // En el celular el panel se abre desde el perfil (la barra de abajo es fija: revisión 23/10).
+    expect(bottom).not.toContain('"/admin"')
+    expect(read("app/perfil/page.tsx")).toContain('session?.user?.role === "admin"')
     expect(read("app/api/auth/native/apple/challenge/route.ts")).toContain(
       'export const dynamic = "force-dynamic"'
     )

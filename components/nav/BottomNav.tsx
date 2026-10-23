@@ -1,56 +1,54 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { useEffect, type ComponentType } from "react"
-import {
-  CircleUserRound,
-  Heart,
-  Home,
-  MapPinned,
-  Plus,
-  ShieldCheck,
-  Store,
-} from "lucide-react"
+import { useEffect } from "react"
+import { CircleUserRound, Heart, Home, MapPinned, Store, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { preloadMapboxMap } from "@/lib/mapbox-preload"
 import {
   BOTTOM_NAV_SLOT_KEYS,
+  isBottomNavItemActive,
   resolveBottomNavPerfilHref,
+  type BottomNavSlotKey,
 } from "@/lib/bottom-nav-perfil"
 import { recordBottomNavIntent, setAuthStatusProbe } from "@/lib/nav-telemetry"
-const BASE_NAV_ITEMS = [
-  { href: "/sugerir", label: "Sugerir", icon: Plus },
-  { href: "/favoritos", label: "Guardados", icon: Heart },
-  { href: "/mapa", label: "Mapa", icon: MapPinned, isCenter: true },
-  { href: "/emprendimientos", label: "Emprendimientos", icon: Store },
-  {
-    href: "/perfil",
-    label: "Perfil",
-    icon: CircleUserRound,
-    fallbackHref: "/login",
-    fallbackLabel: "Perfil",
-  },
-]
+/**
+ * Barra de abajo del celular (revisión 23/10): siempre los mismos cinco, en el mismo
+ * lugar, y se marca el activo. Antes "Mapa" se convertía en "Inicio" dentro del mapa
+ * y el primer lugar era "Sugerir" (sigue en la franja naranja y en el menú).
+ * El panel de admin se abre desde el perfil.
+ */
+type NavItem = {
+  slot: BottomNavSlotKey
+  href: string
+  label: string
+  icon: LucideIcon
+}
 
-const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck }
+const NAV_ITEMS: NavItem[] = (
+  [
+  { slot: "inicio", href: "/", label: "Inicio", icon: Home },
+  { slot: "mapa", href: "/mapa", label: "Mapa", icon: MapPinned },
+  { slot: "favoritos", href: "/favoritos", label: "Guardados", icon: Heart },
+  { slot: "emprendimientos", href: "/emprendimientos", label: "Emprendimientos", icon: Store },
+  { slot: "perfil", href: "/perfil", label: "Perfil", icon: CircleUserRound },
+  ] as NavItem[]
+).sort((a, b) => BOTTOM_NAV_SLOT_KEYS.indexOf(a.slot) - BOTTOM_NAV_SLOT_KEYS.indexOf(b.slot))
 
 // Rediseño Edición: barra oscura (oliva noche) con texto bajo cada ícono.
 // Activo = píldora crema con contenido oliva. Inactivo = crema al 68% (≈5:1 sobre #1F3527).
 const navItemClass =
   "group relative flex h-11 min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center gap-[3px] rounded-[1.25rem] px-1 min-[360px]:px-2 transition-[transform,color,background-color] duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/70 sm:px-2.5"
 
-const centerItemClass = navItemClass
-
 function NavGlyph({
   Icon,
   active,
   label,
 }: {
-  Icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>
+  Icon: LucideIcon
   active: boolean
-  center?: boolean
   label: string
 }) {
   return (
@@ -81,41 +79,12 @@ const itemTone = (active: boolean) =>
     : "text-[#F7F3EB]/[0.68] hover:text-[#F7F3EB]"
 
 export function BottomNav() {
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
-  const listOpen = searchParams.get("list") === "open"
-  const isAdmin = session?.user?.role === "admin"
-  const isOnMap = pathname === "/mapa"
+  const pathname = usePathname() || "/"
+  const { status } = useSession()
 
   useEffect(() => {
     setAuthStatusProbe(status)
   }, [status])
-
-  const rawItems = isAdmin
-    ? BASE_NAV_ITEMS.map((item, i) =>
-        BOTTOM_NAV_SLOT_KEYS[i] === "sugerir" ? ADMIN_ITEM : item
-      )
-    : BASE_NAV_ITEMS
-
-  const navItems = rawItems.map((item, index) => {
-    const slotKey = BOTTOM_NAV_SLOT_KEYS[index] ?? `slot-${index}`
-
-    if (slotKey === "home-map" && isOnMap) {
-      return { ...item, href: "/", label: "Inicio", icon: Home, slotKey }
-    }
-
-    if ("fallbackHref" in item) {
-      return {
-        ...item,
-        href: resolveBottomNavPerfilHref(status),
-        label: "Perfil",
-        slotKey,
-      }
-    }
-    return { ...item, slotKey }
-  })
-  const hasMapListToggle = navItems.some((item) => "isListToggle" in item && item.isListToggle)
 
   return (
     <nav
@@ -128,101 +97,23 @@ export function BottomNav() {
       data-testid="bottom-nav"
     >
       <div className="flex h-14 min-w-0 items-center justify-between gap-0.5 px-1.5 sm:justify-around sm:gap-1 sm:px-2">
-        {navItems.map(({ href, label, icon: Icon, isCenter, isListToggle, slotKey }: any) => {
-          const hrefStr = href ?? "/"
-          const stableKey = slotKey || hrefStr
-          // En /mapa el slot central lleva a Inicio: se muestra como acción, no como pestaña activa.
-          const isMapHomeAction = isOnMap && hrefStr === "/" && label === "Inicio" && !hasMapListToggle
-          const isExplorarActive = isListToggle && pathname === "/mapa"
-          const isActive = isListToggle
-            ? isExplorarActive
-            : (!isMapHomeAction && (hrefStr === "/" ? pathname === "/" : pathname === hrefStr)) ||
-              (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
-              (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle) ||
-              // Las listas viven en Guardados: en /listas y /listas/* se marca esa pestaña.
-              (hrefStr === "/favoritos" && (pathname === "/listas" || pathname.startsWith("/listas/")))
-
-          if (isListToggle) {
-            if (isOnMap) {
-              return (
-                <button
-                  key={stableKey}
-                  type="button"
-                  data-nav-slot={stableKey}
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (listOpen) {
-                      params.delete("list")
-                    } else {
-                      params.set("list", "open")
-                    }
-                    const qs = params.toString()
-                    const to = qs ? `/mapa?${qs}` : "/mapa"
-                    recordBottomNavIntent(pathname || "/", to, stableKey)
-                    // Sin ir al servidor: Next sincroniza replaceState con useSearchParams.
-                    window.history.replaceState(null, "", to)
-                  }}
-                  className={cn(navItemClass, itemTone(isExplorarActive))}
-                  aria-current={isExplorarActive ? "page" : undefined}
-                  aria-label={listOpen ? "Cerrar lista del mapa" : "Abrir lista del mapa"}
-                  title={label}
-                >
-                  <NavGlyph Icon={Icon} active={isExplorarActive} label={label} />
-                </button>
-              )
-            }
-
-            return (
-              <Link
-                key={stableKey}
-                data-nav-slot={stableKey}
-                href="/mapa"
-                onClick={() => recordBottomNavIntent(pathname || "/", "/mapa", stableKey)}
-                onPointerEnter={preloadMapboxMap}
-                onPointerDown={preloadMapboxMap}
-                onFocus={preloadMapboxMap}
-                className={cn(navItemClass, itemTone(false))}
-                aria-label={label}
-                title={label}
-              >
-                <NavGlyph Icon={Icon} active={false} label={label} />
-              </Link>
-            )
-          }
-
-          if (isCenter) {
-            return (
-              <Link
-                key={stableKey}
-                data-nav-slot={stableKey}
-                href={hrefStr}
-                onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
-                {...(hrefStr === "/mapa"
-                  ? {
-                      onPointerEnter: preloadMapboxMap,
-                      onPointerDown: preloadMapboxMap,
-                      onFocus: preloadMapboxMap,
-                    }
-                  : {})}
-                className={cn(centerItemClass, itemTone(isActive))}
-                aria-current={isActive ? "page" : undefined}
-                aria-label={label}
-                title={label}
-              >
-                <NavGlyph Icon={Icon} active={isActive} center label={label} />
-              </Link>
-            )
-          }
-
+        {NAV_ITEMS.map(({ slot, href, label, icon: Icon }) => {
+          const target = slot === "perfil" ? resolveBottomNavPerfilHref(status) : href
+          const isActive = isBottomNavItemActive(slot, pathname)
+          const preload =
+            slot === "mapa"
+              ? { onPointerEnter: preloadMapboxMap, onPointerDown: preloadMapboxMap, onFocus: preloadMapboxMap }
+              : {}
           return (
             <Link
-              key={stableKey}
-              data-nav-slot={stableKey}
-              href={hrefStr}
-              onClick={() => recordBottomNavIntent(pathname || "/", hrefStr, stableKey)}
+              key={slot}
+              data-nav-slot={slot}
+              href={target}
+              onClick={() => recordBottomNavIntent(pathname, target, slot)}
+              {...preload}
               className={cn(navItemClass, itemTone(isActive))}
               aria-current={isActive ? "page" : undefined}
-              aria-label={hrefStr === "/admin" ? "Panel de administracion" : label}
+              aria-label={label}
               title={label}
             >
               <NavGlyph Icon={Icon} active={isActive} label={label} />

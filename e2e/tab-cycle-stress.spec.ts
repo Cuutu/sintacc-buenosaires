@@ -46,10 +46,10 @@ test.describe("BottomNav stress @hermetic @mobile @stress", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(page.getByTestId("bottom-nav")).toBeVisible({ timeout: 12_000 })
 
-    const sequence: Array<"home-map" | "favoritos" | "sugerir" | "perfil"> = [
-      "home-map",
+    const sequence: Array<"mapa" | "favoritos" | "inicio" | "perfil"> = [
+      "mapa",
       "favoritos",
-      "sugerir",
+      "inicio",
       "perfil",
     ]
     const clicks = 88

@@ -94,7 +94,7 @@ test.describe("Client error observability @hermetic @critical", () => {
       window.dispatchEvent(new Event("celimap-e2e-force-boundary"))
     })
     await expect(page.getByTestId("app-error-boundary")).toBeVisible({ timeout: 10_000 })
-    await clickBottomNav(page, "home-map")
+    await clickBottomNav(page, "inicio")
     await page.waitForTimeout(900)
     await expect(page.getByTestId("app-error-boundary")).toHaveCount(0)
 

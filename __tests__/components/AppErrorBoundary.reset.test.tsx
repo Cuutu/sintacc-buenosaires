@@ -33,6 +33,7 @@ describe("AppErrorBoundary + LayoutChrome contratos", () => {
     expect(src).toContain("resolveBottomNavPerfilHref")
     expect(src).toContain("data-nav-slot")
     expect(src).toContain("BOTTOM_NAV_SLOT_KEYS")
+    expect(src).toContain("isBottomNavItemActive")
   })
 
   it("único register SW en PwaRegister", () => {

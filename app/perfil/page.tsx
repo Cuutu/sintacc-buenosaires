@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { User, LogOut, ChevronRight, MapPin, ListChecks } from "lucide-react"
+import { User, LogOut, ChevronRight, MapPin, ListChecks, ShieldCheck } from "lucide-react"
 import { fetchApi } from "@/lib/fetchApi"
 import { IPlace } from "@/models/Place"
 import { getPlacePath } from "@/lib/place-url"
@@ -180,7 +180,18 @@ export default function PerfilPage() {
             <p className={cn(muted, "truncate")}>{session?.user?.email}</p>
           </div>
         </div>
-        <button type="button" className={cn(listsUi.secondary, "mt-4 w-full")} onClick={() => signOut()}>
+        {session?.user?.role === "admin" ? (
+          // En el celular el panel ya no está en la barra de abajo (revisión 23/10).
+          <Link href="/admin" className={cn(listsUi.secondary, "mt-4 w-full")}>
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+            Panel de administración
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          className={cn(listsUi.secondary, session?.user?.role === "admin" ? "mt-2 w-full" : "mt-4 w-full")}
+          onClick={() => signOut()}
+        >
           <LogOut className="h-4 w-4" aria-hidden />
           Cerrar sesión
         </button>
