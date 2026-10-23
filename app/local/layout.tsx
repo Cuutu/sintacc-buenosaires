@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Panel del local",
+  // Objeto: con un texto, /local/escanear y las demás quedaban sin "| CeliMap".
+  title: { default: "Panel del local", template: "%s | CeliMap" },
   robots: { index: false, follow: false, nocache: true },
 }
 

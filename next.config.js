@@ -93,6 +93,9 @@ const nextConfig = {
       { source: "/sin-gluten", destination: "/sin-gluten-argentina", permanent: true },
       { source: "/politica-de-privacidad", destination: "/privacidad", permanent: true },
       { source: "/politica-de-privacidad/", destination: "/privacidad", permanent: true },
+      // Singular que la gente escribe (y algún link viejo): daba 404 (revisión 23/10).
+      { source: "/lista", destination: "/listas", permanent: true },
+      { source: "/lista/:id", destination: "/listas/:id", permanent: true },
       // Huérfana SSG: canonical ya era /sin-gluten/:ciudad/:cat. Pretty /{cat}-sin-gluten/{ciudad} ya 301 en middleware.
       { source: "/categoria/:category/:ciudadSlug", destination: "/sin-gluten/:ciudadSlug/:category", permanent: true },
     ];
