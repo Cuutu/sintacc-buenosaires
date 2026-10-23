@@ -13,6 +13,12 @@ import { notePathname } from "@/lib/nav-telemetry"
 import { isPrivateListPath } from "@/lib/lists/is-private-list-path"
 import { cn } from "@/lib/utils"
 
+/** Páginas que suelen ser cortas: el pie sube en vez de dejar media pantalla vacía. */
+export function isShortContentRoute(pathname: string | null): boolean {
+  if (!pathname) return false
+  return pathname === "/favoritos" || pathname === "/listas" || pathname.startsWith("/listas/")
+}
+
 interface LayoutChromeProps {
   children: React.ReactNode
 }
@@ -84,7 +90,9 @@ export function LayoutChrome({ children }: LayoutChromeProps) {
       <main
         id="contenido-principal"
         className={cn(
-          "min-h-screen",
+          // Guardados y Listas tienen poco contenido: con la pantalla entera de alto quedaba
+          // un hueco grande antes de la franja naranja (revisión 23/10).
+          isShortContentRoute(pathname) ? "min-h-[60vh]" : "min-h-screen",
           // Fuera del mapa el footer ya reserva el lugar de la barra de abajo: sumarlo
           // también acá dejaba un hueco vacío antes del pie en todas las páginas.
           showMobileChrome && isMapRoute && "pb-[var(--bottom-nav-clearance)]",

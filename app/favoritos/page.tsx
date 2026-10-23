@@ -5,18 +5,9 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ListPlaceCard } from "@/components/lists/ListPlaceCard"
+import { SavedPlaceCard } from "@/components/lists/SavedPlaceCard"
+import { listsPill, listsUi } from "@/components/lists/lists-ui"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   LazyCreateListModal,
   LazyManageListModal,
@@ -27,8 +18,8 @@ import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
 import { resolveFavoritosAuthView } from "@/lib/favoritos-auth-view"
 import { toast } from "sonner"
-import { ListPlus } from "lucide-react"
-import { LIST_VISIBILITY } from "@/lib/lists/constants"
+import { ArrowRight, ListPlus } from "lucide-react"
+import { listShareState, listShareUrl } from "@/lib/lists/share-state"
 import { cn } from "@/lib/utils"
 
 /**
@@ -37,23 +28,37 @@ import { cn } from "@/lib/utils"
  */
 const loadOwnerListCard = () => import("@/components/lists/OwnerListCard")
 const OwnerListCard = dynamic(() => loadOwnerListCard().then((m) => m.OwnerListCard), {
-  loading: () => <div className="h-36 animate-pulse rounded-2xl border border-olive/10 bg-olive/5" aria-hidden />,
+  loading: () => <div className="h-[268px] animate-pulse rounded-[26px] bg-[#2D4A34]/5" aria-hidden />,
 })
+
+/** La confirmación de Eliminar / Regenerar (diálogo de Radix, ~12 KB) también se baja al usarla. */
+const loadConfirmDialog = () => import("@/components/lists/ListConfirmDialog")
+const ListConfirmDialog = dynamic(() => loadConfirmDialog().then((m) => m.ListConfirmDialog), { ssr: false })
 
 function preloadOwnerListCard() {
   void loadOwnerListCard().catch(() => undefined)
+  void loadConfirmDialog().catch(() => undefined)
 }
 
 type ListFilter = "all" | "public" | "private"
-type ConfirmKind = "delete" | "regenerate" | "revoke" | null
+type ConfirmKind = "delete" | "regenerate" | null
 
 function FavoritosSkeleton({ state }: { state: string }) {
   return (
-    <div className="container mx-auto px-4 py-8" data-auth-state={state}>
+    <div className={listsUi.page} data-auth-state={state}>
       <div className="animate-pulse space-y-4">
-        <div className="h-10 w-48 rounded bg-muted" />
-        <div className="h-32 rounded-lg bg-muted" />
+        <div className="h-12 w-56 rounded-xl bg-[#2D4A34]/10" />
+        <div className="h-40 rounded-[26px] bg-[#2D4A34]/5" />
       </div>
+    </div>
+  )
+}
+
+/** Caja para los estados vacíos y de error. */
+function EmptyBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[22px] border border-dashed border-[#2D4A34]/20 bg-white/60 px-5 py-10 text-center text-base text-[#5E6A60]">
+      {children}
     </div>
   )
 }
@@ -159,31 +164,21 @@ export default function FavoritosPage() {
   }, [])
 
   const filteredLists = useMemo(() => {
-    if (listFilter === "public") {
-      return lists.filter(
-        (l) =>
-          l.visibility === LIST_VISIBILITY.PUBLIC ||
-          (l.isPublic && l.visibility !== LIST_VISIBILITY.PRIVATE_LINK)
-      )
-    }
-    if (listFilter === "private") {
-      return lists.filter(
-        (l) =>
-          l.visibility === LIST_VISIBILITY.PRIVATE_LINK || l.isPublic === false
-      )
-    }
+    // "Privadas" junta las que van con enlace y las que solo ve la dueña.
+    if (listFilter === "public") return lists.filter((l) => listShareState(l) === "public")
+    if (listFilter === "private") return lists.filter((l) => listShareState(l) !== "public")
     return lists
   }, [lists, listFilter])
 
-  const copyPrivateLink = async (list: ListWithDetails) => {
-    if (!list.privateSharePath) {
-      toast.error("Sin enlace activo")
+  /** También en las públicas (antes solo en las privadas). */
+  const copyListLink = async (list: ListWithDetails) => {
+    const url = listShareUrl(list, window.location.origin)
+    if (!url) {
+      toast.error("Las listas privadas no tienen enlace")
       return
     }
     try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}${list.privateSharePath}`
-      )
+      await navigator.clipboard.writeText(url)
       toast.success("Enlace copiado")
     } catch {
       toast.error("No se pudo copiar el enlace")
@@ -191,23 +186,13 @@ export default function FavoritosPage() {
   }
 
   const openPreview = (list: ListWithDetails) => {
-    const isPrivate =
-      list.visibility === LIST_VISIBILITY.PRIVATE_LINK || list.isPublic === false
-    if (isPrivate) {
-      if (!list.privateSharePath) {
-        toast.error("Sin enlace activo")
-        return
-      }
-      window.open(list.privateSharePath, "_blank", "noopener,noreferrer")
-      return
-    }
-    window.open(`/listas/${list._id}`, "_blank", "noopener,noreferrer")
+    // Con enlace: la vista de quien recibe el enlace. Pública o privada: la página de la lista.
+    const target =
+      listShareState(list) === "link" && list.privateSharePath ? list.privateSharePath : `/listas/${list._id}`
+    window.open(target, "_blank", "noopener,noreferrer")
   }
 
-  const runLinkAction = async (
-    list: ListWithDetails,
-    action: "regenerate" | "revoke" | "enable"
-  ) => {
+  const runLinkAction = async (list: ListWithDetails, action: "regenerate") => {
     setActionLoading(true)
     try {
       await fetchApi(`/api/lists/${list._id}/private-link`, {
@@ -215,13 +200,7 @@ export default function FavoritosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       })
-      toast.success(
-        action === "regenerate"
-          ? "Enlace regenerado"
-          : action === "revoke"
-            ? "Acceso revocado"
-            : "Acceso reactivado"
-      )
+      toast.success(action === "regenerate" ? "Enlace regenerado" : "Listo")
       setConfirmKind(null)
       setConfirmList(null)
       fetchLists()
@@ -263,56 +242,64 @@ export default function FavoritosPage() {
 
   if (authView.kind === "session_error") {
     return (
-      <div className="container mx-auto px-4 py-8" data-auth-state="session_error">
-        <Card>
-          <CardContent className="space-y-4 py-8 text-center">
-            <p className="text-sm text-muted-foreground">{authView.message}</p>
-            <Button type="button" onClick={() => window.location.reload()}>
+      <div className={listsUi.page} data-auth-state="session_error">
+        <EmptyBox>
+          <p>{authView.message}</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button type="button" className={listsUi.primary} onClick={() => window.location.reload()}>
               Reintentar
-            </Button>
-            <div>
-              <Button asChild variant="outline">
-                <Link href="/">Ir al inicio</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </button>
+            <Link href="/" className={listsUi.secondary}>
+              Ir al inicio
+            </Link>
+          </div>
+        </EmptyBox>
       </div>
     )
   }
 
   if (loadError && !loading && favorites.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8" data-auth-state="load_error">
-        <h1 className="mb-6 text-3xl font-bold">Guardados</h1>
-        <Card>
-          <CardContent className="space-y-4 py-8 text-center">
-            <p className="text-sm text-muted-foreground">{loadError}</p>
-            <Button type="button" onClick={() => fetchFavorites()}>
-              Reintentar
-            </Button>
-          </CardContent>
-        </Card>
+      <div className={listsUi.page} data-auth-state="load_error">
+        <p className={listsUi.kicker}>tus lugares y tus listas</p>
+        <h1 className={cn(listsUi.title, "mb-6")}>Guardados</h1>
+        <EmptyBox>
+          <p>{loadError}</p>
+          <button type="button" className={cn(listsUi.primary, "mt-5")} onClick={() => fetchFavorites()}>
+            Reintentar
+          </button>
+        </EmptyBox>
       </div>
     )
   }
 
+  const newListButton = (
+    <button
+      type="button"
+      className={listsUi.primary}
+      onClick={() => {
+        // Desde la pestaña Favoritos todavía no se pidió si puede hacer listas privadas:
+        // sin esto, el modal no mostraba la visibilidad.
+        if (!listsFetched && !listsLoading) fetchLists()
+        setCreateModalOpen(true)
+      }}
+      onPointerEnter={preloadCreateListModal}
+      onPointerDown={preloadCreateListModal}
+      onFocus={preloadCreateListModal}
+    >
+      <ListPlus className="h-4 w-4" aria-hidden />
+      Nueva lista
+    </button>
+  )
+
   return (
-    <div className="container mx-auto px-4 py-8" data-auth-state="ready">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">Guardados</h1>
-        <Button
-          type="button"
-          className="h-10 shrink-0 gap-1.5"
-          onClick={() => setCreateModalOpen(true)}
-          onPointerEnter={preloadCreateListModal}
-          onPointerDown={preloadCreateListModal}
-          onFocus={preloadCreateListModal}
-        >
-          <ListPlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nueva lista</span>
-          <span className="sm:hidden">Nueva</span>
-        </Button>
+    <div className={listsUi.page} data-auth-state="ready">
+      <div className="mb-6 flex items-end justify-between gap-3 md:mb-8">
+        <div className="min-w-0">
+          <p className={listsUi.kicker}>tus lugares y tus listas</p>
+          <h1 className={listsUi.title}>Guardados</h1>
+        </div>
+        {newListButton}
       </div>
 
       <Tabs
@@ -324,54 +311,64 @@ export default function FavoritosPage() {
           if (!listsFetched) fetchLists()
         }}
       >
-        <TabsList className="grid h-11 w-full max-w-md grid-cols-2 rounded-xl border border-olive/10 bg-olive/5 p-1">
+        {/* Píldoras como los filtros de /emprendimientos: la elegida en verde oscuro. */}
+        <TabsList className="h-auto justify-start gap-2 rounded-none bg-transparent p-0">
           <TabsTrigger
             value="favoritos"
-            className={cn(
-              "rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none",
-              "data-[state=inactive]:text-muted-foreground"
-            )}
+            className={cn(listsPill(false), "data-[state=active]:border-[#1F4D35] data-[state=active]:bg-[#1F4D35] data-[state=active]:text-[#F8F5EF] data-[state=active]:shadow-none")}
           >
             Favoritos{!loading ? ` ${favorites.length}` : ""}
           </TabsTrigger>
           <TabsTrigger
             value="listas"
             onPointerEnter={preloadOwnerListCard}
-            className={cn(
-              "rounded-lg data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none",
-              "data-[state=inactive]:text-muted-foreground"
-            )}
+            className={cn(listsPill(false), "data-[state=active]:border-[#1F4D35] data-[state=active]:bg-[#1F4D35] data-[state=active]:text-[#F8F5EF] data-[state=active]:shadow-none")}
           >
             Mis listas{listsFetched ? ` ${lists.length}` : ""}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="favoritos">
+        <TabsContent value="favoritos" className="mt-0">
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted/40" />
+                <div key={i} className="h-[100px] animate-pulse rounded-[20px] bg-[#2D4A34]/5 sm:h-[260px] sm:rounded-[26px]" />
               ))}
             </div>
           ) : favorites.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Todavía no guardaste ningún lugar. Cuando le des Guardar a un
-                lugar en su página de detalle, aparecerá acá.
-              </CardContent>
-            </Card>
+            <EmptyBox>
+              Todavía no guardaste ningún lugar. Tocá el corazón en la ficha de un lugar y va a
+              aparecer acá.
+              <div className="mt-5">
+                <Link href="/mapa" className={listsUi.secondary}>
+                  Abrir el mapa
+                </Link>
+              </div>
+            </EmptyBox>
           ) : (
-            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {favorites.map((place) => (
-                <ListPlaceCard key={place._id.toString()} place={place} />
-              ))}
-            </div>
+            <>
+              {/* Celular: filas compactas (foto chica a la izquierda). */}
+              <ul className="grid gap-3 sm:hidden">
+                {favorites.map((place) => (
+                  <li key={place._id.toString()}>
+                    <SavedPlaceCard place={place} compact />
+                  </li>
+                ))}
+              </ul>
+              <ul className="hidden items-stretch gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+                {favorites.map((place) => (
+                  <li key={place._id.toString()}>
+                    <SavedPlaceCard place={place} />
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </TabsContent>
 
-        <TabsContent value="listas" className="space-y-4">
+        <TabsContent value="listas" className="mt-0 space-y-5">
           {listsFetched && lists.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar listas">
               {(
                 [
                   ["all", "Todas"],
@@ -382,13 +379,9 @@ export default function FavoritosPage() {
                 <button
                   key={key}
                   type="button"
+                  aria-pressed={listFilter === key}
                   onClick={() => setListFilter(key)}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
-                    listFilter === key
-                      ? "border-primary/40 bg-primary/15 text-primary"
-                      : "border-olive/10 text-muted-foreground hover:text-olive/80"
-                  )}
+                  className={listsPill(listFilter === key)}
                 >
                   {label}
                 </button>
@@ -397,52 +390,30 @@ export default function FavoritosPage() {
           ) : null}
 
           {listsLoading && !listsFetched ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-[280px] animate-pulse rounded-2xl bg-muted/40" />
+                <div key={i} className="h-[268px] animate-pulse rounded-[26px] bg-[#2D4A34]/5" />
               ))}
             </div>
           ) : filteredLists.length === 0 ? (
-            <Card>
-              <CardContent className="space-y-4 py-10 text-center text-muted-foreground">
-                <p>
-                  {lists.length === 0
-                    ? "No tenés listas todavía."
-                    : "No hay listas en este filtro."}
-                </p>
-                {lists.length === 0 ? (
-                  <Button
-                    onClick={() => setCreateModalOpen(true)}
-                    onPointerEnter={preloadCreateListModal}
-                    onPointerDown={preloadCreateListModal}
-                    onFocus={preloadCreateListModal}
-                    className="gap-2"
-                  >
-                    <ListPlus className="h-4 w-4" />
-                    Crear mi primera lista
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
+            <EmptyBox>
+              <p>{lists.length === 0 ? "No tenés listas todavía." : "No hay listas en este filtro."}</p>
+              {lists.length === 0 ? <div className="mt-5">{newListButton}</div> : null}
+            </EmptyBox>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredLists.map((list) => (
                 <OwnerListCard
                   key={list._id}
                   list={list}
                   onManage={() => setManageList(list)}
-                  onCopyLink={() => copyPrivateLink(list)}
+                  onCopyLink={() => copyListLink(list)}
                   onPreview={() => openPreview(list)}
                   onDuplicate={() => duplicateList(list)}
                   onRegenerate={() => {
                     setConfirmList(list)
                     setConfirmKind("regenerate")
                   }}
-                  onRevoke={() => {
-                    setConfirmList(list)
-                    setConfirmKind("revoke")
-                  }}
-                  onEnable={() => runLinkAction(list, "enable")}
                   onDelete={() => {
                     setConfirmList(list)
                     setConfirmKind("delete")
@@ -453,6 +424,13 @@ export default function FavoritosPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <p className="mt-10 border-t border-[#E2DACB] pt-4">
+        <Link href="/listas" className={listsUi.link}>
+          Explorar listas de la comunidad
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </p>
 
       <LazyCreateListModal
         open={createModalOpen}
@@ -474,66 +452,22 @@ export default function FavoritosPage() {
         onUpdated={fetchLists}
       />
 
-      <Dialog
-        open={confirmKind !== null}
-        onOpenChange={(v) => {
-          if (!v) {
+      {confirmKind ? (
+        <ListConfirmDialog
+          kind={confirmKind}
+          listName={confirmList?.name}
+          loading={actionLoading || !confirmList}
+          onCancel={() => {
             setConfirmKind(null)
             setConfirmList(null)
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {confirmKind === "delete"
-                ? "¿Eliminar lista?"
-                : confirmKind === "regenerate"
-                  ? "¿Regenerar enlace?"
-                  : "¿Revocar acceso?"}
-            </DialogTitle>
-            <DialogDescription>
-              {confirmKind === "delete" ? (
-                <>
-                  Se eliminará{" "}
-                  <span className="font-medium text-foreground">
-                    {confirmList?.name}
-                  </span>
-                  . Esta acción no se puede deshacer.
-                </>
-              ) : confirmKind === "regenerate" ? (
-                "El enlace anterior dejará de funcionar de inmediato. Tendrás que compartir el nuevo."
-              ) : (
-                "Quienes tengan el enlace ya no podrán ver la lista. Podés reactivarlo después."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setConfirmKind(null)
-                setConfirmList(null)
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant={confirmKind === "delete" || confirmKind === "revoke" ? "destructive" : "default"}
-              disabled={actionLoading || !confirmList}
-              onClick={() => {
-                if (!confirmList || !confirmKind) return
-                if (confirmKind === "delete") deleteList(confirmList)
-                else if (confirmKind === "regenerate")
-                  runLinkAction(confirmList, "regenerate")
-                else runLinkAction(confirmList, "revoke")
-              }}
-            >
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          }}
+          onConfirm={() => {
+            if (!confirmList) return
+            if (confirmKind === "delete") deleteList(confirmList)
+            else runLinkAction(confirmList, "regenerate")
+          }}
+        />
+      ) : null}
     </div>
   )
 }

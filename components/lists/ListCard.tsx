@@ -1,12 +1,15 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Lock, MapPin, User } from "lucide-react"
+import { Globe, Heart, Link2, Lock, User } from "lucide-react"
 import { IPlace } from "@/models/Place"
-import { LIST_VISIBILITY, type ListVisibility } from "@/lib/lists/constants"
-import { formatPlacesCount } from "@/lib/lists/card-places"
+import { type ListVisibility } from "@/lib/lists/constants"
+import { formatPlacesCount, listPlacesCount } from "@/lib/lists/card-places"
+import { LIST_SHARE_LABELS, listShareState, type ListShareState } from "@/lib/lists/share-state"
+import { listsChip } from "@/components/lists/lists-ui"
+import { cn } from "@/lib/utils"
 
 interface ListCreator {
   _id: string
@@ -27,7 +30,7 @@ export interface ListWithDetails {
   coverImage?: string
   placeIds: (IPlace | { _id: string; name: string; neighborhood: string; photos?: string[]; type?: string })[]
   placeNotes?: ListPlaceNote[]
-  /** Total de lugares. En /listas sólo vienen cargados los primeros (para la foto). */
+  /** Lugares publicados de la lista. En /listas sólo vienen cargados los primeros (para la foto). */
   placesCount?: number
   createdBy: ListCreator
   likesCount: number
@@ -39,139 +42,136 @@ export interface ListWithDetails {
   updatedAt?: string | Date
 }
 
+const SHARE_ICONS: Record<ListShareState, typeof Globe> = { public: Globe, link: Link2, private: Lock }
+
+function listCoverPhoto(list: ListWithDetails): string | undefined {
+  if (list.coverImage) return list.coverImage
+  const places = list.placeIds ?? []
+  return places.find((p) => p && "photos" in p && p.photos?.[0])?.photos?.[0]
+}
+
+/** Sello con cómo se comparte la lista (solo en "Mis listas"). */
+export function ListShareChip({ list }: { list: ListWithDetails }) {
+  const state = listShareState(list)
+  const Icon = SHARE_ICONS[state]
+  return (
+    <span className={listsChip}>
+      <Icon className="h-3 w-3 shrink-0" strokeWidth={2.6} aria-hidden />
+      {LIST_SHARE_LABELS[state]}
+    </span>
+  )
+}
+
+/**
+ * Cara de la tarjeta de lista, la misma en /listas y en "Mis listas" (revisión 23/10):
+ * portada con el nombre en Fraunces itálica encima, como las tarjetas de lugar, y abajo
+ * el autor y la cantidad de lugares. `chip` va arriba a la izquierda; `children`, abajo
+ * de todo (las acciones de la dueña).
+ */
+export function ListCardFace({
+  list,
+  chip,
+  children,
+  className,
+}: {
+  list: ListWithDetails
+  chip?: ReactNode
+  children?: ReactNode
+  className?: string
+}) {
+  const photo = listCoverPhoto(list)
+  const count = listPlacesCount(list)
+  const author = list.createdBy?.name?.trim() || "Usuario"
+  const nameSize = list.name.length > 32 ? "text-[23px]" : "text-[27px]"
+
+  return (
+    <article
+      className={cn(
+        "group flex h-full flex-col rounded-[26px] bg-white p-2 shadow-[0_14px_34px_-26px_rgba(31,42,34,0.5),0_0_0_1px_rgba(45,74,52,0.07)] transition-shadow duration-200 hover:shadow-[0_22px_44px_-24px_rgba(31,42,34,0.55),0_0_0_1px_rgba(45,74,52,0.12)]",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "relative h-[172px] overflow-hidden rounded-[20px]",
+          photo ? "bg-[#2D4A34]/10" : "celi-trigo-crema bg-[#2D4A34]"
+        )}
+      >
+        {photo ? (
+          <>
+            <Image
+              src={photo}
+              alt=""
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 330px"
+            />
+            <span
+              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,30,23,0.18)_0%,rgba(20,30,23,0)_28%,rgba(20,30,23,0.5)_62%,rgba(20,30,23,0.86)_100%)]"
+              aria-hidden
+            />
+          </>
+        ) : null}
+        {chip ? <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]">{chip}</div> : null}
+        <h3
+          className={cn(
+            "absolute inset-x-4 bottom-3 line-clamp-2 font-serif font-medium italic leading-[1.0] tracking-[-0.02em] text-white",
+            nameSize,
+            photo && "[text-shadow:0_1px_12px_rgba(0,0,0,0.35)]"
+          )}
+        >
+          {list.name}
+        </h3>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-3">
+        <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-[#2D4A34]">
+          {list.createdBy?.image ? (
+            <Image
+              src={list.createdBy.image}
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[#F1ECE2]" aria-hidden>
+              <User className="h-3 w-3 text-[#5E6A60]" />
+            </span>
+          )}
+          <span className="truncate">{author}</span>
+        </span>
+        <span className="shrink-0 text-sm font-bold text-[#5E6A60]">{formatPlacesCount(count)}</span>
+      </div>
+      {children}
+    </article>
+  )
+}
+
 interface ListCardProps {
   list: ListWithDetails
-  variant?: "default" | "compact"
-  /** Si true, no navega (owner usa gestión aparte) */
-  disableLink?: boolean
   href?: string
 }
 
-export function ListCard({
-  list,
-  variant = "default",
-  disableLink = false,
-  href,
-}: ListCardProps) {
-  const places = list.placeIds ?? []
-  const firstPlaces = places.slice(0, 4)
-  const photo =
-    list.coverImage ||
-    firstPlaces.find((p) => p.photos?.[0])?.photos?.[0] ||
-    (firstPlaces[0] as IPlace)?.photos?.[0]
-  const isPrivate = list.visibility === LIST_VISIBILITY.PRIVATE_LINK || list.isPublic === false
-  const targetHref =
-    href ||
-    (isPrivate && list.privateSharePath
-      ? list.privateSharePath
-      : `/listas/${list._id}`)
+/** Tarjeta de /listas: toda la tarjeta lleva a la lista. Los "♥" solo si hay alguno. */
+export function ListCard({ list, href }: ListCardProps) {
+  const isPrivate = listShareState(list) !== "public"
+  const targetHref = href || (isPrivate && list.privateSharePath ? list.privateSharePath : `/listas/${list._id}`)
+  const chip =
+    list.likesCount > 0 ? (
+      <span className={listsChip}>
+        <Heart className="h-3 w-3 shrink-0 fill-[#B84420] text-[#B84420]" aria-hidden />
+        {list.likesCount}
+        <span className="sr-only"> me gusta</span>
+      </span>
+    ) : null
 
-  const body =
-    variant === "compact" ? (
-      <Card className="h-full overflow-hidden transition-colors hover:border-primary/50">
-        <div className="flex">
-          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden bg-muted">
-            {photo ? (
-              <Image
-                src={photo}
-                alt={`${list.name} - lugares sin gluten`}
-                fill
-                className="object-cover"
-                sizes="96px"
-              />
-            ) : (
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            )}
-          </div>
-          <CardContent className="flex flex-1 flex-col justify-center p-4">
-            <div className="flex items-center gap-2">
-              <h3 className="line-clamp-1 font-semibold">{list.name}</h3>
-              {isPrivate ? (
-                <Lock className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Privada" />
-              ) : null}
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{list.createdBy?.name ?? "Usuario"}</span>
-              {!isPrivate ? (
-                list.likesCount > 0 ? (
-                  <>
-                    <span>·</span>
-                    <Heart className="h-3 w-3" />
-                    <span>{list.likesCount}</span>
-                  </>
-                ) : null
-              ) : (
-                <>
-                  <span>·</span>
-                  <span>Privada mediante enlace</span>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </div>
-      </Card>
-    ) : (
-      <Card className="group h-full overflow-hidden transition-colors hover:border-primary/50">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          {photo ? (
-            <Image
-              src={photo}
-              alt={`${list.name} - lista de lugares sin gluten`}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, 400px"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <MapPin className="h-16 w-16 text-muted-foreground" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
-            <h3 className="line-clamp-2 font-bold text-white drop-shadow-md">
-              {list.name}
-            </h3>
-            {isPrivate ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-black/50 px-1.5 py-0.5 text-[11px] text-white/90">
-                <Lock className="h-3 w-3" />
-                Privada
-              </span>
-            ) : list.likesCount > 0 ? (
-              // Sin likes no se muestra el "♥ 0".
-              <span className="flex shrink-0 items-center gap-1 text-sm text-white/90">
-                <Heart className="h-4 w-4 fill-current" />
-                {list.likesCount}
-              </span>
-            ) : null}
-          </div>
-        </div>
-        <CardContent className="p-4">
-          {list.description && (
-            <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">
-              {list.description}
-            </p>
-          )}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {list.createdBy?.image ? (
-              <Image
-                src={list.createdBy.image}
-                alt={list.createdBy?.name || "Usuario"}
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full object-cover"
-              />
-            ) : (
-              <User className="h-4 w-4" />
-            )}
-            <span>{list.createdBy?.name ?? "Usuario"}</span>
-            <span>·</span>
-            <span>{formatPlacesCount(list.placesCount ?? places.length)}</span>
-          </div>
-        </CardContent>
-      </Card>
-    )
-
-  if (disableLink) return body
-  return <Link href={targetHref}>{body}</Link>
+  return (
+    <Link
+      href={targetHref}
+      className="block h-full rounded-[26px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/40 focus-visible:ring-offset-4 focus-visible:ring-offset-[#F7F3EB]"
+    >
+      <ListCardFace list={list} chip={chip} />
+    </Link>
+  )
 }
