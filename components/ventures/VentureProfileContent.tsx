@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs"
 import {
   getCategoryLabel,
-  getModalityLabel,
+  ventureModalityChips,
   getSafetyBadge,
   getVentureCategories,
   VENTURE_SAFETY_DISCLAIMER,
@@ -195,9 +195,9 @@ export function VentureProfileContent({ venture, related = [] }: VentureProfileC
                   </Link>
                 </Badge>
               ))}
-              {venture.modalities?.map((m) => (
-                <Badge key={m} variant="secondary" className="text-xs">
-                  {getModalityLabel(m)}
+              {ventureModalityChips(categoryIds, venture.modalities).map((label) => (
+                <Badge key={label} variant="secondary" className="text-xs">
+                  {label}
                 </Badge>
               ))}
             </div>

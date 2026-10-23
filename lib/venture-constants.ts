@@ -104,6 +104,27 @@ export function getModalityLabels(ids: string[]): string[] {
   return ids.map(getModalityLabel)
 }
 
+/**
+ * Chips de modalidad sin repetir lo que ya dice la categoría (revisión 23/10): una
+ * ficha mostraba "Envíos a domicilio", "Envíos" y "Delivery" juntos.
+ * - Con la categoría "Envíos a domicilio", no van "Envíos" ni "Delivery".
+ * - Con "Ferias / retiro", no van "Ferias" ni "Retiro".
+ * - "Delivery" + "Envíos" sin esa categoría van en un solo chip.
+ */
+export function ventureModalityChips(categoryIds: readonly string[], modalities: readonly string[] = []): string[] {
+  const cats = new Set(categoryIds)
+  let mods = Array.from(new Set(modalities))
+  if (cats.has("envios_domicilio")) mods = mods.filter((m) => m !== "envios" && m !== "delivery")
+  if (cats.has("ferias_retiro")) mods = mods.filter((m) => m !== "ferias" && m !== "retiro")
+  const labels: string[] = []
+  const both = mods.includes("delivery") && mods.includes("envios")
+  for (const m of mods) {
+    if (both && m === "envios") continue
+    labels.push(both && m === "delivery" ? "Delivery y envíos" : getModalityLabel(m))
+  }
+  return labels
+}
+
 export function getSafetyBadge(level?: string): { label: string; dot: string } {
   const found = VENTURE_SAFETY_LEVELS.find((s) => s.id === level)
   return found

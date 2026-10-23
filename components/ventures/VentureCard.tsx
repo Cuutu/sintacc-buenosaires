@@ -6,7 +6,7 @@ import type { VentureReviewStats } from "@/lib/venture-review-stats"
 import {
   getCategoryLabel,
   getCategoryLabels,
-  getModalityLabel,
+  ventureModalityChips,
   getSafetyBadge,
   getVentureCategories,
 } from "@/lib/venture-constants"
@@ -78,7 +78,8 @@ export function VentureCard({ venture, featured = false }: VentureCardProps) {
     purchaseChannels: venture.purchaseChannels,
   })
 
-  const chips = [...(venture.modalities ?? []).map((m) => getModalityLabel(m))]
+  // La tarjeta muestra solo la primera categoría: se descuenta solo esa.
+  const chips = ventureModalityChips(getVentureCategories(venture).slice(0, 1), venture.modalities)
   if (waUrl && !chips.includes("WhatsApp")) chips.push("WhatsApp")
 
   return (
