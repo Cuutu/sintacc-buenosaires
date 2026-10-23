@@ -340,8 +340,8 @@ function MapaContent() {
       safetyLevel: filters.safetyLevel ?? "",
     })
 
-    const applyMerged = (primaryKey: string, extraKeys: string[] = []) => {
-      setPlaces(mergeCachedPlaces([primaryKey, ...extraKeys]))
+    const applyMerged = (primaryKey: string) => {
+      setPlaces(mergeCachedPlaces([primaryKey]))
     }
 
     const reportSearch = (resultCount: number) => {
@@ -486,35 +486,33 @@ function MapaContent() {
       return { ok: true, complete: totalPages <= MAP_VIEWPORT_MAX_PAGES }
     }
 
+    /**
+     * Precarga los barrios vecinos para que, si la persona busca uno de ellos después, ya
+     * esté en caché. NO se suman a la lista: "Palermo" mostraba "236 en Palermo" con
+     * lugares de Recoleta, Colegiales, Belgrano… (revisión 23/10). Lo que se ve y se
+     * cuenta es solo el barrio buscado.
+     */
     const prefetchAdjacent = (primaryKey: string) => {
       if (!effectiveNeighborhood) return
       const neighbors = getAdjacentNeighborhoods(effectiveNeighborhood)
-      const extraKeys = neighbors.map((name) =>
-        buildMapFilterKey({
-          citySlugs: "",
-          provinceSlugs: "",
-          localitySlugs: "",
-          search: "",
-          type: filters.type ?? "",
-          neighborhood: name,
-          tags: filters.tags,
-          safetyLevel: filters.safetyLevel ?? "",
-        })
-      )
       const run = () => {
         // Una vez por filtro mientras esté fresco; cada vecino mira memoria + IndexedDB
         // y comparte el pedido si ya hay uno en vuelo.
-        if (!claimAdjacentPrefetch(primaryKey)) {
-          applyMerged(primaryKey, extraKeys)
-          return
-        }
-        neighbors.forEach((name, index) => {
-          const key = extraKeys[index]
-          void prefetchPlacesIfStale(key, () => networkFetch(key, name, ""))
-            .then(() => applyMerged(primaryKey, extraKeys))
-            .catch(() => {
-              /* prefetch silencioso */
-            })
+        if (!claimAdjacentPrefetch(primaryKey)) return
+        neighbors.forEach((name) => {
+          const key = buildMapFilterKey({
+            citySlugs: "",
+            provinceSlugs: "",
+            localitySlugs: "",
+            search: "",
+            type: filters.type ?? "",
+            neighborhood: name,
+            tags: filters.tags,
+            safetyLevel: filters.safetyLevel ?? "",
+          })
+          void prefetchPlacesIfStale(key, () => networkFetch(key, name, "")).catch(() => {
+            /* prefetch silencioso */
+          })
         })
       }
       if (typeof requestIdleCallback === "function") {
