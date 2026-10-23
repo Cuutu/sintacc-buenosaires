@@ -9,7 +9,8 @@ import { enforcePublicReadRateLimit } from "@/lib/public-read-limit"
 import { logApiError } from "@/lib/logger"
 import mongoose from "mongoose"
 import { LIST_VISIBILITY } from "@/lib/lists/constants"
-import { canUsePrivateLists, publicListsQuery } from "@/lib/lists/access"
+import { canUsePrivateLists } from "@/lib/lists/access"
+import { findCommunityLists } from "@/lib/lists/get-public-community-lists"
 import {
   applyVisibilityFields,
   normalizeCoverImage,
@@ -18,10 +19,7 @@ import {
   normalizePlaceNotes,
   parseVisibility,
 } from "@/lib/lists/normalize"
-import {
-  serializeListForCommunity,
-  serializeListForOwner,
-} from "@/lib/lists/serialize"
+import { serializeListForOwner } from "@/lib/lists/serialize"
 
 function toObjectIds(ids: string[]) {
   return ids.map((id) => new mongoose.Types.ObjectId(id))
@@ -71,19 +69,10 @@ export async function GET(request: NextRequest) {
       20
     )
 
-    const top = await List.find(publicListsQuery())
-      .sort({ likesCount: -1, createdAt: -1 })
-      .limit(limit)
-      .populate("createdBy", "name image")
-      .populate({
-        path: "placeIds",
-        select: "name neighborhood photos type slug",
-        options: { limit: 4 },
-      })
-      .lean()
+    const lists = await findCommunityLists(limit)
 
     return NextResponse.json(
-      { lists: top.map((list) => serializeListForCommunity(list as never)) },
+      { lists },
       {
         headers: {
           "Cache-Control": "public, max-age=120, stale-while-revalidate=60",
