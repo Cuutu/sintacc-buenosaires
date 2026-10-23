@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { ChevronRight, ScanLine, Store } from "lucide-react"
 
-type Me = { local: boolean; admin?: boolean; lugares: string[] }
+type Me = { local: boolean; lugares: string[] }
 
 /**
- * En el perfil: si la cuenta es de un local con tarjeta de sellos, accesos a escanear y al panel.
+ * En el perfil: si la cuenta atiende un local con tarjeta de sellos, accesos a escanear y al panel.
+ * Ser admin no alcanza (ver /api/local/yo): un admin sin local propio no ve esta sección.
  * Así el personal maneja todo desde la app de CeliMap, con la sesión ya iniciada.
  * Son <a> y no <Link>: /local/escanear necesita carga completa para habilitar la cámara.
  */
@@ -27,7 +28,7 @@ export function LocalPanelEntry() {
   }, [])
 
   if (!me?.local) return null
-  const title = me.admin ? "Tarjetas de los locales" : me.lugares.length === 1 ? me.lugares[0] : "Tus locales"
+  const title = me.lugares.length === 1 ? me.lugares[0] : "Tus locales"
 
   return (
     <section className="mt-6 rounded-2xl bg-olive p-5 text-cream">

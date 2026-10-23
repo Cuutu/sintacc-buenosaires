@@ -10,17 +10,22 @@ import { staffProgramFilter } from "@/lib/wallet/branches"
 
 export const dynamic = "force-dynamic"
 
-/** ¿La cuenta es de un local con tarjeta? Para mostrar "Tu local" en el perfil (y en la app). */
+const NO_STORE = { "Cache-Control": "private, no-store" }
+
+/**
+ * ¿La cuenta atiende algún local con tarjeta (dueño, encargado o empleado)? Para mostrar
+ * "Tarjeta de sellos" en el perfil. Ser admin no cuenta: el admin ve todos los locales en
+ * /local y /admin/tarjetas, pero en su perfil solo aparece si además es de un local.
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth(request)
     if (session instanceof NextResponse) return session
     const email = normalizeEmail(session.user.email)
-    const isAdmin = session.user.role === "admin"
-    if (!email && !isAdmin) return NextResponse.json({ local: false, lugares: [] })
+    if (!email) return NextResponse.json({ local: false, lugares: [] }, { headers: NO_STORE })
 
     await connectDB()
-    const programs = await LoyaltyProgram.find(isAdmin ? {} : staffProgramFilter(email))
+    const programs = await LoyaltyProgram.find(staffProgramFilter(email))
       .select("placeId brandName")
       .limit(20)
       .lean<Array<{ placeId: mongoose.Types.ObjectId; brandName?: string }>>()
@@ -31,10 +36,7 @@ export async function GET(request: NextRequest) {
       : []
     const nameById = new Map(places.map((p) => [p._id.toString(), p.name]))
     const lugares = programs.map((p) => p.brandName || nameById.get(p.placeId.toString()) || "Local")
-    return NextResponse.json(
-      { local: programs.length > 0, admin: isAdmin, lugares },
-      { headers: { "Cache-Control": "private, no-store" } }
-    )
+    return NextResponse.json({ local: programs.length > 0, lugares }, { headers: NO_STORE })
   } catch (error) {
     logApiError("/api/local/yo", error, { request })
     return NextResponse.json({ error: "No se pudo cargar" }, { status: 500 })
