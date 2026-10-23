@@ -5,6 +5,7 @@ import "@/models/Place"
 import { requireAuth } from "@/lib/middleware"
 import { logApiError } from "@/lib/logger"
 import { features } from "@/lib/features"
+import { getReviewStatsFor } from "@/lib/review-stats-index"
 import mongoose from "mongoose"
 
 export async function GET(request: NextRequest) {
@@ -37,12 +38,23 @@ export async function GET(request: NextRequest) {
     })
       .populate(
         "placeId",
-        "name types type neighborhood slug location tags safetyLevel photos googleSnapshot.rating googleSnapshot.userRatingCount status"
+        "name types type neighborhood slug location tags safetyLevel photos openingHours googleSnapshot.rating googleSnapshot.userRatingCount status"
       )
       .lean()
 
+    // Puntaje de CeliMap para las tarjetas (el índice está en caché: no es otra consulta por lugar).
+    const placeIds = favorites
+      .map((f) => f.placeId as unknown as { _id?: { toString(): string } } | null)
+      .filter((p): p is { _id: { toString(): string } } => Boolean(p?._id))
+      .map((p) => p._id)
+    const stats = await getReviewStatsFor(placeIds)
+    const withStats = favorites.map((f) => {
+      const place = f.placeId as unknown as ({ _id?: { toString(): string } } & Record<string, unknown>) | null
+      return place?._id ? { ...f, placeId: { ...place, stats: stats.get(place._id.toString()) } } : f
+    })
+
     return NextResponse.json(
-      { favorites },
+      { favorites: withStats },
       { headers: { "Cache-Control": "private, max-age=15" } }
     )
   } catch (error) {

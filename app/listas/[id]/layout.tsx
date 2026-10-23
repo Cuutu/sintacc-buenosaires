@@ -11,6 +11,8 @@ import {
 import { CELIMAP_NAME } from "@/lib/seo/brand"
 import { OG_IMAGE } from "@/lib/seo/og"
 import { serializeJsonLd } from "@/lib/seo/json-ld"
+import { LIST_VISIBLE_PLACES_MATCH } from "@/lib/lists/card-places"
+import { listPageTitle, listShareImage } from "@/lib/lists/list-meta"
 
 interface ListaLayoutProps {
   params: Promise<{ id: string }>
@@ -35,7 +37,8 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
 
     await connectDB()
     const list = await List.findById(id)
-      .select("name description isPublic visibility placeIds updatedAt")
+      .select("name description isPublic visibility placeIds updatedAt coverImage")
+      .populate({ path: "placeIds", select: "photos", match: LIST_VISIBLE_PLACES_MATCH })
       .lean()
 
     if (!list) {
@@ -48,16 +51,22 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
       return noindexPrivate
     }
 
-    const placeCount = Array.isArray(list.placeIds) ? list.placeIds.length : 0
+    // Mismos lugares que muestra la página (publicados): el conteo y la foto salen de ahí.
+    const places = ((list.placeIds ?? []) as unknown as Array<{ photos?: string[] } | null>).filter(Boolean) as Array<{
+      photos?: string[]
+    }>
+    const placeCount = places.length
     const decision = decidePublicListIndexing({ isPublic: true, placeCount })
     const robots = decisionToRobots(decision)
 
     const baseUrl = getBaseUrl()
     const canonical = `${baseUrl}/listas/${id}`
-    const title = list.name
+    const title = listPageTitle(list.name)
     const description =
       list.description ||
       `Lista pública de lugares sin TACC: ${list.name}. Curada en ${CELIMAP_NAME}.`
+    const image = listShareImage(list.coverImage, places, baseUrl)
+    const ogImages = image ? [{ url: image, alt: list.name }] : [OG_IMAGE]
 
     return {
       title,
@@ -69,12 +78,13 @@ export async function generateMetadata({ params }: ListaLayoutProps): Promise<Me
         description,
         url: canonical,
         type: "website",
-        images: [OG_IMAGE],
+        images: ogImages,
       },
       twitter: {
         card: "summary_large_image",
         title: `${title} | ${CELIMAP_NAME}`,
         description,
+        ...(image ? { images: [image] } : {}),
       },
     }
   } catch {

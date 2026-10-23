@@ -11,6 +11,7 @@ import mongoose from "mongoose"
 import { LIST_VISIBILITY } from "@/lib/lists/constants"
 import { canUsePrivateLists } from "@/lib/lists/access"
 import { findCommunityLists } from "@/lib/lists/get-public-community-lists"
+import { LIST_CARD_PLACE_SELECT, LIST_VISIBLE_PLACES_MATCH } from "@/lib/lists/card-places"
 import {
   applyVisibilityFields,
   normalizeCoverImage,
@@ -41,13 +42,15 @@ export async function GET(request: NextRequest) {
       })
         .select("+privateAccessToken")
         .sort({ updatedAt: -1 })
-        .populate("placeIds", "name neighborhood photos type slug")
+        .populate({ path: "placeIds", select: LIST_CARD_PLACE_SELECT, match: LIST_VISIBLE_PLACES_MATCH })
         .populate("createdBy", "name image")
         .lean()
 
       return NextResponse.json(
         {
-          lists: myLists.map((list) => serializeListForOwner(list as never)),
+          lists: myLists.map((list) =>
+            serializeListForOwner({ ...list, placesCount: (list.placeIds ?? []).filter(Boolean).length } as never)
+          ),
           canUsePrivateLists: canUsePrivateLists({
             email: session.user.email,
             role: session.user.role,

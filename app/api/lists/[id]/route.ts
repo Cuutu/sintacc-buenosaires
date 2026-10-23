@@ -21,6 +21,9 @@ import {
   serializeListForOwner,
 } from "@/lib/lists/serialize"
 import connectDB from "@/lib/mongodb"
+import { LIST_VISIBLE_PLACES_MATCH } from "@/lib/lists/card-places"
+import { PUBLIC_PLACE_LIST_SELECT } from "@/lib/places-public-select"
+import { getReviewStatsFor } from "@/lib/review-stats-index"
 import { List } from "@/models/List"
 import { ListLike } from "@/models/ListLike"
 import "@/models/Place"
@@ -41,14 +44,26 @@ export async function GET(
     }
 
     const session = await getOptionalActiveSession()
-    const list = await List.findById(id)
+    // Solo los lugares publicados y solo campos públicos (antes venía el documento entero,
+    // con editLog y aiEnrichment). Es la misma regla que cuenta /listas.
+    const raw = await List.findById(id)
       .select("+privateAccessToken")
       .populate("createdBy", "name image")
-      .populate("placeIds")
+      .populate({ path: "placeIds", select: PUBLIC_PLACE_LIST_SELECT, match: LIST_VISIBLE_PLACES_MATCH })
       .lean()
 
-    if (!list) {
+    if (!raw) {
       return NextResponse.json({ error: "Lista no encontrada" }, { status: 404 })
+    }
+
+    const places = ((raw.placeIds ?? []) as unknown as Array<{ _id: { toString(): string } } | null>).filter(
+      (place): place is { _id: { toString(): string } } => Boolean(place)
+    )
+    const stats = await getReviewStatsFor(places.map((place) => place._id))
+    const list = {
+      ...raw,
+      placeIds: places.map((place) => ({ ...place, stats: stats.get(place._id.toString()) })),
+      placesCount: places.length,
     }
 
     const isOwner = ownerIdEquals(list.createdBy, session?.user?.id)

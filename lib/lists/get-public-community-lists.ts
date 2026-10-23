@@ -3,29 +3,34 @@ import { List } from "@/models/List"
 import "@/models/Place"
 import "@/models/User"
 import { publicListsQuery } from "@/lib/lists/access"
-import { trimListForCard } from "@/lib/lists/card-places"
+import {
+  LIST_CARD_PLACE_SELECT,
+  LIST_VISIBLE_PLACES_MATCH,
+  trimListForCard,
+} from "@/lib/lists/card-places"
 import { serializeListForCommunity } from "@/lib/lists/serialize"
 import type { ListWithDetails } from "@/components/lists/ListCard"
 
 const DEFAULT_LIMIT = 500
 
 /**
- * Listas públicas para las tarjetas de /listas: cada una con `placesCount` (todos sus
- * lugares) y sólo los primeros lugares cargados, para la foto.
+ * Listas públicas para las tarjetas de /listas: cada una con `placesCount` (sus lugares
+ * publicados, el mismo número que muestra el detalle) y sólo los primeros cargados,
+ * para la foto.
  */
 export async function findCommunityLists(limit: number) {
   const lists = await List.find(publicListsQuery())
     .sort({ likesCount: -1, createdAt: -1 })
     .limit(limit)
     .populate("createdBy", "name image")
+    .populate({
+      path: "placeIds",
+      select: LIST_CARD_PLACE_SELECT,
+      match: LIST_VISIBLE_PLACES_MATCH,
+    })
     .lean()
 
-  const trimmed = lists.map((list) => trimListForCard(list))
-  const populated = await List.populate(trimmed, {
-    path: "placeIds",
-    select: "name neighborhood photos type slug",
-  })
-  return populated.map((list) => serializeListForCommunity(list as never))
+  return lists.map((list) => serializeListForCommunity(trimListForCard(list) as never))
 }
 
 export async function getPublicCommunityLists(

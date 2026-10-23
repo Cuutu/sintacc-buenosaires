@@ -4,12 +4,13 @@
 import {
   LIST_CARD_PREVIEW_PLACES,
   formatPlacesCount,
+  listPlacesCount,
   trimListForCard,
 } from "@/lib/lists/card-places"
 
 const mockLean = jest.fn()
-const mockPopulateDocs = jest.fn()
 const mockFind = jest.fn()
+const mockPopulateQuery = jest.fn()
 
 jest.mock("@/lib/mongodb", () => ({ __esModule: true, default: jest.fn() }))
 jest.mock("@/models/Place", () => ({}))
@@ -18,7 +19,10 @@ jest.mock("@/models/List", () => {
   const chain = {
     sort: () => chain,
     limit: () => chain,
-    populate: () => chain,
+    populate: (...args: unknown[]) => {
+      mockPopulateQuery(...args)
+      return chain
+    },
     lean: () => mockLean(),
   }
   return {
@@ -27,7 +31,6 @@ jest.mock("@/models/List", () => {
         mockFind(...args)
         return chain
       },
-      populate: (...args: unknown[]) => mockPopulateDocs(...args),
     },
   }
 })
@@ -65,27 +68,30 @@ describe("formatPlacesCount", () => {
   })
 })
 
+describe("listPlacesCount", () => {
+  it("usa placesCount si viene; si no, cuenta los lugares cargados", () => {
+    expect(listPlacesCount({ placesCount: 8, placeIds: ids(4) })).toBe(8)
+    expect(listPlacesCount({ placeIds: [...ids(3), null] })).toBe(3)
+    expect(listPlacesCount({})).toBe(0)
+  })
+})
+
 describe("findCommunityLists", () => {
   beforeEach(() => jest.clearAllMocks())
 
-  it("el conteo sale de la lista entera aunque se carguen 4 lugares", async () => {
+  it("cuenta los lugares publicados (como el detalle) y carga 4 para la foto", async () => {
+    // El populate con match ya trae solo los publicados.
     mockLean.mockResolvedValue([
-      { _id: "a", name: "Lista para una salida!", placeIds: ids(15), placeNotes: [] },
-      { _id: "b", name: "Palermo", placeIds: ids(1), placeNotes: [] },
+      { _id: "a", name: "Lugares en Córdoba", placeIds: ids(8).map((id) => ({ _id: id })), placeNotes: [] },
+      { _id: "b", name: "Palermo", placeIds: ids(1).map((id) => ({ _id: id })), placeNotes: [] },
     ])
-    mockPopulateDocs.mockImplementation(async (docs: Array<{ placeIds: string[] }>) =>
-      docs.map((d) => ({ ...d, placeIds: d.placeIds.map((id) => ({ _id: id, name: id })) }))
-    )
 
     const lists = await findCommunityLists(20)
 
-    // Al populate le llegan sólo los primeros ids (no toda la lista).
-    const [docs, options] = mockPopulateDocs.mock.calls[0]
-    expect(docs[0].placeIds).toEqual(ids(4))
-    expect(options).toMatchObject({ path: "placeIds" })
-    expect(options.options?.limit).toBeUndefined()
-
-    expect(lists[0]).toMatchObject({ placesCount: 15, isPublic: true })
+    expect(mockPopulateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "placeIds", match: { status: "approved" } })
+    )
+    expect(lists[0]).toMatchObject({ placesCount: 8, isPublic: true })
     expect(lists[0].placeIds).toHaveLength(4)
     expect(lists[1]).toMatchObject({ placesCount: 1 })
     // Sigue sin exponer las notas en el listado público.
