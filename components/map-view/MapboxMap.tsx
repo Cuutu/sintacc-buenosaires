@@ -83,6 +83,8 @@ export interface MapboxMapRef {
   projectLngLat: (lng: number, lat: number) => { x: number; y: number } | null
   getContainerSize: () => { width: number; height: number } | null
   subscribeViewChange: (listener: () => void) => () => void
+  /** Botones + / − de la compu: un nivel de zoom, con animación corta. */
+  zoomBy: (delta: number) => void
 }
 
 export type MapOverlayPadding = {
@@ -285,6 +287,19 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       [reduceMotion]
     )
 
+    const zoomBy = useCallback(
+      (delta: number) => {
+        if (disposedRef.current || !map.current) return
+        try {
+          const m = map.current
+          m.easeTo({ zoom: m.getZoom() + delta, duration: reduceMotion ? 0 : 250 })
+        } catch {
+          /* mapa ya destruido */
+        }
+      },
+      [reduceMotion]
+    )
+
     const setCenter = useCallback((lng: number, lat: number) => {
       if (!map.current) return
       map.current.setCenter([lng, lat])
@@ -439,6 +454,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         projectLngLat,
         getContainerSize,
         subscribeViewChange,
+        zoomBy,
       }),
       [
         flyTo,
@@ -449,6 +465,7 @@ export const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         projectLngLat,
         getContainerSize,
         subscribeViewChange,
+        zoomBy,
       ]
     )
 

@@ -29,11 +29,17 @@ export const LAYER_PINS = "celimap-pins"
 export const LAYER_SELECTED_HALO = "celimap-selected-halo"
 export const LAYER_SELECTED_PIN = "celimap-selected-pin"
 
-/** En zoom 13 solo se agrupan pilas de pins encimados; desde 14 van todos sueltos. */
-export const CLUSTER_MAX_ZOOM = 13
-/** Radio chico + mínimo 3: dos lugares vecinos se ven como pins, no como "2". */
-export const CLUSTER_RADIUS_PX = 30
-export const CLUSTER_MIN_POINTS = 3
+/**
+ * Agrupado (revisión 23/10): los pins sueltos se pisaban con los grupos.
+ * - El radio cubre lo que mide un pin en pantalla (~37×49 px): dos lugares que se
+ *   encimarían van juntos. Con 30 px y mínimo 3, un par de pins (o un pin al lado de
+ *   un grupo) quedaba montado encima.
+ * - Hasta zoom 14 se agrupan las pilas (antes 13); desde 15 van todos sueltos.
+ * - Los grupos se dibujan arriba de los pins (stackClusterLayers): el número siempre se lee.
+ */
+export const CLUSTER_MAX_ZOOM = 14
+export const CLUSTER_RADIUS_PX = 50
+export const CLUSTER_MIN_POINTS = 2
 /** Zoom al elegir un lugar (o abrir /mapa?place=): barrio cercano, no una sola cuadra. */
 export const PIN_FOCUS_ZOOM = 15
 /** Gota lógica 64×84 @ pixelRatio 3. Desktop ≥ mobile. */
@@ -260,6 +266,16 @@ function addLayerSafe(map: MapboxMapType, layer: AnyLayer, beforeId?: string): v
 
 function stackClusterLayers(map: MapboxMapType): void {
   if (!map.getLayer(LAYER_CLUSTERS)) return
+  // Grupos arriba de los pins sueltos y debajo del pin elegido.
+  if (map.getLayer(LAYER_SELECTED_HALO)) {
+    try {
+      for (const id of [LAYER_CLUSTER_SHADOW, LAYER_CLUSTER_HALO, LAYER_CLUSTERS, LAYER_CLUSTER_COUNT]) {
+        if (map.getLayer(id)) map.moveLayer(id, LAYER_SELECTED_HALO)
+      }
+    } catch {
+      /* orden no crítico */
+    }
+  }
   try {
     if (map.getLayer(LAYER_CLUSTER_HALO)) {
       map.moveLayer(LAYER_CLUSTER_HALO, LAYER_CLUSTERS)

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import type mapboxgl from "mapbox-gl"
-import { X } from "lucide-react"
+import { Minus, Plus, X } from "lucide-react"
 import type { MapboxMapRef, MapViewportBounds } from "./MapboxMap"
 import { MapboxMapLazy as MapboxMap } from "./MapboxMapLazy"
 import { MapErrorBoundary } from "./MapErrorBoundary"
@@ -173,6 +173,33 @@ export function MapDesktop({
             showPopup={false}
           />
         </MapErrorBoundary>
+
+        {/* Zoom con botones (revisión 23/10): con la rueda o el pellizco no todos se dan cuenta. */}
+        <div
+          className="pointer-events-auto absolute right-4 top-4 z-10 flex flex-col overflow-hidden rounded-2xl border border-olive/15 bg-cream/95 shadow-[0_8px_24px_rgba(31,77,53,0.12)] backdrop-blur"
+          role="group"
+          aria-label="Zoom del mapa"
+        >
+          <button
+            type="button"
+            onClick={() => mapRef.current?.zoomBy(1)}
+            className="flex h-11 w-11 items-center justify-center text-olive transition hover:bg-olive/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-olive/40"
+            aria-label="Acercar"
+            title="Acercar"
+          >
+            <Plus className="h-5 w-5" aria-hidden />
+          </button>
+          <span className="h-px bg-olive/10" aria-hidden />
+          <button
+            type="button"
+            onClick={() => mapRef.current?.zoomBy(-1)}
+            className="flex h-11 w-11 items-center justify-center text-olive transition hover:bg-olive/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-olive/40"
+            aria-label="Alejar"
+            title="Alejar"
+          >
+            <Minus className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
 
         {popoverPlace && (
           <DesktopMapPopover
