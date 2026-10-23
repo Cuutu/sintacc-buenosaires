@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Lock, MapPin, User } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { LIST_VISIBILITY, type ListVisibility } from "@/lib/lists/constants"
+import { formatPlacesCount } from "@/lib/lists/card-places"
 
 interface ListCreator {
   _id: string
@@ -26,6 +27,8 @@ export interface ListWithDetails {
   coverImage?: string
   placeIds: (IPlace | { _id: string; name: string; neighborhood: string; photos?: string[]; type?: string })[]
   placeNotes?: ListPlaceNote[]
+  /** Total de lugares. En /listas sólo vienen cargados los primeros (para la foto). */
+  placesCount?: number
   createdBy: ListCreator
   likesCount: number
   isPublic: boolean
@@ -163,7 +166,7 @@ export function ListCard({
             )}
             <span>{list.createdBy?.name ?? "Usuario"}</span>
             <span>·</span>
-            <span>{places.length} lugares</span>
+            <span>{formatPlacesCount(list.placesCount ?? places.length)}</span>
           </div>
         </CardContent>
       </Card>
