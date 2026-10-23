@@ -15,18 +15,20 @@ describe("rediseño ficha lugar", () => {
     expect(src).toContain("h-[220px]")
     expect(ui).toContain("100% sin TACC")
     expect(ui).toContain("Con opciones")
-    expect(src).toContain("emptyHeroPinSrc")
+    // Sin foto (revisión 23/10): encabezado más bajo con el ícono de la categoría.
+    expect(src).toContain("h-[150px] lg:h-[200px]")
+    expect(src).toContain("<CategoryIcon")
     expect(chrome).toContain("Volver")
     expect(chrome).toContain("Compartir")
     expect(chrome).toContain('variant="icon"')
     expect(src).toContain("Foto: Google")
   })
 
-  it("hero vacío usa pin Con opciones / logo CeliMap", () => {
-    const ui = read("components/lugar/place-detail-ui.ts")
+  it("hero vacío: portada de color, sin el pin grande; reseñas vacías con el logo", () => {
+    const src = read("components/lugar/PlaceHero.tsx")
     const reviews = read("components/lugar/PlaceCommunityReviews.tsx")
-    expect(ui).toContain("/map/pin-options.png")
-    expect(ui).toContain("/map/pin-dedicated.png")
+    expect(src).toContain("cover.texture")
+    expect(src).not.toContain("emptyHeroPinSrc")
     expect(reviews).toContain("/CelimapLOGO.png")
   })
 

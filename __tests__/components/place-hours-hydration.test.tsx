@@ -25,9 +25,10 @@ jest.mock("@/components/lugar/PlaceReportCard", () => ({
 
 import { PlaceHoursToggle } from "@/components/lugar/PlaceHoursToggle"
 import { PlaceDesktopAside } from "@/components/lugar/PlaceDesktopAside"
+import { PlaceOpenNowLine } from "@/components/lugar/PlaceOpenNowLine"
 
 const HOURS = "Lun–Vie 09:00–18:00; Sáb 10:00–14:00; Dom cerrado"
-// Martes 14/10/2026: 07:00 ART (cerrado) y 10:00 ART (abierto).
+// Miércoles 14/10/2026: 07:00 ART (cerrado) y 10:00 ART (abierto).
 const SERVER_TIME = new Date("2026-10-14T10:00:00Z")
 const CLIENT_TIME = new Date("2026-10-14T13:00:00Z")
 
@@ -60,14 +61,28 @@ describe("estado abierto/cerrado sin error de hidratación", () => {
     document.body.innerHTML = ""
   })
 
-  it("PlaceHoursToggle: el server no renderiza el estado y el cliente lo muestra al montar", () => {
+  it("PlaceHoursToggle: el horario en un solo formato y 'hoy' recién al montar", () => {
     const { html, container, recoverable, errors } = hydrateAt(<PlaceHoursToggle hours={HOURS} />)
-    expect(html).not.toMatch(/Abierto|Cerrado/)
+    // El horario no depende de la hora: va en el HTML del servidor, ya normalizado.
     expect(html).toContain("Horarios")
-    expect(html).toContain("Ver horarios")
+    expect(html).toContain("9 a 18 h")
+    expect(html).toContain("10 a 14 h")
+    // "Hoy" sí depende de la fecha: no va en el HTML cacheado.
+    expect(html).not.toContain("(hoy)")
     expect(recoverable).toEqual([])
     expect(errors).toEqual([])
-    expect(container.textContent).toContain("Abierto")
+    // 14/10/2026 es miércoles en Argentina.
+    const today = container.querySelector('[aria-current="date"]')
+    expect(today?.textContent).toBe("9 a 18 h")
+    expect(today?.previousElementSibling?.textContent).toContain("Miércoles")
+  })
+
+  it("PlaceOpenNowLine (debajo del nombre): el server no renderiza el estado y el cliente sí", () => {
+    const { html, container, recoverable, errors } = hydrateAt(<PlaceOpenNowLine hours={HOURS} />)
+    expect(html).not.toMatch(/Abierto|Cerrado/)
+    expect(recoverable).toEqual([])
+    expect(errors).toEqual([])
+    expect(container.textContent).toBe("Abierto · cierra a las 18 h")
   })
 
   it("PlaceDesktopAside: idem", () => {

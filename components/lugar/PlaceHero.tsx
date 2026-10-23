@@ -1,8 +1,8 @@
-import Image from "next/image"
 import { PlaceImage } from "@/components/place-image"
 import { getCoverThemeForLevel } from "@/components/map-view/place-selected-card-model"
 import { cn } from "@/lib/utils"
-import { emptyHeroPinSrc, heroSafetyCopy } from "./place-detail-ui"
+import { CategoryIcon } from "@/components/seo/CategoryIcon"
+import { heroSafetyCopy } from "./place-detail-ui"
 import { PlaceHeroChrome } from "./PlaceHeroChrome"
 
 interface PlaceHeroProps {
@@ -12,6 +12,8 @@ interface PlaceHeroProps {
   placeId: string
   shareUrl: string
   safetyLevel?: string
+  /** Tipo del lugar: sin foto, el encabezado lleva el ícono de la categoría. */
+  type?: string
 }
 
 export function PlaceHero({
@@ -21,14 +23,21 @@ export function PlaceHero({
   placeId,
   shareUrl,
   safetyLevel,
+  type,
 }: PlaceHeroProps) {
   const hasPhoto = Boolean(photos?.[0])
   const safety = heroSafetyCopy(safetyLevel)
-  const emptyPinSrc = emptyHeroPinSrc(safetyLevel)
   const cover = getCoverThemeForLevel(safetyLevel)
 
   return (
-    <div className="relative h-[220px] w-full overflow-hidden lg:h-[380px] lg:rounded-[28px]">
+    // Sin foto, un encabezado más bajo (antes era un recuadro de 220/380 px casi vacío).
+    <div
+      className={cn(
+        "relative w-full overflow-hidden lg:rounded-[28px]",
+        hasPhoto ? "h-[220px] lg:h-[380px]" : "h-[150px] lg:h-[200px]"
+      )}
+      data-hero={hasPhoto ? "photo" : "cover"}
+    >
       {hasPhoto ? (
         <PlaceImage
           src={photos![0]}
@@ -39,24 +48,17 @@ export function PlaceHero({
           sizes="(max-width: 1024px) 100vw, 700px"
         />
       ) : (
-        <>
-          <div className="absolute inset-0 flex items-center justify-center bg-[#F8F5EF] lg:hidden">
-            <Image
-              src={emptyPinSrc}
-              alt=""
-              width={88}
-              height={112}
-              priority
-              className="h-[112px] w-auto object-contain"
-            />
-          </div>
-          {/* Compu: portada de color con textura, como las tarjetas del mapa y de inicio. */}
-          <div
-            className={cn("absolute inset-0 hidden lg:block", cover.texture)}
-            style={{ backgroundColor: cover.bg }}
-            aria-hidden
+        // Portada de color con textura (como las tarjetas) y el ícono de la categoría.
+        <div
+          className={cn("absolute inset-0", cover.texture)}
+          style={{ backgroundColor: cover.bg, color: cover.ink }}
+          aria-hidden
+        >
+          <CategoryIcon
+            category={type}
+            className="absolute bottom-3 right-5 h-16 w-16 opacity-80 lg:bottom-6 lg:right-6 lg:h-20 lg:w-20"
           />
-        </>
+        </div>
       )}
 
       {hasPhoto ? (
@@ -67,20 +69,14 @@ export function PlaceHero({
               "linear-gradient(180deg, rgba(31,77,53,0.28) 0%, rgba(31,77,53,0.04) 42%, rgba(15,30,22,0.45) 100%)",
           }}
         />
-      ) : (
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 lg:hidden"
-          style={{
-            background: "linear-gradient(180deg, transparent, rgba(248,245,239,0.9))",
-          }}
-        />
-      )}
+      ) : null}
 
       <PlaceHeroChrome placeId={placeId} name={name} shareUrl={shareUrl} />
 
       <div
         className={`absolute bottom-4 left-5 z-10 inline-flex lg:bottom-6 lg:left-6 ${
-          hasPhoto && photoSource === "google" ? "max-w-[calc(100%-7rem)]" : "max-w-[calc(100%-2.5rem)]"
+          // A la derecha va "Foto: Google" o, sin foto, el ícono de la categoría.
+          !hasPhoto || photoSource === "google" ? "max-w-[calc(100%-7rem)]" : "max-w-[calc(100%-2.5rem)]"
         } items-center rounded-full px-4 py-2 text-base font-bold shadow-[0_8px_24px_-12px_rgba(15,30,22,0.55)] ${safety.className}`}
       >
         {safety.label}

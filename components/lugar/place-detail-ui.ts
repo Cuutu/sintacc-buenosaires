@@ -19,12 +19,6 @@ export function formatNearbyDistance(distance?: number): string | null {
   return `${(distance / 1000).toFixed(1)} km`
 }
 
-export function emptyHeroPinSrc(safetyLevel?: string): string {
-  if (safetyLevel === "gf_options") return "/map/pin-options.png"
-  if (safetyLevel === "dedicated_gf") return "/map/pin-dedicated.png"
-  return "/CelimapLOGO.png"
-}
-
 export function heroSafetyCopy(level?: string): { label: string; className: string } {
   if (level === "dedicated_gf") {
     return {

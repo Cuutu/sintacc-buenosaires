@@ -12,6 +12,9 @@ export type NearbyPlaceCard = {
   types?: string[]
   photos?: string[]
   distance?: number
+  /** Para la etiqueta 100% sin TACC / Con opciones de la tarjeta. */
+  tags?: string[]
+  safetyLevel?: string
 }
 
 const NEARBY_RADIUS_METERS = 2000
@@ -40,6 +43,8 @@ function toCard(
     types?: string[]
     photos?: string[]
     distance?: number
+    tags?: string[]
+    safetyLevel?: string
   },
   excludeId: string
 ): NearbyPlaceCard | null {
@@ -53,6 +58,8 @@ function toCard(
     types: doc.types,
     photos: doc.photos,
     distance: typeof doc.distance === "number" ? doc.distance : undefined,
+    tags: doc.tags,
+    safetyLevel: doc.safetyLevel,
   }
 }
 
@@ -73,15 +80,19 @@ export async function getNearbyPlacesForPlace(
     return cards
   }
 
-  if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
-    const origin = { lat, lng }
+  // (0, 0) es "sin pin": no sirve para medir distancias.
+  const hasOrigin =
+    lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0)
+  const origin = hasOrigin ? { lat: lat as number, lng: lng as number } : null
+
+  if (origin) {
     const nearby = await Place.find({
       status: "approved",
       _id: { $ne: new mongoose.Types.ObjectId(excludeId) },
-      "location.lat": { $gte: lat - NEARBY_DEGREE_PAD, $lte: lat + NEARBY_DEGREE_PAD },
-      "location.lng": { $gte: lng - NEARBY_DEGREE_PAD, $lte: lng + NEARBY_DEGREE_PAD },
+      "location.lat": { $gte: origin.lat - NEARBY_DEGREE_PAD, $lte: origin.lat + NEARBY_DEGREE_PAD },
+      "location.lng": { $gte: origin.lng - NEARBY_DEGREE_PAD, $lte: origin.lng + NEARBY_DEGREE_PAD },
     })
-      .select("slug name type types photos location")
+      .select("slug name type types photos location tags safetyLevel")
       .lean()
 
     const ranked = nearby
@@ -108,25 +119,24 @@ export async function getNearbyPlacesForPlace(
     neighborhood: place.neighborhood,
     _id: { $ne: new mongoose.Types.ObjectId(excludeId) },
   })
-    .select("slug name type types photos")
+    .select("slug name type types photos location tags safetyLevel")
     .limit(5)
     .lean()
 
+  // Mismo barrio: la distancia también, si los dos tienen pin (revisión 23/10).
   return done(
     list
-      .map((doc) =>
-        toCard(
-          doc as {
-            _id: { toString(): string }
-            slug?: string | null
-            name: string
-            type: string
-            types?: string[]
-            photos?: string[]
-          },
-          excludeId
-        )
-      )
+      .map((doc) => {
+        const card = toCard(doc as Parameters<typeof toCard>[0], excludeId)
+        if (!card) return null
+        const docLat = doc.location?.lat
+        const docLng = doc.location?.lng
+        if (origin && typeof docLat === "number" && typeof docLng === "number" && !(docLat === 0 && docLng === 0)) {
+          return { ...card, distance: haversineMeters(origin, { lat: docLat, lng: docLng }) }
+        }
+        return card
+      })
       .filter((row): row is NearbyPlaceCard => row != null)
+      .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
   )
 }

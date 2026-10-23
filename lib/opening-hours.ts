@@ -456,6 +456,92 @@ export function getOpenStatusDetail(
   }
 }
 
+/** "9", "9:30", "24" (cierre a medianoche): para el formato corto "9 a 20 h". */
+function formatShortClock(totalMinutes: number, isClose = false): string {
+  const minutesInDay = ((totalMinutes % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES
+  const h = Math.floor(minutesInDay / 60)
+  const m = minutesInDay % 60
+  const hour = isClose && h === 0 && m === 0 ? 24 : h
+  return m ? `${hour}:${String(m).padStart(2, "0")}` : String(hour)
+}
+
+export type WeeklyScheduleRow = {
+  /** 0 = domingo … 6 = sábado (igual que Date.getDay y la zona de Argentina). */
+  day: number
+  label: string
+  /** "9 a 20 h", "9 a 13 h y 17 a 21 h", "Abierto 24 h" o "Cerrado". */
+  text: string
+  closed: boolean
+}
+
+const SCHEDULE_DAY_LABELS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+/** De lunes a domingo, como se lee un horario. */
+const SCHEDULE_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+/**
+ * El horario en un solo formato, día por día ("9 a 20 h"), de lunes a domingo.
+ * Antes la ficha mostraba el texto tal cual lo cargó cada uno ("09:00–20:00",
+ * "9 a. m. – 8 p. m.", "Lun-Vie 9-18"…). Null si no se puede interpretar: ahí se
+ * muestra el texto original. No depende de la hora actual (se puede usar en ISR).
+ */
+export function getWeeklySchedule(openingHours: string | undefined | null): WeeklyScheduleRow[] | null {
+  const intervals = parseWeeklyIntervals(openingHours)
+  if (!intervals) return null
+  const byDay = new Map<number, WeeklyInterval[]>()
+  for (const iv of intervals) {
+    const day = Math.floor(iv.start / DAY_MINUTES) % 7
+    byDay.set(day, [...(byDay.get(day) ?? []), iv])
+  }
+  return SCHEDULE_DAY_ORDER.map((day) => {
+    const ranges = (byDay.get(day) ?? []).sort((a, b) => a.start - b.start)
+    // Rangos que se tocan o se pisan van juntos ("9 a 13" + "13 a 20" = "9 a 20").
+    const merged: WeeklyInterval[] = []
+    for (const r of ranges) {
+      const last = merged[merged.length - 1]
+      if (last && r.start <= last.end) last.end = Math.max(last.end, r.end)
+      else merged.push({ ...r })
+    }
+    const label = SCHEDULE_DAY_LABELS[day]
+    if (merged.length === 0) return { day, label, text: "Cerrado", closed: true }
+    if (merged.some((r) => r.end - r.start >= DAY_MINUTES)) {
+      return { day, label, text: "Abierto 24 h", closed: false }
+    }
+    const text =
+      merged.map((r) => `${formatShortClock(r.start)} a ${formatShortClock(r.end, true)}`).join(" y ") + " h"
+    return { day, label, text, closed: false }
+  })
+}
+
+/** Día de hoy en Argentina (0 = domingo). Solo en el cliente, después de montar. */
+export function argentinaWeekday(now: Date = new Date()): number {
+  return getArgentinaClock(now).day
+}
+
+/**
+ * "Abierto · cierra a las 20 h" / "Cerrado · abre en 25 min": el estado de hoy en una
+ * línea, para debajo del nombre en el celular. Null si no se puede interpretar.
+ */
+export function getOpenNowLine(
+  openingHours: string | undefined | null,
+  now: Date = new Date()
+): { isOpen: boolean; label: string; detail?: string } | null {
+  const status = parseOpenStatus(openingHours, now)
+  if (!status) return null
+  if (!status.open) {
+    return {
+      isOpen: false,
+      label: "Cerrado",
+      ...(status.minutesUntilChange != null && { detail: formatNextOpening(status.minutesUntilChange, now) }),
+    }
+  }
+  if (status.closeMinutes == null) return { isOpen: true, label: "Abierto", detail: "abierto 24 h" }
+  const detail =
+    status.minutesUntilChange != null && status.minutesUntilChange <= 60
+      ? `cierra en ${formatRelativeTime(status.minutesUntilChange)}`
+      : `cierra a las ${formatShortClock(status.closeMinutes, true)} h`
+  return { isOpen: true, label: "Abierto", detail }
+}
+
 export const WEEK_DAYS = [
   { key: "lun", label: "Lunes", aliases: ["lun", "lunes", "l"] },
   { key: "mar", label: "Martes", aliases: ["mar", "martes"] },

@@ -4,6 +4,7 @@ import { PlaceImage } from "@/components/place-image"
 import { TYPES } from "@/lib/constants"
 import { getPlacePath } from "@/lib/place-url"
 import type { NearbyPlaceCard } from "@/lib/place-nearby"
+import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { formatNearbyDistance } from "./place-detail-ui"
 
 interface PlaceNearbyRailProps {
@@ -55,14 +56,35 @@ export function PlaceNearbyRail({ places }: PlaceNearbyRailProps) {
                 )}
               </div>
               <p className="truncate text-base font-semibold text-[#1F4D35]">{place.name}</p>
-              <p className="mt-1 truncate text-base text-[#5F6B63]">
-                {type?.label ?? "Lugar"}
-                {distance ? ` · ${distance}` : ""}
+              <p className="mt-1 truncate text-[15px] text-[#5F6B63]">
+                {type?.label ?? "Lugar"} · {distance ? `a ${distance}` : "mismo barrio"}
               </p>
+              <NearbySafetyChip place={place} />
             </Link>
           )
         })}
       </div>
     </section>
   )
+}
+
+/** La misma etiqueta que en las tarjetas: 100% sin TACC o Con opciones (revisión 23/10). */
+function NearbySafetyChip({ place }: { place: NearbyPlaceCard }) {
+  const level = inferSafetyLevel({ tags: place.tags, safetyLevel: place.safetyLevel as never })
+  if (level === "dedicated_gf") {
+    return (
+      <span className="mt-2 inline-flex h-6 items-center gap-1 rounded-full bg-[#1F4D35] px-2.5 text-xs font-extrabold text-[#F7F3EB]">
+        100% sin TACC
+      </span>
+    )
+  }
+  if (level === "gf_options") {
+    return (
+      <span className="mt-2 inline-flex h-6 items-center gap-1.5 rounded-full bg-[#F1ECE2] px-2.5 text-xs font-extrabold text-[#1F4D35]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#B84420]" aria-hidden />
+        Con opciones
+      </span>
+    )
+  }
+  return null
 }

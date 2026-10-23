@@ -19,6 +19,7 @@ import { PlaceCommunityReviewsClient } from "@/components/lugar/PlaceCommunityRe
 import { PlaceGoogleSection } from "@/components/lugar/PlaceGoogleSection"
 import { PlaceNearbyRail } from "@/components/lugar/PlaceNearbyRail"
 import { PlaceDesktopAside } from "@/components/lugar/PlaceDesktopAside"
+import { PlaceOpenNowLine } from "@/components/lugar/PlaceOpenNowLine"
 import { TrackPageView } from "@/components/analytics/TrackPageView"
 import { TrackPlaceDwell } from "@/components/analytics/TrackPlaceDwell"
 
@@ -73,7 +74,8 @@ export default async function LugarPage({ params }: LugarPageProps) {
       stats: { avgRating: liveStats.avgRating, totalReviews: liveStats.totalReviews },
       googleSnapshot: place.googleSnapshot,
     },
-    { emptyCommunity: "always" }
+    // "Todavía no hay reseñas de la comunidad" ya lo dice la sección de reseñas.
+    { emptyCommunity: "never" }
   )
 
   const placeProperties = {
@@ -97,6 +99,7 @@ export default async function LugarPage({ params }: LugarPageProps) {
             placeId={placeId}
             shareUrl={shareUrl}
             safetyLevel={effectiveSafety}
+            type={place.type}
           />
 
           <div className="space-y-8 px-5 pt-6 lg:space-y-10 lg:px-0 lg:pt-8">
@@ -110,6 +113,8 @@ export default async function LugarPage({ params }: LugarPageProps) {
                   {categoryLine}
                 </p>
               ) : null}
+              {/* Celular: abierto/cerrado debajo del nombre (en la compu está en la columna derecha). */}
+              <PlaceOpenNowLine hours={place.openingHours} className="lg:hidden" />
               {reviewLines.map((line) => (
                 <p
                   key={line.kind}
