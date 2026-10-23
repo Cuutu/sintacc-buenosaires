@@ -1,6 +1,7 @@
 import type { IPlace } from "@/models/Place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { metersBetween, type UserLatLng } from "./geo"
+import { placeQualityScore } from "@/lib/place-quality"
 import type { LocationStatus } from "./useUserLocation"
 
 export type PlaceSortOption = "nearest" | "recommended" | "rating"
@@ -97,6 +98,7 @@ type SortKeys<T> = {
   safety: number
   rating: number
   reviews: number
+  quality: number
 }
 
 /**
@@ -126,6 +128,7 @@ export function sortPlaces<T extends PlaceWithListStats>(
       safety: byDistance ? 0 : getSafetyRank(place),
       rating: sort === "rating" ? getRating(place) : 0,
       reviews: byDistance ? 0 : getReviewCount(place),
+      quality: sort === "recommended" ? placeQualityScore(place) : 0,
     }
   })
   const byName = (a: SortKeys<T>, b: SortKeys<T>) => NAME_COLLATOR.compare(a.name, b.name)
@@ -148,11 +151,11 @@ export function sortPlaces<T extends PlaceWithListStats>(
       return byName(a, b)
     })
   } else {
+    // Recomendados: puntaje de foto + completitud + rating + reseñas (lib/place-quality).
+    // Antes era 100% sin TACC + alfabético.
     keys.sort((a, b) => {
-      const safetyDelta = b.safety - a.safety
-      if (safetyDelta !== 0) return safetyDelta
-      const reviewPresenceDelta = Math.sign(b.reviews) - Math.sign(a.reviews)
-      if (reviewPresenceDelta !== 0) return reviewPresenceDelta
+      const qualityDelta = b.quality - a.quality
+      if (qualityDelta !== 0) return qualityDelta
       return byName(a, b)
     })
   }
