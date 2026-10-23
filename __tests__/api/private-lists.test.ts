@@ -41,6 +41,8 @@ jest.mock("@/models/List", () => {
     findById: jest.fn(),
     findOne: jest.fn(),
     findByIdAndDelete: jest.fn(),
+    // GET público carga los lugares de las tarjetas con List.populate(docs, …).
+    populate: jest.fn(async (docs: unknown) => docs),
   }
   const ListCtor: any = jest.fn().mockImplementation((doc: any) => {
     const instance: any = {
