@@ -18,6 +18,7 @@ describe("avatar-url", () => {
   it("acepta hosts configurados https", () => {
     expect(isAllowedAvatarUrl("https://lh3.googleusercontent.com/a/x")).toBe(true)
     expect(isAllowedAvatarUrl("https://res.cloudinary.com/demo/image/upload/v1/a.jpg")).toBe(true)
+    expect(isAllowedAvatarUrl("https://img.celimap.com.ar/v1/celimap/a.jpg")).toBe(true)
   })
   it("rechaza hostname desconocido, malformada, vacía, http", () => {
     expect(isAllowedAvatarUrl("https://evil.example/a.png")).toBe(false)

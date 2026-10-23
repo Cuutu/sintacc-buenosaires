@@ -130,6 +130,13 @@ const nextConfig = {
         pathname: "/**",
       },
       {
+        // Copia propia de las fotos de Cloudinary (lib/image-mirror.ts, docs/RESPALDO-IMAGENES.md).
+        protocol: "https",
+        hostname: "img.celimap.com.ar",
+        port: "",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
         port: "",
@@ -168,7 +175,7 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://api.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://img.celimap.com.ar https://lh3.googleusercontent.com https://*.googleusercontent.com https://api.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com",
       "font-src 'self' data:",
       "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://*.mapbox.com https://accounts.google.com https://appleid.apple.com https://places.googleapis.com https://res.cloudinary.com",
       "worker-src 'self' blob:",
