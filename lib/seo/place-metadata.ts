@@ -4,6 +4,7 @@ import { getBaseUrl } from "@/lib/base-url"
 import { getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
+import { getPlaceImageUrl } from "@/lib/place-image"
 
 export const PLACE_TYPE_LABELS: Record<string, string> = {
   restaurant: "Restaurante",
@@ -122,7 +123,7 @@ export function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {
   })}`
   const title = buildPlaceTitle(place)
   const description = buildPlaceDescription(place)
-  const photo = place.photos?.[0]
+  const photo = getPlaceImageUrl(place.photos?.[0], "og")
   const ogImage = photo || `${baseUrl}${OG_IMAGE_PATH}`
 
   return {

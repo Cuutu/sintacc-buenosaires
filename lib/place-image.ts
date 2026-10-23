@@ -1,9 +1,16 @@
-/** Thumb chico para lista. Popup usa tamaño medio, no el original. */
-export type PlaceImageRole = "thumb" | "popup"
+/**
+ * Thumb chico para lista. Popup usa tamaño medio, no el original.
+ * og / large: lo que bajan WhatsApp, Facebook, Google y compañía (OG y JSON-LD).
+ * Van en JPG fijo (no f_auto) porque no todos los crawlers aceptan WebP/AVIF, y
+ * nunca el original: una foto de celular pesa varios MB y cada vista previa la bajaba entera.
+ */
+export type PlaceImageRole = "thumb" | "popup" | "og" | "large"
 
 const TRANSFORMS: Record<PlaceImageRole, string> = {
   thumb: "c_fill,g_auto,w_168,h_168,f_auto,q_auto",
   popup: "c_fill,g_auto,w_640,h_360,f_auto,q_auto",
+  og: "c_fill,g_auto,w_1200,h_630,f_jpg,q_auto",
+  large: "c_limit,w_1200,h_1200,f_jpg,q_auto",
 }
 
 function injectCloudinaryTransform(url: string, transform: string): string {
