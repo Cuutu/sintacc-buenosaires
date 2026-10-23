@@ -86,6 +86,7 @@ export const ALLOWED_EVENT_PROP_KEYS = new Set([
   "province",
   "category",
   "source",
+  "surface",
   "hasType",
   "tagCount",
   "hasNeighborhood",
@@ -111,6 +112,7 @@ export const ALLOWED_EVENT_PROP_KEYS = new Set([
   "dwellThresholdMs",
   "commitmentType",
   "intentType",
+  "placeName",
 ])
 
 export const PRODUCT_EVENT_TTL_SECONDS = 60 * 60 * 24 * 180
