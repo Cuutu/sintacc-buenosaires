@@ -28,6 +28,15 @@ cloudinary.config({
 
 const ALLOWED_FOLDERS: readonly string[] = ["celimap", "places", "ventures", "lists"]
 
+/**
+ * Cloudinary guarda la foto ya achicada (lado mayor ≤ 1600 px, calidad automática).
+ * Una foto de celular entra de varios MB y todo lo que pide el original (next/image,
+ * vistas previas) la bajaba entera: es lo que más ancho de banda gasta del plan gratis.
+ */
+const UPLOAD_INCOMING_TRANSFORMATION = [
+  { width: 1600, height: 1600, crop: "limit", quality: "auto:good" },
+] as const
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -89,7 +98,11 @@ export async function POST(request: NextRequest) {
     const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
       cloudinary.uploader.upload(
         dataUri,
-        { folder, resource_type: "image" },
+        {
+          folder,
+          resource_type: "image",
+          transformation: [...UPLOAD_INCOMING_TRANSFORMATION],
+        },
         (err, res) => {
           if (err) reject(err)
           else if (res?.secure_url) resolve({ secure_url: res.secure_url })

@@ -111,5 +111,14 @@ describe("POST /api/upload", () => {
 
     expect(response.status).toBe(200)
     expect(data.url).toContain("cloudinary.com")
+    // Se guarda achicada (lado mayor ≤ 1600 px), no el original de varios MB.
+    expect(cloudinary.v2.uploader.upload).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        folder: "celimap",
+        transformation: [{ width: 1600, height: 1600, crop: "limit", quality: "auto:good" }],
+      }),
+      expect.any(Function)
+    )
   })
 })
