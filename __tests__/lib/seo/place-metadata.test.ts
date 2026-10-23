@@ -85,7 +85,7 @@ describe("place metadata titles", () => {
     }
     expect(buildPlaceTitle(painDuJour)).toBe("Pain du Jour - Gluten Free | Panadería sin TACC en Palermo")
     expect(buildPlaceDescription(painDuJour)).toMatch(/^Pain du Jour - Gluten Free: Panadería sin TACC en Palermo\./)
-    expect(placeCategoryLine(painDuJour)).toBe("Panadería · sin TACC · Palermo")
+    expect(placeCategoryLine(painDuJour)).toBe("Panadería · sin TACC · Palermo, CABA")
   })
 
   it("100% con \"sin TACC\" en el nombre no lo repite", () => {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getBaseUrl } from "@/lib/base-url"
-import { getCanonicalPlaceArea } from "@/lib/place-location-display"
+import { formatPlaceAreaLine, getCanonicalPlaceArea } from "@/lib/place-location-display"
 import { getPlacePath } from "@/lib/place-url"
 import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 import { getPlaceImageUrl } from "@/lib/place-image"
@@ -119,10 +119,14 @@ export function buildPlaceDescription(place: PlaceMetadataInput): string {
   return withoutAddr.slice(0, 157).trimEnd() + "…"
 }
 
+/**
+ * Subtítulo de la ficha: "Panadería · sin TACC · Palermo, CABA". Siempre con barrio y
+ * ciudad (formatPlaceAreaLine): antes, sin barrio cargado, no decía dónde estaba.
+ */
 export function placeCategoryLine(place: PlaceMetadataInput): string {
   const skipOffer = skipOfferPhrase(place)
   const offer = skipOffer ? "" : placeOfferPhrase(place)
-  return [placeTypeLabel(place), offer, shortPlaceLabel(place)].filter(Boolean).join(" · ")
+  return [placeTypeLabel(place), offer, formatPlaceAreaLine(place)].filter(Boolean).join(" · ")
 }
 
 export function buildPlaceMetadata(place: PlaceMetadataInput): Metadata {

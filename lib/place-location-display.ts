@@ -35,8 +35,27 @@ const CABA_BOUNDS = {
   north: -34.53,
 }
 
+/**
+ * Los 48 barrios oficiales de CABA (+ cómo se los suele escribir). NEIGHBORHOODS tiene
+ * solo 20 (los del formulario): con esa lista "San Nicolás" no era de CABA y la ficha
+ * de Lavalle 1144 no decía "CABA" en la dirección.
+ */
+const CABA_BARRIOS = [
+  "Agronomía", "Almagro", "Balvanera", "Barracas", "Belgrano", "Boedo", "Caballito",
+  "Chacarita", "Coghlan", "Colegiales", "Constitución", "Flores", "Floresta", "La Boca",
+  "La Paternal", "Liniers", "Mataderos", "Monte Castro", "Monserrat", "Nueva Pompeya",
+  "Núñez", "Palermo", "Parque Avellaneda", "Parque Chacabuco", "Parque Chas",
+  "Parque Patricios", "Puerto Madero", "Recoleta", "Retiro", "Saavedra", "San Cristóbal",
+  "San Nicolás", "San Telmo", "Vélez Sarsfield", "Versalles", "Villa Crespo",
+  "Villa del Parque", "Villa Devoto", "Villa General Mitre", "Villa Lugano", "Villa Luro",
+  "Villa Ortúzar", "Villa Pueyrredón", "Villa Real", "Villa Riachuelo", "Villa Santa Rita",
+  "Villa Soldati", "Villa Urquiza",
+  // Formas comunes.
+  "Montserrat", "Boca", "Paternal", "Pompeya", "Barrio Norte",
+]
+
 const CABA_BARRIO_FOLDS = new Set(
-  NEIGHBORHOODS.filter((name) => name !== "Otro").map((name) => fold(name))
+  [...CABA_BARRIOS, ...NEIGHBORHOODS.filter((name) => name !== "Otro")].map((name) => fold(name))
 )
 
 const POSTAL_RE = /^[a-z]?\d{4}[a-z]{0,3}$/i
@@ -65,6 +84,9 @@ export function isCabaBarrio(name?: string | null): boolean {
 
 export function coordsInCaba(lat?: number | null, lng?: number | null): boolean | null {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  // (0, 0) es "sin ubicación" (un pin que no se cargó), no un lugar fuera de CABA:
+  // antes borraba el barrio de la dirección ("Avenida de Mayo 1271, C1085").
+  if (lat === 0 && lng === 0) return null
   return (
     (lng as number) >= CABA_BOUNDS.west &&
     (lng as number) <= CABA_BOUNDS.east &&
@@ -203,6 +225,28 @@ export function getCanonicalPlaceArea(place: PlaceLocationFields): string {
   return ""
 }
 
+/**
+ * Barrio y ciudad para el subtítulo de la ficha: "San Nicolás, CABA",
+ * "Valeria del Mar, Pinamar", "Centro, Córdoba" o solo "Tandil". Siempre dice dónde
+ * está, aunque el barrio falte (revisión 23/10). Vacío solo si no hay ningún dato.
+ */
+export function formatPlaceAreaLine(place: PlaceLocationFields): string {
+  const area = getCanonicalPlaceArea(place)
+  const inCaba = coordsInCaba(place.location?.lat, place.location?.lng)
+  const isCaba =
+    inCaba !== false &&
+    (place.province === "caba" || isCabaLocality(place.locality) || (Boolean(area) && isCabaBarrio(area)))
+  const locality = localityDisplay(place.locality)
+  const city = isCaba ? "CABA" : locality && !isCabaLocality(place.locality) ? locality : ""
+  if (area && city) {
+    const a = fold(area)
+    const c = fold(city)
+    if (a === c || a.includes(c)) return area
+    return `${area}, ${city}`
+  }
+  return area || city || provinceLabel(place)
+}
+
 export function formatShortPlaceAddress(place: PlaceLocationFields): string {
   const area = getCanonicalPlaceArea(place)
   const { street } = parsePlaceAddress(place.addressText || place.address || "")
@@ -236,6 +280,11 @@ export function formatFullPlaceAddress(place: PlaceLocationFields): string {
     } else if (provinceFold !== areaFold) {
       chunks.push(province)
     }
+  }
+
+  // Sin provincia cargada pero con un barrio de CABA (y sin pin que diga lo contrario).
+  if (!province && area && isCabaBarrio(area) && coordsInCaba(place.location?.lat, place.location?.lng) !== false) {
+    chunks.push("CABA")
   }
 
   return chunks.join(", ")
