@@ -12,7 +12,7 @@ export const FAQ_ITEMS = [
   {
     question: "¿Hay un mapa para celíacos en Argentina?",
     answer:
-      "Sí. CeliMap tiene un mapa interactivo para buscar por ciudad, barrio o tu ubicación. Hay cobertura en Buenos Aires, La Plata, Córdoba, Rosario, San Miguel de Tucumán y otras ciudades, según lo que la comunidad fue sumando.\n\nCada ficha puede incluir dirección, clasificación (100% sin gluten u opciones sin TACC), fotos, reseñas y datos de contacto cuando están cargados.\n\nLa cobertura no es uniforme: hay barrios con muchos lugares y otros con pocos. Si conocés uno que falta, podés sugerirlo.",
+      "Sí. CeliMap tiene un mapa interactivo para buscar por ciudad, barrio o tu ubicación. Hay cobertura en Buenos Aires, La Plata, Córdoba, Rosario, San Miguel de Tucumán y otras ciudades, según lo que la comunidad fue sumando.\n\nCada ficha puede incluir dirección, clasificación (100% sin TACC u opciones sin TACC), fotos, reseñas y datos de contacto cuando están cargados.\n\nLa cobertura no es uniforme: hay barrios con muchos lugares y otros con pocos. Si conocés uno que falta, podés sugerirlo.",
   },
   {
     question: "¿Dónde comer sin gluten?",
@@ -25,9 +25,9 @@ export const FAQ_ITEMS = [
       "No. CeliMap no certifica locales, no audita cocinas y no garantiza que un lugar sea seguro para todas las personas celíacas.\n\nLa información puede venir de aportes de la comunidad, de datos cargados en el mapa y, cuando existe, de reseñas o calificaciones públicas. Usala como guía para orientar la búsqueda, no como un sello de seguridad.\n\nAntes de comer, confirmá en el local los protocolos, los ingredientes y el riesgo de contaminación cruzada. Si algo no te cierra, no comas ahí.",
   },
   {
-    question: "¿Qué diferencia hay entre 100% sin gluten y opciones sin TACC?",
+    question: "¿Qué diferencia hay entre 100% sin TACC y opciones sin TACC?",
     answer:
-      "“100% sin gluten” en CeliMap indica que el lugar figura como dedicado o con señales de menú o cocina orientada por completo a sin gluten, según la información cargada. No es una certificación médica ni una auditoría hecha por CeliMap.\n\n“Opciones sin TACC” significa que el lugar también trabaja gluten: puede tener platos o productos aptos, pero el resto del menú no lo es. El riesgo de contaminación cruzada suele ser distinto.\n\nEn ambos casos preguntá cómo preparan la comida el día que vas. La etiqueta del mapa es un punto de partida.",
+      "“100% sin TACC” en CeliMap indica que el lugar figura como dedicado o con señales de menú o cocina orientada por completo a sin gluten, según la información cargada. No es una certificación médica ni una auditoría hecha por CeliMap.\n\n“Opciones sin TACC” significa que el lugar también trabaja gluten: puede tener platos o productos aptos, pero el resto del menú no lo es. El riesgo de contaminación cruzada suele ser distinto.\n\nEn ambos casos preguntá cómo preparan la comida el día que vas. La etiqueta del mapa es un punto de partida.",
   },
   {
     question: "¿CeliMap es gratis? ¿Necesito una cuenta?",
@@ -99,7 +99,7 @@ export function FaqSection() {
   return (
     <section className={homeSection} aria-labelledby="faq-heading">
       <div className="container mx-auto max-w-5xl px-0">
-        <HomeSectionHeader id="faq-heading" title="Preguntas frecuentes" />
+        <HomeSectionHeader id="faq-heading" kicker="lo que más nos preguntan" title="Preguntas frecuentes" />
         <div className="flex max-w-3xl flex-col gap-3">
           {FAQ_ITEMS.map((item) => (
             <FaqItem key={item.question} item={item} />

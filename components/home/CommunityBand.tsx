@@ -27,7 +27,9 @@ function line(raw: number | undefined, label: string, google?: boolean) {
 export function CommunityBand({ stats, children }: { stats?: StatsApi | null; children?: ReactNode }) {
   const metrics = [
     line(stats?.placesCount, "lugares"),
-    line(stats?.reviewsCountGoogle ?? stats?.reviewsCount, "reseñas", true),
+    // Es la suma de reseñas de Google de los lugares (las de CeliMap todavía son pocas):
+    // "reseñas" a secas daba a entender que eran de la comunidad (revisión 23/10).
+    line(stats?.reviewsCountGoogle ?? stats?.reviewsCount, "reseñas en Google", true),
   ].filter(Boolean) as Array<{ value: string; label: string }>
 
   return (

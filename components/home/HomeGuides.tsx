@@ -17,6 +17,7 @@ export function HomeGuides() {
       <div className="container mx-auto max-w-5xl px-0">
         <HomeSectionHeader
           id="home-guides-heading"
+          kicker="para leer antes de salir"
           title="Guías para celíacos"
           action={
             <Link

@@ -11,7 +11,7 @@ const STEPS = [
   {
     n: "02",
     title: "Revisá el nivel de seguridad",
-    body: "Mirá si es 100% sin gluten o con opciones.",
+    body: "Mirá si es 100% sin TACC o con opciones.",
   },
   {
     n: "03",

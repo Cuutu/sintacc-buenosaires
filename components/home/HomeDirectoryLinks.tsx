@@ -48,6 +48,7 @@ export function HomeDirectoryLinks({ cityCounts = {} }: { cityCounts?: Record<st
       <div className="container mx-auto max-w-5xl px-0">
         <HomeSectionHeader
           id="directory-heading"
+          kicker="cerca de casa o de viaje"
           title="Explorá por tipo y ciudad"
           description="Restaurantes, bares, panaderías y más, en las ciudades con más opciones sin TACC."
           className="mb-0 md:mb-0"
