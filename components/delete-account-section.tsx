@@ -124,7 +124,7 @@ export function DeleteAccountSection({ needsAppleReauth }: Props) {
     <section className="mt-8" aria-labelledby="delete-account-heading">
       <h2
         id="delete-account-heading"
-        className="text-lg font-semibold text-foreground mb-2"
+        className="mb-2 text-xl font-extrabold tracking-[-0.02em] text-[#2D4A34]"
       >
         Eliminar cuenta
       </h2>
@@ -135,7 +135,9 @@ export function DeleteAccountSection({ needsAppleReauth }: Props) {
       <Button
         type="button"
         variant="outline"
-        className="w-full h-12 min-h-[44px] justify-start gap-3 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        // Ancho del texto, no de la pantalla: a la derecha, en el celular, pasa el botón de
+        // CeliBot (fijo abajo a la derecha) y tapaba "Eliminar mi cuenta" al scrollear.
+        className="h-12 min-h-[44px] gap-3 px-5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={() => {
           setOpen(true)
           setError(null)
