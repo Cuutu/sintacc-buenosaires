@@ -145,3 +145,22 @@ describe("T2 missing place intacta", () => {
     expect(String(missingPlaceMetadata.title)).not.toContain("| CeliMap")
   })
 })
+
+describe("place metadata: imagen para compartir", () => {
+  const original = "https://res.cloudinary.com/demo/image/upload/v1712345678/places/abc123.jpg"
+
+  it("OG y Twitter usan la foto achicada a 1200×630 en JPG, nunca el original", () => {
+    const meta = buildPlaceMetadata({ ...dedicatedCafe, photos: [original] })
+    const og = (meta.openGraph?.images as { url: string }[])[0].url
+    expect(og).toBe(
+      "https://res.cloudinary.com/demo/image/upload/c_fill,g_auto,w_1200,h_630,f_jpg,q_auto/v1712345678/places/abc123.jpg"
+    )
+    expect(meta.twitter?.images).toEqual([og])
+  })
+
+  it("fotos que no son de Cloudinary quedan como están", () => {
+    const google = "https://lh3.googleusercontent.com/p/xyz"
+    const meta = buildPlaceMetadata({ ...dedicatedCafe, photos: [google] })
+    expect((meta.openGraph?.images as { url: string }[])[0].url).toBe(google)
+  })
+})

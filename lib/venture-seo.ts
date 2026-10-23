@@ -6,6 +6,7 @@ import {
   getModalityLabels,
 } from "@/lib/venture-constants"
 import { getBaseUrl } from "@/lib/base-url"
+import { getPlaceImageUrl } from "@/lib/place-image"
 
 export const VENTURE_DEFAULT_OG_IMAGE = "/og.png"
 
@@ -281,7 +282,7 @@ export function buildVentureMetadata(input: {
     input.zone,
     input.modalities
   )
-  const ogImage = input.photo || `${base}${VENTURE_DEFAULT_OG_IMAGE}`
+  const ogImage = getPlaceImageUrl(input.photo, "og") || `${base}${VENTURE_DEFAULT_OG_IMAGE}`
 
   return {
     title,

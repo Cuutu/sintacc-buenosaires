@@ -7,6 +7,7 @@ import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { getMapsLink, getPublicWebsite } from "@/lib/place-website"
 import { toOpeningHoursSpecification } from "@/lib/opening-hours"
 import { serializeJsonLd } from "@/lib/seo/json-ld"
+import { getPlaceImageUrl } from "@/lib/place-image"
 
 /**
  * JSON-LD LocalBusiness schema para páginas de lugar individual.
@@ -57,7 +58,7 @@ interface PlaceJsonLdProps {
 
 export function PlaceJsonLd({ place }: PlaceJsonLdProps) {
   const placeUrl = `${BASE_URL}${getPlacePath(place)}`
-  const imageUrl = place.photos?.[0] ? place.photos[0] : `${BASE_URL}/CelimapLOGO.png`
+  const imageUrl = getPlaceImageUrl(place.photos?.[0], "large") || `${BASE_URL}/CelimapLOGO.png`
   const typeLabel = TYPE_LABELS[place.type] || "Local"
   const schemaType = SCHEMA_TYPES[place.type] || "LocalBusiness"
   // Un link de Maps en "Sitio web" no es la web del local: va como hasMap, no en sameAs.
