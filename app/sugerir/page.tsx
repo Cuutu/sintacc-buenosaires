@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -49,7 +48,7 @@ interface FormData {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function SugerirPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
 
   const [step, setStep] = useState<Step>(0)
@@ -215,17 +214,15 @@ export default function SugerirPage() {
 
   // ─── Guard: sin sesión ───────────────────────────────────────────────────────
 
+  if (status === "loading") {
+    return <div className="h-40 animate-pulse rounded-xl bg-[#2D4A34]/5" aria-busy aria-label="Cargando" />
+  }
+
   if (!session) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md">
-        <Card>
-          <CardContent className="py-10 text-center space-y-4">
-            <p className="text-muted-foreground">
-              Iniciá sesión para sugerir un lugar
-            </p>
-            <Button onClick={() => router.push("/login?callbackUrl=%2Fsugerir")}>Iniciar sesión</Button>
-          </CardContent>
-        </Card>
+      <div className="py-6 text-center space-y-4">
+        <p className="text-muted-foreground">Iniciá sesión para sugerir un lugar</p>
+        <Button onClick={() => router.push("/login?callbackUrl=%2Fsugerir")}>Iniciar sesión</Button>
       </div>
     )
   }
@@ -234,10 +231,9 @@ export default function SugerirPage() {
 
   if (step === 2) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md">
+      <div>
         <ProgressBar />
-        <Card>
-          <CardContent className="py-12 flex flex-col items-center text-center gap-4">
+        <div className="py-6 flex flex-col items-center text-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
@@ -270,8 +266,7 @@ export default function SugerirPage() {
                 Sugerir otro
               </Button>
             </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     )
   }
@@ -280,20 +275,12 @@ export default function SugerirPage() {
 
   if (step === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-lg">
-        <button
-          onClick={() => router.push("/mapa")}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al mapa
-        </button>
-
+      <div>
         <ProgressBar />
 
-        <h1 className="text-2xl font-bold mb-1">Sugerir un lugar</h1>
+        <h2 className="text-xl font-extrabold text-[#2D4A34] mb-1">¿Qué info tenés?</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          ¿Qué info tenés del lugar? Elegí según lo que sabés.
+          Elegí según lo que sabés del lugar.
         </p>
 
         <div className="grid gap-3">
@@ -369,7 +356,7 @@ export default function SugerirPage() {
 
   if (step === 1 && mode === "quick") {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-lg">
+      <div>
         <button
           onClick={() => { setStep(0); setError("") }}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -380,7 +367,7 @@ export default function SugerirPage() {
 
         <ProgressBar />
 
-        <h1 className="text-2xl font-bold mb-1">Pegá el link</h1>
+        <h2 className="text-xl font-extrabold text-[#2D4A34] mb-1">Pegá el link</h2>
         <p className="text-muted-foreground text-sm mb-6">
           Nos encargamos de completar el resto cuando lo revisemos.
         </p>
@@ -470,7 +457,7 @@ export default function SugerirPage() {
   // ─── Step 1B: Modo completo ──────────────────────────────────────────────────
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-lg">
+    <div>
       <button
         onClick={() => { setStep(0); setError("") }}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -481,7 +468,7 @@ export default function SugerirPage() {
 
       <ProgressBar />
 
-      <h1 className="text-2xl font-bold mb-1">Datos del lugar</h1>
+      <h2 className="text-xl font-extrabold text-[#2D4A34] mb-1">Datos del lugar</h2>
       <p className="text-muted-foreground text-sm mb-6">
         Los campos opcionales los podés completar o dejar vacíos — los revisamos antes de publicar.
       </p>

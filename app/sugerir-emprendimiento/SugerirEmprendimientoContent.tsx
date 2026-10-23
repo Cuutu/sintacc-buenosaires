@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,12 +18,12 @@ import {
 import type { VentureModalityId, VentureSafetyLevelId } from "@/lib/venture-constants"
 import type { VentureCategoryId } from "@/lib/venture-constants"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, CheckCircle2, AlertCircle, Info } from "lucide-react"
+import { CheckCircle2, AlertCircle, Info } from "lucide-react"
 
 const VALID_CATEGORY_IDS = new Set<string>(ventureCategoryIds)
 
 export default function SugerirEmprendimientoContent() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [submitted, setSubmitted] = useState(false)
@@ -110,26 +109,26 @@ export default function SugerirEmprendimientoContent() {
     }
   }
 
+  if (status === "loading") {
+    return <div className="h-40 animate-pulse rounded-xl bg-[#2D4A34]/5" aria-busy aria-label="Cargando" />
+  }
+
   if (!session) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md">
-        <Card>
-          <CardContent className="py-10 text-center space-y-4">
-            <p className="text-muted-foreground">Iniciá sesión para sugerir un emprendimiento</p>
-            <Button onClick={() => router.push("/login?callbackUrl=/sugerir-emprendimiento")}>
-              Iniciar sesión
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="py-6 text-center space-y-4">
+        <p className="text-muted-foreground">Iniciá sesión para sugerir un emprendimiento</p>
+        <Button onClick={() => router.push("/login?callbackUrl=/sugerir-emprendimiento")}>
+          Iniciar sesión
+        </Button>
       </div>
     )
   }
 
   if (submitted) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md text-center">
+      <div className="py-6 text-center">
         <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">¡Gracias por sumar!</h1>
+        <h2 className="text-xl font-extrabold text-[#2D4A34] mb-2">¡Gracias por sumar!</h2>
         <p className="text-muted-foreground mb-8 text-sm">
           Revisamos cada sugerencia antes de publicarla. Te avisamos por email cuando esté online.
         </p>
@@ -146,21 +145,7 @@ export default function SugerirEmprendimientoContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-xl">
-      <Link
-        href="/emprendimientos"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver
-      </Link>
-
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">
-        ¿Conocés un emprendimiento sin gluten?
-      </h1>
-      <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-        Ayudanos a sumar marcas y proyectos que le hacen la vida más fácil a la comunidad celíaca.
-      </p>
+    <div>
 
       <div className="flex gap-2 p-4 rounded-xl border border-olive/10 bg-white/[0.02] text-sm text-muted-foreground mb-8">
         <Info className="h-5 w-5 shrink-0 text-primary/80" />

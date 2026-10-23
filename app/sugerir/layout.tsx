@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getBaseUrl } from "@/lib/base-url";
+import { SuggestPageShell } from "@/components/forms/SuggestPageShell";
 
 const BASE_URL = getBaseUrl();
 
@@ -21,5 +22,13 @@ export default function SugerirLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <SuggestPageShell
+      kicker="sumá un lugar al mapa"
+      title="Sugerir un lugar"
+      intro="Lo revisamos antes de publicarlo. Con el link alcanza: el resto lo completamos nosotros."
+    >
+      {children}
+    </SuggestPageShell>
+  );
 }

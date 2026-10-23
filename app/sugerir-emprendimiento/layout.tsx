@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { SuggestPageShell } from "@/components/forms/SuggestPageShell"
 
 export const metadata: Metadata = {
   title: "Sugerir emprendimiento sin gluten",
@@ -12,5 +13,13 @@ export default function SugerirEmprendimientoLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <SuggestPageShell
+      kicker="sumá un emprendimiento"
+      title="¿Conocés un emprendimiento sin gluten?"
+      intro="Ayudanos a sumar marcas y proyectos que le hacen la vida más fácil a la comunidad celíaca."
+    >
+      {children}
+    </SuggestPageShell>
+  )
 }
