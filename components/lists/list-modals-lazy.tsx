@@ -14,6 +14,11 @@ export function preloadCreateListModal(): void {
   void loadCreateListModal().catch(() => undefined)
 }
 
+/** Lo mismo para "Gestionar". */
+export function preloadManageListModal(): void {
+  void loadManageListModal().catch(() => undefined)
+}
+
 const CreateListModalInner = dynamic(() => loadCreateListModal().then((m) => m.CreateListModal), { ssr: false })
 const ManageListModalInner = dynamic(() => loadManageListModal().then((m) => m.ManageListModal), { ssr: false })
 
