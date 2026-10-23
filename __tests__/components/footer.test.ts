@@ -14,7 +14,8 @@ describe("footer CeliMap", () => {
     expect(src).toContain("texture-wheat-watermark.svg")
     expect(src).toContain("opacity-[0.09]")
     expect(src).toContain("<FooterCta />")
-    expect(src).toContain("pb-[var(--bottom-nav-clearance)]")
+    // Reserva la barra de abajo y el botón de CeliBot (así no tapa "Aviso legal").
+    expect(src).toContain("pb-[calc(var(--bottom-nav-clearance)+4.5rem)] md:pb-0")
     // Mismo ancho que la barra de arriba.
     expect(src).toContain("max-w-5xl")
 

@@ -347,3 +347,10 @@
 html[data-onboarding="open"] .celimap-chat-dock {
   display: none;
 }
+
+/* Con un modal de Radix abierto (Crear/Gestionar lista, confirmaciones, menús), Radix
+   marca <body data-scroll-locked>. El botón (z-90) quedaba encima del modal (z-50) y
+   tapaba los campos y las opciones de visibilidad en el celular. */
+body[data-scroll-locked] .celimap-chat-dock {
+  display: none;
+}

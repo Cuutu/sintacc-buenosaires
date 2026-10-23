@@ -94,7 +94,7 @@ describe("catálogo /emprendimientos", () => {
     // El lugar de la barra de abajo lo reserva el footer (que sigue a la página);
     // sumarlo también acá dejaba un hueco vacío antes del pie.
     expect(src).not.toContain("pb-[calc(var(--bottom-nav-clearance)")
-    expect(read("components/footer.tsx")).toContain("pb-[var(--bottom-nav-clearance)]")
+    expect(read("components/footer.tsx")).toContain("pb-[calc(var(--bottom-nav-clearance)+4.5rem)]")
     expect(src).toContain("VENTURE_CATALOG_INTRO")
     expect(read("lib/ventures-server.ts")).toContain("dedicatedVentureMongoFilter")
     expect(read("app/api/ventures/route.ts")).toContain("dedicatedVentureMongoFilter")

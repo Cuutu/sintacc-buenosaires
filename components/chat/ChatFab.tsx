@@ -31,7 +31,7 @@ export function ChatFab({
       aria-label={open ? "Cerrar CeliBot" : "Abrir CeliBot"}
       aria-expanded={open}
       className={cn(
-        "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] md:h-16 md:w-16 transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
+        "relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full shadow-[0_4px_14px_rgba(31,77,53,0.28)] md:h-16 md:w-16 transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B64320] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EB]",
         open ? "bg-[#1F4D35] text-white" : "bg-[#F7F3EB]"
       )}
     >

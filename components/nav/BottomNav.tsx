@@ -138,7 +138,9 @@ export function BottomNav() {
             ? isExplorarActive
             : (!isMapHomeAction && (hrefStr === "/" ? pathname === "/" : pathname === hrefStr)) ||
               (hrefStr !== "/mapa" && hrefStr !== "/" && pathname.startsWith(hrefStr)) ||
-              (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle)
+              (hrefStr === "/mapa" && pathname === "/mapa" && !isListToggle) ||
+              // Las listas viven en Guardados: en /listas y /listas/* se marca esa pestaña.
+              (hrefStr === "/favoritos" && (pathname === "/listas" || pathname.startsWith("/listas/")))
 
           if (isListToggle) {
             if (isOnMap) {

@@ -95,7 +95,9 @@ export function Footer() {
   return (
     <div className="mt-auto">
       <FooterCta />
-      <footer className="relative overflow-hidden bg-[#234A33] pb-[var(--bottom-nav-clearance)] md:pb-0">
+      {/* Abajo, además de la barra, el lugar del botón de CeliBot (48 px + aire): al final
+          de la página no tapa "Aviso legal". */}
+      <footer className="relative overflow-hidden bg-[#234A33] pb-[calc(var(--bottom-nav-clearance)+4.5rem)] md:pb-0">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.09]"

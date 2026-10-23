@@ -278,7 +278,8 @@ export function ChatWidget() {
           </div>
         ) : null}
         <div
-          className={cn("relative h-16 w-16", fabEnter && !open && "celimap-fab-enter")}
+          // En el celular, 48 px: con 64 tapaba "Ver en mapa", la franja naranja y "Aviso legal".
+          className={cn("relative h-12 w-12 md:h-16 md:w-16", fabEnter && !open && "celimap-fab-enter")}
           onAnimationEnd={(event) => {
             if (event.animationName === "celimap-fab-bounce") setFabEnter(false)
           }}
