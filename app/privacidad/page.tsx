@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
 import { OG_IMAGE } from "@/lib/seo/og"
+import { EditorialArticle } from "@/components/seo/EditorialArticle"
 
+// Según el entorno (getBaseUrl): www.celimap.com.ar en producción, prueba en prueba.
 const BASE_URL = getBaseUrl()
+const SITE_HOST = BASE_URL.replace(/^https?:\/\//, "")
 const UPDATED_AT = "7 de septiembre de 2026"
 const CONTACT_MAIL = "contacto@celimap.com.ar"
 
@@ -33,7 +35,7 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
         <p>
           CeliMap (“nosotros”) opera el sitio{" "}
           <a href={BASE_URL} className="text-primary hover:underline">
-            {BASE_URL}
+            {SITE_HOST}
           </a>{" "}
           y la aplicación móvil CeliMap (iOS / Android), que muestra el mismo
           contenido web.
@@ -265,39 +267,22 @@ const sections: Array<{ id: string; title: string; body: ReactNode }> = [
 ]
 
 export default function PrivacidadPage() {
+  // Mismo diseño que las demás páginas informativas (revisión 23/10): migas, frase en
+  // cursiva, título grande y la columna de la derecha.
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12 md:py-16">
-      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
-        Legal
-      </p>
-      <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
-        Política de privacidad
-      </h1>
-      <p className="mb-10 text-sm text-muted-foreground">
-        Última actualización: {UPDATED_AT}
-      </p>
-
-      <div className="space-y-10 text-sm leading-7 text-muted-foreground md:text-[15px]">
-        {sections.map((section) => (
-          <section key={section.id} id={section.id} className="scroll-mt-24">
-            <h2 className="mb-3 text-lg font-semibold text-foreground">
-              {section.title}
-            </h2>
-            <div className="space-y-3">{section.body}</div>
-          </section>
-        ))}
-      </div>
-
-      <p className="mt-12 text-sm text-muted-foreground">
-        Volver al{" "}
-        <Link href="/" className="font-medium text-primary hover:underline">
-          inicio
-        </Link>{" "}
-        ·{" "}
-        <Link href="/que-es-celimap" className="font-medium text-primary hover:underline">
-          Qué es CeliMap
-        </Link>
-      </p>
-    </main>
+    <EditorialArticle
+      breadcrumbs={[{ label: "Política de privacidad" }]}
+      eyebrow="legal"
+      h1="Política de privacidad"
+      intro="Qué datos usa CeliMap, para qué, con quién se comparten y cómo borrar tu cuenta."
+      meta={<>Última actualización: {UPDATED_AT}</>}
+    >
+      {sections.map((section) => (
+        <section key={section.id} id={section.id} className="scroll-mt-24 space-y-4">
+          <h2>{section.title}</h2>
+          {section.body}
+        </section>
+      ))}
+    </EditorialArticle>
   )
 }
