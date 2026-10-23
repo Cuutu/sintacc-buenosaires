@@ -27,3 +27,18 @@ export function isAllowedAvatarUrl(src: string | null | undefined): boolean {
     return false
   }
 }
+
+/**
+ * Foto de Google al tamaño que se muestra (por defecto viene en 96 px; "=s64-c" la pide
+ * cuadrada de 64, 2x para el círculo de 32 px de la barra). Las demás URLs, iguales.
+ */
+export function avatarAtSize(src: string, size: number): string {
+  try {
+    const u = new URL(src)
+    if (!u.hostname.endsWith(".googleusercontent.com")) return src
+    const base = src.replace(/=[sw]\d+[^/]*$/, "")
+    return `${base}=s${size}-c`
+  } catch {
+    return src
+  }
+}

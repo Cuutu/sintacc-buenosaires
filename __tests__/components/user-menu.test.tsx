@@ -69,4 +69,24 @@ describe("UserMenu (barra de compu)", () => {
     act(() => logout.click())
     expect(mockSignOut).toHaveBeenCalledTimes(1)
   })
+
+  it("con foto de Google la muestra (64 px, sin referer); si no carga, vuelve la inicial", () => {
+    const { el } = mount({ image: "https://lh3.googleusercontent.com/a/ACg8ocAbc=s96-c" })
+    const img = el.querySelector('[data-testid="user-menu-photo"]') as HTMLImageElement
+    expect(img).toBeTruthy()
+    expect(img.getAttribute("src")).toBe("https://lh3.googleusercontent.com/a/ACg8ocAbc=s64-c")
+    expect(img.getAttribute("referrerpolicy")).toBe("no-referrer")
+    expect(img.getAttribute("alt")).toBe("")
+    act(() => {
+      img.dispatchEvent(new Event("error"))
+    })
+    expect(el.querySelector('[data-testid="user-menu-photo"]')).toBeNull()
+    expect(el.querySelector("button[aria-haspopup=menu]")?.textContent).toContain("F")
+  })
+
+  it("sin foto, o con una URL que no es de un host permitido: la inicial", () => {
+    const { el } = mount({ image: "https://evil.example.com/a.jpg" })
+    expect(el.querySelector("img")).toBeNull()
+    expect(el.querySelector("button[aria-haspopup=menu]")?.textContent).toContain("F")
+  })
 })

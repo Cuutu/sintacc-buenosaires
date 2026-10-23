@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { isAllowedAvatarUrl } from "@/lib/avatar-url"
+import { avatarAtSize, isAllowedAvatarUrl } from "@/lib/avatar-url"
 import { resolveBottomNavPerfilHref } from "@/lib/bottom-nav-perfil"
 import {
   isCelimapServiceWorkerScript,
@@ -73,5 +73,22 @@ describe("native SW helpers + contratos", () => {
     expect(cleanup).not.toContain("document.cookie")
     expect(cleanup).toContain('"reloading"')
     expect(cleanup).toContain('"done"')
+  })
+})
+
+describe("avatarAtSize", () => {
+  it("pide la foto de Google al tamaño justo", () => {
+    expect(avatarAtSize("https://lh3.googleusercontent.com/a/ACg8oc=s96-c", 64)).toBe(
+      "https://lh3.googleusercontent.com/a/ACg8oc=s64-c"
+    )
+    expect(avatarAtSize("https://lh3.googleusercontent.com/a/ACg8oc", 64)).toBe(
+      "https://lh3.googleusercontent.com/a/ACg8oc=s64-c"
+    )
+  })
+
+  it("las demás URLs no cambian", () => {
+    const cloud = "https://res.cloudinary.com/demo/image/upload/v1/a.jpg"
+    expect(avatarAtSize(cloud, 64)).toBe(cloud)
+    expect(avatarAtSize("no es url", 64)).toBe("no es url")
   })
 })

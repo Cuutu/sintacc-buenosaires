@@ -84,6 +84,7 @@ export function Navbar() {
             {session?.user?.id ? (
               <UserMenu
                 name={session.user.name}
+                image={session.user.image}
                 isAdmin={session.user.role === "admin"}
                 showFavorites={features.favorites}
                 compact={compact}

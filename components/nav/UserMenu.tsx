@@ -5,9 +5,12 @@ import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { ChevronDown, Heart, List, LogOut, Shield, UserRound } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { avatarAtSize, isAllowedAvatarUrl } from "@/lib/avatar-url"
 
 type UserMenuProps = {
   name?: string | null
+  /** Foto de la cuenta (la de Google). Sin foto, o si no carga, va la inicial. */
+  image?: string | null
   isAdmin: boolean
   showFavorites: boolean
   compact?: boolean
@@ -21,8 +24,12 @@ const itemClass =
  * "salir" eran íconos sueltos. Liviano a propósito (sin Radix): la barra está en
  * todas las páginas y suma al JS de cada una.
  */
-export function UserMenu({ name, isAdmin, showFavorites, compact }: UserMenuProps) {
+export function UserMenu({ name, image, isAdmin, showFavorites, compact }: UserMenuProps) {
   const [open, setOpen] = useState(false)
+  const [photoFailed, setPhotoFailed] = useState(false)
+  // Otra cuenta, otra foto: vuelve a probar.
+  useEffect(() => setPhotoFailed(false), [image])
+  const photo = !photoFailed && isAllowedAvatarUrl(image) ? avatarAtSize(image!.trim(), 64) : null
   const rootRef = useRef<HTMLDivElement>(null)
   const firstName = name?.trim().split(/\s+/)[0] || "Mi cuenta"
   const initial = firstName.charAt(0).toUpperCase()
@@ -57,12 +64,30 @@ export function UserMenu({ name, isAdmin, showFavorites, compact }: UserMenuProp
           compact ? "h-9" : "h-10"
         )}
       >
-        <span
-          aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2D4A34] text-sm font-extrabold text-[#F7F3EB]"
-        >
-          {initial}
-        </span>
+        {photo ? (
+          // <img> y no next/image: la barra está en todas las páginas y next/image suma JS.
+          // Google ya la sirve achicada (avatarAtSize); no-referrer porque a veces
+          // responde 403 si le llega el referer.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photo}
+            alt=""
+            width={32}
+            height={32}
+            referrerPolicy="no-referrer"
+            decoding="async"
+            onError={() => setPhotoFailed(true)}
+            className="h-8 w-8 shrink-0 rounded-full bg-[#2D4A34]/10 object-cover"
+            data-testid="user-menu-photo"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2D4A34] text-sm font-extrabold text-[#F7F3EB]"
+          >
+            {initial}
+          </span>
+        )}
         <span className="hidden max-w-[120px] truncate lg:inline">{firstName}</span>
         <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} aria-hidden />
       </button>
