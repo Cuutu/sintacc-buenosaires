@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { PlaceCard } from "@/components/place-card"
+import { RepeatedNamesProvider } from "@/components/places/BranchName"
 import type { PlaceSEO } from "@/lib/seo/places"
 import { placeSeoToCardPlace } from "@/lib/seo/place-for-card"
 import { CATEGORIES } from "@/lib/seo/cities"
@@ -40,6 +41,8 @@ export function PlaceListWithFilters({
             ? `${CATEGORIES.find((c) => c.slug === currentCategory)?.name ?? currentCategory} en ${cityName}`
             : `Lugares en ${cityName}`}
         </h2>
+        {/* Sucursales con el mismo nombre: el barrio al lado del nombre. */}
+        <RepeatedNamesProvider names={places.map((p) => p.name)}>
         <div className={cardVariant === "compact" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"}>
           {places.map((p, index) => (
             <PlaceCard
@@ -57,6 +60,7 @@ export function PlaceListWithFilters({
             />
           ))}
         </div>
+        </RepeatedNamesProvider>
       </section>
       {topNeighborhoods.length > 0 && (
         <section>

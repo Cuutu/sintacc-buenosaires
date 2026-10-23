@@ -1,5 +1,6 @@
 "use client"
 
+import { PlaceNameWithBranch } from "@/components/places/BranchName"
 import { memo, type ComponentType } from "react"
 import { PlaceImage } from "@/components/place-image"
 import { Coffee, MapPin, ShoppingBasket, Star, Store, Utensils } from "lucide-react"
@@ -102,7 +103,7 @@ export const PlaceMiniCard = memo(function PlaceMiniCard({
         </span>
         <span className="min-w-0 flex-1">
           <h3 className="line-clamp-2 font-serif text-[18px] font-medium italic leading-[1.1] tracking-[-0.015em] text-[#1F4D35]">
-            {place.name}
+            <PlaceNameWithBranch place={place} />
           </h3>
           {metaParts.length > 0 ? (
             <p className="mt-0.5 truncate text-[12.5px] font-medium text-[#5F6B63]">

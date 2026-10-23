@@ -1,5 +1,6 @@
 "use client"
 
+import { PlaceNameWithBranch } from "@/components/places/BranchName"
 import * as React from "react"
 import { PlaceImage } from "@/components/place-image"
 import Link from "next/link"
@@ -392,7 +393,7 @@ export function MobileMapBottomSheet({
               )}
               style={{ color: coverInk }}
             >
-              {place.name}
+              <PlaceNameWithBranch place={place} />
             </h2>
           </div>
 

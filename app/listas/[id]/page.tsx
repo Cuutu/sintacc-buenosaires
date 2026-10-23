@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
+import { RepeatedNamesProvider } from "@/components/places/BranchName"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { CalendarDays, Copy, Globe, Heart, Link2, Lock, MapPin, Settings2, User } from "lucide-react"
@@ -245,13 +246,15 @@ export default function ListaDetailPage() {
         </div>
       ) : (
         // Tres columnas como máximo: con cuatro, "Ver en mapa" se partía.
-        <ul className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {places.map((place) => (
-            <li key={place._id.toString()}>
-              <SavedPlaceCard place={place} />
-            </li>
-          ))}
-        </ul>
+        <RepeatedNamesProvider names={places.map((place) => place.name)}>
+          <ul className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {places.map((place) => (
+              <li key={place._id.toString()}>
+                <SavedPlaceCard place={place} />
+              </li>
+            ))}
+          </ul>
+        </RepeatedNamesProvider>
       )}
 
       {isOwner ? (

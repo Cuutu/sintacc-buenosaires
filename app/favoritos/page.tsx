@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { SavedPlaceCard } from "@/components/lists/SavedPlaceCard"
+import { RepeatedNamesProvider } from "@/components/places/BranchName"
 import { listsPill, listsUi } from "@/components/lists/lists-ui"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -349,6 +350,7 @@ export default function FavoritosPage() {
         </TabsList>
 
         <TabsContent value="favoritos" className="mt-0">
+          <RepeatedNamesProvider names={favorites.map((place) => place.name)}>
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -384,6 +386,7 @@ export default function FavoritosPage() {
               </ul>
             </>
           )}
+          </RepeatedNamesProvider>
         </TabsContent>
 
         <TabsContent value="listas" className="mt-0 space-y-5">

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { PlaceImage } from "@/components/place-image"
+import { PlaceNameWithBranch } from "@/components/places/BranchName"
 import { Check, Star } from "lucide-react"
 import { IPlace } from "@/models/Place"
 import { getPlacePath } from "@/lib/place-url"
@@ -102,7 +103,7 @@ export function PlaceCard({
       </div>
       <div className="min-w-0 flex-1 py-0.5 pr-1">
         <h3 className="line-clamp-2 font-serif text-[19px] font-medium italic leading-[1.1] tracking-[-0.015em] text-[#2D4A34]">
-          {place.name}
+          <PlaceNameWithBranch place={place} />
         </h3>
         <p className="mt-1 truncate text-[13px] font-bold text-[#5E6A60]">{meta || "Lugar"}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -185,7 +186,7 @@ export function PlaceCard({
           )}
           style={{ color: coverInk }}
         >
-          {place.name}
+          <PlaceNameWithBranch place={place} />
         </h3>
       </div>
 

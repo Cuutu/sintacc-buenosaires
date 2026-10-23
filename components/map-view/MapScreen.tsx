@@ -7,6 +7,7 @@ import type { MapFilters } from "./MapTopBar"
 import type { MapViewportBounds } from "./MapboxMap"
 import type { IPlace } from "@/models/Place"
 import type { MapSearchPin } from "@/lib/map-address-search"
+import { RepeatedNamesProvider } from "@/components/places/BranchName"
 
 interface MapScreenProps {
   places: IPlace[]
@@ -54,6 +55,8 @@ export function MapScreen({
 }: MapScreenProps) {
   const isMobile = useIsMobile()
   const variant = resolveMapVariant(isMobile)
+  // Sucursales con el mismo nombre: el barrio va al lado del nombre (lista, tarjeta, popover).
+  const names = places.map((place) => place.name)
 
   // Una sola variante: loading | mobile | desktop — nunca Desktop+Mobile juntos
   if (variant === "loading") {
@@ -71,8 +74,38 @@ export function MapScreen({
 
   if (variant === "mobile") {
     return (
-      <div className="h-full w-full" data-map-variant="mobile">
-        <MapMobile
+      <RepeatedNamesProvider names={names}>
+        <div className="h-full w-full" data-map-variant="mobile">
+          <MapMobile
+            places={places}
+            loading={loading}
+            loadError={loadError}
+            onRetryLoad={onRetryLoad}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onSearchChange={onSearchChange}
+            searchQuery={searchQuery}
+            searchPin={searchPin}
+            selectedPlaceId={selectedPlaceId}
+            onPlaceSelect={onPlaceSelect}
+            onPlaceDeselect={onPlaceDeselect}
+            initialCenter={initialCenter}
+            initialZoom={initialZoom}
+            placeIdToFocus={placeIdToFocus}
+            listOpen={listOpen}
+            onSheetCollapse={onSheetCollapse}
+            onListOpen={onListOpen}
+            onMapMoveEnd={onMapMoveEnd}
+          />
+        </div>
+      </RepeatedNamesProvider>
+    )
+  }
+
+  return (
+    <RepeatedNamesProvider names={names}>
+      <div className="h-full w-full" data-map-variant="desktop">
+        <MapDesktop
           places={places}
           loading={loading}
           loadError={loadError}
@@ -87,35 +120,9 @@ export function MapScreen({
           onPlaceDeselect={onPlaceDeselect}
           initialCenter={initialCenter}
           initialZoom={initialZoom}
-          placeIdToFocus={placeIdToFocus}
-          listOpen={listOpen}
-          onSheetCollapse={onSheetCollapse}
-          onListOpen={onListOpen}
           onMapMoveEnd={onMapMoveEnd}
         />
       </div>
-    )
-  }
-
-  return (
-    <div className="h-full w-full" data-map-variant="desktop">
-      <MapDesktop
-        places={places}
-        loading={loading}
-        loadError={loadError}
-        onRetryLoad={onRetryLoad}
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        onSearchChange={onSearchChange}
-        searchQuery={searchQuery}
-        searchPin={searchPin}
-        selectedPlaceId={selectedPlaceId}
-        onPlaceSelect={onPlaceSelect}
-        onPlaceDeselect={onPlaceDeselect}
-        initialCenter={initialCenter}
-        initialZoom={initialZoom}
-        onMapMoveEnd={onMapMoveEnd}
-      />
-    </div>
+    </RepeatedNamesProvider>
   )
 }
