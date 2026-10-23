@@ -25,10 +25,14 @@ export function argentinaPlaceMongoFilter(): { province: { $in: string[] } } {
 }
 
 /** Query del hub nacional: approved + type/types + province ∈ PROVINCES (AR). */
+/**
+ * Páginas nacionales por tipo: solo el tipo principal (`type`). Con `types` entraban
+ * lugares de otra categoría que además tenían esa (una tienda en Restaurantes).
+ */
 export function buildNationalCategoryMongoQuery(type: string) {
   return {
     status: "approved" as const,
-    $or: [{ type }, { types: type }],
+    type,
     ...argentinaPlaceMongoFilter(),
   }
 }

@@ -34,7 +34,8 @@ function matchesNationalHub(
   type: string
 ): boolean {
   const query = buildNationalCategoryMongoQuery(type)
-  const typeOk = place.type === type || Boolean(place.types?.includes(type))
+  // Solo el tipo principal (revisión 23/10): `types` ya no alcanza para entrar.
+  const typeOk = place.type === query.type
   const provinceOk =
     typeof place.province === "string" && query.province.$in.includes(place.province)
   return place.status === query.status && typeOk && provinceOk
@@ -68,7 +69,8 @@ describe("getPlacesByCategory query (hub nacional)", () => {
   it("buildNationalCategoryMongoQuery filtra province ∈ AR, no Brasil", () => {
     const query = buildNationalCategoryMongoQuery("restaurant")
     expect(query.status).toBe("approved")
-    expect(query.$or).toEqual([{ type: "restaurant" }, { types: "restaurant" }])
+    expect(query.type).toBe("restaurant")
+    expect(query).not.toHaveProperty("$or")
     expect(query.province.$in).toContain("caba")
     expect(query.province.$in).toContain("buenos-aires")
     expect(query.province.$in).not.toContain("rio-de-janeiro")
@@ -99,6 +101,9 @@ describe("getPlacesByCategory query (hub nacional)", () => {
     expect(matchesNationalHub(buzios, "restaurant")).toBe(false)
     expect(matchesNationalHub(salvador, "restaurant")).toBe(false)
     expect(matchesNationalHub(caba, "restaurant")).toBe(true)
+    // Una tienda que además figura como restaurante no entra en Restaurantes.
+    const tienda = makePlace({ _id: "ar-2", type: "store", types: ["store", "restaurant"], province: "caba" })
+    expect(matchesNationalHub(tienda, "restaurant")).toBe(false)
     expect(isArgentinaPlace(buzios)).toBe(false)
     expect(isArgentinaPlace(caba)).toBe(true)
   })
@@ -109,8 +114,9 @@ describe("getPlacesByCategory query (hub nacional)", () => {
     const fn = src.slice(src.indexOf("export async function getPlacesByCategory"))
     const body = fn.slice(0, fn.indexOf("export async function getPlacesByCategoryAndCity"))
     expect(body).toContain("buildNationalCategoryMongoQuery(type)")
-    expect(body).toContain("findDedicatedFirst(query, skip, PER_PAGE)")
-    expect(body).toContain("Place.countDocuments(query)")
+    // El puntaje se calcula con una proyección liviana sobre la misma consulta AR.
+    expect(body).toContain("Place.find(query, QUALITY_PROJECTION)")
+    expect(body).toContain("sortByPlaceQuality(")
   })
 })
 

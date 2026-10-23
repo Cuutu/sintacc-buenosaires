@@ -16,6 +16,7 @@ import { buildNationalCategoryMongoQuery } from "./argentina-place"
 import { inferSafetyLevel } from "@/components/featured/featured-utils"
 import { canonicalCityPlaceFilter } from "./city-place-match"
 import { escapeRegexLiteral } from "@/lib/chat/regex"
+import { sortByPlaceQuality } from "@/lib/place-quality"
 
 const PER_PAGE = 24
 
@@ -196,6 +197,33 @@ async function loadPlacesByCityAndCategory(
 
 export const getPlacesByCityAndCategory = cache(loadPlacesByCityAndCategory)
 
+/** Campos que pide el puntaje de calidad (lib/place-quality): livianos, sin el documento entero. */
+const QUALITY_PROJECTION = {
+  name: 1,
+  photos: { $slice: 1 },
+  address: 1,
+  addressText: 1,
+  openingHours: 1,
+  neighborhood: 1,
+  locality: 1,
+  "contact.instagram": 1,
+  "contact.phone": 1,
+  "contact.whatsapp": 1,
+  "contact.url": 1,
+  "googleSnapshot.rating": 1,
+  "googleSnapshot.userRatingCount": 1,
+  tags: 1,
+  safetyLevel: 1,
+} as const
+
+/**
+ * Páginas por tipo (/restaurantes-sin-gluten, /cafes-sin-gluten…), revisión 23/10:
+ * - Solo lugares cuyo tipo principal es ese: antes entraba cualquiera que lo tuviera
+ *   entre sus tipos ("Con las manos en la masa", una tienda, salía en Restaurantes).
+ * - Orden por el puntaje de calidad (foto, ficha completa, rating, reseñas), el mismo
+ *   de "Recomendados" en el mapa. Se calcula sobre todos los lugares del tipo (solo
+ *   los campos del puntaje) y después se trae la página: la paginación es estable.
+ */
 export async function getPlacesByCategory(
   categorySlug: string,
   page = 1
@@ -204,18 +232,22 @@ export async function getPlacesByCategory(
   if (!type) return { places: [], total: 0, pages: 0 }
   if (!(await connectSeoDb())) return EMPTY_PLACE_PAGE
 
-  const skip = (page - 1) * PER_PAGE
-
   const query = buildNationalCategoryMongoQuery(type)
+  const candidates = (await Place.find(query, QUALITY_PROJECTION).lean()) as any[]
+  const stats = await getReviewStatsFor(candidates.map((p) => p._id))
+  const ranked = sortByPlaceQuality(
+    candidates.map((p) => ({ ...p, stats: stats.get(p._id.toString()) }))
+  )
 
-  const [places, total] = await Promise.all([
-    findDedicatedFirst(query, skip, PER_PAGE),
-    Place.countDocuments(query),
-  ])
-
-  const enriched = sortDedicatedThenRating(await enrichPlacesWithStats(places))
+  const total = ranked.length
   const pages = Math.ceil(total / PER_PAGE)
-  return { places: enriched, total, pages }
+  const pageIds = ranked.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((p) => p._id)
+  if (pageIds.length === 0) return { places: [], total, pages }
+
+  const docs = (await Place.find({ _id: { $in: pageIds } }, PLACE_SEO_PROJECTION).lean()) as any[]
+  const byId = new Map(docs.map((d) => [d._id.toString(), d]))
+  const ordered = pageIds.map((id) => byId.get(id.toString())).filter(Boolean)
+  return { places: await enrichPlacesWithStats(ordered), total, pages }
 }
 
 export async function getPlacesByCategoryAndCity(
