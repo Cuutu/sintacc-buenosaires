@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import { ArrowRight, ListPlus } from "lucide-react"
 import { listShareState, listShareUrl } from "@/lib/lists/share-state"
 import { cn } from "@/lib/utils"
+import { guardadosTabFromSearch, type GuardadosTab } from "@/lib/lists/guardados-tab"
 
 /**
  * Las tarjetas de "Mis listas" traen el menú de acciones (Radix DropdownMenu, ~20 KB
@@ -41,6 +42,7 @@ function preloadOwnerListCard() {
 }
 
 type ListFilter = "all" | "public" | "private"
+
 type ConfirmKind = "delete" | "regenerate" | null
 
 function FavoritosSkeleton({ state }: { state: string }) {
@@ -76,6 +78,7 @@ export default function FavoritosPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [manageList, setManageList] = useState<ListWithDetails | null>(null)
   const [listFilter, setListFilter] = useState<ListFilter>("all")
+  const [tab, setTab] = useState<GuardadosTab>("favoritos")
   const [confirmKind, setConfirmKind] = useState<ConfirmKind>(null)
   const [confirmList, setConfirmList] = useState<ListWithDetails | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -162,6 +165,27 @@ export default function FavoritosPage() {
       setListsLoading(false)
     }
   }, [])
+
+  // La pestaña sale de la URL al montar (sin useSearchParams: obligaría a un Suspense).
+  useEffect(() => {
+    setTab(guardadosTabFromSearch(window.location.search))
+  }, [])
+
+  useEffect(() => {
+    if (tab !== "listas" || authView.kind !== "ready") return
+    preloadOwnerListCard()
+    if (!listsFetched && !listsLoading) fetchLists()
+  }, [tab, authView.kind, listsFetched, listsLoading, fetchLists])
+
+  const changeTab = (value: string) => {
+    const next: GuardadosTab = value === "listas" ? "listas" : "favoritos"
+    setTab(next)
+    // La URL recuerda la pestaña: al volver de una lista, sigue en "Mis listas".
+    const url = new URL(window.location.href)
+    if (next === "listas") url.searchParams.set("tab", "listas")
+    else url.searchParams.delete("tab")
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash)
+  }
 
   const filteredLists = useMemo(() => {
     // "Privadas" junta las que van con enlace y las que solo ve la dueña.
@@ -303,13 +327,9 @@ export default function FavoritosPage() {
       </div>
 
       <Tabs
-        defaultValue="favoritos"
+        value={tab}
         className="space-y-6"
-        onValueChange={(v) => {
-          if (v !== "listas") return
-          preloadOwnerListCard()
-          if (!listsFetched) fetchLists()
-        }}
+        onValueChange={changeTab}
       >
         {/* Píldoras como los filtros de /emprendimientos: la elegida en verde oscuro. */}
         <TabsList className="h-auto justify-start gap-2 rounded-none bg-transparent p-0">
