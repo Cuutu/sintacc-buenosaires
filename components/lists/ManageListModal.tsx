@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
+import { Copy, CopyPlus, ExternalLink, RefreshCw } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -12,25 +14,31 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { fetchApi } from "@/lib/fetchApi"
-import { toast } from "sonner"
-import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  ExternalLink,
-  Link2Off,
-  RefreshCw,
-  CopyPlus,
-  Lock,
-  Globe,
-} from "lucide-react"
 import type { ListWithDetails } from "@/components/lists/ListCard"
-import { LIST_LINK_STATUS, LIST_VISIBILITY } from "@/lib/lists/constants"
 import { IPlace } from "@/models/Place"
-import { cn } from "@/lib/utils"
 import { ImageUpload } from "@/components/image-upload"
+import { listsUi } from "@/components/lists/lists-ui"
+import {
+  LIST_DESTINATION_PLACEHOLDER,
+  LIST_NAME_PLACEHOLDER,
+  ListPlaceRow,
+  ListVisibilityField,
+  PlaceSearchBox,
+  focusDialogContent,
+  listModalUi,
+  moveId,
+  orderPlaceRows,
+  usePlaceSearch,
+  type PlaceLite,
+} from "@/components/lists/ListFormParts"
+import {
+  linkActionForShareChange,
+  listShareState,
+  visibilityForShareState,
+  type ListShareState,
+} from "@/lib/lists/share-state"
+import { cn } from "@/lib/utils"
 
 interface ManageListModalProps {
   open: boolean
@@ -41,7 +49,15 @@ interface ManageListModalProps {
   onUpdated: () => void
 }
 
-type ConfirmAction = "regenerate" | "revoke" | null
+function toLite(p: { _id: unknown; name: string; neighborhood?: string; photos?: string[]; type?: string }): PlaceLite {
+  return {
+    _id: String(p._id),
+    name: p.name,
+    neighborhood: p.neighborhood,
+    photos: p.photos,
+    type: p.type,
+  }
+}
 
 export function ManageListModal({
   open,
@@ -52,85 +68,62 @@ export function ManageListModal({
   onUpdated,
 }: ManageListModalProps) {
   const [saving, setSaving] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [destination, setDestination] = useState("")
-  const [visibility, setVisibility] = useState<string>(LIST_VISIBILITY.PUBLIC)
+  const [share, setShare] = useState<ListShareState>("public")
   const [orderedIds, setOrderedIds] = useState<string[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [coverUrls, setCoverUrls] = useState<string[]>([])
+  const [extraPlaces, setExtraPlaces] = useState<PlaceLite[]>([])
+  const placeSearch = usePlaceSearch(open)
 
-  const placeById = useMemo(() => {
-    const map = new Map<string, IPlace | { _id: string; name: string; neighborhood?: string; photos?: string[] }>()
-    for (const p of favorites) map.set(p._id.toString(), p)
-    if (list?.placeIds) {
-      for (const p of list.placeIds) {
-        const id = typeof p === "string" ? p : p._id?.toString?.() || String(p._id)
-        if (id && !map.has(id) && typeof p !== "string") map.set(id, p as IPlace)
-      }
-    }
+  const listPlaces = useMemo<PlaceLite[]>(
+    () =>
+      (list?.placeIds ?? [])
+        .filter((p): p is Exclude<typeof p, string> => Boolean(p) && typeof p !== "string")
+        .map(toLite),
+    [list]
+  )
+  const favoritePlaces = useMemo(() => favorites.map(toLite), [favorites])
+
+  const placePool = useMemo(() => {
+    const map = new Map<string, PlaceLite>()
+    for (const p of favoritePlaces) map.set(p._id, p)
+    for (const p of listPlaces) map.set(p._id, p)
+    for (const p of extraPlaces) map.set(p._id, p)
     return map
-  }, [favorites, list])
+  }, [favoritePlaces, listPlaces, extraPlaces])
 
   useEffect(() => {
     if (!list || !open) return
     setName(list.name || "")
     setDescription(list.description || "")
     setDestination(list.destination || "")
-    setVisibility(
-      list.visibility ||
-        (list.isPublic ? LIST_VISIBILITY.PUBLIC : LIST_VISIBILITY.PRIVATE_LINK)
-    )
-    const ids = (list.placeIds || []).map((p) =>
-      typeof p === "string" ? p : p._id.toString()
-    )
-    setOrderedIds(ids)
+    setShare(listShareState(list))
+    setOrderedIds(listPlaces.map((p) => p._id))
     const noteMap: Record<string, string> = {}
     for (const n of list.placeNotes || []) {
-      const pid =
-        typeof n.placeId === "string" ? n.placeId : n.placeId?.toString?.()
+      const pid = typeof n.placeId === "string" ? n.placeId : n.placeId?.toString?.()
       if (pid && n.note) noteMap[pid] = n.note
     }
     setNotes(noteMap)
     setCoverUrls(list.coverImage ? [list.coverImage] : [])
-  }, [list, open])
+    setExtraPlaces([])
+  }, [list, open, listPlaces])
 
-  const allPlaceOptions = useMemo(() => {
-    const ids = new Set<string>()
-    const items: Array<{ id: string; name: string; neighborhood?: string }> = []
-    for (const [id, p] of placeById) {
-      ids.add(id)
-      items.push({ id, name: p.name, neighborhood: p.neighborhood })
-    }
-    for (const f of favorites) {
-      const id = f._id.toString()
-      if (!ids.has(id)) {
-        items.push({ id, name: f.name, neighborhood: f.neighborhood })
-      }
-    }
-    return items
-  }, [placeById, favorites])
+  // Primero los lugares que ya están en la lista (en su orden); después favoritos y búsquedas.
+  const rows = useMemo(
+    () => orderPlaceRows(orderedIds, placePool, [...listPlaces, ...favoritePlaces, ...extraPlaces]),
+    [orderedIds, placePool, listPlaces, favoritePlaces, extraPlaces]
+  )
 
   if (!list) return null
 
-  const isPrivate = visibility === LIST_VISIBILITY.PRIVATE_LINK
+  const savedShare = listShareState(list)
   const sharePath = list.privateSharePath
-  const linkStatus = list.linkStatus
-  const linkActive =
-    isPrivate && linkStatus === LIST_LINK_STATUS.ACTIVE && Boolean(sharePath)
-
-  const move = (id: string, dir: -1 | 1) => {
-    setOrderedIds((prev) => {
-      const idx = prev.indexOf(id)
-      if (idx < 0) return prev
-      const nextIdx = idx + dir
-      if (nextIdx < 0 || nextIdx >= prev.length) return prev
-      const copy = [...prev]
-      ;[copy[idx], copy[nextIdx]] = [copy[nextIdx], copy[idx]]
-      return copy
-    })
-  }
+  const linkActive = savedShare === "link" && Boolean(sharePath)
 
   const togglePlace = (id: string) => {
     setOrderedIds((prev) => {
@@ -146,25 +139,33 @@ export function ManageListModal({
     })
   }
 
+  const addFromSearch = (place: PlaceLite) => {
+    setExtraPlaces((prev) => (prev.some((p) => p._id === place._id) ? prev : [...prev, place]))
+    setOrderedIds((prev) => (prev.includes(place._id) ? prev : [...prev, place._id]))
+    placeSearch.clear()
+  }
+
   const copyLink = async () => {
     if (!sharePath) return
-    const url = `${window.location.origin}${sharePath}`
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(`${window.location.origin}${sharePath}`)
       toast.success("Enlace copiado")
     } catch {
       toast.error("No se pudo copiar el enlace")
     }
   }
 
-  const openClientView = () => {
-    if (!sharePath) return
-    window.open(sharePath, "_blank", "noopener,noreferrer")
+  const linkAction = async (action: "regenerate" | "revoke" | "enable") => {
+    await fetchApi(`/api/lists/${list._id}/private-link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    })
   }
 
   const save = async () => {
     if (!name.trim()) {
-      toast.error("El nombre es obligatorio")
+      toast.error("Ponele un nombre a la lista")
       return
     }
     if (orderedIds.length === 0) {
@@ -176,6 +177,7 @@ export function ManageListModal({
       const placeNotes = orderedIds
         .filter((id) => notes[id]?.trim())
         .map((id) => ({ placeId: id, note: notes[id].trim() }))
+      const nextShare = canUsePrivateLists ? share : savedShare
       await fetchApi(`/api/lists/${list._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -185,42 +187,32 @@ export function ManageListModal({
           destination: destination.trim() || "",
           placeIds: orderedIds,
           placeNotes,
-          visibility,
-          coverImage:
-            coverUrls[0] ||
-            placeById.get(orderedIds[0])?.photos?.[0] ||
-            "",
+          visibility: visibilityForShareState(nextShare),
+          coverImage: coverUrls[0] || placePool.get(orderedIds[0])?.photos?.[0] || "",
         }),
       })
+      // Privada = enlace revocado; volver a "Con enlace" lo reactiva.
+      const action = linkActionForShareChange(savedShare, nextShare)
+      if (action) await linkAction(action)
       toast.success("Lista actualizada")
       onUpdated()
       onOpenChange(false)
     } catch (err: any) {
-      toast.error(err?.message || "Error al guardar")
+      toast.error(err?.message || "No se pudo guardar")
     } finally {
       setSaving(false)
     }
   }
 
-  const runLinkAction = async (action: "regenerate" | "revoke" | "enable") => {
+  const regenerate = async () => {
     setSaving(true)
     try {
-      await fetchApi(`/api/lists/${list._id}/private-link`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      })
-      toast.success(
-        action === "regenerate"
-          ? "Enlace regenerado"
-          : action === "revoke"
-            ? "Acceso revocado"
-            : "Acceso rehabilitado"
-      )
-      setConfirmAction(null)
+      await linkAction("regenerate")
+      toast.success("Enlace nuevo listo")
+      setConfirmRegenerate(false)
       onUpdated()
     } catch (err: any) {
-      toast.error(err?.message || "Error al actualizar enlace")
+      toast.error(err?.message || "No se pudo regenerar el enlace")
     } finally {
       setSaving(false)
     }
@@ -234,7 +226,7 @@ export function ManageListModal({
       onUpdated()
       onOpenChange(false)
     } catch (err: any) {
-      toast.error(err?.message || "Error al duplicar")
+      toast.error(err?.message || "No se pudo duplicar")
     } finally {
       setSaving(false)
     }
@@ -243,301 +235,155 @@ export function ManageListModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Gestionar lista</DialogTitle>
-            <DialogDescription>
-              Editá lugares, notas y visibilidad. No incluyas datos sensibles del viajero.
+        <DialogContent className={listModalUi.content} onOpenAutoFocus={focusDialogContent}>
+          <DialogHeader className={listModalUi.header}>
+            <DialogTitle className="text-xl font-extrabold text-[#2D4A34]">Gestionar lista</DialogTitle>
+            <DialogDescription className="text-base text-[#5E6A60]">
+              {canUsePrivateLists
+                ? "Editá los lugares, las notas y quién la puede ver. No pongas datos personales."
+                : "Editá los lugares y las notas. No pongas datos personales."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className={listModalUi.body}>
             <div>
-              <Label htmlFor="edit-name">Nombre</Label>
+              <label htmlFor="edit-name" className={listModalUi.label}>
+                Nombre
+              </label>
               <Input
                 id="edit-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder={LIST_NAME_PLACEHOLDER}
                 maxLength={80}
-                className="mt-1"
+                className={listModalUi.field}
               />
             </div>
             <div>
-              <Label>Foto de portada</Label>
+              <span className={listModalUi.label}>Foto de portada</span>
               <div className="mt-1.5">
-                <ImageUpload
-                  value={coverUrls}
-                  onChange={setCoverUrls}
-                  maxCount={1}
-                  folder="lists"
-                />
+                <ImageUpload value={coverUrls} onChange={setCoverUrls} maxCount={1} folder="lists" />
               </div>
             </div>
             <div>
-              <Label htmlFor="edit-desc">Descripción</Label>
+              <label htmlFor="edit-desc" className={listModalUi.label}>
+                Descripción
+              </label>
               <Textarea
                 id="edit-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={300}
                 rows={2}
-                className="mt-1"
+                className={listModalUi.field}
               />
             </div>
             <div>
-              <Label htmlFor="edit-dest">Destino</Label>
+              <label htmlFor="edit-dest" className={listModalUi.label}>
+                Destino
+              </label>
               <Input
                 id="edit-dest"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
+                placeholder={LIST_DESTINATION_PLACEHOLDER}
                 maxLength={120}
-                className="mt-1"
+                className={listModalUi.field}
               />
             </div>
 
-            {canUsePrivateLists ? (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">Visibilidad</legend>
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setVisibility(LIST_VISIBILITY.PUBLIC)}
-                    className={cn(
-                      "flex items-start gap-3 rounded-xl border p-3 text-left",
-                      visibility === LIST_VISIBILITY.PUBLIC
-                        ? "border-primary bg-primary/10"
-                        : "border-olive/10"
-                    )}
-                  >
-                    <Globe className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>
-                      <span className="block text-sm font-semibold">Pública</span>
-                      <span className="text-xs text-muted-foreground">
-                        Visible en CeliMap para la comunidad.
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibility(LIST_VISIBILITY.PRIVATE_LINK)}
-                    className={cn(
-                      "flex items-start gap-3 rounded-xl border p-3 text-left",
-                      visibility === LIST_VISIBILITY.PRIVATE_LINK
-                        ? "border-primary bg-primary/10"
-                        : "border-olive/10"
-                    )}
-                  >
-                    <Lock className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>
-                      <span className="block text-sm font-semibold">
-                        Privada mediante enlace
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Solo podrán verla las personas que tengan el enlace.
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </fieldset>
-            ) : null}
+            {canUsePrivateLists ? <ListVisibilityField value={share} onChange={setShare} /> : null}
 
-            {isPrivate ? (
-              <div className="space-y-2 rounded-xl border border-olive/10 bg-olive/5 p-3">
-                <p className="text-sm font-medium">Enlace privado</p>
-                <p className="text-xs text-muted-foreground">
-                  Estado:{" "}
-                  {linkStatus === LIST_LINK_STATUS.REVOKED
-                    ? "Revocado"
-                    : linkStatus === LIST_LINK_STATUS.ARCHIVED
-                      ? "Archivado"
-                      : linkActive
-                        ? "Activo"
-                        : "Pendiente de guardar"}
-                </p>
+            {share === "link" && linkActive ? (
+              <div className="space-y-2 rounded-[14px] border border-[#E6DFD2] bg-[#F7F3EB] p-3">
+                <p className="text-sm font-bold text-[#2D4A34]">Enlace privado activo</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled={!linkActive}
-                    onClick={copyLink}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
+                  <button type="button" className={listsUi.secondary} onClick={copyLink}>
+                    <Copy className="h-4 w-4" aria-hidden />
                     Copiar enlace
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled={!linkActive}
-                    onClick={openClientView}
+                    className={listsUi.secondary}
+                    onClick={() => sharePath && window.open(sharePath, "_blank", "noopener,noreferrer")}
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <ExternalLink className="h-4 w-4" aria-hidden />
                     Vista previa
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
+                    className={listsUi.secondary}
                     disabled={saving}
-                    onClick={() => setConfirmAction("regenerate")}
+                    onClick={() => setConfirmRegenerate(true)}
                   >
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-4 w-4" aria-hidden />
                     Regenerar
-                  </Button>
-                  {linkStatus === LIST_LINK_STATUS.REVOKED ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={saving}
-                      onClick={() => runLinkAction("enable")}
-                    >
-                      Rehabilitar acceso
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="destructive"
-                      className="gap-1.5"
-                      disabled={saving}
-                      onClick={() => setConfirmAction("revoke")}
-                    >
-                      <Link2Off className="h-3.5 w-3.5" />
-                      Revocar
-                    </Button>
-                  )}
+                  </button>
                 </div>
               </div>
             ) : null}
 
+            <PlaceSearchBox
+              search={placeSearch.search}
+              onSearch={placeSearch.setSearch}
+              results={placeSearch.results}
+              searching={placeSearch.searching}
+              selectedIds={orderedIds}
+              onPick={addFromSearch}
+            />
+
             <div>
-              <Label>Lugares y notas</Label>
-              <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border p-2">
-                {allPlaceOptions.map((place) => {
-                  const selected = orderedIds.includes(place.id)
-                  const orderIdx = orderedIds.indexOf(place.id)
+              <span className={listModalUi.label}>Lugares y notas ({orderedIds.length} en la lista)</span>
+              <div className="mt-1.5 space-y-1 rounded-[14px] border border-[#E6DFD2] bg-white p-1.5">
+                {rows.map((place) => {
+                  const id = place._id
                   return (
-                    <div
-                      key={place.id}
-                      className={cn(
-                        "rounded-lg p-2",
-                        selected ? "bg-muted/40" : "hover:bg-muted/30"
-                      )}
-                    >
-                      <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => togglePlace(place.id)}
-                          className="rounded"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          {place.name}
-                        </span>
-                      </label>
-                      {selected ? (
-                        <div className="mt-2 space-y-2 pl-6">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[11px] text-muted-foreground">
-                              #{orderIdx + 1}
-                            </span>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              onClick={() => move(place.id, -1)}
-                              disabled={orderIdx <= 0}
-                            >
-                              <ArrowUp className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              onClick={() => move(place.id, 1)}
-                              disabled={orderIdx >= orderedIds.length - 1}
-                            >
-                              <ArrowDown className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <Textarea
-                            value={notes[place.id] || ""}
-                            onChange={(e) =>
-                              setNotes((prev) => ({
-                                ...prev,
-                                [place.id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Nota personalizada"
-                            maxLength={500}
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
+                    <ListPlaceRow
+                      key={id}
+                      place={place}
+                      selected={orderedIds.includes(id)}
+                      orderIdx={orderedIds.indexOf(id)}
+                      total={orderedIds.length}
+                      note={notes[id] || ""}
+                      onToggle={() => togglePlace(id)}
+                      onMove={(dir) => setOrderedIds((prev) => moveId(prev, id, dir))}
+                      onNote={(value) => setNotes((prev) => ({ ...prev, [id]: value }))}
+                    />
                   )
                 })}
               </div>
             </div>
+
+            <button type="button" className={cn(listsUi.link, "text-[#5E6A60]")} disabled={saving} onClick={duplicate}>
+              <CopyPlus className="h-4 w-4" aria-hidden />
+              Duplicar lista
+            </button>
           </div>
 
-          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-1.5"
-              disabled={saving}
-              onClick={duplicate}
-            >
-              <CopyPlus className="h-3.5 w-3.5" />
-              Duplicar
-            </Button>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" disabled={saving} onClick={save}>
-                {saving ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
+          <DialogFooter className={listModalUi.footer}>
+            <button type="button" className={listsUi.secondary} onClick={() => onOpenChange(false)}>
+              Cancelar
+            </button>
+            <button type="button" className={listsUi.primary} disabled={saving} onClick={save}>
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={confirmAction !== null}
-        onOpenChange={(v) => !v && setConfirmAction(null)}
-      >
+      <Dialog open={confirmRegenerate} onOpenChange={setConfirmRegenerate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {confirmAction === "regenerate"
-                ? "¿Regenerar enlace?"
-                : "¿Revocar acceso?"}
-            </DialogTitle>
+            <DialogTitle>¿Regenerar enlace?</DialogTitle>
             <DialogDescription>
-              {confirmAction === "regenerate"
-                ? "El enlace anterior dejará de funcionar de inmediato. Tendrás que compartir el nuevo."
-                : "Quienes tengan el enlace ya no podrán ver la lista. Podés rehabilitarlo después."}
+              El enlace anterior deja de funcionar en el momento. Vas a tener que compartir el nuevo.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmAction(null)}>
+            <Button variant="outline" onClick={() => setConfirmRegenerate(false)}>
               Cancelar
             </Button>
-            <Button
-              variant={confirmAction === "revoke" ? "destructive" : "default"}
-              disabled={saving}
-              onClick={() => confirmAction && runLinkAction(confirmAction)}
-            >
+            <Button disabled={saving} onClick={regenerate}>
               Confirmar
             </Button>
           </DialogFooter>

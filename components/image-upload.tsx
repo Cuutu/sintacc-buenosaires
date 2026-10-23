@@ -218,7 +218,9 @@ export function ImageUpload({
         </p>
       )}
       <p className="text-xs text-muted-foreground">
-        Máx. {maxCount} imágenes. JPEG, PNG o WebP. Hasta 5MB cada una.
+        {maxCount === 1
+          ? "Máx. 1 imagen. JPEG, PNG o WebP. Hasta 5 MB."
+          : `Máx. ${maxCount} imágenes. JPEG, PNG o WebP. Hasta 5 MB cada una.`}
       </p>
     </div>
   )

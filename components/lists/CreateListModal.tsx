@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -9,19 +11,31 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { IPlace } from "@/models/Place"
 import { fetchApi } from "@/lib/fetchApi"
-import { toast } from "sonner"
-import { ArrowDown, ArrowUp, Lock, Globe, Search } from "lucide-react"
-import { LIST_VISIBILITY, type ListVisibility } from "@/lib/lists/constants"
-import { cn } from "@/lib/utils"
 import { ImageUpload } from "@/components/image-upload"
-import Link from "next/link"
 import { trackEvent } from "@/lib/analytics"
+import { listsUi } from "@/components/lists/lists-ui"
+import {
+  LIST_DESTINATION_PLACEHOLDER,
+  LIST_NAME_PLACEHOLDER,
+  ListPlaceRow,
+  ListVisibilityField,
+  PlaceSearchBox,
+  focusDialogContent,
+  listModalUi,
+  moveId,
+  orderPlaceRows,
+  usePlaceSearch,
+  type PlaceLite,
+} from "@/components/lists/ListFormParts"
+import {
+  linkActionForShareChange,
+  visibilityForShareState,
+  type ListShareState,
+} from "@/lib/lists/share-state"
 
 interface CreateListModalProps {
   open: boolean
@@ -29,15 +43,6 @@ interface CreateListModalProps {
   favorites: IPlace[]
   canUsePrivateLists?: boolean
   onCreated?: (list?: { visibility?: string; privateSharePath?: string | null }) => void
-}
-
-type PlaceLite = {
-  _id: string
-  name: string
-  neighborhood?: string
-  photos?: string[]
-  type?: string
-  slug?: string
 }
 
 function placeKey(p: { _id: string | { toString(): string } }) {
@@ -54,17 +59,13 @@ export function CreateListModal({
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [destination, setDestination] = useState("")
-  const [visibility, setVisibility] = useState<ListVisibility>(
-    LIST_VISIBILITY.PUBLIC
-  )
+  const [share, setShare] = useState<ListShareState>("public")
   const [orderedIds, setOrderedIds] = useState<string[]>([])
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [coverUrls, setCoverUrls] = useState<string[]>([])
   const [extraPlaces, setExtraPlaces] = useState<PlaceLite[]>([])
-  const [search, setSearch] = useState("")
-  const [searchResults, setSearchResults] = useState<PlaceLite[]>([])
-  const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(false)
+  const placeSearch = usePlaceSearch(open)
 
   useEffect(() => {
     if (!open) return
@@ -72,88 +73,36 @@ export function CreateListModal({
     setNotes({})
     setCoverUrls([])
     setExtraPlaces([])
-    setSearch("")
-    setSearchResults([])
-    setVisibility(LIST_VISIBILITY.PUBLIC)
+    setShare("public")
     setName("")
     setDescription("")
     setDestination("")
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    const q = search.trim()
-    if (q.length < 2) {
-      setSearchResults([])
-      return
-    }
-    let alive = true
-    const t = setTimeout(async () => {
-      setSearching(true)
-      try {
-        const data = await fetchApi<{ places: PlaceLite[] }>(
-          `/api/places?search=${encodeURIComponent(q)}&limit=8`
-        )
-        if (!alive) return
-        setSearchResults(
-          (data.places ?? []).map((p) => ({
-            ...p,
-            _id: typeof p._id === "string" ? p._id : String(p._id),
-          }))
-        )
-      } catch {
-        if (alive) setSearchResults([])
-      } finally {
-        if (alive) setSearching(false)
-      }
-    }, 300)
-    return () => {
-      alive = false
-      clearTimeout(t)
-    }
-  }, [search, open])
-
-  const placePool = useMemo(() => {
-    const map = new Map<string, PlaceLite>()
-    for (const p of favorites) {
-      map.set(placeKey(p), {
+  const favoritePlaces = useMemo<PlaceLite[]>(
+    () =>
+      favorites.map((p) => ({
         _id: placeKey(p),
         name: p.name,
         neighborhood: p.neighborhood,
         photos: p.photos,
         type: p.type,
         slug: p.slug,
-      })
-    }
+      })),
+    [favorites]
+  )
+
+  const placePool = useMemo(() => {
+    const map = new Map<string, PlaceLite>()
+    for (const p of favoritePlaces) map.set(p._id, p)
     for (const p of extraPlaces) map.set(p._id, p)
     return map
-  }, [favorites, extraPlaces])
+  }, [favoritePlaces, extraPlaces])
 
-  const selectablePlaces = useMemo(() => {
-    const ids = new Set<string>()
-    const items: PlaceLite[] = []
-    for (const id of orderedIds) {
-      const p = placePool.get(id)
-      if (p && !ids.has(id)) {
-        ids.add(id)
-        items.push(p)
-      }
-    }
-    for (const p of favorites) {
-      const id = placeKey(p)
-      if (!ids.has(id)) {
-        ids.add(id)
-        items.push(placePool.get(id)!)
-      }
-    }
-    for (const p of extraPlaces) {
-      if (!ids.has(p._id)) {
-        ids.add(p._id)
-        items.push(p)
-      }
-    }
-    return items
-  }, [orderedIds, favorites, extraPlaces, placePool])
+  const rows = useMemo(
+    () => orderPlaceRows(orderedIds, placePool, [...favoritePlaces, ...extraPlaces]),
+    [orderedIds, placePool, favoritePlaces, extraPlaces]
+  )
 
   const togglePlace = (id: string) => {
     setOrderedIds((prev) => {
@@ -170,31 +119,15 @@ export function CreateListModal({
   }
 
   const addFromSearch = (place: PlaceLite) => {
-    const id = place._id
-    setExtraPlaces((prev) =>
-      prev.some((p) => p._id === id) ? prev : [...prev, place]
-    )
-    setOrderedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
-    setSearch("")
-    setSearchResults([])
-  }
-
-  const move = (id: string, dir: -1 | 1) => {
-    setOrderedIds((prev) => {
-      const idx = prev.indexOf(id)
-      if (idx < 0) return prev
-      const nextIdx = idx + dir
-      if (nextIdx < 0 || nextIdx >= prev.length) return prev
-      const copy = [...prev]
-      ;[copy[idx], copy[nextIdx]] = [copy[nextIdx], copy[idx]]
-      return copy
-    })
+    setExtraPlaces((prev) => (prev.some((p) => p._id === place._id) ? prev : [...prev, place]))
+    setOrderedIds((prev) => (prev.includes(place._id) ? prev : [...prev, place._id]))
+    placeSearch.clear()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      toast.error("El nombre es obligatorio")
+      toast.error("Ponele un nombre a la lista")
       return
     }
     if (orderedIds.length === 0) {
@@ -208,12 +141,11 @@ export function CreateListModal({
         .filter((id) => notes[id]?.trim())
         .map((id) => ({ placeId: id, note: notes[id].trim() }))
 
-      const coverImage =
-        coverUrls[0] ||
-        placePool.get(orderedIds[0])?.photos?.[0] ||
-        undefined
+      const coverImage = coverUrls[0] || placePool.get(orderedIds[0])?.photos?.[0] || undefined
+      const visibility = canUsePrivateLists ? visibilityForShareState(share) : "PUBLIC"
 
       const created = await fetchApi<{
+        _id?: string
         visibility?: string
         privateSharePath?: string | null
       }>("/api/lists", {
@@ -229,23 +161,28 @@ export function CreateListModal({
           visibility,
         }),
       })
+
+      // "Privada" = con enlace y el enlace revocado: solo la ve quien la creó.
+      const linkAction = canUsePrivateLists ? linkActionForShareChange(null, share) : null
+      if (linkAction && created._id) {
+        await fetchApi(`/api/lists/${created._id}/private-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: linkAction }),
+        })
+      }
+
       trackEvent("list_create", {
-        visibility:
-          visibility === LIST_VISIBILITY.PRIVATE_LINK ? "private_link" : "public",
+        visibility: visibility === "PRIVATE_LINK" ? "private_link" : "public",
         placeCount: orderedIds.length,
       })
-      if (
-        visibility === LIST_VISIBILITY.PRIVATE_LINK &&
-        created.privateSharePath
-      ) {
+      if (share === "link" && canUsePrivateLists && created.privateSharePath) {
         try {
-          await navigator.clipboard.writeText(
-            `${window.location.origin}${created.privateSharePath}`
-          )
-          toast.success("Lista privada creada — enlace copiado")
+          await navigator.clipboard.writeText(`${window.location.origin}${created.privateSharePath}`)
+          toast.success("Lista creada. Copiamos el enlace.")
           trackEvent("list_share", { visibility: "private_link" })
         } catch {
-          toast.success("Lista privada creada")
+          toast.success("Lista creada")
         }
       } else {
         toast.success("Lista creada")
@@ -253,7 +190,7 @@ export function CreateListModal({
       onOpenChange(false)
       onCreated?.(created)
     } catch (err: any) {
-      toast.error(err?.message || "Error al crear lista")
+      toast.error(err?.message || "No se pudo crear la lista")
     } finally {
       setLoading(false)
     }
@@ -261,262 +198,130 @@ export function CreateListModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Crear lista</DialogTitle>
-          <DialogDescription>
-            Compartí recomendaciones. Si es privada, usá un alias — no pongas
-            documentos, teléfonos ni datos médicos.
+      <DialogContent className={listModalUi.content} onOpenAutoFocus={focusDialogContent}>
+        <DialogHeader className={listModalUi.header}>
+          <DialogTitle className="text-xl font-extrabold text-[#2D4A34]">Crear lista</DialogTitle>
+          <DialogDescription className="text-base text-[#5E6A60]">
+            Juntá lugares para recomendar. No pongas datos personales: nada de documentos,
+            teléfonos ni datos médicos.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre de la lista</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Recomendaciones para María — Madrid 2026"
-              maxLength={80}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label>Foto de portada (opcional)</Label>
-            <div className="mt-1.5">
-              <ImageUpload
-                value={coverUrls}
-                onChange={setCoverUrls}
-                maxCount={1}
-                folder="lists"
-              />
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Si no subís foto, usamos la del primer lugar.
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Descripción (opcional)</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Contame de qué trata tu lista..."
-              maxLength={300}
-              rows={2}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="destination">Destino (opcional)</Label>
-            <Input
-              id="destination"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="Ej: Madrid, España"
-              maxLength={120}
-              className="mt-1"
-            />
-          </div>
-
-          {canUsePrivateLists ? (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Visibilidad</legend>
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={() => setVisibility(LIST_VISIBILITY.PUBLIC)}
-                  className={cn(
-                    "flex items-start gap-3 rounded-xl border p-3 text-left transition",
-                    visibility === LIST_VISIBILITY.PUBLIC
-                      ? "border-primary bg-primary/10"
-                      : "border-olive/10 hover:border-olive/20"
-                  )}
-                >
-                  <Globe className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    <span className="block text-sm font-semibold">Pública</span>
-                    <span className="text-xs text-muted-foreground">
-                      Visible en CeliMap para la comunidad.
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVisibility(LIST_VISIBILITY.PRIVATE_LINK)}
-                  className={cn(
-                    "flex items-start gap-3 rounded-xl border p-3 text-left transition",
-                    visibility === LIST_VISIBILITY.PRIVATE_LINK
-                      ? "border-primary bg-primary/10"
-                      : "border-olive/10 hover:border-olive/20"
-                  )}
-                >
-                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    <span className="block text-sm font-semibold">
-                      Privada mediante enlace
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Solo podrán verla las personas que tengan el enlace.
-                    </span>
-                  </span>
-                </button>
-              </div>
-            </fieldset>
-          ) : null}
-
-          <div className="space-y-2">
-            <Label>Buscar lugares para agregar</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className={listModalUi.body}>
+            <div>
+              <label htmlFor="list-name" className={listModalUi.label}>
+                Nombre de la lista
+              </label>
               <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nombre o barrio..."
-                className="pl-9"
+                id="list-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={LIST_NAME_PLACEHOLDER}
+                maxLength={80}
+                className={listModalUi.field}
               />
             </div>
-            {searching ? (
-              <p className="text-xs text-muted-foreground">Buscando...</p>
-            ) : null}
-            {searchResults.length > 0 ? (
-              <ul className="max-h-36 space-y-1 overflow-y-auto rounded-lg border p-1">
-                {searchResults.map((place) => (
-                  <li key={place._id}>
-                    <button
-                      type="button"
-                      onClick={() => addFromSearch(place)}
-                      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted/50"
-                    >
-                      <span className="truncate font-medium">{place.name}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {place.neighborhood}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label>Lugares ({orderedIds.length} seleccionados)</Label>
-              {favorites.length > 0 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setOrderedIds(favorites.map((p) => placeKey(p)))
-                  }
-                >
-                  Usar favoritos
-                </Button>
-              ) : null}
+            <div>
+              <span className={listModalUi.label}>Foto de portada (opcional)</span>
+              <div className="mt-1.5">
+                <ImageUpload value={coverUrls} onChange={setCoverUrls} maxCount={1} folder="lists" />
+              </div>
+              <p className="mt-1 text-sm text-[#5E6A60]">Si no subís una, usamos la del primer lugar.</p>
             </div>
 
-            {selectablePlaces.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-                Buscá lugares arriba o{" "}
-                <Link href="/mapa" className="text-primary underline">
-                  guardá favoritos en el mapa
-                </Link>
-                .
+            <div>
+              <label htmlFor="list-description" className={listModalUi.label}>
+                Descripción (opcional)
+              </label>
+              <Textarea
+                id="list-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Contá de qué se trata la lista"
+                maxLength={300}
+                rows={2}
+                className={listModalUi.field}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="list-destination" className={listModalUi.label}>
+                Destino (opcional)
+              </label>
+              <Input
+                id="list-destination"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder={LIST_DESTINATION_PLACEHOLDER}
+                maxLength={120}
+                className={listModalUi.field}
+              />
+            </div>
+
+            {canUsePrivateLists ? <ListVisibilityField value={share} onChange={setShare} /> : null}
+
+            <PlaceSearchBox
+              search={placeSearch.search}
+              onSearch={placeSearch.setSearch}
+              results={placeSearch.results}
+              searching={placeSearch.searching}
+              selectedIds={orderedIds}
+              onPick={addFromSearch}
+            />
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className={listModalUi.label}>Lugares ({orderedIds.length} elegidos)</span>
+                {favoritePlaces.length > 0 ? (
+                  <button
+                    type="button"
+                    className={listsUi.link}
+                    onClick={() => setOrderedIds(favoritePlaces.map((p) => p._id))}
+                  >
+                    Usar mis favoritos
+                  </button>
+                ) : null}
               </div>
-            ) : (
-              <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-2">
-                {selectablePlaces.map((place) => {
-                  const id = place._id
-                  const selected = orderedIds.includes(id)
-                  const orderIdx = orderedIds.indexOf(id)
-                  return (
-                    <div
-                      key={id}
-                      className={cn(
-                        "rounded-lg p-2",
-                        selected ? "bg-muted/40" : "hover:bg-muted/30"
-                      )}
-                    >
-                      <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => togglePlace(id)}
-                          className="rounded"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          {place.name}
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {place.neighborhood}
-                        </span>
-                      </label>
-                      {selected ? (
-                        <div className="mt-2 space-y-2 pl-6">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[11px] text-muted-foreground">
-                              #{orderIdx + 1}
-                            </span>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              onClick={() => move(id, -1)}
-                              disabled={orderIdx <= 0}
-                              aria-label="Subir"
-                            >
-                              <ArrowUp className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              onClick={() => move(id, 1)}
-                              disabled={orderIdx >= orderedIds.length - 1}
-                              aria-label="Bajar"
-                            >
-                              <ArrowDown className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <Textarea
-                            value={notes[id] || ""}
-                            onChange={(e) =>
-                              setNotes((prev) => ({
-                                ...prev,
-                                [id]: e.target.value,
-                              }))
-                            }
-                            placeholder="Nota personalizada (opcional)"
-                            maxLength={500}
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+
+              {rows.length === 0 ? (
+                <div className="rounded-[14px] border border-dashed border-[#2D4A34]/20 p-4 text-center text-base text-[#5E6A60]">
+                  Buscá lugares arriba o{" "}
+                  <Link href="/mapa" className="font-bold text-[#B84420] underline">
+                    guardá favoritos en el mapa
+                  </Link>
+                  .
+                </div>
+              ) : (
+                <div className="space-y-1 rounded-[14px] border border-[#E6DFD2] bg-white p-1.5">
+                  {rows.map((place) => {
+                    const id = place._id
+                    return (
+                      <ListPlaceRow
+                        key={id}
+                        place={place}
+                        selected={orderedIds.includes(id)}
+                        orderIdx={orderedIds.indexOf(id)}
+                        total={orderedIds.length}
+                        note={notes[id] || ""}
+                        onToggle={() => togglePlace(id)}
+                        onMove={(dir) => setOrderedIds((prev) => moveId(prev, id, dir))}
+                        onNote={(value) => setNotes((prev) => ({ ...prev, [id]: value }))}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+          <DialogFooter className={listModalUi.footer}>
+            <button type="button" className={listsUi.secondary} onClick={() => onOpenChange(false)}>
               Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
+            </button>
+            <button type="submit" className={listsUi.primary} disabled={loading}>
               {loading ? "Creando..." : "Crear lista"}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>
