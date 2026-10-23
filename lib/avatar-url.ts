@@ -6,6 +6,8 @@
 const ALLOWED_AVATAR_HOSTS = [
   "lh3.googleusercontent.com",
   "res.cloudinary.com",
+  // Copia propia de Cloudinary (lib/image-mirror.ts).
+  "img.celimap.com.ar",
 ] as const
 
 export function isAllowedAvatarUrl(src: string | null | undefined): boolean {
