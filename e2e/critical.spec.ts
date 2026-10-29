@@ -35,7 +35,7 @@ test.describe("suite crítica @hermetic @critical", () => {
     await assertNoAppCrash(page)
     await assertBodyHasVisibleContent(page)
     await expect(page.getByTestId("home-search-bar")).toBeVisible()
-    await expect(page.getByRole("link", { name: /Abrir el mapa/i })).toBeVisible()
+    await expect(page.getByRole("link", { name: /Explorar el mapa/i })).toBeVisible()
     await assertNoAccidentalOverflow(page, "/")
     assertHappyPathNetwork(guards.responses500, guards.networkFailures)
     assertPageErrorsClean(guards.pageErrors, { baseHost: host(), webkitRscCancels: cancels })

@@ -9,7 +9,8 @@
 
 /**
  * Sistema de botones de la home (revisión 20/10): tres tipos, un solo redondeo
- * (16 px) y dos alturas: 48 px los botones, 44 px los chips y links.
+ * (16 px) y dos alturas: 48 px los botones, 44 px los chips y links. La excepción es
+ * `heroMap`, que va al lado del buscador y copia su alto y su redondeo.
  * - primary: la acción principal de cada bloque. Terracota oscuro (AA).
  * - secondary: con borde, verde (o crema sobre fondo verde).
  * - link: texto subrayado con zona de toque de 44 px.
@@ -21,6 +22,13 @@ export const homeBtn = {
   primary: `${base} h-12 bg-[#B84420] text-base text-white hover:bg-[#9A3A1B] focus-visible:ring-[#B84420]/40 focus-visible:ring-offset-[#F7F3EB]`,
   secondary: `${base} h-12 border border-[#2D4A34]/25 bg-transparent text-base text-[#2D4A34] hover:bg-[#2D4A34]/5 focus-visible:ring-[#2D4A34]/30 focus-visible:ring-offset-[#F7F3EB]`,
   secondaryOnDark: `${base} h-12 border border-[#F7F3EB]/40 bg-transparent text-base text-[#F7F3EB] hover:bg-[#F7F3EB]/10 focus-visible:ring-[#F7F3EB]/60 focus-visible:ring-offset-[#2D4A34]`,
+  /**
+   * "Explorar el mapa" en el hero (revisión 29/10): a la altura del buscador (60/64 px) y
+   * con su mismo redondeo, crema con borde sobre el verde. Buscar sigue siendo el único
+   * terracota; este queda como la segunda opción, a la vista y sin competir.
+   */
+  heroMap:
+    "inline-flex h-[60px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[20px] border-2 border-[#F7F3EB]/55 bg-[#F7F3EB]/10 px-6 text-base font-extrabold text-[#F7F3EB] transition-colors hover:border-[#F7F3EB]/80 hover:bg-[#F7F3EB]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4A34] md:h-[64px] md:w-auto",
   link: "inline-flex min-h-[44px] items-center gap-1.5 text-sm font-extrabold text-[#2D4A34] underline decoration-[#2D4A34]/30 underline-offset-4 transition-colors hover:text-[#B84420] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4A34]/30",
   linkOnDark:
     "inline-flex min-h-[44px] items-center gap-1.5 text-sm font-extrabold text-[#F7F3EB] underline decoration-[#F7F3EB]/40 underline-offset-4 transition-colors hover:decoration-[#F7F3EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7F3EB]/60",

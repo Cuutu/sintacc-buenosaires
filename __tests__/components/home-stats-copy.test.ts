@@ -40,8 +40,18 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).toContain("CommunityBand")
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
-    // Revisión 20/10: buscar es la acción principal; "Abrir el mapa" queda como link debajo.
-    expect(src.indexOf("<SearchBar />")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
+    // Revisión 20/10: buscar es la acción principal. Revisión 29/10: el mapa es un botón
+    // a la altura del buscador (al lado en compu, abajo en el celular), antes de los chips.
+    expect(src.indexOf("<SearchBar")).toBeGreaterThan(-1)
+    expect(src.indexOf("<SearchBar")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
+    expect(src.indexOf('data-testid="home-open-map"')).toBeLessThan(src.indexOf("<NearMeButton />"))
+    expect(src).toContain("className={homeBtn.heroMap}")
+    expect(src).toContain("Explorar el mapa")
+    expect(src).not.toContain("o abrí el mapa")
+    // El mapa de fondo también abre /mapa, como atajo fuera del Tab y del lector.
+    expect(src).toMatch(/<Link\s+href="\/mapa"\s+aria-hidden\s+tabIndex=\{-1\}\s+data-hero-map-shortcut/)
+    const pins = read("components/home/HeroPins.tsx")
+    expect(pins).toMatch(/<Link\s+href="\/mapa"\s+aria-hidden\s+tabIndex=\{-1\}/)
     expect(src).toContain("<NearMeButton />")
     // Cómo funciona va antes que explorar (explica 100% vs. opciones).
     expect(src.indexOf("<HowItWorks />")).toBeLessThan(src.indexOf("<HomeDirectoryLinks"))

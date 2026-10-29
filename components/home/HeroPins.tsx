@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 
 /**
  * Pines de marca sobre el mapa nocturno del hero (decorativos).
@@ -48,10 +49,15 @@ export function HeroPins() {
           />
         ))}
       </div>
-      <div
+      {/* Compu: la zona de los pines es un atajo a /mapa con el mouse (revisión 29/10). El
+          acceso de verdad es el botón "Explorar el mapa", así que no va al lector ni al Tab. */}
+      <Link
+        href="/mapa"
         aria-hidden
+        tabIndex={-1}
+        title="Explorar el mapa"
         data-hero-pins="desktop"
-        className="pointer-events-none absolute bottom-24 right-[4%] top-[calc(var(--desktop-nav-clearance)+2.5rem)] hidden w-[min(40%,620px)] lg:block"
+        className="group absolute bottom-24 right-[4%] top-[calc(var(--desktop-nav-clearance)+2.5rem)] hidden w-[min(40%,620px)] cursor-pointer lg:block"
       >
         {HERO_PINS_DESKTOP.map((pin, i) => (
           <Image
@@ -60,11 +66,11 @@ export function HeroPins() {
             alt=""
             width={96}
             height={129}
-            className="absolute h-auto drop-shadow-[0_6px_8px_rgba(0,0,0,0.35)]"
+            className="absolute h-auto drop-shadow-[0_6px_8px_rgba(0,0,0,0.35)] transition-transform duration-200 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
             style={{ left: pin.left, top: pin.top, width: pin.w }}
           />
         ))}
-      </div>
+      </Link>
     </>
   )
 }

@@ -44,7 +44,7 @@ test.describe("home carrusel y buscador @hermetic @mobile", () => {
     ).toBe(true)
   })
 
-  test("CTA Abrir el mapa visible sin scroll en mobile", async ({ page }) => {
+  test("CTA Explorar el mapa visible sin scroll en mobile", async ({ page }) => {
     await installHappyPathMocks(page)
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto("/", { waitUntil: "domcontentloaded" })

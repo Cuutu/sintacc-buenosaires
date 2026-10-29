@@ -9,7 +9,7 @@ import { CELIMAP_DESCRIPTION_SHORT, CELIMAP_NAME } from "@/lib/seo/brand"
 import { OG_IMAGE, OG_IMAGE_PATH } from "@/lib/seo/og"
 import { FAQ_ITEMS, FaqSection } from "@/components/home/FaqSection"
 import Link from "next/link"
-import { ArrowRight, MapPin } from "lucide-react"
+import { ArrowRight, Map as MapIcon } from "lucide-react"
 import { SearchBar } from "@/components/search-bar"
 import { BrandLogo } from "@/components/brand/BrandLogo"
 import { HeroPins } from "@/components/home/HeroPins"
@@ -24,7 +24,6 @@ import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
 import { EmprendimientosSection } from "@/components/home/EmprendimientosSection"
 import { NearMeButton } from "@/components/home/NearMeButton"
 import { homeBtn, homeSection } from "@/components/home/home-ui"
-import { cn } from "@/lib/utils"
 
 const BASE_URL = getBaseUrl()
 
@@ -85,17 +84,30 @@ export default async function HomePage() {
 
       {/* Hero "Edición": oliva con mapa nocturno estático (sin Mapbox) y pines de marca.
           Nada depende de la hora ni del usuario: seguro para ISR.
-          Revisión 20/10: la acción principal es buscar (o "Cerca mío"); "Abrir el mapa"
-          queda como link. Antes había ~9 acciones arriba del pliegue. */}
+          Revisión 20/10: la acción principal es buscar (o "Cerca mío"). Antes había ~9
+          acciones arriba del pliegue.
+          Revisión 29/10: el mapa era un link chico debajo de los chips y se perdía.
+          Ahora "Explorar el mapa" es un botón a la altura del buscador: al lado en compu y
+          abajo, a todo el ancho, en el celular. El mapa de fondo también lleva a /mapa. */}
       <section className="celi-hero-mapa relative overflow-hidden min-[769px]:-mt-[var(--desktop-nav-clearance)] min-[769px]:pt-[var(--desktop-nav-clearance)]">
         <HeroPins />
-        <div className="container relative mx-auto max-w-5xl px-5 pb-10 pt-[max(1rem,calc(var(--safe-area-top)+0.5rem))] md:pb-20 md:pt-10">
+        {/* pointer-events-none + auto en los hijos: lo que no es texto ni botón deja pasar el
+            toque al mapa de fondo (los pines de compu, en HeroPins, llevan a /mapa). */}
+        <div className="container pointer-events-none relative mx-auto max-w-5xl px-5 pb-10 pt-[max(1rem,calc(var(--safe-area-top)+0.5rem))] md:pb-20 md:pt-10 [&>*]:pointer-events-auto">
           {/* En el celular, "Sugerir" ya está en la barra de abajo; en compu, en la de arriba. */}
           <div className="min-[769px]:hidden">
             <BrandLogo inverse size="sm" />
           </div>
 
-          <div className="h-[96px] md:h-[150px]" aria-hidden />
+          {/* La franja de los pines (celular y tablet) también abre el mapa. Es un atajo para
+              el dedo: el botón de abajo es el acceso de verdad, así que no va al lector ni al Tab. */}
+          <Link
+            href="/mapa"
+            aria-hidden
+            tabIndex={-1}
+            data-hero-map-shortcut
+            className="block h-[96px] md:h-[150px] lg:max-w-[680px]"
+          />
 
           <div className="max-w-[680px]">
             <p className="text-xs font-extrabold tracking-[0.16em] text-[#F7F3EB]/[0.72]">
@@ -117,18 +129,20 @@ export default async function HomePage() {
               Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
-            <div className="mt-6 max-w-[640px]">
-              <SearchBar />
+            <div className="mt-6 max-w-[680px]">
+              <div className="flex flex-col gap-3 md:flex-row">
+                <SearchBar className="md:flex-1" />
+                <Link href="/mapa" data-testid="home-open-map" className={homeBtn.heroMap}>
+                  <MapIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                  Explorar el mapa
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
+                </Link>
+              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <NearMeButton />
                 {/* Modo "Solo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
                 <SafetyModeSwitch variant="chip" />
               </div>
-              <Link href="/mapa" data-testid="home-open-map" className={cn(homeBtn.linkOnDark, "mt-1")}>
-                <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
-                o abrí el mapa
-                <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
-              </Link>
             </div>
           </div>
         </div>
