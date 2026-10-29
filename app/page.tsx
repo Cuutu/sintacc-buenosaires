@@ -87,8 +87,8 @@ export default async function HomePage() {
           Revisión 20/10: la acción principal es buscar (o "Cerca mío"). Antes había ~9
           acciones arriba del pliegue.
           Revisión 29/10: el mapa era un link chico debajo de los chips y se perdía.
-          Ahora "Explorar el mapa" es un botón a la altura del buscador: al lado en compu y
-          abajo, a todo el ancho, en el celular. El mapa de fondo también lleva a /mapa. */}
+          Ahora "Explorar el mapa" es un botón crema abajo del buscador, del mismo ancho y alto.
+          El mapa de fondo también lleva a /mapa. */}
       <section className="celi-hero-mapa relative overflow-hidden min-[769px]:-mt-[var(--desktop-nav-clearance)] min-[769px]:pt-[var(--desktop-nav-clearance)]">
         <HeroPins />
         {/* pointer-events-none + auto en los hijos: lo que no es texto ni botón deja pasar el
@@ -129,9 +129,11 @@ export default async function HomePage() {
               Restaurantes, cafeterías y panaderías recomendados por la comunidad celíaca.
             </p>
 
-            <div className="mt-6 max-w-[680px]">
-              <div className="flex flex-col gap-3 md:flex-row">
-                <SearchBar className="md:flex-1" />
+            {/* Mismo ancho que el párrafo de arriba (560 px): el buscador no pierde lugar y el
+                botón no se sale de la columna de texto hacia los pines (revisión 30/10). */}
+            <div className="mt-6 max-w-[560px]">
+              <div className="flex flex-col gap-3">
+                <SearchBar />
                 <Link href="/mapa" data-testid="home-open-map" className={homeBtn.heroMap}>
                   <MapIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
                   Explorar el mapa

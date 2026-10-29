@@ -41,11 +41,16 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
     // Revisión 20/10: buscar es la acción principal. Revisión 29/10: el mapa es un botón
-    // a la altura del buscador (al lado en compu, abajo en el celular), antes de los chips.
+    // a la altura del buscador, antes de los chips. Revisión 30/10: abajo del buscador en
+    // todos los tamaños (al lado le sacaba ancho), en la columna del párrafo (560 px).
     expect(src.indexOf("<SearchBar")).toBeGreaterThan(-1)
     expect(src.indexOf("<SearchBar")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
     expect(src.indexOf('data-testid="home-open-map"')).toBeLessThan(src.indexOf("<NearMeButton />"))
     expect(src).toContain("className={homeBtn.heroMap}")
+    expect(src).toContain('<div className="mt-6 max-w-[560px]">\n              <div className="flex flex-col gap-3">\n                <SearchBar />')
+    const ui = read("components/home/home-ui.ts")
+    // Crema sólido con texto verde: con verde transparente se confundía con los chips.
+    expect(ui).toMatch(/heroMap:\s*\n\s*"[^"]*bg-\[#F7F3EB\][^"]*text-\[#2D4A34\]/)
     expect(src).toContain("Explorar el mapa")
     expect(src).not.toContain("o abrí el mapa")
     // El mapa de fondo también abre /mapa, como atajo fuera del Tab y del lector.
