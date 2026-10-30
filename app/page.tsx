@@ -24,6 +24,7 @@ import { HomeDirectoryLinks } from "@/components/home/HomeDirectoryLinks"
 import { EmprendimientosSection } from "@/components/home/EmprendimientosSection"
 import { NearMeButton } from "@/components/home/NearMeButton"
 import { homeBtn, homeSection } from "@/components/home/home-ui"
+import { cn } from "@/lib/utils"
 
 const BASE_URL = getBaseUrl()
 
@@ -87,8 +88,8 @@ export default async function HomePage() {
           Revisión 20/10: la acción principal es buscar (o "Cerca mío"). Antes había ~9
           acciones arriba del pliegue.
           Revisión 29/10: el mapa era un link chico debajo de los chips y se perdía.
-          Ahora "Explorar el mapa" es un botón crema abajo del buscador, del mismo ancho y alto.
-          El mapa de fondo también lleva a /mapa. */}
+          Ahora "Explorar el mapa" es un botón crema con borde terracota, del ancho y el alto
+          del buscador, debajo de los chips. El mapa de fondo también lleva a /mapa. */}
       <section className="celi-hero-mapa relative overflow-hidden min-[769px]:-mt-[var(--desktop-nav-clearance)] min-[769px]:pt-[var(--desktop-nav-clearance)]">
         <HeroPins />
         {/* pointer-events-none + auto en los hijos: lo que no es texto ni botón deja pasar el
@@ -132,19 +133,19 @@ export default async function HomePage() {
             {/* Mismo ancho que el párrafo de arriba (560 px): el buscador no pierde lugar y el
                 botón no se sale de la columna de texto hacia los pines (revisión 30/10). */}
             <div className="mt-6 max-w-[560px]">
-              <div className="flex flex-col gap-3">
-                <SearchBar />
-                <Link href="/mapa" data-testid="home-open-map" className={homeBtn.heroMap}>
-                  <MapIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
-                  Explorar el mapa
-                  <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden />
-                </Link>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <SearchBar />
+              {/* "Cerca mío" y "Solo 100%" son filtros de la búsqueda: van pegados a ella, y el
+                  mapa queda debajo de todo (revisión 30/10, tercera vuelta). */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <NearMeButton />
                 {/* Modo "Solo 100% sin TACC": preferencia del dispositivo, se lee después de montar. */}
                 <SafetyModeSwitch variant="chip" />
               </div>
+              <Link href="/mapa" data-testid="home-open-map" className={cn(homeBtn.heroMap, "mt-4")}>
+                <MapIcon className="h-5 w-5 text-[#B84420]" strokeWidth={2.2} aria-hidden />
+                Explorar el mapa
+                <ArrowRight className="h-4 w-4 text-[#B84420]" strokeWidth={2.4} aria-hidden />
+              </Link>
             </div>
           </div>
         </div>

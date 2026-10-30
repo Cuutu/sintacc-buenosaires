@@ -40,18 +40,16 @@ describe("Home landing v3 copy + structure", () => {
     expect(src).toContain("CommunityBand")
     expect(src).toContain("FaqSection")
     expect(src).toContain("TakeCeliMapWithYou")
-    // Revisión 20/10: buscar es la acción principal. Revisión 29/10: el mapa es un botón
-    // a la altura del buscador, antes de los chips. Revisión 30/10: abajo del buscador en
-    // todos los tamaños (al lado le sacaba ancho), en la columna del párrafo (560 px).
-    expect(src.indexOf("<SearchBar")).toBeGreaterThan(-1)
-    expect(src.indexOf("<SearchBar")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
-    expect(src.indexOf('data-testid="home-open-map"')).toBeLessThan(src.indexOf("<NearMeButton />"))
-    expect(src).toContain("className={homeBtn.heroMap}")
-    // Con \s+ y no con saltos de línea literales: en Windows el repo baja con CRLF.
-    expect(src).toMatch(/<div className="mt-6 max-w-\[560px\]">\s+<div className="flex flex-col gap-3">\s+<SearchBar \/>/)
+    // Revisión 20/10: buscar es la acción principal. Revisión 30/10: los chips son filtros
+    // de la búsqueda y van pegados a ella; "Explorar el mapa" va debajo de todo, en la
+    // columna del párrafo (560 px). Con \s+ y no saltos literales: en Windows hay CRLF.
+    expect(src).toMatch(/<div className="mt-6 max-w-\[560px\]">\s+<SearchBar \/>/)
+    expect(src.indexOf("<SearchBar />")).toBeLessThan(src.indexOf("<NearMeButton />"))
+    expect(src.indexOf("<SafetyModeSwitch")).toBeLessThan(src.indexOf('data-testid="home-open-map"'))
+    expect(src).toContain('className={cn(homeBtn.heroMap, "mt-4")}')
     const ui = read("components/home/home-ui.ts")
-    // Crema sólido con texto verde: con verde transparente se confundía con los chips.
-    expect(ui).toMatch(/heroMap:\s+"[^"]*bg-\[#F7F3EB\][^"]*text-\[#2D4A34\]/)
+    // Crema sólido, texto verde y borde terracota: no se confunde con los chips ni con el buscador.
+    expect(ui).toMatch(/heroMap:\s+"[^"]*border-\[#B84420\][^"]*bg-\[#F7F3EB\][^"]*text-\[#2D4A34\]/)
     expect(src).toContain("Explorar el mapa")
     expect(src).not.toContain("o abrí el mapa")
     // El mapa de fondo también abre /mapa, como atajo fuera del Tab y del lector.
