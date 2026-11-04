@@ -170,7 +170,7 @@ export function LoyaltyTeamEditor({
       </div>
 
       {open && (
-        <form onSubmit={add} noValidate className="grid gap-3 rounded-xl bg-[#F8F5EF] p-3">
+        <form onSubmit={add} noValidate className="grid gap-3 rounded-xl bg-cream p-3">
           <label className="grid gap-1">
             <span className={adminUi.label}>Mail con el que entra a CeliMap</span>
             <input
@@ -201,7 +201,7 @@ export function LoyaltyTeamEditor({
                   className={cn(
                     "grid min-h-14 content-center rounded-xl border px-3 py-2 text-left",
                     role === r.value
-                      ? "border-[#234A33] bg-[#234A33] text-[#F8F5EF]"
+                      ? "border-olive bg-olive text-cream"
                       : `${adminUi.border} bg-white ${adminUi.text}`
                   )}
                 >
@@ -231,7 +231,7 @@ export function LoyaltyTeamEditor({
               Hoy es {describe(moving)}: pasa a {describe(slot)}.
             </p>
           )}
-          {error && <p className="text-sm text-[#B84420]">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex gap-2">
             <button type="submit" className={cn(adminUi.btnPrimary, "flex-1")} disabled={busy || !typed}>
@@ -264,7 +264,7 @@ export function LoyaltyTeamEditor({
               {g.emails.map((e) => (
                 <li
                   key={e}
-                  className="flex min-h-12 items-center justify-between gap-2 rounded-xl bg-[#F8F5EF] py-1 pl-3 pr-1"
+                  className="flex min-h-12 items-center justify-between gap-2 rounded-xl bg-cream py-1 pl-3 pr-1"
                 >
                   {confirming === e ? (
                     <>
@@ -275,7 +275,7 @@ export function LoyaltyTeamEditor({
                         <button
                           type="button"
                           disabled={busy}
-                          className={cn(adminUi.btnGhost, "px-3 text-[#B84420]")}
+                          className={cn(adminUi.btnGhost, "px-3 text-danger")}
                           onClick={() => remove(e)}
                         >
                           Quitar
@@ -309,7 +309,7 @@ export function LoyaltyTeamEditor({
         </div>
       ))}
 
-      {!open && error && <p className="text-sm text-[#B84420]">{error}</p>}
+      {!open && error && <p className="text-sm text-danger">{error}</p>}
       {done && (
         <p role="status" className={`text-sm font-semibold ${adminUi.text}`}>
           {done}

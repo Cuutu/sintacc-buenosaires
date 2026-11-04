@@ -12,6 +12,7 @@ const program = (over: Partial<AdminProgramRow> = {}): AdminProgramRow => ({
   stampsForReward: 10,
   reward: "Cookie",
   staffEmails: [],
+  employeeEmails: [],
   brandName: "",
   branches: [],
   active: true,
