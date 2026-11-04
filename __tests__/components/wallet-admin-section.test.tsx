@@ -22,6 +22,7 @@ const row = (id: string, placeName: string, current: number, previous: number): 
   stampsForReward: 10,
   reward: "Cookie",
   staffEmails: [],
+  employeeEmails: [],
   brandName: "",
   branches: [],
   active: true,
@@ -43,5 +44,40 @@ describe("AdminLoyaltySection", () => {
     expect(html).toContain("(+73% vs. el mes pasado)")
     expect(html.indexOf("Otro Local")).toBeLessThan(html.indexOf("Polvorín"))
     expect(html).toContain("Sellos por mes")
+  })
+
+  it("tells managers from employees", () => {
+    const html = renderToStaticMarkup(
+      <AdminLoyaltySection
+        initialPrograms={[
+          { ...row("a", "Polvorín", 6, 5), staffEmails: ["duenio@polvorin.com"], employeeEmails: ["caja@polvorin.com"] },
+        ]}
+      />
+    )
+    const managers = html.indexOf("Encargados")
+    const employees = html.indexOf("Empleados")
+    expect(managers).toBeGreaterThan(-1)
+    expect(html.indexOf("duenio@polvorin.com")).toBeGreaterThan(managers)
+    expect(html.indexOf("duenio@polvorin.com")).toBeLessThan(employees)
+    expect(html.indexOf("caja@polvorin.com")).toBeGreaterThan(employees)
+    expect(html).toContain("Agregar persona")
+  })
+
+  it("lists the employees of each branch in their own group", () => {
+    const html = renderToStaticMarkup(
+      <AdminLoyaltySection
+        initialPrograms={[
+          {
+            ...row("a", "Polvorín Palermo", 6, 5),
+            brandName: "Polvorín",
+            employeeEmails: ["caja@polvorin.com"],
+            branches: [{ placeId: "s1", name: "Polvorín Belgrano", staffEmails: ["mozo@polvorin.com"] }],
+          },
+        ]}
+      />
+    )
+    expect(html).toContain("Empleados de Polvorín Palermo")
+    expect(html).toContain("Empleados de Polvorín Belgrano")
+    expect(html.indexOf("mozo@polvorin.com")).toBeGreaterThan(html.indexOf("Empleados de Polvorín Belgrano"))
   })
 })

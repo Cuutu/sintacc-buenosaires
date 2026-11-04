@@ -4,24 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Camera, CameraOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { stampPathFromScan } from "@/lib/wallet/scan"
+import { createNativeDetector, createQrReader, type NativeDetectorCtor } from "@/lib/wallet/qr-reader"
+import { isNativeAndroidApp } from "@/lib/native-app"
 
 type Status = "idle" | "starting" | "scanning" | "found" | "denied" | "unavailable" | "error"
 
-type Detector = { detect: (source: CanvasImageSource) => Promise<Array<{ rawValue: string }>> }
-
 const SCAN_EVERY_MS = 200
-
-/** Lector rápido nativo (Chrome/Android); si no hay, jsQR (iPhone). */
-function nativeDetector(): Detector | null {
-  const Ctor = (globalThis as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector })
-    .BarcodeDetector
-  if (!Ctor) return null
-  try {
-    return new Ctor({ formats: ["qr_code"] })
-  } catch {
-    return null
-  }
-}
 
 /**
  * Cámara trasera + lectura del QR de la tarjeta. Al leer una tarjeta de CeliMap, abre la página
@@ -33,6 +21,11 @@ export function CardScanner() {
   const streamRef = useRef<MediaStream | null>(null)
   const [status, setStatus] = useState<Status>("idle")
   const [hint, setHint] = useState<string | null>(null)
+  // Dentro de la app de Android vieja (sin permiso de cámara) no hay ajuste que lo arregle: hay que actualizarla.
+  const [inAndroidApp, setInAndroidApp] = useState(false)
+  useEffect(() => {
+    setInAndroidApp(isNativeAndroidApp())
+  }, [])
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -72,16 +65,9 @@ export function CardScanner() {
     if (status !== "scanning") return
     let cancelled = false
     let timer: ReturnType<typeof setTimeout>
-    const detector = nativeDetector()
     let jsQR: ((data: Uint8ClampedArray, w: number, h: number) => { data: string } | null) | null = null
 
-    async function readFrame(): Promise<string | null> {
-      const video = videoRef.current
-      if (!video || video.readyState < 2 || !video.videoWidth) return null
-      if (detector) {
-        const codes = await detector.detect(video).catch(() => [])
-        return codes[0]?.rawValue ?? null
-      }
+    async function decodeWithJsQr(video: HTMLVideoElement): Promise<string | null> {
       if (!jsQR) jsQR = (await import("jsqr")).default
       const canvas = canvasRef.current
       const ctx = canvas?.getContext("2d", { willReadFrequently: true })
@@ -93,6 +79,16 @@ export function CardScanner() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
       return jsQR(image.data, image.width, image.height)?.data ?? null
+    }
+
+    const readerReady = createNativeDetector(
+      (globalThis as unknown as { BarcodeDetector?: NativeDetectorCtor }).BarcodeDetector
+    ).then((native) => createQrReader<HTMLVideoElement>({ native, decodeWithJsQr }))
+
+    async function readFrame(): Promise<string | null> {
+      const video = videoRef.current
+      if (!video || video.readyState < 2 || !video.videoWidth) return null
+      return (await readerReady).read(video)
     }
 
     async function tick() {
@@ -144,7 +140,9 @@ export function CardScanner() {
       <p role="status" className="text-center text-olive">
         {status === "scanning" && (hint ?? "Apuntá al QR de la tarjeta del cliente.")}
         {status === "denied" &&
-          "CeliMap no tiene permiso para usar la cámara. Habilitalo en los ajustes del celu (o del navegador) y tocá Reintentar."}
+          (inAndroidApp
+            ? "CeliMap no tiene permiso para usar la cámara. Actualizá la app desde Google Play, dale permiso a la cámara y tocá Reintentar. Mientras tanto podés escanear desde Chrome en celimap.com.ar/local/escanear."
+            : "CeliMap no tiene permiso para usar la cámara. Habilitalo en los ajustes del celu (o del navegador) y tocá Reintentar.")}
         {status === "unavailable" && "Este dispositivo no tiene cámara disponible acá. Usá la cámara del celu para escanear el QR."}
         {status === "error" && "No pudimos prender la cámara. Probá de nuevo."}
       </p>

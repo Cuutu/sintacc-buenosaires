@@ -45,7 +45,13 @@ export default async function CartelPage({ params, searchParams }: Props) {
     return s ? `${path}?${s}` : path
   }
   const size = parsePosterSize(searchParams.tamano)
-  const wallets = { apple: isApplePassConfigured(), google: isGoogleWalletConfigured() }
+  // El cartel se imprime y queda meses en la caja: lleva los dos Wallets aunque alguno todavía no
+  // esté prendido en este servidor (el admin ve el aviso de abajo).
+  const wallets = { apple: true, google: true }
+  const missingWallets = [
+    isApplePassConfigured() ? null : "Apple Wallet",
+    isGoogleWalletConfigured() ? null : "Google Wallet",
+  ].filter(Boolean)
 
   return (
     <>
@@ -86,6 +92,12 @@ export default async function CartelPage({ params, searchParams }: Props) {
             ))}
           </div>
         )}
+        {session.user.role === "admin" && missingWallets.length > 0 && (
+          <p className="mt-3 rounded-xl bg-[#FBE9E2] p-3 text-sm text-[#B84420]">
+            Sólo lo ves vos: {missingWallets.join(" y ")} todavía no está activo en este sitio. El cartel ya lo
+            muestra; mientras tanto, esos celulares ven &quot;todavía no disponible&quot;.
+          </p>
+        )}
         {!program.active && (
           <p className="mt-3 rounded-xl bg-[#FBE9E2] p-3 text-sm text-[#B84420]">
             Esta tarjeta está pausada: hasta que la reactives, el QR no abre nada.
@@ -116,8 +128,6 @@ export default async function CartelPage({ params, searchParams }: Props) {
       <div className="flex justify-center px-4 pb-12">
         <LoyaltyPoster
           placeName={placeName}
-          reward={program.reward}
-          stampsForReward={program.stampsForReward}
           safety={safety}
           enrollUrl={absoluteUrl(enrollPathFor(program._id.toString()))}
           wallets={wallets}

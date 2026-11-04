@@ -1,5 +1,7 @@
 /** Textos de la tarjeta de sellos, iguales en Apple Wallet y Google Wallet. */
 
+import { rewardChangeText } from "@/lib/wallet/reward-text"
+
 /** Sellos y total dentro de rango (total entre 1 y lo que diga el programa). */
 export function clampStamps(stamps: number, stampsForReward: number): { stamps: number; total: number } {
   const total = Math.max(1, Math.floor(stampsForReward))
@@ -19,8 +21,20 @@ export function stampNewsMessage(input: {
   /** Sellos que sumó la última visita (2 con sello doble) y por qué. */
   lastStampAdded?: number
   lastStampReason?: "double" | "friend" | "inviter"
+  /** Lo último fue un cambio de sellos o premio del local (ver reward-change.ts). */
+  rewardChanged?: boolean
 }): string {
   const { stamps, total, placeName, reward } = input
+  if (input.rewardChanged) {
+    const left = total - stamps
+    const tail =
+      stamps >= total
+        ? "¡Ya podés canjear tu premio!"
+        : stamps > 0
+          ? `Tenés ${stamps}: te ${left === 1 ? "falta" : "faltan"} ${left}.`
+          : "Sumá tu primer sello en tu próxima visita."
+    return `${rewardChangeText(placeName, total, reward)} ${tail}`
+  }
   if (stamps <= 0) {
     return (input.rewardsRedeemed ?? 0) > 0
       ? `¡Canjeaste tu premio en ${placeName}! Ya arrancás una tarjeta nueva.`

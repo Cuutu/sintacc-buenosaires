@@ -73,6 +73,8 @@ export type LoyaltyPassInput = {
   /** Cuántos sellos sumó la última visita y por qué (para "Última novedad"). */
   lastStampAdded?: number
   lastStampReason?: StampReason
+  /** Lo último fue un cambio de sellos o premio del local: "Última novedad" lo cuenta. */
+  rewardChanged?: boolean
   /** Servicio web para que el Wallet se actualice solo (sólo https). */
   webService?: { url: string; authenticationToken: string }
 }

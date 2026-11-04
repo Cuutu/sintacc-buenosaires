@@ -58,6 +58,23 @@ describe("sucursales", () => {
     expect(canStampProgram(program, user("cliente@gmail.com"))).toBe(false)
   })
 
+  it("employees of the main place only add stamps there", () => {
+    const shop = { ...program, branches: [], employeeEmails: ["caja@polvorin.com"] }
+    expect(staffRole(shop, user("Caja@Polvorin.com"))).toBe("branch")
+    expect(canStampProgram(shop, user("caja@polvorin.com"))).toBe(true)
+    expect(stampPlaceIdsFor(shop, user("caja@polvorin.com"))).toEqual([main.toString()])
+    // Si el mail está en las dos listas, manda la de encargado.
+    expect(staffRole({ ...shop, employeeEmails: ["duenio@polvorin.com"] }, user("duenio@polvorin.com"))).toBe(
+      "manager"
+    )
+    // Con sucursales: el empleado del principal y de una sucursal suma en las dos.
+    const both = {
+      ...program,
+      employeeEmails: ["caja.palermo@polvorin.com"],
+    }
+    expect(stampPlaceIdsFor(both, user("caja.palermo@polvorin.com"))).toEqual([main.toString(), palermo.toString()])
+  })
+
   it("lets branch staff stamp only at their branch", () => {
     expect(stampPlaceIdsFor(program, user("caja.palermo@polvorin.com"))).toEqual([palermo.toString()])
     expect(stampPlaceIdsFor(program, user("duenio@polvorin.com"))).toHaveLength(3)
@@ -70,7 +87,7 @@ describe("sucursales", () => {
 
   it("finds the panel programs of managers and branch staff", () => {
     expect(staffProgramFilter("a@b.com")).toEqual({
-      $or: [{ staffEmails: "a@b.com" }, { "branches.staffEmails": "a@b.com" }],
+      $or: [{ staffEmails: "a@b.com" }, { employeeEmails: "a@b.com" }, { "branches.staffEmails": "a@b.com" }],
     })
   })
 

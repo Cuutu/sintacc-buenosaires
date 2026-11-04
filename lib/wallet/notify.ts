@@ -16,6 +16,7 @@ import {
   refreshGoogleClass,
 } from "@/lib/wallet/google-wallet"
 import { getProgramWithPlace, passInputFor, type ProgramWithPlace } from "@/lib/wallet/loyalty"
+import { rewardChangeText } from "@/lib/wallet/reward-text"
 
 export async function notifyCardChanged(card: ILoyaltyCard): Promise<void> {
   if (card.wallet === "google") {
@@ -78,12 +79,43 @@ export const GOOGLE_REFRESH_LIMIT = 500
  * (en Apple la novedad no cambia, así que el iPhone no muestra nada).
  */
 export async function refreshProgramCards(data: ProgramWithPlace, now = new Date()): Promise<void> {
-  const programId = data.program._id
   const apple = getApplePassConfig()
-  if (apple) await refreshApplePasses(programId, apple, now, "la promo")
+  if (apple) await refreshApplePasses(data.program._id, apple, now, "la promo")
+  const google = getGoogleWalletConfig()
+  if (google) await refreshGoogleCards(data, google, now)
+}
+
+/**
+ * Cambiaron los sellos o el premio: se actualizan todas las tarjetas y les llega un aviso.
+ * En Apple, "Última novedad" pasa a contar las nuevas condiciones (y el iPhone lo muestra);
+ * en Google, además, un mensaje en la clase.
+ */
+export async function notifyRewardChanged(data: ProgramWithPlace, now = new Date()): Promise<void> {
+  const apple = getApplePassConfig()
+  if (apple) await refreshApplePasses(data.program._id, apple, now, "las nuevas condiciones")
   const google = getGoogleWalletConfig()
   if (!google) return
-  // La clase lleva el nombre y las ubicaciones (sucursales); las tarjetas, el resto.
+  await refreshGoogleCards(data, google, now)
+  await pushGoogleProgramNotice(
+    {
+      programId: data.program._id.toString(),
+      placeName: data.placeName,
+      safety: data.safety,
+      locations: data.locations,
+    },
+    rewardChangeText(data.placeName, data.program.stampsForReward, data.program.reward),
+    google,
+    now
+  )
+}
+
+/** La clase (nombre, ubicaciones) y hasta GOOGLE_REFRESH_LIMIT tarjetas de Google del local. */
+async function refreshGoogleCards(
+  data: ProgramWithPlace,
+  google: NonNullable<ReturnType<typeof getGoogleWalletConfig>>,
+  now: Date
+): Promise<void> {
+  const programId = data.program._id
   await refreshGoogleClass(
     { programId: programId.toString(), placeName: data.placeName, safety: data.safety, locations: data.locations },
     google
